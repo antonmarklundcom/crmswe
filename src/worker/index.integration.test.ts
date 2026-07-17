@@ -21,6 +21,7 @@ describe.skipIf(!hasDb)("worker (MySQL integration)", () => {
   });
 
   afterAll(async () => {
+    if (!db) return; // beforeAll failed before assigning it — nothing to close
     const pool = (db as unknown as { $client: { end: () => Promise<void> } })
       .$client;
     await pool.end();

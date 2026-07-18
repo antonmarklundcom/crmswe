@@ -3,6 +3,87 @@
     "appName": "VenderCRM",
     "loading": "Cargando…",
     "save": "Guardar",
-    "cancel": "Cancelar"
+    "cancel": "Cancelar",
+    "create": "Crear",
+    "back": "Volver"
+  },
+  "auth": {
+    "login": {
+      "title": "Iniciar sesión",
+      "email": "Correo electrónico",
+      "password": "Contraseña",
+      "submit": "Entrar",
+      "error": "Correo o contraseña incorrectos"
+    },
+    "acceptInvite": {
+      "title": "Aceptar invitación",
+      "name": "Nombre completo",
+      "password": "Elegí una contraseña",
+      "submit": "Crear cuenta",
+      "invalid": "Esta invitación no es válida o ya expiró",
+      "success": "Cuenta creada. Ya podés iniciar sesión."
+    }
+  },
+  "tenancy": {
+    "status": {
+      "grace": {
+        "banner": "Tu suscripción venció. Tenés acceso de solo lectura hasta que se registre el pago."
+      },
+      "locked": {
+        "title": "Cuenta suspendida",
+        "body": "El acceso a esta cuenta está bloqueado. Contactá al administrador para regularizar el pago.",
+        "backToLogin": "Volver a iniciar sesión"
+      }
+    }
+  },
+  "superadmin": {
+    "nav": {
+      "tenants": "Empresas",
+      "plans": "Planes"
+    },
+    "tenants": {
+      "title": "Empresas",
+      "createTitle": "Nueva empresa",
+      "name": "Nombre",
+      "slug": "Slug",
+      "status": "Estado",
+      "statusValues": {
+        "active": "Activa",
+        "suspended": "Suspendida",
+        "trial": "Prueba"
+      },
+      "suspend": "Suspender",
+      "activate": "Activar",
+      "impersonate": "Ver como",
+      "viewDetail": "Ver detalle",
+      "createdAt": "Creada"
+    },
+    "subscriptions": {
+      "title": "Suscripción",
+      "none": "Sin suscripción activa",
+      "plan": "Plan",
+      "expiresAt": "Vence",
+      "accessStatus": "Acceso",
+      "createTitle": "Nueva suscripción",
+      "recordPaymentTitle": "Registrar pago",
+      "amount": "Monto (PYG)",
+      "method": "Método",
+      "methodValues": {
+        "transfer": "Transferencia",
+        "cash": "Efectivo",
+        "other": "Otro"
+      },
+      "reference": "Referencia",
+      "notes": "Notas",
+      "submit": "Registrar pago"
+    },
+    "plans": {
+      "title": "Planes",
+      "createTitle": "Nuevo plan",
+      "name": "Nombre",
+      "durationMonths": "Duración (meses)",
+      "price": "Precio (PYG)",
+      "active": "Activo"
+    }
   }
 }

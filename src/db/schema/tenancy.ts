@@ -55,8 +55,12 @@ export const users = mysqlTable(
     emailVerified: boolean("email_verified").notNull().default(false),
     name: varchar("name", { length: 200 }).notNull(),
     image: varchar("image", { length: 2000 }),
-    // Tenant role — null for platform superadmins (they aren't `admin`/`agent`).
-    role: varchar("role", { length: 20, enum: ["admin", "agent"] }),
+    // Tenant role (admin|agent). Superadmins additionally get role="superadmin"
+    // so Better Auth's admin-plugin `adminRoles` gate (§3.2) can key off it as
+    // defense-in-depth for its own /api/auth/admin/* endpoints — the app's own
+    // authorization never trusts this field alone, only `isSuperadmin` below
+    // (resolved via getTenantContext/getSuperadminContext, PLAN.md §3.3).
+    role: varchar("role", { length: 20, enum: ["admin", "agent", "superadmin"] }),
     isSuperadmin: boolean("is_superadmin").notNull().default(false),
     // Better Auth admin plugin ban fields.
     banned: boolean("banned").notNull().default(false),

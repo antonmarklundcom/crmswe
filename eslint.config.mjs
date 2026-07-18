@@ -45,6 +45,14 @@ const eslintConfig = defineConfig([
       "src/worker/**/*.{ts,tsx}",
       "src/lib/queue/**/*.{ts,tsx}",
       "src/modules/tenancy/**/*.{ts,tsx}",
+      // JUDGMENT CALL (flagged for Fable review, not explicit in PLAN.md
+      // §3.3's exemption list): the Better Auth instance (src/lib/auth/server.ts)
+      // is infra wiring handed the raw `db` client by the Drizzle adapter,
+      // the same shape as db/client.ts or worker/index.ts — not business
+      // logic. Everything that actually reads/writes tenant data still goes
+      // through src/modules/tenancy or src/modules/auth (which holds no raw
+      // db import of its own).
+      "src/lib/auth/**/*.{ts,tsx}",
     ],
     rules: {
       "no-restricted-imports": "off",

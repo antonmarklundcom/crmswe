@@ -46,7 +46,12 @@ export const jobs = mysqlTable(
     type: varchar("type", { length: 100 }).notNull(),
     payload: json("payload").notNull(),
     tenantId: char("tenant_id", { length: 26 }),
-    runAt: datetime("run_at").notNull(),
+    // fsp: 3 (millisecond precision) — MySQL *rounds* (not truncates) values
+    // inserted into a DATETIME column with no fsp, so a run_at written at
+    // e.g. .900s can round up to the next whole second and land in the
+    // future relative to the immediately-following claim query. That made
+    // "due now" jobs intermittently miss their own tick.
+    runAt: datetime("run_at", { fsp: 3 }).notNull(),
     status: varchar("status", {
       length: 20,
       enum: ["pending", "running", "done", "failed", "dead"],
@@ -55,7 +60,7 @@ export const jobs = mysqlTable(
       .default("pending"),
     attempts: int("attempts").notNull().default(0),
     maxAttempts: int("max_attempts").notNull().default(5),
-    lockedAt: datetime("locked_at"),
+    lockedAt: datetime("locked_at", { fsp: 3 }),
     lockedBy: varchar("locked_by", { length: 100 }),
     lastError: varchar("last_error", { length: 2000 }),
     createdAt: datetime("created_at")

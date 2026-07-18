@@ -9,6 +9,34 @@ import {
 } from "drizzle-orm/mysql-core";
 import { sql } from "drizzle-orm";
 
+// Platform-level audit trail (PLAN.md §4 "infra"). Every impersonated action
+// is written here with both the real actor and the effective (impersonated)
+// user — §3.2. Nullable tenant_id lets platform-level actions (e.g. tenant
+// creation) be logged too, filterable per tenant in the superadmin console.
+export const auditLog = mysqlTable(
+  "audit_log",
+  {
+    id: char("id", { length: 26 }).primaryKey(),
+    tenantId: char("tenant_id", { length: 26 }),
+    actorUserId: char("actor_user_id", { length: 26 }).notNull(),
+    impersonatorUserId: char("impersonator_user_id", { length: 26 }),
+    action: varchar("action", { length: 100 }).notNull(),
+    entity: varchar("entity", { length: 100 }).notNull(),
+    entityId: varchar("entity_id", { length: 100 }).notNull(),
+    payload: json("payload").notNull().default({}),
+    createdAt: datetime("created_at")
+      .notNull()
+      .default(sql`CURRENT_TIMESTAMP`),
+    updatedAt: datetime("updated_at")
+      .notNull()
+      .default(sql`CURRENT_TIMESTAMP`),
+  },
+  (table) => [
+    index("audit_log_tenant_id_idx").on(table.tenantId),
+    index("audit_log_entity_idx").on(table.entity, table.entityId),
+  ],
+);
+
 // Platform-level job queue (PLAN.md §2.1) — a `jobs` table drained by an
 // in-process worker, no Redis. Delayed steps are just jobs with a future run_at.
 export const jobs = mysqlTable(

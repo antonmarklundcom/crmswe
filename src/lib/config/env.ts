@@ -10,6 +10,11 @@ const envSchema = z.object({
   STORAGE_DRIVER: z.enum(["local", "s3"]).default("local"),
   STORAGE_LOCAL_PATH: z.string().default("./.storage"),
   CRON_SECRET: z.string().min(1, "CRON_SECRET is required"),
+  // Better Auth session/cookie signing secret (distinct from APP_ENCRYPTION_KEY,
+  // which is reserved for AES-256-GCM secrets-at-rest per §3.4).
+  BETTER_AUTH_SECRET: z
+    .string()
+    .min(32, "BETTER_AUTH_SECRET must be at least 32 characters"),
 });
 
 export type Env = z.infer<typeof envSchema>;

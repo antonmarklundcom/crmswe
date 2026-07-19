@@ -2,10 +2,12 @@ import { betterAuth } from "better-auth";
 import { admin } from "better-auth/plugins/admin";
 import { adminAc } from "better-auth/plugins/admin/access";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { APIError, createAuthMiddleware } from "better-auth/api";
 import { db } from "@/db/client";
 import * as schema from "@/db/schema";
 import { env } from "@/lib/config/env";
 import { newId } from "@/lib/ids";
+import { hasValidInvitationForEmail } from "@/modules/tenancy/invitations";
 
 // Better Auth instance (Drizzle adapter + admin plugin for impersonation —
 // PLAN.md §2.3, §3.2). This file is infra wiring analogous to db/client.ts
@@ -51,6 +53,26 @@ export const auth = betterAuth({
         input: false,
       },
     },
+  },
+  hooks: {
+    // Closes the open public sign-up (PLAN.md §10 1C follow-up #2): Better
+    // Auth's /sign-up/email is otherwise unauthenticated and unrestricted —
+    // anyone could create an orphan account, and squatting an invited
+    // email would permanently block that invitation from being accepted.
+    // Restrict it to emails holding a valid, unexpired, unaccepted
+    // invitation. The accept-invite flow (modules/auth/invitations.ts)
+    // validates the same invitation immediately before calling
+    // auth.api.signUpEmail, so it always passes this check too.
+    before: createAuthMiddleware(async (ctx) => {
+      if (ctx.path !== "/sign-up/email") return;
+
+      const email = (ctx.body as { email?: string } | undefined)?.email;
+      if (!email || !(await hasValidInvitationForEmail(email))) {
+        throw new APIError("FORBIDDEN", {
+          message: "Este correo no tiene una invitación válida.",
+        });
+      }
+    }),
   },
   plugins: [
     admin({

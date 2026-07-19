@@ -1,8 +1,6 @@
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { getTenantContext } from "@/modules/tenancy/context";
-import { getTenant } from "@/modules/tenancy/tenants";
-import { computeAccessStatus } from "@/modules/tenancy/subscriptions";
 
 // Tenant suspension/expiry enforcement (PLAN.md §10 1B: "grace → read-only
 // banner → locked"). Runs server-side, in the Node.js runtime, so it can
@@ -16,10 +14,7 @@ export default async function AppLayout({
   const ctx = await getTenantContext();
   if (!ctx) redirect("/login");
 
-  const tenant = await getTenant(ctx.tenantId);
-  if (!tenant) redirect("/login");
-
-  const status = await computeAccessStatus(tenant.id, tenant.status);
+  const status = ctx.accessStatus;
 
   if (status === "locked") {
     const t = await getTranslations("tenancy.status.locked");

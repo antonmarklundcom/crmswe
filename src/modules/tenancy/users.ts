@@ -1,6 +1,8 @@
 import { eq } from "drizzle-orm";
+import { hashPassword } from "better-auth/crypto";
 import { db } from "@/db/client";
-import { users } from "@/db/schema";
+import { accounts, users } from "@/db/schema";
+import { newId } from "@/lib/ids";
 import type { TenantContext } from "./context";
 import { tenantDb } from "./db";
 
@@ -16,6 +18,41 @@ export async function assignUserToTenant(
   role: "admin" | "agent",
 ) {
   await db.update(users).set({ tenantId, role }).where(eq(users.id, userId));
+}
+
+/**
+ * Superadmin bootstrap (PLAN.md §10 1C follow-up #2, scripts/create-superadmin.ts):
+ * inserts a user + credential account directly, the same shape Better
+ * Auth's own email/password sign-up would produce. Only entry point for the
+ * very first superadmin — sign-up itself is gated to invited emails, and
+ * invitations can only be created by an existing admin/superadmin.
+ */
+export async function createSuperadminUser(input: {
+  email: string;
+  password: string;
+  name: string;
+}) {
+  const userId = newId();
+
+  await db.insert(users).values({
+    id: userId,
+    email: input.email,
+    emailVerified: true,
+    name: input.name,
+    role: "superadmin",
+    isSuperadmin: true,
+    tenantId: null,
+  });
+
+  await db.insert(accounts).values({
+    id: newId(),
+    userId,
+    accountId: userId,
+    providerId: "credential",
+    password: await hashPassword(input.password),
+  });
+
+  return getUserById(userId);
 }
 
 export async function markSuperadmin(userId: string) {

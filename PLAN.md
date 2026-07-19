@@ -140,7 +140,13 @@ table**, FK to `tenants`. Composite indexes lead with `tenant_id`. Tenant-scoped
 uniqueness is always `(tenant_id, x)` — e.g. one contact per phone per tenant.
 
 Platform-level tables (no `tenant_id`): `tenants`, `users`, `sessions`, `plans`,
-`subscriptions`, `payments`, `jobs`, `audit_log` (has nullable tenant_id for filtering).
+`payments`, `jobs`. Two platform tables carry a `tenant_id` column without being
+tenant-owned (superadmin-only writes; never accessed through `tenantDb`):
+`subscriptions.tenant_id` — the FK tying billing to a tenant, which expiry/lockout
+lookups key on — and `audit_log.tenant_id` (nullable, for per-tenant filtering).
+`payments` reaches its tenant via `subscription_id`. *(Ruled at the 1B review gate:
+§4's schema — `subscriptions` **with** `tenant_id` — is correct; an earlier revision
+of this paragraph contradicted it.)*
 
 Users belong to **exactly one tenant** (`users.tenant_id`, nullable only for
 superadmins). No cross-tenant membership in Phase 1 — simpler and matches the market.
@@ -149,7 +155,7 @@ superadmins). No cross-tenant membership in Phase 1 — simpler and matches the 
 
 | Role | Scope | Powers |
 |---|---|---|
-| `superadmin` | Platform | Create/suspend tenants, manage plans & payments, impersonate ("ver como"), platform WhatsApp health dashboard. Stored as `users.is_superadmin` flag, `tenant_id = NULL`. |
+| `superadmin` | Platform | Create/suspend tenants, manage plans & payments, impersonate ("ver como"), platform WhatsApp health dashboard. Stored as `users.is_superadmin` flag, `tenant_id = NULL`; additionally `users.role = 'superadmin'` **solely** to key Better Auth's admin-plugin `adminRoles` gate for its own `/api/auth/admin/*` endpoints (ratified at the 1B review gate). App authorization keys off `is_superadmin` only and never trusts `role` alone. |
 | `admin` | Tenant | Everything in tenant: users/invites, WhatsApp connection, automations, forms, pipeline config, billing status view. |
 | `agent` | Tenant | Work contacts/deals/inbox/quotes (all visible, per locked decision); cannot manage users, WhatsApp connection, or automations. |
 
@@ -191,7 +197,7 @@ Drizzle schema, one file per module. All PKs `char(26)` ULID, all tables get
 
 **tenancy/billing** *(platform)*
 - `tenants` — name, slug, status (`active|suspended|trial`), locale (`es`), timezone (`America/Asuncion`), settings JSON
-- `users` — tenant_id (nullable), email, name, role (`admin|agent`), is_superadmin, Better Auth fields
+- `users` — tenant_id (nullable), email, name, role (`admin|agent|superadmin` — the third value exists only for the Better Auth admin-plugin gate, see §3.2), is_superadmin, Better Auth fields
 - `invitations` — tenant_id, email, role, token, expires_at
 - `plans` — name, duration_months (3|6|12), price (BIGINT PYG), limits JSON (users, WhatsApp numbers, monthly automation runs), is_active, `features` JSON (factura_electronica: "coming_soon")
 - `subscriptions` — tenant_id, plan_id, starts_at, expires_at, status (`active|grace|expired`)
@@ -427,8 +433,10 @@ the raw-`db` import ban, CI (lint, typecheck, test).
 Better Auth + Drizzle, tenants/users/invitations, roles (§3.2), `getTenantContext` +
 `tenantDb` scoped access layer, impersonation + audit log, superadmin console (tenant
 CRUD, suspend, plans, **manual payments ledger + subscription expiry**), tenant
-suspension/expiry middleware (grace → read-only banner → locked), **cross-tenant
-isolation test suite**.
+suspension/expiry middleware (grace → read-only banner → locked; **grace period =
+7 days** after expiry, ratified at the 1B review gate — a constant in
+`modules/tenancy/subscriptions.ts`, promoted to plan-limit/env config only if a
+real need appears), **cross-tenant isolation test suite**.
 **Exit**: isolation suite green; superadmin can create a tenant, record a payment,
 impersonate; expired tenant is locked out.
 
@@ -437,8 +445,24 @@ Contacts CRUD + tags + search/filter, pipelines/stages config, kanban board with
 deal CRUD + assignment, activity timeline, internal event dispatcher, form builder +
 public form pages + submission→contact/deal wiring, tenant settings (branding, business
 hours, timezone).
+
+**1B review-gate follow-ups (land within 1C, before its exit):**
+1. **Grace-state write enforcement** (deferred from 1B, which shipped no tenant-owned
+   mutations): one service-layer guard — e.g. `assertTenantWritable(ctx)`, or an
+   `accessStatus` resolved into `TenantContext` — called by **every** mutating tenant
+   service, so grace tenants are read-only at the write path, not just the banner.
+   Test-covered (a grace tenant's mutation is rejected server-side).
+2. **Close the open public sign-up**: Better Auth's `/api/auth/sign-up/email` is
+   currently unrestricted — anyone can create an orphan account, and squatting an
+   invited email blocks that invitation from ever being accepted. Restrict sign-up
+   (e.g. a Better Auth `before` hook on the sign-up path) to emails holding a valid,
+   unexpired, unaccepted invitation; keep the accept-invite flow green and document
+   the superadmin bootstrap path (script/manual). Test: sign-up with a non-invited
+   email returns 4xx; invite acceptance still passes.
+
 **Exit**: full lead lifecycle by hand — form submission → contact → deal moves across
-kanban → timeline shows history.
+kanban → timeline shows history; grace-tenant writes rejected server-side; non-invited
+sign-up rejected.
 
 ### 1D — WhatsApp integration *(Opus, ~4 sessions)* — 🔍 Fable review gate
 `wa_accounts` + manual connect flow, webhook endpoint per §6.3 (signature, ack-fast,

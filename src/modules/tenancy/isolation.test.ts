@@ -313,8 +313,11 @@ describe.skipIf(!hasDb)("tenancy isolation", () => {
           expiresAt: new Date(Date.now() + 86400000),
         });
 
-    await expect(attemptInsert(graceCtx)).rejects.toThrow(/not writable/);
-    await expect(attemptInsert(lockedCtx)).rejects.toThrow(/not writable/);
+    // assertTenantWritable throws synchronously (it runs before the
+    // drizzle query builder ever produces a promise), so these are sync
+    // throws, not rejected promises — toThrow, not rejects.toThrow.
+    expect(() => attemptInsert(graceCtx)).toThrow(/not writable/);
+    expect(() => attemptInsert(lockedCtx)).toThrow(/not writable/);
 
     const existingId = newId();
     await tenantDb(ctxA).insert(schema.invitations).values({
@@ -326,15 +329,15 @@ describe.skipIf(!hasDb)("tenancy isolation", () => {
       expiresAt: new Date(Date.now() + 86400000),
     });
 
-    await expect(
+    expect(() =>
       tenantDb(graceCtx)
         .update(schema.invitations)
         .set({ role: "admin" })
         .where(eq(schema.invitations.id, existingId)),
-    ).rejects.toThrow(/not writable/);
-    await expect(
+    ).toThrow(/not writable/);
+    expect(() =>
       tenantDb(lockedCtx).delete(schema.invitations, eq(schema.invitations.id, existingId)),
-    ).rejects.toThrow(/not writable/);
+    ).toThrow(/not writable/);
 
     // Reads still work — only mutation methods are gated.
     const rows = await tenantDb(graceCtx).select(

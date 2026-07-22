@@ -103,6 +103,19 @@ export async function requireTenantContext(): Promise<TenantContext> {
   return ctx;
 }
 
+/**
+ * Tenant `admin`-only actions (PLAN.md §3.2: WhatsApp connection,
+ * automations, users/invites, and — new in 1C — tenant settings; `agent`
+ * works contacts/deals/inbox/quotes but doesn't manage tenant config).
+ */
+export async function requireTenantAdmin(): Promise<TenantContext> {
+  const ctx = await requireTenantContext();
+  if (ctx.role !== "admin") {
+    throw new Error("Se requiere rol de administrador");
+  }
+  return ctx;
+}
+
 /** Resolves the current superadmin identity, or null if not a superadmin. */
 export async function getSuperadminContext(): Promise<SuperadminContext | null> {
   const session = await getSession();

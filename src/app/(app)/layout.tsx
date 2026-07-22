@@ -45,6 +45,7 @@ export default async function AppLayout({
         <Link href="/contacts">{t("contacts")}</Link>
         <Link href="/pipeline">{t("pipeline")}</Link>
         <Link href="/forms">{t("forms")}</Link>
+        {ctx.role === "admin" && <Link href="/settings">{t("settings")}</Link>}
       </nav>
       <div className="flex-1 p-6">{children}</div>
     </div>

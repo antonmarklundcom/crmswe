@@ -6,3 +6,4 @@ export * from "./plans";
 export * from "./subscriptions";
 export * from "./users";
 export * from "./invitations";
+export * from "./settings";

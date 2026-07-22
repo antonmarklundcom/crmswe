@@ -41,7 +41,8 @@
       "dashboard": "Inicio",
       "contacts": "Contactos",
       "pipeline": "Pipeline",
-      "forms": "Formularios"
+      "forms": "Formularios",
+      "settings": "Configuración"
     },
     "contacts": {
       "title": "Contactos",
@@ -89,6 +90,24 @@
       "targetStage": "Etapa destino",
       "noStage": "Ninguna",
       "createForm": "Crear formulario"
+    },
+    "settings": {
+      "title": "Configuración",
+      "adminOnly": "Solo los administradores pueden ver esta página",
+      "brandingTitle": "Marca",
+      "logoUrl": "URL del logo",
+      "primaryColor": "Color principal",
+      "timezoneTitle": "Zona horaria",
+      "businessHoursTitle": "Horario de atención",
+      "days": {
+        "mon": "Lunes",
+        "tue": "Martes",
+        "wed": "Miércoles",
+        "thu": "Jueves",
+        "fri": "Viernes",
+        "sat": "Sábado",
+        "sun": "Domingo"
+      }
     }
   },
   "superadmin": {

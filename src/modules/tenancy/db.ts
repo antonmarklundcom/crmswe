@@ -26,9 +26,12 @@ export type TenantDb = ReturnType<typeof tenantDb>;
  * Grace-state write enforcement (PLAN.md §10 1C follow-up #1): every
  * mutating tenant service goes through tenantDb's insert/update/delete, so
  * gating them here is the single choke point — grace/locked tenants become
- * read-only at the write path itself, not just the UI banner.
+ * read-only at the write path itself, not just the UI banner. Exported for
+ * the handful of tenancy-module writes that can't go through tenantDb
+ * itself (e.g. `tenants` — a platform table keyed by its own id, not a
+ * `tenant_id` column) but still need to honor the same policy.
  */
-function assertTenantWritable(ctx: TenantContext): void {
+export function assertTenantWritable(ctx: TenantContext): void {
   if (ctx.accessStatus !== "active") {
     throw new Error(
       `Tenant is not writable (accessStatus: ${ctx.accessStatus})`,

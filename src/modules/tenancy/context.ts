@@ -71,6 +71,30 @@ export async function getTenantContext(): Promise<TenantContext | null> {
   };
 }
 
+/**
+ * Reconstructs a TenantContext for code paths with no Better Auth session at
+ * all — public form submissions (tenant resolved by URL slug, not user
+ * input) and, per §3.3, background jobs ("jobs carry tenant_id in their
+ * payload and the worker reconstructs a tenant context before calling
+ * services"). userId is a fixed sentinel, never a real user row — nothing
+ * in tenantDb or the services built on it dereferences it as one. Returns
+ * null if the tenant doesn't exist.
+ */
+export async function buildSystemTenantContext(
+  tenantId: string,
+): Promise<TenantContext | null> {
+  const tenant = await getTenant(tenantId);
+  if (!tenant) return null;
+
+  return {
+    tenantId,
+    userId: "system",
+    role: "agent",
+    impersonatorUserId: null,
+    accessStatus: await computeAccessStatus(tenant.id, tenant.status),
+  };
+}
+
 export async function requireTenantContext(): Promise<TenantContext> {
   const ctx = await getTenantContext();
   if (!ctx) {

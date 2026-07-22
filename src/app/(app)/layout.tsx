@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { getTenantContext } from "@/modules/tenancy/context";
 
@@ -34,10 +35,18 @@ export default async function AppLayout({
       <GraceBanner />
     ) : null;
 
+  const t = await getTranslations("app.nav");
+
   return (
     <div className="flex flex-1 flex-col">
       {graceBanner}
-      {children}
+      <nav className="flex gap-4 border-b px-6 py-3 text-sm">
+        <Link href="/dashboard">{t("dashboard")}</Link>
+        <Link href="/contacts">{t("contacts")}</Link>
+        <Link href="/pipeline">{t("pipeline")}</Link>
+        <Link href="/forms">{t("forms")}</Link>
+      </nav>
+      <div className="flex-1 p-6">{children}</div>
     </div>
   );
 }

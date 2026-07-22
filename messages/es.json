@@ -36,6 +36,61 @@
       }
     }
   },
+  "app": {
+    "nav": {
+      "dashboard": "Inicio",
+      "contacts": "Contactos",
+      "pipeline": "Pipeline",
+      "forms": "Formularios"
+    },
+    "contacts": {
+      "title": "Contactos",
+      "searchPlaceholder": "Buscar por nombre, teléfono o correo",
+      "allTags": "Todas las etiquetas",
+      "filter": "Filtrar",
+      "name": "Nombre",
+      "phone": "Teléfono",
+      "email": "Correo",
+      "source": "Origen",
+      "notes": "Notas",
+      "empty": "Todavía no hay contactos",
+      "createTitle": "Nuevo contacto",
+      "createTagTitle": "Nueva etiqueta",
+      "addTag": "Agregar etiqueta",
+      "dealsTitle": "Negocios",
+      "timelineTitle": "Historial",
+      "timelineEmpty": "Todavía no hay actividad",
+      "notePlaceholder": "Escribí una nota…",
+      "addNote": "Agregar nota",
+      "activityTypes": {
+        "note": "Nota",
+        "call": "Llamada",
+        "stage_change": "Cambio de etapa",
+        "form_submission": "Formulario recibido",
+        "quote_sent": "Presupuesto enviado",
+        "system": "Sistema"
+      }
+    },
+    "pipeline": {
+      "noPipeline": "Todavía no hay un pipeline configurado",
+      "createDealTitle": "Nuevo negocio",
+      "dealTitle": "Título",
+      "contact": "Contacto",
+      "stage": "Etapa",
+      "value": "Valor (PYG)",
+      "createDeal": "Crear negocio"
+    },
+    "forms": {
+      "title": "Formularios",
+      "empty": "Todavía no hay formularios",
+      "createTitle": "Nuevo formulario",
+      "name": "Nombre",
+      "slug": "Slug",
+      "targetStage": "Etapa destino",
+      "noStage": "Ninguna",
+      "createForm": "Crear formulario"
+    }
+  },
   "superadmin": {
     "nav": {
       "tenants": "Empresas",

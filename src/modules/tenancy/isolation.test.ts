@@ -76,8 +76,20 @@ describe.skipIf(!hasDb)("tenancy isolation", () => {
       },
     ]);
 
-    ctxA = { tenantId: tenantAId, userId: userAId, role: "admin", impersonatorUserId: null };
-    ctxB = { tenantId: tenantBId, userId: userBId, role: "admin", impersonatorUserId: null };
+    ctxA = {
+      tenantId: tenantAId,
+      userId: userAId,
+      role: "admin",
+      impersonatorUserId: null,
+      accessStatus: "active",
+    };
+    ctxB = {
+      tenantId: tenantBId,
+      userId: userBId,
+      role: "admin",
+      impersonatorUserId: null,
+      accessStatus: "active",
+    };
   });
 
   afterAll(async () => {
@@ -283,5 +295,55 @@ describe.skipIf(!hasDb)("tenancy isolation", () => {
 
     // A suspended tenant is always locked, regardless of subscription state.
     expect(await computeAccessStatus(tenantAId, "suspended")).toBe("locked");
+  });
+
+  it("tenantDb rejects writes for a grace or locked context but still allows reads (PLAN.md §10 1C follow-up #1)", async () => {
+    const graceCtx: TenantContext = { ...ctxA, accessStatus: "grace" };
+    const lockedCtx: TenantContext = { ...ctxA, accessStatus: "locked" };
+
+    const attemptInsert = (ctx: TenantContext) =>
+      tenantDb(ctx)
+        .insert(schema.invitations)
+        .values({
+          id: newId(),
+          email: `blocked-${newId()}@example.com`,
+          role: "agent",
+          token: newId(),
+          invitedBy: ctx.userId,
+          expiresAt: new Date(Date.now() + 86400000),
+        });
+
+    // assertTenantWritable throws synchronously (it runs before the
+    // drizzle query builder ever produces a promise), so these are sync
+    // throws, not rejected promises — toThrow, not rejects.toThrow.
+    expect(() => attemptInsert(graceCtx)).toThrow(/not writable/);
+    expect(() => attemptInsert(lockedCtx)).toThrow(/not writable/);
+
+    const existingId = newId();
+    await tenantDb(ctxA).insert(schema.invitations).values({
+      id: existingId,
+      email: `existing-${existingId}@example.com`,
+      role: "agent",
+      token: newId(),
+      invitedBy: ctxA.userId,
+      expiresAt: new Date(Date.now() + 86400000),
+    });
+
+    expect(() =>
+      tenantDb(graceCtx)
+        .update(schema.invitations)
+        .set({ role: "admin" })
+        .where(eq(schema.invitations.id, existingId)),
+    ).toThrow(/not writable/);
+    expect(() =>
+      tenantDb(lockedCtx).delete(schema.invitations, eq(schema.invitations.id, existingId)),
+    ).toThrow(/not writable/);
+
+    // Reads still work — only mutation methods are gated.
+    const rows = await tenantDb(graceCtx).select(
+      schema.invitations,
+      eq(schema.invitations.id, existingId),
+    );
+    expect(rows).toHaveLength(1);
   });
 });

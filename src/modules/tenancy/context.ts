@@ -1,5 +1,7 @@
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth/server";
+import { getTenant } from "./tenants";
+import { computeAccessStatus, type AccessStatus } from "./subscriptions";
 
 // The single sanctioned source of tenant identity (PLAN.md §3.3, layer 1).
 // Resolved from the Better Auth session once per request. Client-supplied
@@ -15,6 +17,12 @@ export type TenantContext = {
   role: TenantRole;
   /** Real superadmin user id, set only while impersonating this tenant user. */
   impersonatorUserId: string | null;
+  /** Subscription/suspension state (PLAN.md §10 1B: "grace → read-only
+   * banner → locked"). tenantDb's mutation methods (./db.ts) read this to
+   * reject writes for anything but "active" — the single choke point every
+   * tenant-owned mutation goes through, so grace/locked tenants are
+   * read-only at the write path, not just the UI banner. */
+  accessStatus: AccessStatus;
 };
 
 export type SuperadminContext = {
@@ -47,6 +55,9 @@ export async function getTenantContext(): Promise<TenantContext | null> {
   if (!user.tenantId) return null;
   if (user.role !== "admin" && user.role !== "agent") return null;
 
+  const tenant = await getTenant(user.tenantId);
+  if (!tenant) return null;
+
   const impersonatedBy = (
     session.session as unknown as { impersonatedBy?: string | null }
   ).impersonatedBy;
@@ -56,6 +67,7 @@ export async function getTenantContext(): Promise<TenantContext | null> {
     userId: user.id,
     role: user.role,
     impersonatorUserId: impersonatedBy ?? null,
+    accessStatus: await computeAccessStatus(tenant.id, tenant.status),
   };
 }
 

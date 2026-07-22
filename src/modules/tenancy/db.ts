@@ -22,6 +22,20 @@ function tenantFilter<T extends TenantScopedTable>(
 
 export type TenantDb = ReturnType<typeof tenantDb>;
 
+/**
+ * Grace-state write enforcement (PLAN.md §10 1C follow-up #1): every
+ * mutating tenant service goes through tenantDb's insert/update/delete, so
+ * gating them here is the single choke point — grace/locked tenants become
+ * read-only at the write path itself, not just the UI banner.
+ */
+function assertTenantWritable(ctx: TenantContext): void {
+  if (ctx.accessStatus !== "active") {
+    throw new Error(
+      `Tenant is not writable (accessStatus: ${ctx.accessStatus})`,
+    );
+  }
+}
+
 export function tenantDb(ctx: TenantContext) {
   return {
     /** SELECT ... FROM table WHERE tenant_id = ctx.tenantId [AND extra] */
@@ -35,11 +49,13 @@ export function tenantDb(ctx: TenantContext) {
     /** INSERT INTO table VALUES { ...values, tenant_id: ctx.tenantId } */
     insert<T extends TenantScopedTable>(table: T) {
       return {
-        values: (values: Omit<T["$inferInsert"], "tenantId">) =>
-          db.insert(table).values({
+        values: (values: Omit<T["$inferInsert"], "tenantId">) => {
+          assertTenantWritable(ctx);
+          return db.insert(table).values({
             ...values,
             tenantId: ctx.tenantId,
-          } as T["$inferInsert"]),
+          } as T["$inferInsert"]);
+        },
       };
     },
 
@@ -47,17 +63,20 @@ export function tenantDb(ctx: TenantContext) {
     update<T extends TenantScopedTable>(table: T) {
       return {
         set: (values: Partial<T["$inferInsert"]>) => ({
-          where: (extra?: SQL) =>
-            db
+          where: (extra?: SQL) => {
+            assertTenantWritable(ctx);
+            return db
               .update(table)
               .set(values)
-              .where(tenantFilter(table, ctx.tenantId, extra)),
+              .where(tenantFilter(table, ctx.tenantId, extra));
+          },
         }),
       };
     },
 
     /** DELETE FROM table WHERE tenant_id = ctx.tenantId [AND extra] */
     delete<T extends TenantScopedTable>(table: T, extra?: SQL) {
+      assertTenantWritable(ctx);
       return db.delete(table).where(tenantFilter(table, ctx.tenantId, extra));
     },
 

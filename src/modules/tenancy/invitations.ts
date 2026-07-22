@@ -1,5 +1,5 @@
 import { randomBytes } from "node:crypto";
-import { eq } from "drizzle-orm";
+import { and, eq, gt, isNull } from "drizzle-orm";
 import { db } from "@/db/client";
 import { invitations } from "@/db/schema";
 import { newId } from "@/lib/ids";
@@ -56,6 +56,27 @@ export async function getInvitationByToken(token: string) {
     .from(invitations)
     .where(eq(invitations.token, token));
   return row ?? null;
+}
+
+/**
+ * Gate for Better Auth's public /sign-up/email hook (lib/auth/server.ts):
+ * true only if this email holds an invitation that is unaccepted and not
+ * yet expired. Unauthenticated by nature — sign-up happens before any
+ * session exists.
+ */
+export async function hasValidInvitationForEmail(email: string): Promise<boolean> {
+  const [row] = await db
+    .select({ id: invitations.id })
+    .from(invitations)
+    .where(
+      and(
+        eq(invitations.email, email),
+        isNull(invitations.acceptedAt),
+        gt(invitations.expiresAt, new Date()),
+      ),
+    )
+    .limit(1);
+  return !!row;
 }
 
 export async function markInvitationAccepted(invitationId: string) {

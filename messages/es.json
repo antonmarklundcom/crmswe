@@ -41,7 +41,9 @@
       "dashboard": "Inicio",
       "contacts": "Contactos",
       "pipeline": "Pipeline",
+      "inbox": "Bandeja",
       "forms": "Formularios",
+      "whatsapp": "WhatsApp",
       "settings": "Configuración"
     },
     "contacts": {
@@ -108,6 +110,31 @@
         "sat": "Sábado",
         "sun": "Domingo"
       }
+    },
+    "whatsapp": {
+      "title": "WhatsApp",
+      "adminOnly": "Solo los administradores pueden ver esta página",
+      "empty": "Todavía no hay ningún número conectado",
+      "status": {
+        "connected": "Conectado",
+        "disconnected": "Desconectado",
+        "error": "Error"
+      },
+      "connectTitle": "Conectar número",
+      "connectHelp": "Ingresá los datos generados en Meta Business Manager (conexión manual — PLAN.md §6.2).",
+      "wabaId": "WABA ID",
+      "phoneNumberId": "Phone Number ID",
+      "displayNumber": "Número (para mostrar)",
+      "accessToken": "Token de acceso",
+      "connect": "Conectar"
+    },
+    "inbox": {
+      "title": "Bandeja de entrada",
+      "empty": "Todavía no hay conversaciones",
+      "noMessages": "Todavía no hay mensajes",
+      "messagePlaceholder": "Escribí un mensaje…",
+      "send": "Enviar",
+      "windowClosed": "La ventana de 24 horas está cerrada. Todavía no hay plantillas disponibles para reabrir la conversación."
     }
   },
   "superadmin": {

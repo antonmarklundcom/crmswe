@@ -15,6 +15,10 @@ const envSchema = z.object({
   BETTER_AUTH_SECRET: z
     .string()
     .min(32, "BETTER_AUTH_SECRET must be at least 32 characters"),
+  WHATSAPP_APP_SECRET: z.string().min(1, "WHATSAPP_APP_SECRET is required"),
+  WHATSAPP_WEBHOOK_VERIFY_TOKEN: z
+    .string()
+    .min(1, "WHATSAPP_WEBHOOK_VERIFY_TOKEN is required"),
 });
 
 export type Env = z.infer<typeof envSchema>;

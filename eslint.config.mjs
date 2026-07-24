@@ -45,6 +45,15 @@ const eslintConfig = defineConfig([
       "src/worker/**/*.{ts,tsx}",
       "src/lib/queue/**/*.{ts,tsx}",
       "src/modules/tenancy/**/*.{ts,tsx}",
+      // JUDGMENT CALL (flagged for Fable review): the WhatsApp webhook
+      // receiver has no session and no tenant slug — it only has a Meta
+      // phone_number_id, and must find *which* tenant owns it before any
+      // TenantContext can exist (PLAN.md §6.3 rule 3: "route phone_number_id
+      // → wa_accounts → tenant"). That one routing lookup is structurally a
+      // platform-wide read, the same shape as tenancy's own token/slug
+      // lookups — everything else in this module still goes through
+      // tenantDb once the tenant is resolved.
+      "src/modules/whatsapp/**/*.{ts,tsx}",
       // JUDGMENT CALL (flagged for Fable review, not explicit in PLAN.md
       // §3.3's exemption list): the Better Auth instance (src/lib/auth/server.ts)
       // is infra wiring handed the raw `db` client by the Drizzle adapter,

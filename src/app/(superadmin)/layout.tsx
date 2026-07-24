@@ -18,6 +18,7 @@ export default async function SuperadminLayout({
       <nav className="flex gap-4 border-b px-6 py-3 text-sm">
         <Link href="/tenants">{t("tenants")}</Link>
         <Link href="/plans">{t("plans")}</Link>
+        <Link href="/whatsapp-health">{t("whatsappHealth")}</Link>
       </nav>
       <div className="flex-1 p-6">{children}</div>
     </div>

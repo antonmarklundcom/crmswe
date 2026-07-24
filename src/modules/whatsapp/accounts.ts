@@ -5,6 +5,7 @@ import { newId } from "@/lib/ids";
 import { encrypt, decrypt } from "@/lib/crypto";
 import type { TenantContext } from "@/modules/tenancy/context";
 import { tenantDb } from "@/modules/tenancy/db";
+import { scheduleTemplateSync } from "./sync-schedule";
 
 // wa_accounts (PLAN.md §4, §6.2). Manual connect is the bootstrap path
 // (build first); embedded signup lands later behind a flag. Access tokens
@@ -38,6 +39,12 @@ export async function connectAccountManually(
       accessTokenTag: encrypted.tag,
       connectedVia: "manual",
     });
+
+  // "Fetch templates from Meta on connect" (§6.4) — enqueued rather than
+  // awaited so a bad token surfaces as a visible job/account error instead
+  // of failing the connect form the admin just submitted. This first run
+  // also seeds the recurring nightly chain.
+  await scheduleTemplateSync(ctx, id);
 
   return getAccount(ctx, id);
 }

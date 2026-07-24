@@ -126,7 +126,9 @@
       "phoneNumberId": "Phone Number ID",
       "displayNumber": "Número (para mostrar)",
       "accessToken": "Token de acceso",
-      "connect": "Conectar"
+      "connect": "Conectar",
+      "syncTemplates": "Sincronizar plantillas",
+      "templateCount": "{approved} de {total} plantillas aprobadas"
     },
     "inbox": {
       "title": "Bandeja de entrada",
@@ -134,13 +136,17 @@
       "noMessages": "Todavía no hay mensajes",
       "messagePlaceholder": "Escribí un mensaje…",
       "send": "Enviar",
-      "windowClosed": "La ventana de 24 horas está cerrada. Todavía no hay plantillas disponibles para reabrir la conversación."
+      "windowClosed": "La ventana de 24 horas está cerrada. Solo se pueden enviar plantillas aprobadas.",
+      "windowOpen": "Ventana de 24 horas abierta — se cierra en {remaining}",
+      "sendTemplate": "Enviar plantilla",
+      "noTemplates": "Todavía no hay plantillas aprobadas. Sincronizalas desde la página de WhatsApp."
     }
   },
   "superadmin": {
     "nav": {
       "tenants": "Empresas",
-      "plans": "Planes"
+      "plans": "Planes",
+      "whatsappHealth": "WhatsApp"
     },
     "tenants": {
       "title": "Empresas",
@@ -185,6 +191,19 @@
       "durationMonths": "Duración (meses)",
       "price": "Precio (PYG)",
       "active": "Activo"
+    },
+    "whatsappHealth": {
+      "title": "Salud de WhatsApp",
+      "tenant": "Empresa",
+      "number": "Número",
+      "status": "Estado",
+      "quality": "Calidad",
+      "connectedVia": "Conexión",
+      "noAccounts": "Todavía no hay números conectados",
+      "failedWebhooks": "Webhooks fallidos",
+      "noFailures": "Sin fallos recientes",
+      "deadJobs": "Trabajos agotados",
+      "noDeadJobs": "Sin trabajos agotados"
     }
   }
 }

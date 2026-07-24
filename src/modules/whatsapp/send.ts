@@ -6,12 +6,12 @@ import { enqueue } from "@/lib/queue";
 import { buildSystemTenantContext, type TenantContext } from "@/modules/tenancy/context";
 import { tenantDb } from "@/modules/tenancy/db";
 import { getAccount, getDecryptedAccessToken } from "./accounts";
+import { GRAPH_API_BASE } from "./graph";
 
 // Outbound sends (PLAN.md §6.4). All outbound goes through this service —
 // the 24h window / template enforcement lives here so callers (inbox UI,
 // automations, quotes) can't bypass it.
 
-const GRAPH_API_BASE = "https://graph.facebook.com/v21.0";
 const WINDOW_MS = 24 * 60 * 60 * 1000;
 
 export type SendTextInput = { conversationId: string; body: string };

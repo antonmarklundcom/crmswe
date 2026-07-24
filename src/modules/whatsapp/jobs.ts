@@ -1,6 +1,9 @@
 import { registerHandler } from "@/worker/handlers";
+import { buildSystemTenantContext } from "@/modules/tenancy/context";
 import { processWebhookEvent } from "./webhook";
 import { deliverQueuedMessage } from "./send";
+import { syncTemplates } from "./templates";
+import { scheduleTemplateSync, SYNC_INTERVAL_MS } from "./sync-schedule";
 
 // Job handlers for the WhatsApp pipeline (PLAN.md §6.3, §6.4). Imported for
 // its registration side effect from worker/handlers.ts, same pattern as
@@ -18,4 +21,18 @@ registerHandler("whatsapp.send", async (payload, tenantId) => {
     graphPayload: Record<string, unknown>;
   };
   await deliverQueuedMessage(tenantId, messageId, graphPayload);
+});
+
+// Nightly template sync (§6.4). Re-enqueues itself only after the sync
+// succeeds, so a retry storm can't fan out into duplicate chains — see
+// scheduleTemplateSync's comment for why a failed chain is allowed to end.
+registerHandler("whatsapp.sync_templates", async (payload, tenantId) => {
+  if (!tenantId) throw new Error("whatsapp.sync_templates job missing tenantId");
+  const { accountId } = payload as { accountId: string };
+
+  const ctx = await buildSystemTenantContext(tenantId);
+  if (!ctx) return;
+
+  await syncTemplates(ctx, accountId);
+  await scheduleTemplateSync(ctx, accountId, SYNC_INTERVAL_MS);
 });

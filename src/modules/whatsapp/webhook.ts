@@ -10,6 +10,7 @@ import { buildSystemTenantContext, type TenantContext } from "@/modules/tenancy/
 import { tenantDb } from "@/modules/tenancy/db";
 import { createContact, getContactByPhone } from "@/modules/crm/contacts";
 import { resolveAccountByPhoneNumberId, getDecryptedAccessToken } from "./accounts";
+import { GRAPH_API_BASE } from "./graph";
 import { whatsappEvents } from "./events";
 
 // Webhook ingestion (PLAN.md §6.3, reliability-critical). The route handler
@@ -17,7 +18,6 @@ import { whatsappEvents } from "./events";
 // signature, persist raw + enqueue + return 200 fast. Everything else (this
 // file) runs as a job, off the request path.
 
-const GRAPH_API_BASE = "https://graph.facebook.com/v21.0";
 
 /** Step 1: HMAC-SHA256 over the *raw* request body, app-secret keyed. */
 export function verifySignature(rawBody: string, signatureHeader: string | null): boolean {

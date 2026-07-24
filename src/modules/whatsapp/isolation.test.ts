@@ -1,5 +1,5 @@
 import { eq } from "drizzle-orm";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
 // Cross-tenant isolation for the WhatsApp tables added in 1D (PLAN.md §3.3
 // layer 3 merge gate), plus the two reliability-critical behaviors called
@@ -20,6 +20,10 @@ describe.skipIf(!hasDb)("whatsapp isolation + webhook processing", () => {
   let processWebhookEvent: (typeof import("./webhook"))["processWebhookEvent"];
   let sendText: (typeof import("./send"))["sendText"];
   let listConversations: (typeof import("./inbox"))["listConversations"];
+  let syncTemplates: (typeof import("./templates"))["syncTemplates"];
+  let listTemplates: (typeof import("./templates"))["listTemplates"];
+  let listApprovedTemplates: (typeof import("./templates"))["listApprovedTemplates"];
+  let accountIdA: string;
 
   type TenantContext = import("@/modules/tenancy/context").TenantContext;
   const superadmin = { userId: "sa-test", impersonatorUserId: null } as const;
@@ -38,6 +42,7 @@ describe.skipIf(!hasDb)("whatsapp isolation + webhook processing", () => {
     ({ persistRawEvent, processWebhookEvent } = await import("./webhook"));
     ({ sendText } = await import("./send"));
     ({ listConversations } = await import("./inbox"));
+    ({ syncTemplates, listTemplates, listApprovedTemplates } = await import("./templates"));
     await import("./jobs"); // registers the whatsapp.* job handlers (unused here, but mirrors prod wiring)
 
     const tenantA = await createTenant(superadmin, {
@@ -52,11 +57,12 @@ describe.skipIf(!hasDb)("whatsapp isolation + webhook processing", () => {
     ctxB = (await buildSystemTenantContext(tenantB!.id))!;
 
     phoneNumberIdA = `pn-a-${newId()}`;
-    await connectAccountManually(ctxA, {
+    const accountA = await connectAccountManually(ctxA, {
       wabaId: `waba-a-${newId()}`,
       phoneNumberId: phoneNumberIdA,
       accessToken: "test-token-a",
     });
+    accountIdA = accountA!.id;
     await connectAccountManually(ctxB, {
       wabaId: `waba-b-${newId()}`,
       phoneNumberId: `pn-b-${newId()}`,
@@ -69,6 +75,19 @@ describe.skipIf(!hasDb)("whatsapp isolation + webhook processing", () => {
     const pool = (db as unknown as { $client: { end: () => Promise<void> } }).$client;
     await pool.end();
   });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  /** Stands in for Meta's GET /{waba_id}/message_templates. */
+  function stubTemplatesFetch(
+    templates: Array<{ name: string; language: string; status: string }>,
+  ) {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({ data: templates }), { status: 200 }),
+    );
+  }
 
   it("resolves a phone_number_id to the correct tenant's account, never the other tenant's", async () => {
     const account = await resolveAccountByPhoneNumberId(phoneNumberIdA);
@@ -149,6 +168,59 @@ describe.skipIf(!hasDb)("whatsapp isolation + webhook processing", () => {
 
     const [updated] = await db.select().from(schema.webhookEvents).where(eq(schema.webhookEvents.id, eventId));
     expect(updated.status).toBe("failed");
+  });
+
+  it("syncTemplates inserts, updates, and prunes — scoped to the syncing tenant only", async () => {
+    stubTemplatesFetch([
+      { name: "bienvenida", language: "es", status: "APPROVED" },
+      { name: "seguimiento", language: "es", status: "PENDING" },
+    ]);
+    await syncTemplates(ctxA, accountIdA);
+
+    let templatesA = await listTemplates(ctxA, accountIdA);
+    expect(templatesA.map((t) => t.name).sort()).toEqual(["bienvenida", "seguimiento"]);
+    expect((await listApprovedTemplates(ctxA, accountIdA)).map((t) => t.name)).toEqual([
+      "bienvenida",
+    ]);
+
+    // Second sync: "seguimiento" got approved upstream, "bienvenida" was
+    // deleted at Meta, and a new template appeared.
+    stubTemplatesFetch([
+      { name: "seguimiento", language: "es", status: "APPROVED" },
+      { name: "recordatorio", language: "es", status: "APPROVED" },
+    ]);
+    await syncTemplates(ctxA, accountIdA);
+
+    templatesA = await listTemplates(ctxA, accountIdA);
+    expect(templatesA.map((t) => t.name).sort()).toEqual(["recordatorio", "seguimiento"]);
+    expect(templatesA.find((t) => t.name === "seguimiento")?.status).toBe("APPROVED");
+
+    // Tenant B never sees tenant A's templates.
+    const accountsB = await db
+      .select()
+      .from(schema.waAccounts)
+      .where(eq(schema.waAccounts.tenantId, ctxB.tenantId));
+    expect(await listTemplates(ctxB, accountsB[0].id)).toHaveLength(0);
+  });
+
+  it("syncTemplates marks the account errored when Meta rejects the token", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response("invalid token", { status: 401 }),
+    );
+
+    await expect(syncTemplates(ctxA, accountIdA)).rejects.toThrow(/Template sync failed/);
+
+    const [account] = await db
+      .select()
+      .from(schema.waAccounts)
+      .where(eq(schema.waAccounts.id, accountIdA));
+    expect(account.status).toBe("error");
+
+    // Restore for the send tests below, which need a connected account.
+    await db
+      .update(schema.waAccounts)
+      .set({ status: "connected" })
+      .where(eq(schema.waAccounts.id, accountIdA));
   });
 
   it("sendText rejects when the 24h window is closed and queues nothing", async () => {

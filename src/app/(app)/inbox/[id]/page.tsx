@@ -8,8 +8,21 @@ import {
   isWithinFreeFormWindow,
 } from "@/modules/whatsapp/inbox";
 import { getContact } from "@/modules/crm/contacts";
+import { listApprovedTemplates } from "@/modules/whatsapp/templates";
 import { Button } from "@/components/ui/button";
-import { sendTextAction } from "../actions";
+import { sendTextAction, sendTemplateAction } from "../actions";
+
+// Window countdown (§6.5). Rendered server-side, so it's accurate as of
+// page load rather than ticking — the inbox is a server component and
+// there's no polling layer yet (deferred with the rest of §6.5's realtime).
+function formatRemaining(lastInboundAt: Date | null): string {
+  if (!lastInboundAt) return "";
+  const msLeft = lastInboundAt.getTime() + 24 * 60 * 60 * 1000 - Date.now();
+  if (msLeft <= 0) return "";
+  const hours = Math.floor(msLeft / (60 * 60 * 1000));
+  const minutes = Math.floor((msLeft % (60 * 60 * 1000)) / (60 * 1000));
+  return hours > 0 ? `${hours}h ${minutes}min` : `${minutes}min`;
+}
 
 export default async function ConversationPage({
   params,
@@ -23,9 +36,10 @@ export default async function ConversationPage({
   const conversation = await getConversation(ctx, id);
   if (!conversation) notFound();
 
-  const [contact, messages] = await Promise.all([
+  const [contact, messages, templates] = await Promise.all([
     getContact(ctx, conversation.contactId),
     listMessagesForConversation(ctx, id),
+    listApprovedTemplates(ctx, conversation.waAccountId),
   ]);
 
   if (conversation.unreadCount > 0) {
@@ -58,20 +72,45 @@ export default async function ConversationPage({
       </ul>
 
       {windowOpen ? (
-        <form action={sendAction} className="mt-4 flex gap-2">
-          <input type="hidden" name="conversationId" value={id} />
-          <input
-            name="body"
-            required
-            placeholder={t("messagePlaceholder")}
-            className="flex-1 rounded-md border px-3 py-2 text-sm"
-          />
-          <Button type="submit">{t("send")}</Button>
-        </form>
+        <div className="mt-4 flex flex-col gap-2">
+          <p className="text-xs text-muted-foreground">
+            {t("windowOpen", { remaining: formatRemaining(conversation.lastInboundAt) })}
+          </p>
+          <form action={sendAction} className="flex gap-2">
+            <input type="hidden" name="conversationId" value={id} />
+            <input
+              name="body"
+              required
+              placeholder={t("messagePlaceholder")}
+              className="flex-1 rounded-md border px-3 py-2 text-sm"
+            />
+            <Button type="submit">{t("send")}</Button>
+          </form>
+        </div>
       ) : (
-        <p className="mt-4 rounded-md border bg-amber-100 px-3 py-2 text-sm text-amber-900">
-          {t("windowClosed")}
-        </p>
+        <div className="mt-4 flex flex-col gap-2">
+          <p className="rounded-md border bg-amber-100 px-3 py-2 text-sm text-amber-900">
+            {t("windowClosed")}
+          </p>
+          {templates.length > 0 ? (
+            <form action={sendTemplateAction} className="flex gap-2">
+              <input type="hidden" name="conversationId" value={id} />
+              <select name="template" required className="flex-1 rounded-md border px-3 py-2 text-sm">
+                {templates.map((template) => (
+                  <option
+                    key={template.id}
+                    value={`${template.name}|${template.language}`}
+                  >
+                    {template.name} ({template.language})
+                  </option>
+                ))}
+              </select>
+              <Button type="submit">{t("sendTemplate")}</Button>
+            </form>
+          ) : (
+            <p className="text-sm text-muted-foreground">{t("noTemplates")}</p>
+          )}
+        </div>
       )}
     </div>
   );

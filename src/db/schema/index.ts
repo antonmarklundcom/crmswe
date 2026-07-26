@@ -3,4 +3,5 @@ export * from "./tenancy";
 export * from "./auth";
 export * from "./crm";
 export * from "./forms";
+export * from "./sites";
 export * from "./whatsapp";

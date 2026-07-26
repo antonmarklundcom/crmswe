@@ -44,7 +44,8 @@
       "inbox": "Bandeja",
       "forms": "Formularios",
       "whatsapp": "WhatsApp",
-      "settings": "Configuración"
+      "settings": "Configuración",
+      "sites": "Sitios"
     },
     "contacts": {
       "title": "Contactos",
@@ -140,6 +141,34 @@
       "windowOpen": "Ventana de 24 horas abierta — se cierra en {remaining}",
       "sendTemplate": "Enviar plantilla",
       "noTemplates": "Todavía no hay plantillas aprobadas. Sincronizalas desde la página de WhatsApp."
+    },
+    "sites": {
+      "title": "Sitios",
+      "intro": "Cada sitio de tu red envía sus leads acá con su propia clave. Los leads de un sitio caen en la etapa que elijas, así odontología y materiales no se mezclan.",
+      "adminOnly": "Solo los administradores pueden ver esta página",
+      "empty": "Todavía no hay sitios conectados",
+      "createTitle": "Conectar nuevo sitio",
+      "createSite": "Crear sitio",
+      "name": "Nombre",
+      "slug": "Slug",
+      "domain": "Dominio",
+      "pipeline": "Pipeline",
+      "stage": "Etapa destino",
+      "waAccount": "Número de WhatsApp",
+      "none": "Ninguno",
+      "active": "Activo",
+      "inactive": "Inactivo",
+      "activate": "Activar",
+      "deactivate": "Desactivar",
+      "saveRouting": "Guardar",
+      "rotateKey": "Rotar clave",
+      "copyNow": "Copiá esta clave ahora — no se vuelve a mostrar.",
+      "leads": "leads",
+      "totalLeads": "leads en total",
+      "leadsWithDeal": "con negocio abierto",
+      "byCampaign": "Leads por campaña",
+      "howToTitle": "Cómo conectar un sitio",
+      "howToIntro": "Desde el backend del sitio (nunca desde el navegador — así la clave no queda expuesta):"
     }
   },
   "superadmin": {

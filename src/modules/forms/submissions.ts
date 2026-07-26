@@ -1,20 +1,20 @@
 import { eq } from "drizzle-orm";
-import { formSubmissions, forms } from "@/db/schema";
-import { newId } from "@/lib/ids";
+import { forms } from "@/db/schema";
 import { buildSystemTenantContext } from "@/modules/tenancy/context";
 import { getTenantBySlug } from "@/modules/tenancy/tenants";
 import { tenantDb } from "@/modules/tenancy/db";
-import { createContact, getContactByPhone, addTagToContact } from "@/modules/crm/contacts";
-import { createDeal } from "@/modules/crm/deals";
-import { createActivity } from "@/modules/crm/activities";
+import { normalizePhone } from "@/modules/crm/contacts";
+import { recordLeadSubmission } from "@/modules/leads/submissions";
 import type { FormSettings } from "./forms";
-import { formsEvents } from "./events";
 
-// Public form submission (PLAN.md §5): unauthenticated by nature — the
+// Public form submission (PLAN.md §5). Unauthenticated by nature — the
 // tenant is resolved from the URL slug, not from user input, then a system
 // TenantContext is built from that resolved id (never a client-supplied
-// tenantId). Rate limiting + honeypot enforcement is 1G hardening scope
-// (§10); this module is the submission→contact/deal wiring itself.
+// tenantId).
+//
+// The CRM-side effects (contact upsert, deal, timeline, event) are shared
+// with the ingest API via modules/leads (§5.1); this file only resolves the
+// form and maps its fields.
 
 /** Resolves the public form for rendering `/f/[tenantSlug]/[formSlug]`. */
 export async function getPublicForm(tenantSlug: string, formSlug: string) {
@@ -48,66 +48,41 @@ export async function submitForm(
   const ctx = await buildSystemTenantContext(tenant.id);
   if (!ctx) throw new Error("Formulario no encontrado");
 
-  const phoneField = (form.fields as Array<{ key: string; type: string }>).find(
-    (f) => f.type === "phone",
-  );
-  const phone = phoneField ? input.data[phoneField.key] : undefined;
+  const fields = form.fields as Array<{ key: string; type: string }>;
+  const valueOfType = (type: string) => {
+    const field = fields.find((f) => f.type === type);
+    return field ? input.data[field.key] : undefined;
+  };
+
+  const phone = valueOfType("phone");
   if (!phone) throw new Error("El teléfono es obligatorio");
 
-  const emailField = (form.fields as Array<{ key: string; type: string }>).find(
-    (f) => f.type === "email",
-  );
-  const email = emailField ? input.data[emailField.key] : undefined;
-
-  const nameField = (form.fields as Array<{ key: string; type: string }>).find(
-    (f) => f.key === "name" || f.key === "nombre",
-  );
-  const name = (nameField ? input.data[nameField.key] : undefined) || phone;
-
-  let contact = await getContactByPhone(ctx, phone);
-  if (!contact) {
-    contact = await createContact(ctx, { name, phone, email, source: `form:${form.slug}` });
-  }
-  if (!contact) throw new Error("No se pudo crear el contacto");
+  const nameField = fields.find((f) => f.key === "name" || f.key === "nombre");
+  const name = nameField ? input.data[nameField.key] : undefined;
 
   const settings = form.settings as FormSettings;
-  for (const tagId of settings.defaultTagIds ?? []) {
-    await addTagToContact(ctx, contact.id, tagId);
-  }
 
-  if (settings.targetPipelineId && settings.targetStageId) {
-    await createDeal(ctx, {
-      contactId: contact.id,
+  const result = await recordLeadSubmission(ctx, {
+    formId: form.id,
+    phone: normalizePhone(phone),
+    name,
+    email: valueOfType("email"),
+    message: valueOfType("textarea"),
+    source: `form:${form.slug}`,
+    ipAddress: input.ipAddress,
+    userAgent: input.userAgent,
+    payload: input.data,
+    defaults: {
       pipelineId: settings.targetPipelineId,
       stageId: settings.targetStageId,
-      title: `${form.name} — ${contact.name}`,
-    });
-  }
-
-  const submissionId = newId();
-  await tenantDb(ctx)
-    .insert(formSubmissions)
-    .values({
-      id: submissionId,
-      formId: form.id,
-      contactId: contact.id,
-      data: input.data,
-      ipAddress: input.ipAddress,
-      userAgent: input.userAgent,
-    });
-
-  await createActivity(ctx, {
-    contactId: contact.id,
-    type: "form_submission",
-    payload: { formId: form.id, formName: form.name, data: input.data },
+      tagIds: settings.defaultTagIds ?? [],
+      dealTitle: `${form.name} — ${name || phone}`,
+    },
   });
 
-  await formsEvents.emit("form.submitted", {
-    tenantId: tenant.id,
-    formId: form.id,
-    contactId: contact.id,
-    submissionId,
-  });
-
-  return { contactId: contact.id, submissionId, redirectUrl: settings.redirectUrl };
+  return {
+    contactId: result.contactId,
+    submissionId: result.submissionId,
+    redirectUrl: settings.redirectUrl,
+  };
 }

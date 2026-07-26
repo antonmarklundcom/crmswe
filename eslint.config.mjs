@@ -54,6 +54,12 @@ const eslintConfig = defineConfig([
       // lookups — everything else in this module still goes through
       // tenantDb once the tenant is resolved.
       "src/modules/whatsapp/**/*.{ts,tsx}",
+      // Same rationale as whatsapp above: the public lead-ingest endpoint
+      // authenticates by API key and must resolve key → site → tenant
+      // *before* any TenantContext can exist (PLAN.md §5.1). Only that
+      // routing lookup touches raw db; every CRM-side write goes through
+      // modules/leads and tenantDb once the tenant is known.
+      "src/modules/sites/**/*.{ts,tsx}",
       // JUDGMENT CALL (flagged for Fable review, not explicit in PLAN.md
       // §3.3's exemption list): the Better Auth instance (src/lib/auth/server.ts)
       // is infra wiring handed the raw `db` client by the Drizzle adapter,

@@ -18,6 +18,13 @@ describe.skipIf(!hasDb)("worker (MySQL integration)", () => {
     ({ tick } = await import("./index"));
     ({ newId } = await import("@/lib/ids"));
     await import("./handlers");
+
+    // tick() claims the oldest *due* job in the table, not "the job this
+    // test just made" — so any leftover pending row from an earlier run
+    // would be claimed instead, and the assertions below would read a job
+    // that was never processed. CI always starts on a fresh database; this
+    // keeps the suite honest when run repeatedly against a local one.
+    await db.delete(jobs);
   });
 
   afterAll(async () => {

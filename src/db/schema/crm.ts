@@ -70,6 +70,12 @@ export const contacts = mysqlTable(
     notes: text("notes"),
     source: varchar("source", { length: 100 }),
     ownerUserId: char("owner_user_id", { length: 26 }),
+    // First-touch attribution (§5.1): stamped once when the contact is
+    // created and never overwritten, so "which site/campaign originally
+    // produced this customer" survives every later interaction. Each
+    // submission keeps its own last-touch set in lead_submissions.utm.
+    firstSiteId: char("first_site_id", { length: 26 }),
+    firstTouchUtm: json("first_touch_utm"),
     custom: json("custom").notNull().default({}),
     createdAt: datetime("created_at")
       .notNull()

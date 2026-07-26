@@ -17,6 +17,13 @@ Built first for the owner's own sales team, but **multi-tenant from day one** so
 be sold as SaaS to other Paraguayan businesses without a rebuild. Factura electrónica
 is shown as **"próximamente" (coming soon)** in UI/pricing during Phase 1.
 
+**Added after 1D (owner request):** the first production user is the owner's own network
+of Paraguayan lead-gen sites (inmobiliaria, contador, electricista, dentista…), today
+funnelling into **GoHighLevel**. Replacing GHL is now an explicit Phase 1 goal: those
+sites post leads into VenderCRM and the owner manages every Paraguay lead from one
+login. See §5.1 for the architecture and §11 for what GHL still does that this
+deliberately won't.
+
 ### 1.2 Locked decisions — DO NOT reopen
 
 | Decision | Value |
@@ -26,6 +33,9 @@ is shown as **"próximamente" (coming soon)** in UI/pricing during Phase 1.
 | Billing collection (Phase 1) | **Manual**: tenants pay by transfer/cash outside the app; superadmin records payment and sets plan expiry. No payment gateway in Phase 1. |
 | WhatsApp API | **Direct Meta Cloud API** (no BSP). Tenants connect their own numbers via Meta **embedded signup**; manual connect as bootstrap fallback (§6.2). |
 | Tenancy | Multi-tenant, single app: **superadmin** role manages all tenants; per-tenant logins with fully isolated data. |
+| Sites per tenant | **One tenant owns many sites.** The owner's whole lead-gen network is a single tenant with N `sites` rows; leads share one pipeline and carry `site_id` for filtering/attribution. Never one-tenant-per-site (§5.1). |
+| Lead ingest | **Server-to-server only**: the site's own backend POSTs to `/api/v1/leads` with `X-Api-Key`. Never from the browser. Hosted form pages stay available for sites with no backend. |
+| Traffic analytics | **Not built in this repo.** Self-host Umami as a separate app; the CRM stores lead-level attribution only. PostHog is ruled out — it needs ClickHouse+Redis+Postgres and can't run on Hostinger managed Node. |
 | In-tenant visibility | **Shared pipeline + assignment**: all tenant users see all contacts/deals; deals & conversations assignable to a rep. Roles: tenant `admin`, tenant `agent`. |
 | Automations | **Visual flow builder** (node canvas: triggers, conditions, delays, branches) in Phase 1. |
 | UI language | **Spanish-only, i18n-ready** (all strings through an i18n layer; `es` is the only shipped locale). |
@@ -38,7 +48,7 @@ is shown as **"próximamente" (coming soon)** in UI/pricing during Phase 1.
 - **Fable 5**: architecture, schema/spec decisions, gap analysis, review gates. Author
   of this plan.
 - **Opus 4.8**: hardest build problems — multi-tenant isolation layer (1B), WhatsApp
-  webhook ingestion/reliability pipeline (1D), automation execution engine (1F), and
+  webhook ingestion/reliability pipeline (1D), automation execution engine (1G), and
   the Phase 2 SIFEN engine.
 - **Sonnet 5**: everything else — scaffolding, CRM CRUD/UI, forms, inbox UI, flow
   editor UI, quotes, superadmin console, billing ledger, hardening.
@@ -212,7 +222,14 @@ Drizzle schema, one file per module. All PKs `char(26)` ULID, all tables get
 
 **forms**
 - `forms` — name, slug (unique per tenant), fields JSON (ordered field defs: text/phone/email/select/textarea, required flags), settings (redirect, target pipeline/stage, default tags), is_active
-- `form_submissions` — form_id, contact_id (resolved/created by phone or email), data JSON, ip/user_agent
+- ~~`form_submissions`~~ — **superseded by `lead_submissions` below** (1E). The hosted-form
+  path and the API path produce the same row, so attribution and per-source stats live in
+  one place instead of two near-identical tables that every dashboard query would have to
+  UNION. Done destructively: nothing is deployed yet, so this is the cheapest moment.
+
+**sites / ingest** *(1E — §5.1)*
+- `sites` — name, slug, domain, `api_key_hash` (SHA-256, unique), `api_key_prefix` (for display in the UI), is_active, default_pipeline_id?, default_stage_id?, default_tag_ids JSON, default_owner_user_id?, settings JSON
+- `lead_submissions` — site_id? / form_id? (exactly one set), contact_id, deal_id?, payload JSON, utm JSON (source/medium/campaign/term/content + gclid/fbclid), page_url, referrer, ip/user_agent, idempotency_key; unique `(tenant_id, site_id, idempotency_key)`
 
 **whatsapp**
 - `wa_accounts` — tenant_id, waba_id, phone_number_id, display_number, verified_name, status, quality_rating, access_token (encrypted), connected_via (`embedded|manual`), webhook_subscribed_at
@@ -259,6 +276,58 @@ for invoicing — Phase 2 adds a proper `ruc` column, don't pre-add it.
 - **Events**: a tiny internal event dispatcher (`modules/*/events.ts`) — synchronous
   fan-out that enqueues jobs (e.g. automation trigger evaluation). Not a message bus;
   just a typed function registry. Keeps automations decoupled from CRM code.
+
+### 5.1 Multi-site lead ingest *(added after 1D — the GHL replacement)*
+
+**Tenancy shape (locked, §1.2)**: **one tenant owns many sites.** Every lead lands in
+that tenant's shared pipeline carrying a `site_id`. This is what makes "one admin panel
+for all Paraguay leads" work *without* cross-tenant membership — §3.1 stays exactly as
+it is. One-tenant-per-site would force the owner through superadmin impersonation to
+see their own leads, which is unusable daily.
+
+**A lead is not a new entity.** An inbound submission upserts a `contact` (by phone) and
+optionally opens a `deal`, exactly as the hosted-form path already does. There is no
+`leads` table: a lead *is* contact + deal + timeline, and the kanban already runs on
+`deals`. A parallel `leads` table would be a second, competing name for the same thing.
+What ingest genuinely adds is **attribution** and a **machine-facing entry point**.
+
+**Transport: server-to-server only.** The site's backend POSTs to `/api/v1/leads` with
+its key from its own env. Never from the browser — no CORS surface, no key in page
+source, no bot floods. Static sites with no backend keep using the hosted form pages at
+`/f/[tenantSlug]/[formSlug]`; both paths write the same `lead_submissions` row.
+
+**API contract** (`POST /api/v1/leads`):
+- **Auth**: `X-Api-Key` → resolves site + tenant. Keys are stored **hashed** (SHA-256 —
+  the key is high-entropy random, not a password, so a slow KDF buys nothing) and shown
+  in plaintext exactly once at creation. Rotation = issue new, revoke old.
+- **Body** (zod): `phone` (required — phone is contact identity, §5), `name?`, `email?`,
+  `message?`, `source?`, `utm_*`, `gclid?`/`fbclid?`, `page_url?`, `referrer?`,
+  `idempotency_key` (required).
+- **Idempotency**: unique `(tenant_id, site_id, idempotency_key)` — a retried POST
+  returns the original result instead of a duplicate contact. Same discipline as the
+  WhatsApp `wa_message_id` guard (§6.3).
+- **Routing note**: resolving an API key to a tenant is a platform-wide lookup that runs
+  *before* any TenantContext exists — structurally identical to the WhatsApp webhook's
+  `phone_number_id` routing, and covered by the same lint-exemption rationale (§3.3).
+- **Responses**: `201 {contactId, dealId?, submissionId}`; `401` bad key; `403` inactive
+  site or non-writable tenant (grace/locked, §10 1C follow-up #1); `422` validation;
+  `429` rate limited.
+- **Per-site defaults** (target pipeline/stage, tags, owner) are configured *in the CRM*,
+  never sent by the caller — a leaked key can't reshape someone's pipeline.
+
+**Attribution**: first-touch UTMs are stamped on the contact at creation and never
+overwritten; each submission keeps its own last-touch set. A ~2KB site-side snippet
+persists first-touch UTMs in a cookie and attaches them to the form post — the only
+client-side code this project ships.
+
+**What each site must add** (three things, none large):
+1. A server-side form handler POSTing to `/api/v1/leads` with its key from env.
+2. Honeypot field + Cloudflare Turnstile — spam is stopped at the edge, not in the CRM.
+3. The UTM cookie snippet.
+
+**Cutover discipline**: point *one* site at VenderCRM and run it in parallel with GHL for
+2–3 weeks before migrating the rest. Existing GHL contacts come over as a one-off CSV
+import (§12).
 
 ---
 
@@ -474,17 +543,36 @@ lands (calendar-dependent, not blocking).
 **Exit**: real Paraguayan number connected manually; inbound/outbound messages flow;
 duplicate webhook deliveries are no-ops; kill-and-restart loses no messages.
 
-### 1E — Quotes *(Sonnet, ~2 sessions)*
+> **Renumbering note**: 1E–1G below were renumbered to 1F–1H when multi-site lead ingest
+> was inserted as the new 1E after 1D shipped. Only not-yet-built phases moved; the
+> merged 1A–1D keep their letters, so commit history stays readable.
+
+### 1E — Multi-site lead ingest & attribution *(Sonnet, ~2 sessions)* — **NEW**
+`sites` CRUD + API key issue/rotate/revoke (hashed at rest, shown once), public
+`POST /api/v1/leads` (key auth, zod, idempotency, per-site defaults, rate limit),
+`lead_submissions` unification (folds in `form_submissions`), first-touch attribution on
+contacts, per-site lead dashboard (leads by site / source / campaign, stage conversion),
+UTM cookie snippet + a copy-paste server-side handler example for the sites. Full detail
+in §5.1.
+**Exit**: two real sites posting leads into one tenant; a replayed POST with the same
+`idempotency_key` is a no-op; leads filterable by site and campaign in the UI; a leaked
+key can't write outside its own site's configured pipeline/stage.
+
+> **★ GHL-replacement milestone**: after 1E the owner's Paraguay lead network runs capture
+> + WhatsApp follow-up on VenderCRM instead of GoHighLevel. Email, booking and SMS stay
+> on whatever handles them today — see §11.
+
+### 1F — Quotes *(Sonnet, ~2 sessions)*
 Products catalog, quote builder, per-tenant numbering, PDF render + storage, send via
 WhatsApp + public link, statuses + timeline activity, "Factura electrónica —
 Próximamente" placeholder in nav/pricing.
 **Exit**: quote created → PDF received on WhatsApp → public link renders.
 
-> **★ Internal-tool milestone**: after 1E the owner's team runs daily sales on the
-> platform (contacts, kanban, WhatsApp inbox, quotes). Automations (1F) and hardening
-> (1G) complete Phase 1 but don't gate internal adoption.
+> **★ Internal-tool milestone**: after 1F the owner's team runs daily sales on the
+> platform (contacts, kanban, WhatsApp inbox, quotes). Automations (1G) and hardening
+> (1H) complete Phase 1 but don't gate internal adoption.
 
-### 1F — Automation flow builder *(Opus engine + Sonnet editor UI, ~5 sessions)* — 🔍 Fable review gate
+### 1G — Automation flow builder *(Opus engine + Sonnet editor UI, ~5 sessions)* — 🔍 Fable review gate
 Schema (flows/versions/runs/steps), React Flow editor with the §7.1 palette, graph
 validation + publishing, execution engine per §7.2 (durable runs, delays, wait-for-reply
 with timeout race handling, guards, opt-out), trigger wiring to CRM/forms/WhatsApp
@@ -493,7 +581,7 @@ events, runs monitoring UI.
 wait-for-reply 2 days → timeout branch sends follow-up → reply moves deal stage and
 cancels remaining steps; engine survives process restart mid-wait.
 
-### 1G — Hardening & internal launch *(Sonnet, ~2 sessions)*
+### 1H — Hardening & internal launch *(Sonnet, ~2 sessions)*
 Seed owner's real tenant, rate limiting on public endpoints, webhook_events pruning
 job, error tracking (Sentry or similar), MySQL backup verification, deploy runbook for
 Hostinger (env, migrations, process restart), smoke-test checklist, pass through UI
@@ -504,11 +592,12 @@ for Spanish copy consistency.
 
 | Milestone | Sessions (cumulative) |
 |---|---|
-| Internal-tool milestone (1A–1E) | **~15** |
-| Full Phase 1 (through 1G) | **~22** |
+| GHL-replacement milestone (1A–1E) | **~17** |
+| Internal-tool milestone (1A–1F) | **~19** |
+| Full Phase 1 (through 1H) | **~26** |
 
 Estimates assume focused build sessions against this spec; Fable review gates (after
-1B, 1D, 1F) are separate short sessions, not counted above.
+1B, 1D, 1G) are separate short sessions, not counted above.
 
 ---
 
@@ -517,8 +606,23 @@ Estimates assume focused build sessions against this spec; Fable review gates (a
 Payment gateway (Bancard/Pagopar), monthly billing, client-side quote acceptance,
 websockets/SSE realtime, multi-tenant users (one user in many tenants), Guaraní/English
 locales (i18n layer is ready), WhatsApp broadcast/bulk campaigns (compliance-sensitive —
-revisit deliberately), mobile apps, public API, SIFEN anything (Phase 2), all Phase 3
-marketing features.
+revisit deliberately), mobile apps, SIFEN anything (Phase 2), all Phase 3 marketing
+features. *(“Public API” is no longer deferred in full: 1E ships a deliberately narrow
+one — lead ingest only, not a general CRUD API.)*
+
+**GHL capabilities this deliberately does not replace in Phase 1.** Listed so the cutover
+is planned, not discovered:
+
+| GHL feature | Status here | Cheapest path when needed |
+|---|---|---|
+| Workflows / automations | **Replaced in 1G** (visual flow builder) | — |
+| WhatsApp inbox + templates | **Replaced in 1D** ✅ | — |
+| Lead capture from sites | **Replaced in 1E** | — |
+| Transactional/marketing **email** | Not built | Resend or Postmark + own domain warmup — you now own deliverability |
+| **SMS** | Not built | Twilio; Paraguay SMS pricing is poor and WhatsApp is the stronger channel anyway |
+| **Booking / calendar** | Not built | Cal.com self-hosted |
+| **Missed-call textback** | Not built | Needs a telephony number (Twilio) + a 1G flow |
+| Traffic analytics / funnels | Not built, **by decision** (§1.2) | Self-hosted Umami as a separate app |
 
 ## 12. Open questions for the owner (non-blocking)
 
@@ -531,3 +635,17 @@ marketing features.
 4. **Object storage**: OK to add a Cloudflare R2 (or similar S3-compatible) account
    before onboarding external tenants? (~free at this scale; local-disk driver is fine
    for the internal-only period.)
+
+*Added with 1E (multi-site ingest):*
+
+5. **Pilot site**: which single site points at VenderCRM first for the 2–3 week parallel
+   run against GHL? Ideally the one with steady but not critical lead volume.
+6. **Site backends**: do all the sites in the network have a server-side form handler, or
+   are some fully static / still GHL-hosted? Static ones use the hosted form pages
+   instead — worth knowing the split before 1E starts.
+7. **GHL export**: can existing contacts be exported to CSV now? A one-off import script
+   is small, but it needs the real column shape to be written against.
+8. **Turnstile**: OK to add a Cloudflare account for Turnstile (free) on the sites?
+   Without it the honeypot alone carries spam defense.
+9. **Email**: is any current GHL email flow load-bearing for the Paraguay sites? If yes,
+   §11's email gap needs scheduling; if it's WhatsApp-only follow-up, it doesn't.

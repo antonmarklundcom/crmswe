@@ -9,6 +9,7 @@ import { processJob } from "./process-job";
 // cycle, since ESM hoists all static imports ahead of a module's own body).
 import "./handlers";
 import "@/modules/whatsapp/jobs";
+import "@/modules/automations/jobs";
 
 const TICK_MS = 2000;
 

@@ -1,0 +1,174 @@
+import { enqueue } from "@/lib/queue";
+import { buildSystemTenantContext, type TenantContext } from "@/modules/tenancy/context";
+import { crmEvents } from "@/modules/crm/events";
+import { leadEvents } from "@/modules/leads/events";
+import { whatsappEvents } from "@/modules/whatsapp/events";
+import { listActiveFlowsForTrigger } from "./flows";
+import { startRun } from "./engine";
+import type { TriggerType } from "./graph";
+
+// Trigger wiring (PLAN.md §5 "events", §7.2): domain events enqueue an
+// `automation.trigger` job; the handler matches active flows and starts
+// runs. Events stay synchronous and cheap — the matching happens off the
+// request path so a slow flow can never slow down a webhook or form post.
+
+export type TriggerPayload = {
+  tenantId: string;
+  triggerType: TriggerType;
+  contactId: string;
+  data: Record<string, unknown>;
+};
+
+export async function fireTrigger(payload: TriggerPayload) {
+  await enqueue("automation.trigger", payload, { tenantId: payload.tenantId });
+}
+
+/** `automation.trigger` job body — match flows, apply guards, start runs. */
+export async function dispatchTrigger(payload: TriggerPayload) {
+  const ctx = await buildSystemTenantContext(payload.tenantId);
+  if (!ctx) return;
+
+  const flows = await listActiveFlowsForTrigger(ctx, payload.triggerType);
+
+  for (const flow of flows) {
+    if (!matchesTriggerConfig(flow.triggerConfig as Record<string, unknown>, payload)) continue;
+
+    await startRun(ctx, {
+      flowId: flow.id,
+      flowVersionId: flow.publishedVersionId!,
+      contactId: payload.contactId,
+      startedBy: { triggerType: payload.triggerType, ...payload.data },
+    });
+  }
+}
+
+/**
+ * Per-trigger narrowing configured on the flow (§7.1) — e.g. only this form,
+ * only this pipeline stage, only messages containing a keyword. An empty
+ * config matches everything.
+ */
+function matchesTriggerConfig(
+  config: Record<string, unknown>,
+  payload: TriggerPayload,
+): boolean {
+  if (config.formId && config.formId !== payload.data.formId) return false;
+  if (config.siteId && config.siteId !== payload.data.siteId) return false;
+  if (config.stageId && config.stageId !== payload.data.toStageId) return false;
+  if (config.tagId && config.tagId !== payload.data.tagId) return false;
+
+  if (config.keyword) {
+    const body = String(payload.data.body ?? "").toLowerCase();
+    if (!body.includes(String(config.keyword).toLowerCase())) return false;
+  }
+
+  return true;
+}
+
+let registered = false;
+
+/**
+ * Subscribes the engine to the domain event buses. Idempotent because the
+ * worker and the Next server both import this module and each would
+ * otherwise add its own copy of every listener — producing duplicate runs.
+ */
+export function registerAutomationTriggers() {
+  if (registered) return;
+  registered = true;
+
+  crmEvents.on("contact.created", async ({ tenantId, contactId }) => {
+    await fireTrigger({ tenantId, triggerType: "contact_created", contactId, data: {} });
+  });
+
+  crmEvents.on("tag.added", async ({ tenantId, contactId, tagId }) => {
+    await fireTrigger({ tenantId, triggerType: "tag_added", contactId, data: { tagId } });
+  });
+
+  crmEvents.on("deal.stage_changed", async ({ tenantId, dealId, fromStageId, toStageId }) => {
+    const ctx = await buildSystemTenantContext(tenantId);
+    if (!ctx) return;
+    const contactId = await contactForDeal(ctx, dealId);
+    if (!contactId) return;
+
+    await fireTrigger({
+      tenantId,
+      triggerType: "deal_stage_changed",
+      contactId,
+      data: { dealId, fromStageId, toStageId },
+    });
+  });
+
+  leadEvents.on("lead.received", async ({ tenantId, contactId, formId, siteId }) => {
+    // A hosted-form lead fires both triggers so a flow can target either
+    // "any lead" or "this specific form".
+    await fireTrigger({
+      tenantId,
+      triggerType: "lead_received",
+      contactId,
+      data: { formId, siteId },
+    });
+    if (formId) {
+      await fireTrigger({
+        tenantId,
+        triggerType: "form_submitted",
+        contactId,
+        data: { formId },
+      });
+    }
+  });
+
+  whatsappEvents.on("wa.message_received", async ({ tenantId, contactId, messageId }) => {
+    const ctx = await buildSystemTenantContext(tenantId);
+    if (!ctx) return;
+
+    const body = await messageBody(ctx, messageId);
+
+    // An inbound reply resumes any run parked on wait-for-reply *before*
+    // new flows are matched, so a reply advances the conversation the
+    // contact is already in rather than only starting another one.
+    const { resumeOnReply } = await import("./engine");
+    await resumeOnReply(ctx, contactId);
+
+    await maybeOptOut(ctx, contactId, body);
+
+    await fireTrigger({
+      tenantId,
+      triggerType: "wa_message_received",
+      contactId,
+      data: { messageId, body },
+    });
+  });
+}
+
+async function contactForDeal(ctx: TenantContext, dealId: string): Promise<string | null> {
+  const { getDeal } = await import("@/modules/crm/deals");
+  const deal = await getDeal(ctx, dealId);
+  return deal?.contactId ?? null;
+}
+
+async function messageBody(ctx: TenantContext, messageId: string): Promise<string> {
+  const { eq } = await import("drizzle-orm");
+  const { messages } = await import("@/db/schema");
+  const { tenantDb } = await import("@/modules/tenancy/db");
+  const [row] = await tenantDb(ctx).select(messages, eq(messages.id, messageId));
+  return row?.body ?? "";
+}
+
+/**
+ * Global opt-out (§7.2): an inbound BAJA/STOP tags the contact `optout`,
+ * which every send action then honours. Done here rather than in a flow so
+ * it applies even to tenants who never build one.
+ */
+const OPTOUT_KEYWORDS = ["baja", "stop", "cancelar suscripcion", "cancelar suscripción"];
+
+async function maybeOptOut(ctx: TenantContext, contactId: string, body: string) {
+  const normalized = body.trim().toLowerCase();
+  if (!OPTOUT_KEYWORDS.some((keyword) => normalized === keyword)) return;
+
+  const { listTags, createTag, addTagToContact } = await import("@/modules/crm/contacts");
+  const { OPTOUT_TAG } = await import("./actions");
+
+  const tags = await listTags(ctx);
+  const existing = tags.find((tag) => tag.name.toLowerCase() === OPTOUT_TAG);
+  const tag = existing ?? (await createTag(ctx, { name: OPTOUT_TAG }));
+  if (tag) await addTagToContact(ctx, contactId, tag.id);
+}

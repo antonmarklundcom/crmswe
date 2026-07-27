@@ -48,7 +48,8 @@
       "sites": "Sitios",
       "quotes": "Presupuestos",
       "products": "Productos",
-      "facturaElectronica": "Factura electrónica — Próximamente"
+      "facturaElectronica": "Factura electrónica — Próximamente",
+      "automations": "Automatizaciones"
     },
     "contacts": {
       "title": "Contactos",
@@ -219,6 +220,43 @@
       "markAs": {
         "accepted": "Marcar aceptado",
         "rejected": "Marcar rechazado"
+      }
+    },
+    "automations": {
+      "title": "Automatizaciones",
+      "intro": "Cada flujo empieza con un disparador y sigue una secuencia de condiciones, esperas y acciones. Publicá el flujo para activarlo.",
+      "empty": "Todavía no hay flujos",
+      "createTitle": "Nuevo flujo",
+      "createFlow": "Crear flujo",
+      "name": "Nombre",
+      "trigger": "Disparador",
+      "pause": "Pausar",
+      "activate": "Activar",
+      "runsTitle": "Ejecuciones",
+      "runStatus": "Estado",
+      "currentNode": "Nodo actual",
+      "startedAt": "Iniciado",
+      "cancelRun": "Cancelar",
+      "noRuns": "Todavía no hay ejecuciones",
+      "triggers": {
+        "wa_message_received": "Mensaje de WhatsApp recibido",
+        "form_submitted": "Formulario enviado",
+        "lead_received": "Lead recibido (sitio o formulario)",
+        "deal_stage_changed": "Negocio cambió de etapa",
+        "contact_created": "Contacto creado",
+        "tag_added": "Etiqueta agregada"
+      },
+      "statusValues": {
+        "draft": "Borrador",
+        "active": "Activo",
+        "paused": "Pausado"
+      },
+      "runStatusValues": {
+        "running": "En curso",
+        "waiting": "Esperando",
+        "completed": "Completado",
+        "failed": "Falló",
+        "cancelled": "Cancelado"
       }
     }
   },

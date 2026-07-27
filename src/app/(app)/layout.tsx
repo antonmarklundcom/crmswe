@@ -47,6 +47,7 @@ export default async function AppLayout({
         <Link href="/inbox">{t("inbox")}</Link>
         <Link href="/quotes">{t("quotes")}</Link>
         <Link href="/products">{t("products")}</Link>
+        <Link href="/automations">{t("automations")}</Link>
         <Link href="/forms">{t("forms")}</Link>
         {ctx.role === "admin" && <Link href="/sites">{t("sites")}</Link>}
         {ctx.role === "admin" && <Link href="/whatsapp">{t("whatsapp")}</Link>}

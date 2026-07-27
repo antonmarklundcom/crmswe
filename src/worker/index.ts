@@ -2,7 +2,14 @@ import { randomUUID } from "node:crypto";
 import { db } from "@/db/client";
 import { claimNextJob } from "./claim";
 import { processJob } from "./process-job";
+// "./handlers" must be imported (and fully initialized) before any module
+// that registers its own handlers into it — e.g. whatsapp/jobs.ts calls
+// registerHandler() at import time, and would hit its `handlers` Map before
+// initialization if handlers.ts imported whatsapp/jobs.ts itself (a real
+// cycle, since ESM hoists all static imports ahead of a module's own body).
 import "./handlers";
+import "@/modules/whatsapp/jobs";
+import "@/modules/automations/jobs";
 
 const TICK_MS = 2000;
 

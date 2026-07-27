@@ -11,6 +11,8 @@ env:
   CRON_SECRET: ci-dummy-secret
   APP_URL: http://localhost:3000
   BETTER_AUTH_SECRET: ci-dummy-better-auth-secret-32chars-min
+  WHATSAPP_APP_SECRET: ci-dummy-whatsapp-app-secret
+  WHATSAPP_WEBHOOK_VERIFY_TOKEN: ci-dummy-whatsapp-verify-token
 
 jobs:
   lint-typecheck-build:

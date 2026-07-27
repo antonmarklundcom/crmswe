@@ -45,6 +45,27 @@ const eslintConfig = defineConfig([
       "src/worker/**/*.{ts,tsx}",
       "src/lib/queue/**/*.{ts,tsx}",
       "src/modules/tenancy/**/*.{ts,tsx}",
+      // JUDGMENT CALL (flagged for Fable review): the WhatsApp webhook
+      // receiver has no session and no tenant slug — it only has a Meta
+      // phone_number_id, and must find *which* tenant owns it before any
+      // TenantContext can exist (PLAN.md §6.3 rule 3: "route phone_number_id
+      // → wa_accounts → tenant"). That one routing lookup is structurally a
+      // platform-wide read, the same shape as tenancy's own token/slug
+      // lookups — everything else in this module still goes through
+      // tenantDb once the tenant is resolved.
+      "src/modules/whatsapp/**/*.{ts,tsx}",
+      // Same rationale as whatsapp above: the public lead-ingest endpoint
+      // authenticates by API key and must resolve key → site → tenant
+      // *before* any TenantContext can exist (PLAN.md §5.1). Only that
+      // routing lookup touches raw db; every CRM-side write goes through
+      // modules/leads and tenantDb once the tenant is known.
+      "src/modules/sites/**/*.{ts,tsx}",
+      // Same rationale again: the public quote view /q/[token] resolves an
+      // unguessable token to its quote — and therefore its tenant — before
+      // any TenantContext exists (PLAN.md §8). That single lookup is the
+      // only raw-db use here; the items and everything else are read back
+      // through tenantDb once the tenant is known.
+      "src/modules/quotes/**/*.{ts,tsx}",
       // JUDGMENT CALL (flagged for Fable review, not explicit in PLAN.md
       // §3.3's exemption list): the Better Auth instance (src/lib/auth/server.ts)
       // is infra wiring handed the raw `db` client by the Drizzle adapter,

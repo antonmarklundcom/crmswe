@@ -1,0 +1,111 @@
+import { notFound } from "next/navigation";
+import { getTranslations } from "next-intl/server";
+import { requireTenantContext } from "@/modules/tenancy/context";
+import { getQuote, listQuoteItems } from "@/modules/quotes/quotes";
+import { publicQuoteUrl } from "@/modules/quotes/delivery";
+import { getContact } from "@/modules/crm/contacts";
+import { Button } from "@/components/ui/button";
+import { sendQuoteAction, setQuoteStatusAction } from "../actions";
+
+export default async function QuoteDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  const ctx = await requireTenantContext();
+  const t = await getTranslations("app.quotes");
+
+  const quote = await getQuote(ctx, id);
+  if (!quote) notFound();
+
+  const [items, contact] = await Promise.all([
+    listQuoteItems(ctx, quote.id),
+    getContact(ctx, quote.contactId),
+  ]);
+
+  const fmt = (n: number) => `${new Intl.NumberFormat("es-PY").format(n)} ${quote.currency}`;
+  const publicUrl = publicQuoteUrl(quote.publicToken);
+
+  return (
+    <div className="flex flex-col gap-6">
+      <header className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-xl font-semibold">{quote.number}</h1>
+          <p className="text-sm text-muted-foreground">
+            {contact?.name} · {contact?.phone}
+          </p>
+          <p className="text-sm text-muted-foreground">
+            {t(`statusValues.${quote.status}` as "statusValues.draft")}
+          </p>
+        </div>
+        <form action={sendQuoteAction}>
+          <input type="hidden" name="quoteId" value={quote.id} />
+          <Button type="submit">{t("sendWhatsapp")}</Button>
+        </form>
+      </header>
+
+      <table className="w-full text-left text-sm">
+        <thead>
+          <tr className="border-b">
+            <th className="py-2">{t("description")}</th>
+            <th className="py-2 text-right">{t("qty")}</th>
+            <th className="py-2 text-right">{t("unitPrice")}</th>
+            <th className="py-2 text-right">{t("lineTotal")}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {items.map((item) => (
+            <tr key={item.id} className="border-b">
+              <td className="py-2">{item.description}</td>
+              <td className="py-2 text-right">{item.qty}</td>
+              <td className="py-2 text-right">{fmt(item.unitPrice)}</td>
+              <td className="py-2 text-right">{fmt(item.lineTotal)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      <div className="flex flex-col items-end gap-1 text-sm">
+        <div className="flex w-56 justify-between">
+          <span>{t("subtotal")}</span>
+          <span>{fmt(quote.subtotal)}</span>
+        </div>
+        {quote.discount > 0 && (
+          <div className="flex w-56 justify-between">
+            <span>{t("discount")}</span>
+            <span>-{fmt(quote.discount)}</span>
+          </div>
+        )}
+        <div className="flex w-56 justify-between text-base font-semibold">
+          <span>{t("total")}</span>
+          <span>{fmt(quote.total)}</span>
+        </div>
+      </div>
+
+      <section className="flex flex-col gap-2 text-sm">
+        <p>
+          {t("publicLink")}:{" "}
+          <a href={publicUrl} className="underline">
+            {publicUrl}
+          </a>
+        </p>
+        <a href={`/q/${quote.publicToken}/pdf`} className="underline">
+          {t("downloadPdf")}
+        </a>
+      </section>
+
+      <section className="flex gap-2">
+        {(["accepted", "rejected"] as const).map((status) => (
+          <form key={status} action={setQuoteStatusAction}>
+            <input type="hidden" name="quoteId" value={quote.id} />
+            <input type="hidden" name="status" value={status} />
+            <Button type="submit" size="sm" variant="outline">
+              {t(`markAs.${status}` as "markAs.accepted")}
+            </Button>
+          </form>
+        ))}
+      </section>
+    </div>
+  );
+}

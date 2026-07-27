@@ -2,8 +2,9 @@
 
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
-import { requireSuperadminContext } from "@/modules/tenancy/context";
+import { requireSuperadminContext, buildSystemTenantContext } from "@/modules/tenancy/context";
 import { createTenant, suspendTenant, activateTenant } from "@/modules/tenancy/tenants";
+import { seedDefaultPipeline } from "@/modules/crm/pipelines";
 
 const createTenantSchema = z.object({
   name: z.string().min(1).max(200),
@@ -21,7 +22,11 @@ export async function createTenantAction(formData: FormData) {
     slug: formData.get("slug"),
   });
 
-  await createTenant(ctx, input);
+  const tenant = await createTenant(ctx, input);
+  if (tenant) {
+    const tenantCtx = await buildSystemTenantContext(tenant.id);
+    if (tenantCtx) await seedDefaultPipeline(tenantCtx);
+  }
   revalidatePath("/tenants");
 }
 

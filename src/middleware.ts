@@ -13,10 +13,20 @@ import { getSessionCookie } from "better-auth/cookies";
 // for anything not explicitly listed here.
 const PUBLIC_PREFIXES = ["/login", "/accept-invite", "/api", "/f/", "/q/"];
 
+// Exact public paths, kept separate from the prefixes above so this stays a
+// narrow allowlist rather than "anything under /vc-*". The attribution
+// snippet (§5.1) is loaded by connected sites' visitors, who by definition
+// have no session here — without this it would be redirected to /login.
+const PUBLIC_EXACT = ["/vc-attribution.js"];
+
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  if (pathname === "/" || PUBLIC_PREFIXES.some((p) => pathname.startsWith(p))) {
+  if (
+    pathname === "/" ||
+    PUBLIC_EXACT.includes(pathname) ||
+    PUBLIC_PREFIXES.some((p) => pathname.startsWith(p))
+  ) {
     return NextResponse.next();
   }
 

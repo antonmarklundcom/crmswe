@@ -45,10 +45,21 @@ export default async function AppLayout({
         <Link href="/contacts">{t("contacts")}</Link>
         <Link href="/pipeline">{t("pipeline")}</Link>
         <Link href="/inbox">{t("inbox")}</Link>
+        <Link href="/quotes">{t("quotes")}</Link>
+        <Link href="/products">{t("products")}</Link>
         <Link href="/forms">{t("forms")}</Link>
         {ctx.role === "admin" && <Link href="/sites">{t("sites")}</Link>}
         {ctx.role === "admin" && <Link href="/whatsapp">{t("whatsapp")}</Link>}
         {ctx.role === "admin" && <Link href="/settings">{t("settings")}</Link>}
+        {/* Phase 2 (§9). Present but inert so the roadmap is visible in the
+            product itself, per §8's "nav item exists, disabled". */}
+        <span
+          aria-disabled="true"
+          title={t("facturaElectronica")}
+          className="cursor-not-allowed text-muted-foreground/60"
+        >
+          {t("facturaElectronica")}
+        </span>
       </nav>
       <div className="flex-1 p-6">{children}</div>
     </div>

@@ -22,6 +22,14 @@ export type SendTemplateInput = {
   components?: unknown[];
 };
 
+export type SendDocumentInput = {
+  conversationId: string;
+  /** Publicly reachable HTTPS URL — Meta fetches the file itself. */
+  link: string;
+  filename: string;
+  caption?: string;
+};
+
 export async function sendText(ctx: TenantContext, input: SendTextInput) {
   const conversation = await getConversationOrThrow(ctx, input.conversationId);
 
@@ -57,6 +65,32 @@ export async function sendTemplate(ctx: TenantContext, input: SendTemplateInput)
   });
 }
 
+/**
+ * Documents are ordinary free-form messages as far as Meta is concerned, so
+ * they need an open 24h window just like text (§6.4). Quote delivery (§8)
+ * calls this; when the window is shut the caller falls back to the public
+ * link rather than silently failing.
+ */
+export async function sendDocument(ctx: TenantContext, input: SendDocumentInput) {
+  const conversation = await getConversationOrThrow(ctx, input.conversationId);
+
+  if (!withinFreeFormWindow(conversation.lastInboundAt)) {
+    throw new Error(
+      "La ventana de 24 horas está cerrada — solo se pueden enviar plantillas aprobadas.",
+    );
+  }
+
+  return queueOutboundMessage(ctx, conversation.id, {
+    type: "document",
+    body: input.caption ?? input.filename,
+    graphPayload: {
+      messaging_product: "whatsapp",
+      type: "document",
+      document: { link: input.link, filename: input.filename, caption: input.caption },
+    },
+  });
+}
+
 function withinFreeFormWindow(lastInboundAt: Date | null): boolean {
   if (!lastInboundAt) return false;
   return Date.now() - lastInboundAt.getTime() < WINDOW_MS;
@@ -74,7 +108,11 @@ async function getConversationOrThrow(ctx: TenantContext, conversationId: string
 async function queueOutboundMessage(
   ctx: TenantContext,
   conversationId: string,
-  input: { type: "text" | "template"; body: string; graphPayload: Record<string, unknown> },
+  input: {
+    type: "text" | "template" | "document";
+    body: string;
+    graphPayload: Record<string, unknown>;
+  },
 ) {
   const messageId = newId();
   await tenantDb(ctx)

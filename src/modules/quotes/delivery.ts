@@ -1,0 +1,126 @@
+import { storage } from "@/lib/storage";
+import { env } from "@/lib/config/env";
+import type { TenantContext } from "@/modules/tenancy/context";
+import { getTenant } from "@/modules/tenancy/tenants";
+import type { TenantSettings } from "@/modules/tenancy/settings";
+import { getContact } from "@/modules/crm/contacts";
+import { createActivity } from "@/modules/crm/activities";
+import { getPrimaryAccount } from "@/modules/whatsapp/accounts";
+import { getOrCreateConversation } from "@/modules/whatsapp/inbox";
+import { sendDocument } from "@/modules/whatsapp/send";
+import { getQuote, listQuoteItems, setQuotePdfKey, setQuoteStatus } from "./quotes";
+import { renderQuotePdf } from "./pdf";
+
+// Quote delivery (PLAN.md §8): render the PDF with tenant branding, store it
+// via the storage adapter, then send it as a WhatsApp document — with the
+// public link /q/[token] as the fallback and preview.
+
+export function publicQuoteUrl(token: string): string {
+  return `${env.APP_URL}/q/${token}`;
+}
+
+/** Meta fetches this URL itself, so it has to be reachable without a session. */
+export function publicQuotePdfUrl(token: string): string {
+  return `${env.APP_URL}/q/${token}/pdf`;
+}
+
+export async function generateQuotePdf(ctx: TenantContext, quoteId: string): Promise<Buffer> {
+  const quote = await getQuote(ctx, quoteId);
+  if (!quote) throw new Error(`Presupuesto ${quoteId} no encontrado`);
+
+  const [items, contact, tenant] = await Promise.all([
+    listQuoteItems(ctx, quote.id),
+    getContact(ctx, quote.contactId),
+    getTenant(ctx.tenantId),
+  ]);
+  if (!contact) throw new Error("Contacto no encontrado");
+
+  const settings = (tenant?.settings ?? {}) as TenantSettings;
+
+  const pdf = await renderQuotePdf({
+    number: quote.number,
+    tenantName: tenant?.name ?? "",
+    branding: settings.branding ?? {},
+    contactName: contact.name,
+    contactPhone: contact.phone,
+    currency: quote.currency,
+    subtotal: quote.subtotal,
+    discount: quote.discount,
+    total: quote.total,
+    validUntil: quote.validUntil,
+    notes: quote.notes,
+    createdAt: quote.createdAt,
+    items: items.map((item) => ({
+      description: item.description,
+      qty: item.qty,
+      unitPrice: item.unitPrice,
+      lineTotal: item.lineTotal,
+    })),
+  });
+
+  const key = `quotes/${ctx.tenantId}/${quote.id}.pdf`;
+  await storage.put(key, pdf, "application/pdf");
+  await setQuotePdfKey(ctx, quote.id, key);
+
+  return pdf;
+}
+
+export type SendQuoteResult = {
+  /** Null when WhatsApp couldn't be used — the public link is then the delivery. */
+  messageId: string | null;
+  publicUrl: string;
+  whatsappError?: string;
+};
+
+/**
+ * Sends the quote over WhatsApp and flips it to `sent` with a `quote_sent`
+ * activity (§8). A closed 24h window is an expected outcome, not a failure:
+ * the PDF and public link still exist, so the status still advances and the
+ * reason is reported back for the UI to show.
+ */
+export async function sendQuote(ctx: TenantContext, quoteId: string): Promise<SendQuoteResult> {
+  const quote = await getQuote(ctx, quoteId);
+  if (!quote) throw new Error(`Presupuesto ${quoteId} no encontrado`);
+
+  await generateQuotePdf(ctx, quote.id);
+
+  const publicUrl = publicQuoteUrl(quote.publicToken);
+  let messageId: string | null = null;
+  let whatsappError: string | undefined;
+
+  const account = await getPrimaryAccount(ctx);
+  if (!account) {
+    whatsappError = "No hay un número de WhatsApp conectado";
+  } else {
+    try {
+      const conversation = await getOrCreateConversation(ctx, account.id, quote.contactId);
+      messageId = await sendDocument(ctx, {
+        conversationId: conversation.id,
+        link: publicQuotePdfUrl(quote.publicToken),
+        filename: `${quote.number}.pdf`,
+        caption: `Presupuesto ${quote.number}`,
+      });
+    } catch (err) {
+      whatsappError = err instanceof Error ? err.message : String(err);
+    }
+  }
+
+  await setQuoteStatus(ctx, quote.id, "sent");
+  await createActivity(ctx, {
+    contactId: quote.contactId,
+    dealId: quote.dealId ?? undefined,
+    type: "quote_sent",
+    payload: {
+      quoteId: quote.id,
+      number: quote.number,
+      total: quote.total,
+      currency: quote.currency,
+      publicUrl,
+      viaWhatsapp: messageId !== null,
+      whatsappError,
+    },
+    userId: ctx.userId,
+  });
+
+  return { messageId, publicUrl, whatsappError };
+}

@@ -60,6 +60,12 @@ const eslintConfig = defineConfig([
       // routing lookup touches raw db; every CRM-side write goes through
       // modules/leads and tenantDb once the tenant is known.
       "src/modules/sites/**/*.{ts,tsx}",
+      // Same rationale again: the public quote view /q/[token] resolves an
+      // unguessable token to its quote — and therefore its tenant — before
+      // any TenantContext exists (PLAN.md §8). That single lookup is the
+      // only raw-db use here; the items and everything else are read back
+      // through tenantDb once the tenant is known.
+      "src/modules/quotes/**/*.{ts,tsx}",
       // JUDGMENT CALL (flagged for Fable review, not explicit in PLAN.md
       // §3.3's exemption list): the Better Auth instance (src/lib/auth/server.ts)
       // is infra wiring handed the raw `db` client by the Drizzle adapter,

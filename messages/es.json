@@ -45,7 +45,10 @@
       "forms": "Formularios",
       "whatsapp": "WhatsApp",
       "settings": "Configuración",
-      "sites": "Sitios"
+      "sites": "Sitios",
+      "quotes": "Presupuestos",
+      "products": "Productos",
+      "facturaElectronica": "Factura electrónica — Próximamente"
     },
     "contacts": {
       "title": "Contactos",
@@ -169,6 +172,54 @@
       "byCampaign": "Leads por campaña",
       "howToTitle": "Cómo conectar un sitio",
       "howToIntro": "Desde el backend del sitio (nunca desde el navegador — así la clave no queda expuesta):"
+    },
+    "products": {
+      "title": "Productos",
+      "empty": "Todavía no hay productos",
+      "createTitle": "Nuevo producto",
+      "name": "Nombre",
+      "description": "Descripción",
+      "unitPrice": "Precio unitario (PYG)",
+      "inactive": "inactivo",
+      "activate": "Activar",
+      "deactivate": "Desactivar"
+    },
+    "quotes": {
+      "title": "Presupuestos",
+      "empty": "Todavía no hay presupuestos",
+      "createTitle": "Nuevo presupuesto",
+      "needContact": "Primero necesitás al menos un contacto.",
+      "number": "Número",
+      "status": "Estado",
+      "contact": "Contacto",
+      "description": "Descripción",
+      "qty": "Cant.",
+      "unitPrice": "Precio",
+      "lineTotal": "Total",
+      "addLine": "Agregar ítem",
+      "removeLine": "Quitar",
+      "fromCatalog": "Del catálogo",
+      "freeText": "Texto libre",
+      "discount": "Descuento",
+      "validUntil": "Válido hasta",
+      "notes": "Notas",
+      "subtotal": "Subtotal",
+      "total": "Total",
+      "createQuote": "Crear presupuesto",
+      "sendWhatsapp": "Enviar por WhatsApp",
+      "publicLink": "Enlace público",
+      "downloadPdf": "Descargar PDF",
+      "statusValues": {
+        "draft": "Borrador",
+        "sent": "Enviado",
+        "accepted": "Aceptado",
+        "rejected": "Rechazado",
+        "expired": "Vencido"
+      },
+      "markAs": {
+        "accepted": "Marcar aceptado",
+        "rejected": "Marcar rechazado"
+      }
     }
   },
   "superadmin": {

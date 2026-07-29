@@ -2,6 +2,7 @@ import { z } from "zod";
 import { buildSystemTenantContext } from "@/modules/tenancy/context";
 import { normalizePhone } from "@/modules/crm/contacts";
 import { recordLeadSubmission, type RecordLeadResult } from "@/modules/leads/submissions";
+import { checkRateLimit } from "@/lib/rate-limit";
 import { resolveSiteByApiKey } from "./keys";
 
 // Public ingest (PLAN.md §5.1). Server-to-server only: the site's own
@@ -35,23 +36,13 @@ export type IngestOutcome =
   | { ok: true; result: RecordLeadResult }
   | { ok: false; status: 401 | 403 | 422 | 429; error: string };
 
-// Per-site fixed-window limiter. In-memory is sound here specifically
-// because Hostinger runs a single Node process (§2.1) — if the worker is
-// ever lifted out, this must move to the database with it.
+// Per-site fixed-window limiter (see lib/rate-limit for the shared
+// implementation and its documented single-process limitation).
 const RATE_LIMIT = 60;
 const RATE_WINDOW_MS = 60_000;
-const buckets = new Map<string, { count: number; resetAt: number }>();
 
 function rateLimited(siteId: string): boolean {
-  const now = Date.now();
-  const bucket = buckets.get(siteId);
-
-  if (!bucket || now >= bucket.resetAt) {
-    buckets.set(siteId, { count: 1, resetAt: now + RATE_WINDOW_MS });
-    return false;
-  }
-  bucket.count += 1;
-  return bucket.count > RATE_LIMIT;
+  return checkRateLimit(`leads:${siteId}`, RATE_LIMIT, RATE_WINDOW_MS).limited;
 }
 
 export type IngestRequestMeta = {

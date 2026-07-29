@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { hashPassword } from "better-auth/crypto";
 import { db } from "@/db/client";
 import { accounts, users } from "@/db/schema";
@@ -53,6 +53,56 @@ export async function createSuperadminUser(input: {
   });
 
   return getUserById(userId);
+}
+
+/**
+ * Owner tenant bootstrap (PLAN.md §10 1H #1, scripts/seed-tenant.ts):
+ * creates the admin user for a brand-new tenant the same way
+ * createSuperadminUser does for the platform — inserts a user + credential
+ * account directly, since there's no admin session yet to invite them
+ * through the normal flow.
+ */
+export async function createTenantAdminUser(input: {
+  tenantId: string;
+  email: string;
+  password: string;
+  name: string;
+}) {
+  const userId = newId();
+
+  await db.insert(users).values({
+    id: userId,
+    tenantId: input.tenantId,
+    email: input.email,
+    emailVerified: true,
+    name: input.name,
+    role: "admin",
+    isSuperadmin: false,
+  });
+
+  await db.insert(accounts).values({
+    id: newId(),
+    userId,
+    accountId: userId,
+    providerId: "credential",
+    password: await hashPassword(input.password),
+  });
+
+  return getUserById(userId);
+}
+
+/** Resets a user's credential password in place — used by the idempotent
+ * seed script when the user row already exists. */
+export async function setUserPassword(userId: string, password: string) {
+  await db
+    .update(accounts)
+    .set({ password: await hashPassword(password) })
+    .where(and(eq(accounts.userId, userId), eq(accounts.providerId, "credential")));
+}
+
+export async function getUserByEmail(email: string) {
+  const [row] = await db.select().from(users).where(eq(users.email, email));
+  return row ?? null;
 }
 
 export async function markSuperadmin(userId: string) {

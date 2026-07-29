@@ -58,7 +58,7 @@
       "filter": "Filtrar",
       "name": "Nombre",
       "phone": "Teléfono",
-      "email": "Correo",
+      "email": "Correo electrónico",
       "source": "Origen",
       "notes": "Notas",
       "empty": "Todavía no hay contactos",

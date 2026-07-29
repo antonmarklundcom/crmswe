@@ -5,6 +5,7 @@ import { getTenantBySlug } from "@/modules/tenancy/tenants";
 import { tenantDb } from "@/modules/tenancy/db";
 import { normalizePhone } from "@/modules/crm/contacts";
 import { recordLeadSubmission } from "@/modules/leads/submissions";
+import { checkRateLimit } from "@/lib/rate-limit";
 import type { FormSettings } from "./forms";
 
 // Public form submission (PLAN.md §5). Unauthenticated by nature — the
@@ -36,6 +37,12 @@ export type SubmitFormInput = {
   userAgent?: string;
 };
 
+// Per-IP fixed-window limit, form-scoped so one spammy form can't exhaust a
+// shared visitor's budget on another (see lib/rate-limit for the shared
+// implementation and its documented limitation).
+const RATE_LIMIT = 20;
+const RATE_WINDOW_MS = 60_000;
+
 export async function submitForm(
   tenantSlug: string,
   formSlug: string,
@@ -44,6 +51,11 @@ export async function submitForm(
   const resolved = await getPublicForm(tenantSlug, formSlug);
   if (!resolved) throw new Error("Formulario no encontrado");
   const { tenant, form } = resolved;
+
+  const rateKey = `form:${form.id}:${input.ipAddress ?? "unknown"}`;
+  if (checkRateLimit(rateKey, RATE_LIMIT, RATE_WINDOW_MS).limited) {
+    throw new Error("Demasiados envíos. Probá de nuevo en un momento.");
+  }
 
   const ctx = await buildSystemTenantContext(tenant.id);
   if (!ctx) throw new Error("Formulario no encontrado");

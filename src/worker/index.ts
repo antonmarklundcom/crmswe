@@ -10,6 +10,7 @@ import { processJob } from "./process-job";
 import "./handlers";
 import "@/modules/whatsapp/jobs";
 import "@/modules/automations/jobs";
+import { ensureWebhookPruningScheduled } from "@/modules/maintenance/jobs";
 
 const TICK_MS = 2000;
 
@@ -28,6 +29,12 @@ export async function tick(workerId: string): Promise<boolean> {
 export function startWorker(): () => void {
   const workerId = `${process.pid}-${randomUUID()}`;
   let stopped = false;
+
+  // Seeds the recurring webhook_events pruning chain if it isn't already
+  // running (PLAN.md §10 1H #3) — idempotent, safe on every worker start.
+  void ensureWebhookPruningScheduled().catch((err) => {
+    console.error("[worker] failed to schedule webhook pruning", err);
+  });
 
   const loop = async () => {
     while (!stopped) {

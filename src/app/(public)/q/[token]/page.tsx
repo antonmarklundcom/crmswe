@@ -1,8 +1,10 @@
 import { notFound } from "next/navigation";
+import { headers } from "next/headers";
 import { getPublicQuote } from "@/modules/quotes/quotes";
 import { getContact } from "@/modules/crm/contacts";
 import { getTenant } from "@/modules/tenancy/tenants";
 import type { TenantSettings } from "@/modules/tenancy/settings";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 // Public read-only quote view (PLAN.md §8) — the token is the secret, and
 // there is deliberately no accept/reject button in Phase 1: the rep sets
@@ -22,6 +24,19 @@ export default async function PublicQuotePage({
   params: Promise<{ token: string }>;
 }) {
   const { token } = await params;
+
+  // Per-IP limit — the token itself is the secret, so this isn't for
+  // brute-forcing defense, it's to keep the page from being scraped/hammered
+  // (lib/rate-limit documents the single-process limitation).
+  const ip = (await headers()).get("x-forwarded-for") ?? "unknown";
+  if (checkRateLimit(`quote-view:${ip}`, 60, 60_000).limited) {
+    return (
+      <main className="mx-auto max-w-2xl p-6 text-sm text-muted-foreground">
+        Demasiadas solicitudes. Probá de nuevo en un momento.
+      </main>
+    );
+  }
+
   const resolved = await getPublicQuote(token);
   if (!resolved) notFound();
 

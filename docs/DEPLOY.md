@@ -23,11 +23,15 @@ first deploy and every routine redeploy after it.
    - `APP_ENCRYPTION_KEY` — 32-byte hex, generate with
      `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`
    - `APP_URL` — the final deployed URL (Hostinger subdomain or custom domain)
-   - `STORAGE_DRIVER` / `STORAGE_LOCAL_PATH` — `local` is fine to start;
-     switch to `s3` (R2) before onboarding tenants beyond the owner's own,
-     since Hostinger disk isn't durable across redeploys
+   - `STORAGE_DRIVER` / `STORAGE_LOCAL_PATH` — leave as `local`. Setting
+     `s3` throws at boot: the R2 driver isn't written yet
+     (`src/lib/storage/index.ts`, PLAN.md §2.1), so no Cloudflare account is
+     needed to launch. What `local` costs today is only that stored quote
+     PDFs don't survive a redeploy — the public quote route re-renders them
+     on demand, so nothing is actually lost. Write the S3 driver before
+     onboarding tenants beyond the owner's own.
    - `CRON_SECRET` — arbitrary long random string, shared with the Hostinger
-     cron job set up in §4
+     cron job set up in §5
    - `BETTER_AUTH_SECRET` — >=32 chars, generate the same way as the
      encryption key
    - `WHATSAPP_APP_SECRET`, `WHATSAPP_WEBHOOK_VERIFY_TOKEN` — from the Meta
@@ -76,7 +80,28 @@ deploy. If SSH is used anyway: `npm`/`npx` aren't on the default PATH —
 `export PATH=/opt/alt/alt-nodejsNN/root/usr/bin:$PATH` first (match the
 installed Node version under `/opt/alt/`).
 
-## 4. Cron fallback (worker safety net)
+## 4. Point Meta's webhook at the app
+
+Required before inbound WhatsApp works at all — outbound sending needs only
+the per-tenant token, but nothing arrives in the Inbox until this is set.
+One endpoint serves every tenant; Meta routes by `phone_number_id`
+(PLAN.md §6.3), so this is configured once per Meta app, not per tenant.
+
+1. Meta developer app → **WhatsApp → Configuration → Webhook → Edit**.
+2. Callback URL: `https://<app-domain>/api/webhooks/whatsapp`
+3. Verify token: the exact `WHATSAPP_WEBHOOK_VERIFY_TOKEN` value set in
+   hPanel. Meta immediately GETs the URL with a challenge and expects it
+   echoed back — a mismatch (or an app that hasn't been restarted since the
+   env var was added) fails verification with a 403.
+4. Subscribe the app to the **`messages`** webhook field.
+5. Confirm `WHATSAPP_APP_SECRET` in hPanel matches the Meta app's secret —
+   POSTs are rejected with 401 on a signature mismatch, which looks
+   identical to "no messages arriving" from the UI.
+
+Meta pauses a subscription that keeps failing, so re-check this after any
+domain change. `docs/SMOKE_TEST.md` §2 verifies inbound delivery end-to-end.
+
+## 5. Cron fallback (worker safety net)
 
 The job queue worker ticks in-process every ~2s via `instrumentation.ts`
 (§2.1: "no cron guarantees" on Hostinger, hence a fallback, not the primary
@@ -94,14 +119,14 @@ backstop if the in-process loop ever stalls. It also indirectly keeps the
 itself isn't running for some reason, since a stalled worker means both the
 regular loop and the pruning chain are stuck at the same time.
 
-## 5. Process restart
+## 6. Process restart
 
 hPanel → the app → **Restart**. Required after any environment variable
 change (redeploy also restarts it; editing env vars alone does not take
 effect until a restart/redeploy). The in-process worker restarts
 automatically with the app — no separate process to manage.
 
-## 6. Rollback
+## 7. Rollback
 
 1. hPanel → the app → **Deployments** (or Git tab) → redeploy a previous
    commit/build. Hostinger's Node.js apps keep recent build history for
@@ -116,10 +141,11 @@ automatically with the app — no separate process to manage.
    between them is the usual cause of a rollback still crashing).
 4. Confirm with `docs/SMOKE_TEST.md` before calling the rollback done.
 
-## 7. Post-deploy checklist
+## 8. Post-deploy checklist
 
 - [ ] App loads at the deployed URL over HTTPS
 - [ ] Login works with real (not seed-default) admin credentials
 - [ ] `docs/SMOKE_TEST.md` passes
 - [ ] `/api/cron/tick` returns 401 without the header and 200 with it
+- [ ] Meta webhook shows as verified and subscribed to `messages` (§4)
 - [ ] Sentry (if configured) shows the deploy's release/environment

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useState, useTransition } from "react";
+import { useTranslations } from "next-intl";
 import {
   ReactFlow,
   Background,
@@ -21,25 +22,32 @@ import { saveDraftAction, publishFlowAction } from "../actions";
 // editing; saving serialises it back into the same graph JSON the engine
 // interprets, so what you see is literally what runs.
 
-export type EditorLabels = Record<string, string>;
-
 type NodeData = { label: string; kind?: string; config: Record<string, unknown> };
 
-const PALETTE: Array<{ type: "condition" | "action" | "delay"; kind: string; label: string }> = [
-  { type: "action", kind: "send_whatsapp", label: "Enviar WhatsApp" },
-  { type: "action", kind: "send_template", label: "Enviar plantilla" },
-  { type: "action", kind: "add_tag", label: "Agregar etiqueta" },
-  { type: "action", kind: "remove_tag", label: "Quitar etiqueta" },
-  { type: "action", kind: "move_deal_stage", label: "Mover etapa" },
-  { type: "action", kind: "assign_user", label: "Asignar usuario" },
-  { type: "action", kind: "create_note", label: "Crear nota" },
-  { type: "condition", kind: "has_tag", label: "¿Tiene etiqueta?" },
-  { type: "condition", kind: "deal_in_stage", label: "¿En etapa?" },
-  { type: "condition", kind: "business_hours", label: "¿Horario de atención?" },
-  { type: "condition", kind: "has_replied_since", label: "¿Respondió?" },
-  { type: "delay", kind: "wait_duration", label: "Esperar" },
-  { type: "delay", kind: "wait_for_reply", label: "Esperar respuesta" },
+// Node kinds the palette offers, in display order. Labels live in
+// messages/es.json (`app.automations.editor.palette`, keyed by kind) so the
+// editor doesn't hardcode copy like the rest of the UI (PLAN.md §1.2).
+const PALETTE: Array<{ type: "condition" | "action" | "delay"; kind: string }> = [
+  { type: "action", kind: "send_whatsapp" },
+  { type: "action", kind: "send_template" },
+  { type: "action", kind: "add_tag" },
+  { type: "action", kind: "remove_tag" },
+  { type: "action", kind: "move_deal_stage" },
+  { type: "action", kind: "assign_user" },
+  { type: "action", kind: "create_note" },
+  { type: "condition", kind: "has_tag" },
+  { type: "condition", kind: "deal_in_stage" },
+  { type: "condition", kind: "business_hours" },
+  { type: "condition", kind: "has_replied_since" },
+  { type: "delay", kind: "wait_duration" },
+  { type: "delay", kind: "wait_for_reply" },
 ];
+
+type EditorTranslator = ReturnType<typeof useTranslations<"app.automations.editor">>;
+
+function paletteLabel(t: EditorTranslator, kind: string): string {
+  return t(`palette.${kind}` as "palette.send_whatsapp");
+}
 
 export function FlowEditor({
   flowId,
@@ -50,6 +58,7 @@ export function FlowEditor({
   triggerType: TriggerType;
   initialGraph: FlowGraph | null;
 }) {
+  const t = useTranslations("app.automations.editor");
   const seeded = initialGraph ?? {
     nodes: [{ id: "t1", type: "trigger" as const, config: { triggerType } }],
     edges: [],
@@ -60,7 +69,7 @@ export function FlowEditor({
       id: node.id,
       position: { x: 120, y: 60 + index * 110 },
       data: {
-        label: labelFor(node.type, (node.config as { kind?: string }).kind),
+        label: labelFor(t, node.type, (node.config as { kind?: string }).kind),
         kind: (node.config as { kind?: string }).kind,
         config: node.config as Record<string, unknown>,
       },
@@ -122,7 +131,7 @@ export function FlowEditor({
         id,
         position: { x: 420, y: 60 + nds.length * 90 },
         data: {
-          label: entry.label,
+          label: paletteLabel(t, entry.kind),
           kind: entry.kind,
           config:
             entry.type === "delay"
@@ -158,7 +167,7 @@ export function FlowEditor({
     setMessage(null);
     startTransition(async () => {
       await saveDraftAction(flowId, JSON.stringify(serialise()));
-      setMessage("Borrador guardado");
+      setMessage(t("draftSaved"));
     });
   }
 
@@ -168,7 +177,7 @@ export function FlowEditor({
     startTransition(async () => {
       await saveDraftAction(flowId, JSON.stringify(serialise()));
       const result = await publishFlowAction(flowId);
-      if (result.ok) setMessage("Flujo publicado y activo");
+      if (result.ok) setMessage(t("published"));
       else setErrors(result.errors.map((e) => e.message));
     });
   }
@@ -186,7 +195,7 @@ export function FlowEditor({
             variant="outline"
             onClick={() => addNode(entry)}
           >
-            + {entry.label}
+            + {paletteLabel(t, entry.kind)}
           </Button>
         ))}
       </div>
@@ -226,10 +235,10 @@ export function FlowEditor({
 
       <div className="flex items-center gap-2">
         <Button type="button" onClick={save} disabled={pending} variant="outline">
-          Guardar borrador
+          {t("saveDraft")}
         </Button>
         <Button type="button" onClick={publish} disabled={pending}>
-          Publicar
+          {t("publish")}
         </Button>
         {message && <span className="text-sm text-green-700">{message}</span>}
       </div>
@@ -255,9 +264,10 @@ function seededTypeOf(node: Node<NodeData>): "trigger" | "condition" | "action" 
   return "action";
 }
 
-function labelFor(type: string, kind?: string): string {
-  if (type === "trigger") return "Disparador";
-  return PALETTE.find((entry) => entry.kind === kind)?.label ?? kind ?? type;
+function labelFor(t: EditorTranslator, type: string, kind?: string): string {
+  if (type === "trigger") return t("triggerNode");
+  if (kind && PALETTE.some((entry) => entry.kind === kind)) return paletteLabel(t, kind);
+  return kind ?? type;
 }
 
 /** Per-node fields. Deliberately plain inputs — ids are pasted from the
@@ -272,6 +282,7 @@ function NodeConfigPanel({
   onChange: (config: Record<string, unknown>) => void;
   onDelete: () => void;
 }) {
+  const t = useTranslations("app.automations.editor");
   const config = node.data.config;
   const kind = node.data.kind;
 
@@ -285,11 +296,13 @@ function NodeConfigPanel({
 
       {(kind === "send_whatsapp" || kind === "create_note") && (
         <label className="flex flex-1 flex-col gap-1">
-          Texto
+          {t("fields.text")}
           <textarea
             value={String(config.text ?? "")}
             onChange={(e) => set("text", e.target.value)}
-            placeholder="Hola {{contact.name}}…"
+            // The merge tag is passed as an ICU argument rather than written
+            // into the message: `{{…}}` is invalid ICU syntax.
+            placeholder={t("fields.textPlaceholder", { tag: "{{contact.name}}" })}
             className="rounded-md border px-2 py-1"
           />
         </label>
@@ -298,7 +311,7 @@ function NodeConfigPanel({
       {kind === "send_template" && (
         <>
           <label className="flex flex-col gap-1">
-            Plantilla
+            {t("fields.template")}
             <input
               value={String(config.templateName ?? "")}
               onChange={(e) => set("templateName", e.target.value)}
@@ -306,7 +319,7 @@ function NodeConfigPanel({
             />
           </label>
           <label className="flex flex-col gap-1">
-            Idioma
+            {t("fields.language")}
             <input
               value={String(config.language ?? "es")}
               onChange={(e) => set("language", e.target.value)}
@@ -318,7 +331,7 @@ function NodeConfigPanel({
 
       {(kind === "add_tag" || kind === "remove_tag" || kind === "has_tag") && (
         <label className="flex flex-col gap-1">
-          ID de etiqueta
+          {t("fields.tagId")}
           <input
             value={String(config.tagId ?? "")}
             onChange={(e) => set("tagId", e.target.value)}
@@ -329,7 +342,7 @@ function NodeConfigPanel({
 
       {(kind === "move_deal_stage" || kind === "deal_in_stage") && (
         <label className="flex flex-col gap-1">
-          ID de etapa
+          {t("fields.stageId")}
           <input
             value={String(config.stageId ?? "")}
             onChange={(e) => set("stageId", e.target.value)}
@@ -340,7 +353,7 @@ function NodeConfigPanel({
 
       {kind === "assign_user" && (
         <label className="flex flex-col gap-1">
-          ID de usuario
+          {t("fields.userId")}
           <input
             value={String(config.userId ?? "")}
             onChange={(e) => set("userId", e.target.value)}
@@ -351,7 +364,7 @@ function NodeConfigPanel({
 
       {(kind === "wait_duration" || kind === "wait_for_reply" || kind === "has_replied_since") && (
         <label className="flex flex-col gap-1">
-          Minutos
+          {t("fields.minutes")}
           <input
             type="number"
             min={1}
@@ -363,7 +376,7 @@ function NodeConfigPanel({
       )}
 
       <Button type="button" size="sm" variant="outline" onClick={onDelete}>
-        Eliminar nodo
+        {t("deleteNode")}
       </Button>
     </div>
   );

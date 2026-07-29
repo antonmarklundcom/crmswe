@@ -6,18 +6,14 @@ import { newId } from "@/lib/ids";
 import { buildSystemTenantContext, type TenantContext } from "@/modules/tenancy/context";
 import { tenantDb } from "@/modules/tenancy/db";
 import { nextQuoteNumber } from "./numbering";
+import { computeTotals, type QuoteLineInput } from "./totals";
+
+export { computeTotals, type QuoteLineInput };
 
 // Quote documents (PLAN.md §8). Non-fiscal in Phase 1 — no SIFEN dependency,
 // and deliberately separate from the future `invoices` tables (§4).
 
 export type QuoteStatus = "draft" | "sent" | "accepted" | "rejected" | "expired";
-
-export type QuoteLineInput = {
-  productId?: string;
-  description: string;
-  qty: number;
-  unitPrice: number;
-};
 
 export type CreateQuoteInput = {
   contactId: string;
@@ -28,19 +24,6 @@ export type CreateQuoteInput = {
   notes?: string;
   items: QuoteLineInput[];
 };
-
-/** Totals are derived here, never taken from the client. */
-export function computeTotals(items: QuoteLineInput[], discount = 0) {
-  const lines = items.map((item) => ({
-    ...item,
-    lineTotal: item.qty * item.unitPrice,
-  }));
-  const subtotal = lines.reduce((sum, line) => sum + line.lineTotal, 0);
-  // A discount larger than the subtotal would produce a negative total,
-  // which is never a real quote — clamp instead of trusting the input.
-  const appliedDiscount = Math.min(Math.max(discount, 0), subtotal);
-  return { lines, subtotal, discount: appliedDiscount, total: subtotal - appliedDiscount };
-}
 
 export async function createQuote(ctx: TenantContext, input: CreateQuoteInput) {
   if (input.items.length === 0) {

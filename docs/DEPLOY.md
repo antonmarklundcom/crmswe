@@ -23,9 +23,13 @@ first deploy and every routine redeploy after it.
    - `APP_ENCRYPTION_KEY` — 32-byte hex, generate with
      `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`
    - `APP_URL` — the final deployed URL (Hostinger subdomain or custom domain)
-   - `STORAGE_DRIVER` / `STORAGE_LOCAL_PATH` — `local` is fine to start;
-     switch to `s3` (R2) before onboarding tenants beyond the owner's own,
-     since Hostinger disk isn't durable across redeploys
+   - `STORAGE_DRIVER` / `STORAGE_LOCAL_PATH` — leave as `local`. Setting
+     `s3` throws at boot: the R2 driver isn't written yet
+     (`src/lib/storage/index.ts`, PLAN.md §2.1), so no Cloudflare account is
+     needed to launch. What `local` costs today is only that stored quote
+     PDFs don't survive a redeploy — the public quote route re-renders them
+     on demand, so nothing is actually lost. Write the S3 driver before
+     onboarding tenants beyond the owner's own.
    - `CRON_SECRET` — arbitrary long random string, shared with the Hostinger
      cron job set up in §5
    - `BETTER_AUTH_SECRET` — >=32 chars, generate the same way as the

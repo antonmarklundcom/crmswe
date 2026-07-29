@@ -2,13 +2,18 @@ import { and, eq, lt } from "drizzle-orm";
 import { db } from "@/db/client";
 import { jobs, webhookEvents } from "@/db/schema";
 import { enqueue } from "@/lib/queue";
-import { registerHandler } from "@/worker/handlers";
+import { registerHandler } from "./handlers";
 
 // Recurring maintenance jobs (PLAN.md §10 1H #3). Same self-rescheduling
 // pattern as modules/whatsapp/sync-schedule.ts's nightly template sync: the
 // handler re-enqueues itself after each successful run, so the chain lives
 // in the jobs table (survives restarts, needs no cron) rather than in a
 // process timer.
+//
+// Lives in src/worker (not src/modules) because it needs raw db access to
+// the platform-level `webhook_events`/`jobs` tables — same reasoning as
+// worker/claim.ts and worker/process-job.ts, both exempt from the
+// tenancy-scoped db rule (PLAN.md §3.3, eslint.config.mjs).
 
 export const PRUNE_JOB_TYPE = "maintenance.prune_webhook_events";
 const PRUNE_INTERVAL_MS = 24 * 60 * 60 * 1000;

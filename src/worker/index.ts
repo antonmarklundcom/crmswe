@@ -10,7 +10,7 @@ import { processJob } from "./process-job";
 import "./handlers";
 import "@/modules/whatsapp/jobs";
 import "@/modules/automations/jobs";
-import { ensureWebhookPruningScheduled } from "@/modules/maintenance/jobs";
+import { ensureWebhookPruningScheduled } from "./maintenance";
 
 const TICK_MS = 2000;
 

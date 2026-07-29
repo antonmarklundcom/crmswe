@@ -119,14 +119,14 @@
     "whatsapp": {
       "title": "WhatsApp",
       "adminOnly": "Solo los administradores pueden ver esta página",
-      "empty": "Todavía no hay ningún número conectado",
+      "empty": "Todavía no hay números conectados",
       "status": {
         "connected": "Conectado",
         "disconnected": "Desconectado",
         "error": "Error"
       },
       "connectTitle": "Conectar número",
-      "connectHelp": "Ingresá los datos generados en Meta Business Manager (conexión manual — PLAN.md §6.2).",
+      "connectHelp": "Ingresá los datos generados en Meta Business Manager.",
       "wabaId": "WABA ID",
       "phoneNumberId": "Phone Number ID",
       "displayNumber": "Número (para mostrar)",
@@ -257,6 +257,39 @@
         "completed": "Completado",
         "failed": "Falló",
         "cancelled": "Cancelado"
+      },
+      "editor": {
+        "triggerNode": "Disparador",
+        "saveDraft": "Guardar borrador",
+        "publish": "Publicar",
+        "draftSaved": "Borrador guardado",
+        "published": "Flujo publicado y activo",
+        "deleteNode": "Eliminar nodo",
+        "palette": {
+          "send_whatsapp": "Enviar WhatsApp",
+          "send_template": "Enviar plantilla",
+          "add_tag": "Agregar etiqueta",
+          "remove_tag": "Quitar etiqueta",
+          "move_deal_stage": "Mover etapa",
+          "assign_user": "Asignar usuario",
+          "create_note": "Crear nota",
+          "has_tag": "¿Tiene etiqueta?",
+          "deal_in_stage": "¿En etapa?",
+          "business_hours": "¿Horario de atención?",
+          "has_replied_since": "¿Respondió?",
+          "wait_duration": "Esperar",
+          "wait_for_reply": "Esperar respuesta"
+        },
+        "fields": {
+          "text": "Texto",
+          "textPlaceholder": "Hola {tag}…",
+          "template": "Plantilla",
+          "language": "Idioma",
+          "tagId": "ID de etiqueta",
+          "stageId": "ID de etapa",
+          "userId": "ID de usuario",
+          "minutes": "Minutos"
+        }
       }
     }
   },
@@ -279,9 +312,7 @@
       },
       "suspend": "Suspender",
       "activate": "Activar",
-      "impersonate": "Ver como",
-      "viewDetail": "Ver detalle",
-      "createdAt": "Creada"
+      "impersonate": "Ver como"
     },
     "subscriptions": {
       "title": "Suscripción",

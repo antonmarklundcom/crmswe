@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { computeTotals } from "./quotes";
+import { computeTotals } from "./totals";
 
 // computeTotals is pure, so it runs everywhere; everything else needs a real
 // MySQL (transactional numbering can't be faked) and follows the same

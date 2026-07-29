@@ -79,7 +79,7 @@ Meta connection.
       with the correct one returns 200
 - [ ] `webhook_events` table has rows older than 30 days pruned (check
       after the pruning chain has had time to run once, or trigger it
-      manually — see `docs/DEPLOY.md` §4)
+      manually — see `docs/DEPLOY.md` §5)
 - [ ] If Sentry is configured: trigger a deliberate error (e.g. a bad
       route) and confirm it shows up in the Sentry project within a
       couple minutes
@@ -89,5 +89,5 @@ Meta connection.
 ## If anything fails
 
 Don't leave a failing smoke test unresolved before calling a deploy done —
-either fix forward or roll back per `docs/DEPLOY.md` §6, then re-run this
+either fix forward or roll back per `docs/DEPLOY.md` §7, then re-run this
 checklist before considering the deploy complete.

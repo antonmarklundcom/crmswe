@@ -1,13 +1,15 @@
-import { useTranslations } from "next-intl";
-import { Button } from "@/components/ui/button";
+import { redirect } from "next/navigation";
+import { headers } from "next/headers";
+import { auth } from "@/lib/auth/server";
 
-export default function Home() {
-  const t = useTranslations("common");
+// "/" carries no session guard of its own — (app)/layout.tsx and
+// (superadmin)/layout.tsx each redirect to /login when unauthenticated, but
+// only once you're already inside one of those route groups. Route straight
+// to the right area (or /login) instead of showing a bare landing page.
+export default async function Home() {
+  const session = await auth.api.getSession({ headers: await headers() });
+  const user = session?.user as { isSuperadmin?: boolean | null } | undefined;
 
-  return (
-    <main className="flex flex-1 flex-col items-center justify-center gap-4">
-      <h1 className="text-2xl font-semibold">{t("appName")}</h1>
-      <Button>{t("save")}</Button>
-    </main>
-  );
+  if (!user) redirect("/login");
+  redirect(user.isSuperadmin ? "/tenants" : "/dashboard");
 }

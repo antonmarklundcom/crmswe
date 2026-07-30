@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
-import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { getTenantContext } from "@/modules/tenancy/context";
+import { AppNav, type NavGroup } from "@/components/app-nav";
 
 // Tenant suspension/expiry enforcement (PLAN.md §10 1B: "grace → read-only
 // banner → locked"). Runs server-side, in the Node.js runtime, so it can
@@ -36,33 +36,65 @@ export default async function AppLayout({
     ) : null;
 
   const t = await getTranslations("app.nav");
+  const tc = await getTranslations("common");
+  const isAdmin = ctx.role === "admin";
+
+  // Grouped so the nav reads as a product rather than a list of routes: what
+  // you work in daily, what feeds it, and what you configure once.
+  const groups: NavGroup[] = [
+    {
+      label: null,
+      items: [{ href: "/dashboard", label: t("dashboard"), icon: "dashboard" }],
+    },
+    {
+      label: t("groups.crm"),
+      items: [
+        { href: "/contacts", label: t("contacts"), icon: "contacts" },
+        { href: "/pipeline", label: t("pipeline"), icon: "pipeline" },
+        { href: "/inbox", label: t("inbox"), icon: "inbox" },
+        { href: "/quotes", label: t("quotes"), icon: "quotes" },
+        { href: "/products", label: t("products"), icon: "products" },
+      ],
+    },
+    {
+      label: t("groups.capture"),
+      items: [
+        { href: "/automations", label: t("automations"), icon: "automations" },
+        { href: "/forms", label: t("forms"), icon: "forms" },
+        ...(isAdmin
+          ? [{ href: "/sites", label: t("sites"), icon: "sites" as const }]
+          : []),
+      ],
+    },
+    {
+      label: t("groups.settings"),
+      items: [
+        ...(isAdmin
+          ? [
+              { href: "/whatsapp", label: t("whatsapp"), icon: "whatsapp" as const },
+              { href: "/settings", label: t("settings"), icon: "settings" as const },
+            ]
+          : []),
+        // Phase 2 (§9). Present but inert so the roadmap is visible in the
+        // product itself, per §8's "nav item exists, disabled".
+        {
+          href: "/factura-electronica",
+          label: t("facturaElectronica"),
+          icon: "facturaElectronica" as const,
+          disabled: true,
+          badge: t("soon"),
+        },
+      ],
+    },
+  ];
 
   return (
     <div className="flex flex-1 flex-col">
       {graceBanner}
-      <nav className="flex gap-4 border-b px-6 py-3 text-sm">
-        <Link href="/dashboard">{t("dashboard")}</Link>
-        <Link href="/contacts">{t("contacts")}</Link>
-        <Link href="/pipeline">{t("pipeline")}</Link>
-        <Link href="/inbox">{t("inbox")}</Link>
-        <Link href="/quotes">{t("quotes")}</Link>
-        <Link href="/products">{t("products")}</Link>
-        <Link href="/automations">{t("automations")}</Link>
-        <Link href="/forms">{t("forms")}</Link>
-        {ctx.role === "admin" && <Link href="/sites">{t("sites")}</Link>}
-        {ctx.role === "admin" && <Link href="/whatsapp">{t("whatsapp")}</Link>}
-        {ctx.role === "admin" && <Link href="/settings">{t("settings")}</Link>}
-        {/* Phase 2 (§9). Present but inert so the roadmap is visible in the
-            product itself, per §8's "nav item exists, disabled". */}
-        <span
-          aria-disabled="true"
-          title={t("facturaElectronica")}
-          className="cursor-not-allowed text-muted-foreground/60"
-        >
-          {t("facturaElectronica")}
-        </span>
-      </nav>
-      <div className="flex-1 p-6">{children}</div>
+      <div className="flex flex-1 flex-col md:flex-row">
+        <AppNav groups={groups} appName={tc("appName")} />
+        <div className="min-w-0 flex-1 p-6">{children}</div>
+      </div>
     </div>
   );
 }

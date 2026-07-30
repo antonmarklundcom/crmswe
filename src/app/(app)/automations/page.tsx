@@ -1,9 +1,12 @@
 import Link from "next/link";
+import { Workflow } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { requireTenantContext } from "@/modules/tenancy/context";
 import { listFlows } from "@/modules/automations/flows";
 import { TRIGGER_TYPES } from "@/modules/automations/graph";
 import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/empty-state";
+import { PageHeader } from "@/components/page-header";
 import { createFlowAction } from "./actions";
 
 export default async function AutomationsPage() {
@@ -13,26 +16,35 @@ export default async function AutomationsPage() {
 
   return (
     <div className="flex flex-col gap-8">
-      <section>
-        <h1 className="mb-2 text-xl font-semibold">{t("title")}</h1>
-        <p className="mb-4 max-w-2xl text-sm text-muted-foreground">{t("intro")}</p>
-        <ul className="flex flex-col gap-2 text-sm">
-          {flows.map((flow) => (
-            <li key={flow.id} className="rounded-md border px-3 py-2">
-              <Link href={`/automations/${flow.id}`} className="font-medium underline">
-                {flow.name}
-              </Link>
-              <p className="text-muted-foreground">
-                {t(`triggers.${flow.triggerType}` as "triggers.form_submitted")} ·{" "}
-                {t(`statusValues.${flow.status}` as "statusValues.draft")}
-              </p>
-            </li>
-          ))}
-          {flows.length === 0 && <li className="text-muted-foreground">{t("empty")}</li>}
-        </ul>
+      <section className="flex flex-col gap-4">
+        <PageHeader title={t("title")} description={t("intro")} />
+
+        {flows.length === 0 ? (
+          <EmptyState
+            icon={Workflow}
+            title={t("emptyTitle")}
+            description={t("emptyBody")}
+            actionLabel={t("createFlow")}
+            actionHref="#nuevo-flujo"
+          />
+        ) : (
+          <ul className="flex flex-col gap-2 text-sm">
+            {flows.map((flow) => (
+              <li key={flow.id} className="rounded-md border px-3 py-2">
+                <Link href={`/automations/${flow.id}`} className="font-medium underline">
+                  {flow.name}
+                </Link>
+                <p className="text-muted-foreground">
+                  {t(`triggers.${flow.triggerType}` as "triggers.form_submitted")} ·{" "}
+                  {t(`statusValues.${flow.status}` as "statusValues.draft")}
+                </p>
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
 
-      <section>
+      <section id="nuevo-flujo" className="scroll-mt-6">
         <h2 className="mb-4 text-lg font-semibold">{t("createTitle")}</h2>
         <form action={createFlowAction} className="flex max-w-sm flex-col gap-4">
           <label className="flex flex-col gap-1 text-sm">

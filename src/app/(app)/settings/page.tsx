@@ -3,6 +3,7 @@ import { requireTenantContext } from "@/modules/tenancy/context";
 import { getTenant } from "@/modules/tenancy/tenants";
 import type { BusinessHours, TenantSettings } from "@/modules/tenancy/settings";
 import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/page-header";
 import { updateBrandingAction, updateBusinessHoursAction, updateTimezoneAction } from "./actions";
 
 const DAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"] as const;
@@ -31,9 +32,7 @@ export default async function SettingsPage() {
 
   return (
     <div className="flex flex-col gap-8">
-      <section>
-        <h1 className="mb-4 text-xl font-semibold">{t("title")}</h1>
-      </section>
+      <PageHeader title={t("title")} description={t("intro")} />
 
       <section>
         <h2 className="mb-4 text-lg font-semibold">{t("brandingTitle")}</h2>

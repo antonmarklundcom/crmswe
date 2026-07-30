@@ -1,8 +1,11 @@
+import { Smartphone } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { requireTenantContext } from "@/modules/tenancy/context";
 import { listAccountsForTenant } from "@/modules/whatsapp/accounts";
 import { listTemplates } from "@/modules/whatsapp/templates";
 import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/empty-state";
+import { PageHeader } from "@/components/page-header";
 import { connectAccountAction, syncTemplatesAction } from "./actions";
 
 export default async function WhatsappPage() {
@@ -24,8 +27,18 @@ export default async function WhatsappPage() {
 
   return (
     <div className="flex flex-col gap-8">
-      <section>
-        <h1 className="mb-4 text-xl font-semibold">{t("title")}</h1>
+      <section className="flex flex-col gap-4">
+        <PageHeader title={t("title")} description={t("intro")} />
+
+        {accounts.length === 0 ? (
+          <EmptyState
+            icon={Smartphone}
+            title={t("emptyTitle")}
+            description={t("emptyBody")}
+            actionLabel={t("connect")}
+            actionHref="#conectar-numero"
+          />
+        ) : (
         <ul className="flex flex-col gap-2 text-sm">
           {accounts.map((account) => {
             const templates = templatesByAccount.get(account.id) ?? [];
@@ -63,11 +76,11 @@ export default async function WhatsappPage() {
               </li>
             );
           })}
-          {accounts.length === 0 && <li className="text-muted-foreground">{t("empty")}</li>}
         </ul>
+        )}
       </section>
 
-      <section>
+      <section id="conectar-numero" className="scroll-mt-6">
         <h2 className="mb-4 text-lg font-semibold">{t("connectTitle")}</h2>
         <p className="mb-4 max-w-md text-sm text-muted-foreground">{t("connectHelp")}</p>
         <form action={connectAccountAction} className="flex max-w-sm flex-col gap-4">

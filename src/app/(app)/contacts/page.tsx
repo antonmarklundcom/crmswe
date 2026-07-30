@@ -1,8 +1,11 @@
 import Link from "next/link";
+import { Users } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { requireTenantContext } from "@/modules/tenancy/context";
 import { listContacts, listTags } from "@/modules/crm/contacts";
 import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/empty-state";
+import { PageHeader } from "@/components/page-header";
 import { createContactAction, createTagAction } from "./actions";
 
 export default async function ContactsPage({
@@ -20,12 +23,19 @@ export default async function ContactsPage({
     listTags(ctx),
   ]);
 
+  const hasFilters = Boolean(search || tagId);
+  // A first-time tenant and a search that found nothing are different
+  // problems: one needs an explanation of the feature, the other just needs
+  // its filters cleared.
+  const isFirstTime = contacts.length === 0 && !hasFilters;
+
   return (
     <div className="flex flex-col gap-8">
-      <section>
-        <h1 className="mb-4 text-xl font-semibold">{t("title")}</h1>
+      <section className="flex flex-col gap-4">
+        <PageHeader title={t("title")} description={t("intro")} />
 
-        <form className="mb-4 flex flex-wrap gap-2" method="get">
+        {!isFirstTime && (
+        <form className="flex flex-wrap gap-2" method="get">
           <input
             name="search"
             defaultValue={search ?? ""}
@@ -44,7 +54,25 @@ export default async function ContactsPage({
             {t("filter")}
           </Button>
         </form>
+        )}
 
+        {isFirstTime ? (
+          <EmptyState
+            icon={Users}
+            title={t("emptyTitle")}
+            description={t("emptyBody")}
+            actionLabel={t("emptyAction")}
+            actionHref="#nuevo-contacto"
+          />
+        ) : contacts.length === 0 ? (
+          <EmptyState
+            icon={Users}
+            title={t("noResults")}
+            description={t("noResultsBody")}
+            actionLabel={t("clearFilters")}
+            actionHref="/contacts"
+          />
+        ) : (
         <table className="w-full text-left text-sm">
           <thead>
             <tr className="border-b">
@@ -67,18 +95,12 @@ export default async function ContactsPage({
                 <td className="py-2">{contact.source}</td>
               </tr>
             ))}
-            {contacts.length === 0 && (
-              <tr>
-                <td colSpan={4} className="py-4 text-center text-muted-foreground">
-                  {t("empty")}
-                </td>
-              </tr>
-            )}
           </tbody>
         </table>
+        )}
       </section>
 
-      <section>
+      <section id="nuevo-contacto" className="scroll-mt-6">
         <h2 className="mb-4 text-lg font-semibold">{t("createTitle")}</h2>
         <form action={createContactAction} className="flex max-w-sm flex-col gap-4">
           <label className="flex flex-col gap-1 text-sm">

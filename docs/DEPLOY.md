@@ -141,7 +141,35 @@ automatically with the app — no separate process to manage.
    between them is the usual cause of a rollback still crashing).
 4. Confirm with `docs/SMOKE_TEST.md` before calling the rollback done.
 
-## 8. Post-deploy checklist
+## 8. Diagnosing a blank HTTP 500
+
+In production Next.js returns an empty 500 body for any unhandled error, and
+the login form shows one generic "wrong credentials" message no matter what
+actually failed — so a broken database connection and a wrong password look
+identical from the browser. Ask the app directly instead:
+
+```
+curl -s -i -H "x-cron-secret: <CRON_SECRET>" https://<app-domain>/api/health/db
+```
+
+- `200 {"ok":true,...}` — the app can reach MySQL; the 500 is elsewhere.
+- `503` with `"code":"ER_ACCESS_DENIED_ERROR"` — credentials/grant problem.
+  Check the reported `target.host`/`target.user`/`target.database` against
+  hPanel; note the app connects over the **internal** host, whose MySQL grant
+  is separate from the Remote MySQL allowlist used for migrations, so
+  changing the password in one place does not necessarily fix the other. If
+  the user shows as `'user'@'::1'` in the server log, see below.
+- `503` with `ECONNREFUSED` — wrong host/port.
+- `401` — `CRON_SECRET` in hPanel doesn't match what you sent.
+
+**`Access denied for user '...'@'::1'`**: Node 18+ resolves `localhost` to
+the IPv6 loopback `::1`, which Hostinger's grant (`@localhost`/`@127.0.0.1`)
+doesn't cover. `src/db/url.ts` now rewrites a `localhost` (or `[::1]`) host
+in `DATABASE_URL` to `127.0.0.1` at pool creation, so a deploy of this code
+fixes it without an env change; setting `DATABASE_URL` to `127.0.0.1`
+directly is equivalent.
+
+## 9. Post-deploy checklist
 
 - [ ] App loads at the deployed URL over HTTPS
 - [ ] Login works with real (not seed-default) admin credentials

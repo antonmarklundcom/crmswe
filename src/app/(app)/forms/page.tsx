@@ -1,9 +1,12 @@
+import { ClipboardList } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { requireTenantContext } from "@/modules/tenancy/context";
 import { getTenant } from "@/modules/tenancy/tenants";
 import { listForms } from "@/modules/forms/forms";
 import { listPipelines, listStagesForPipeline } from "@/modules/crm/pipelines";
 import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/empty-state";
+import { PageHeader } from "@/components/page-header";
 import { createFormAction } from "./actions";
 
 export default async function FormsPage() {
@@ -20,22 +23,32 @@ export default async function FormsPage() {
 
   return (
     <div className="flex flex-col gap-8">
-      <section>
-        <h1 className="mb-4 text-xl font-semibold">{t("title")}</h1>
-        <ul className="flex flex-col gap-2 text-sm">
-          {forms.map((form) => (
-            <li key={form.id} className="rounded-md border px-3 py-2">
-              <p className="font-medium">{form.name}</p>
-              <p className="text-muted-foreground">
-                {tenant && `/f/${tenant.slug}/${form.slug}`}
-              </p>
-            </li>
-          ))}
-          {forms.length === 0 && <li className="text-muted-foreground">{t("empty")}</li>}
-        </ul>
+      <section className="flex flex-col gap-4">
+        <PageHeader title={t("title")} description={t("intro")} />
+
+        {forms.length === 0 ? (
+          <EmptyState
+            icon={ClipboardList}
+            title={t("emptyTitle")}
+            description={t("emptyBody")}
+            actionLabel={t("createForm")}
+            actionHref="#nuevo-formulario"
+          />
+        ) : (
+          <ul className="flex flex-col gap-2 text-sm">
+            {forms.map((form) => (
+              <li key={form.id} className="rounded-md border px-3 py-2">
+                <p className="font-medium">{form.name}</p>
+                <p className="text-muted-foreground">
+                  {tenant && `/f/${tenant.slug}/${form.slug}`}
+                </p>
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
 
-      <section>
+      <section id="nuevo-formulario" className="scroll-mt-6">
         <h2 className="mb-4 text-lg font-semibold">{t("createTitle")}</h2>
         <form action={createFormAction} className="flex max-w-sm flex-col gap-4">
           <label className="flex flex-col gap-1 text-sm">

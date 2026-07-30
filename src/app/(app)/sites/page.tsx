@@ -1,3 +1,4 @@
+import { Globe } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { requireTenantContext } from "@/modules/tenancy/context";
 import { listSites } from "@/modules/sites/sites";
@@ -6,6 +7,8 @@ import { listAccountsForTenant } from "@/modules/whatsapp/accounts";
 import { getLeadStats } from "@/modules/leads/stats";
 import { env } from "@/lib/config/env";
 import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/empty-state";
+import { PageHeader } from "@/components/page-header";
 import { NewSiteForm, RotateKeyButton, type KeyLabels } from "./SiteKeyForms";
 import { toggleSiteActiveAction, updateSiteRoutingAction } from "./actions";
 
@@ -56,11 +59,10 @@ export default async function SitesPage() {
 
   return (
     <div className="flex flex-col gap-8">
-      <section>
-        <h1 className="mb-2 text-xl font-semibold">{t("title")}</h1>
-        <p className="mb-4 max-w-2xl text-sm text-muted-foreground">{t("intro")}</p>
+      <section className="flex flex-col gap-4">
+        <PageHeader title={t("title")} description={t("intro")} />
 
-        <div className="mb-4 flex gap-6 text-sm">
+        <div className="flex gap-6 text-sm">
           <span>
             <strong>{stats.total}</strong> {t("totalLeads")}
           </span>
@@ -69,6 +71,15 @@ export default async function SitesPage() {
           </span>
         </div>
 
+        {sites.length === 0 ? (
+          <EmptyState
+            icon={Globe}
+            title={t("emptyTitle")}
+            description={t("emptyBody")}
+            actionLabel={t("createSite")}
+            actionHref="#nuevo-sitio"
+          />
+        ) : (
         <ul className="flex flex-col gap-4">
           {sites.map((site) => (
             <li key={site.id} className="flex flex-col gap-3 rounded-md border px-4 py-3">
@@ -133,11 +144,11 @@ export default async function SitesPage() {
               <RotateKeyButton siteId={site.id} labels={labels} />
             </li>
           ))}
-          {sites.length === 0 && <li className="text-muted-foreground">{t("empty")}</li>}
         </ul>
+        )}
       </section>
 
-      <section>
+      <section id="nuevo-sitio" className="scroll-mt-6">
         <h2 className="mb-4 text-lg font-semibold">{t("createTitle")}</h2>
         <NewSiteForm
           labels={labels}

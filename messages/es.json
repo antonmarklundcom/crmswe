@@ -48,11 +48,73 @@
       "sites": "Sitios",
       "quotes": "Presupuestos",
       "products": "Productos",
-      "facturaElectronica": "Factura electrónica — Próximamente",
-      "automations": "Automatizaciones"
+      "facturaElectronica": "Factura electrónica",
+      "soon": "Próximamente",
+      "automations": "Automatizaciones",
+      "groups": {
+        "crm": "CRM",
+        "capture": "Captación",
+        "settings": "Configuración"
+      }
+    },
+    "dashboard": {
+      "title": "Panel de {tenant}",
+      "subtitle": "Tu operación de hoy: negocios abiertos, mensajes sin responder y presupuestos en curso.",
+      "stats": {
+        "openDeals": "Negocios abiertos",
+        "openDealsHint": "{value} PYG en juego",
+        "unread": "Mensajes sin leer",
+        "unreadHint": "{count, plural, =0 {Sin conversaciones pendientes} one {en # conversación} other {en # conversaciones}}",
+        "pendingQuotes": "Presupuestos pendientes",
+        "pendingQuotesHint": "Borradores y enviados sin respuesta",
+        "contacts": "Contactos",
+        "contactsHint": "Personas en tu base"
+      },
+      "checklist": {
+        "title": "Primeros pasos",
+        "intro": "Completá estos pasos para dejar el CRM funcionando de punta a punta. Cada uno se marca solo cuando lo hacés.",
+        "progress": "{done} de {total} listos",
+        "steps": {
+          "whatsapp": {
+            "title": "Conectá tu número de WhatsApp",
+            "description": "Es el canal principal: los mensajes de tus clientes entran a la bandeja y podés responder desde acá.",
+            "action": "Conectar"
+          },
+          "contact": {
+            "title": "Cargá tu primer contacto",
+            "description": "El teléfono identifica al cliente. Todo lo demás —negocios, mensajes, presupuestos— cuelga del contacto.",
+            "action": "Agregar contacto"
+          },
+          "deal": {
+            "title": "Abrí tu primer negocio en el pipeline",
+            "description": "El tablero muestra en qué etapa está cada oportunidad y la vas arrastrando hasta ganarla.",
+            "action": "Crear negocio"
+          },
+          "quote": {
+            "title": "Enviá tu primer presupuesto",
+            "description": "Armá el presupuesto, generá el PDF y mandalo por WhatsApp sin salir del sistema.",
+            "action": "Crear presupuesto"
+          },
+          "capture": {
+            "title": "Conectá una fuente de leads",
+            "description": "Sumá un sitio que envíe sus leads por API o publicá un formulario: los contactos entran solos al pipeline.",
+            "action": "Configurar"
+          },
+          "automation": {
+            "title": "Activá tu primera automatización",
+            "description": "Respuestas automáticas y seguimientos: por ejemplo, si no contestan en dos días, se envía un recordatorio.",
+            "action": "Crear flujo"
+          }
+        }
+      },
+      "activity": {
+        "title": "Actividad reciente",
+        "empty": "Todavía no hay actividad. Apenas cargues un contacto o recibas un mensaje, aparece acá."
+      }
     },
     "contacts": {
       "title": "Contactos",
+      "intro": "Tu base de clientes y prospectos. El teléfono es la identidad de cada contacto: los mensajes de WhatsApp, los negocios y los presupuestos se enganchan solos con él.",
       "searchPlaceholder": "Buscar por nombre, teléfono o correo",
       "allTags": "Todas las etiquetas",
       "filter": "Filtrar",
@@ -62,6 +124,12 @@
       "source": "Origen",
       "notes": "Notas",
       "empty": "Todavía no hay contactos",
+      "emptyTitle": "Todavía no hay contactos",
+      "emptyBody": "Cargá tu primer contacto con nombre y teléfono, o dejá que entren solos desde un formulario o desde WhatsApp.",
+      "emptyAction": "Cargar contacto",
+      "noResults": "Ningún contacto coincide con la búsqueda",
+      "noResultsBody": "Probá con otro nombre, teléfono o etiqueta.",
+      "clearFilters": "Limpiar filtros",
       "createTitle": "Nuevo contacto",
       "createTagTitle": "Nueva etiqueta",
       "addTag": "Agregar etiqueta",
@@ -80,7 +148,14 @@
       }
     },
     "pipeline": {
+      "title": "Pipeline",
+      "intro": "Cada negocio avanza de etapa arrastrándolo por el tablero. El cambio de etapa queda en el historial del contacto y puede disparar automatizaciones.",
       "noPipeline": "Todavía no hay un pipeline configurado",
+      "noPipelineBody": "El pipeline se crea junto con tu empresa. Si no ves ninguno, escribinos para que lo configuremos.",
+      "emptyTitle": "El tablero está vacío",
+      "emptyBody": "Abrí tu primer negocio y arrastralo entre etapas a medida que avanza la venta.",
+      "needContact": "Primero necesitás al menos un contacto para abrir un negocio.",
+      "goToContacts": "Ir a contactos",
       "createDealTitle": "Nuevo negocio",
       "dealTitle": "Título",
       "contact": "Contacto",
@@ -90,7 +165,11 @@
     },
     "forms": {
       "title": "Formularios",
+      "intro": "Formularios alojados acá, para sitios que no tienen backend propio. Cada envío crea o actualiza el contacto y puede abrir un negocio en la etapa que elijas.",
       "empty": "Todavía no hay formularios",
+      "emptyTitle": "Todavía no hay formularios",
+      "emptyBody": "Creá un formulario y pegá su enlace en tu sitio o en tu perfil: los datos entran directo al CRM, sin planillas de por medio.",
+      "publicUrl": "Enlace público",
       "createTitle": "Nuevo formulario",
       "name": "Nombre",
       "slug": "Slug",
@@ -100,6 +179,7 @@
     },
     "settings": {
       "title": "Configuración",
+      "intro": "Los datos de tu empresa que usa el resto del sistema: la marca que sale en los PDF de presupuesto y el horario que respetan las automatizaciones.",
       "adminOnly": "Solo los administradores pueden ver esta página",
       "brandingTitle": "Marca",
       "logoUrl": "URL del logo",
@@ -118,8 +198,11 @@
     },
     "whatsapp": {
       "title": "WhatsApp",
+      "intro": "Conectá los números de tu empresa. Los mensajes entrantes llegan a la bandeja y las plantillas aprobadas te dejan escribir aunque hayan pasado más de 24 horas.",
       "adminOnly": "Solo los administradores pueden ver esta página",
       "empty": "Todavía no hay números conectados",
+      "emptyTitle": "Todavía no hay números conectados",
+      "emptyBody": "Sin un número conectado no entran ni salen mensajes. Generá los datos en Meta Business Manager y cargalos en el formulario de abajo.",
       "status": {
         "connected": "Conectado",
         "disconnected": "Desconectado",
@@ -137,7 +220,13 @@
     },
     "inbox": {
       "title": "Bandeja de entrada",
+      "intro": "Todas las conversaciones de WhatsApp de tu equipo en un solo lugar, con el historial completo de cada cliente.",
       "empty": "Todavía no hay conversaciones",
+      "emptyTitle": "Todavía no hay conversaciones",
+      "emptyBody": "Las conversaciones aparecen acá apenas un cliente te escribe al número conectado, o cuando vos le escribís primero con una plantilla.",
+      "emptyNoAccountTitle": "Conectá un número para empezar",
+      "emptyNoAccountBody": "La bandeja se llena con los mensajes de tu número de WhatsApp Business. Todavía no hay ninguno conectado.",
+      "emptyAction": "Conectar WhatsApp",
       "noMessages": "Todavía no hay mensajes",
       "messagePlaceholder": "Escribí un mensaje…",
       "send": "Enviar",
@@ -151,6 +240,8 @@
       "intro": "Cada sitio de tu red envía sus leads acá con su propia clave. Los leads de un sitio caen en la etapa que elijas, así odontología y materiales no se mezclan.",
       "adminOnly": "Solo los administradores pueden ver esta página",
       "empty": "Todavía no hay sitios conectados",
+      "emptyTitle": "Todavía no hay sitios conectados",
+      "emptyBody": "Conectá el primer sitio de tu red para que sus leads entren automáticamente al pipeline, con su campaña y su origen. Abajo está el código que va en el backend del sitio.",
       "createTitle": "Conectar nuevo sitio",
       "createSite": "Crear sitio",
       "name": "Nombre",
@@ -176,7 +267,10 @@
     },
     "products": {
       "title": "Productos",
+      "intro": "Tu catálogo para armar presupuestos más rápido. No es obligatorio: en un presupuesto también podés escribir ítems a mano.",
       "empty": "Todavía no hay productos",
+      "emptyTitle": "Todavía no hay productos",
+      "emptyBody": "Cargá los productos o servicios que vendés seguido con su precio, y aparecen listos para elegir al armar un presupuesto.",
       "createTitle": "Nuevo producto",
       "name": "Nombre",
       "description": "Descripción",
@@ -187,9 +281,13 @@
     },
     "quotes": {
       "title": "Presupuestos",
+      "intro": "Armá el presupuesto, generá el PDF con tu marca y mandalo por WhatsApp o por enlace público. La factura electrónica llega en una etapa posterior.",
       "empty": "Todavía no hay presupuestos",
+      "emptyTitle": "Todavía no hay presupuestos",
+      "emptyBody": "Elegí un contacto, sumá los ítems y generá el PDF. Podés enviarlo por WhatsApp sin salir del sistema.",
       "createTitle": "Nuevo presupuesto",
       "needContact": "Primero necesitás al menos un contacto.",
+      "goToContacts": "Ir a contactos",
       "number": "Número",
       "status": "Estado",
       "contact": "Contacto",
@@ -226,6 +324,8 @@
       "title": "Automatizaciones",
       "intro": "Cada flujo empieza con un disparador y sigue una secuencia de condiciones, esperas y acciones. Publicá el flujo para activarlo.",
       "empty": "Todavía no hay flujos",
+      "emptyTitle": "Todavía no hay flujos",
+      "emptyBody": "Un flujo típico: entra un lead del sitio, se le manda una plantilla de WhatsApp, se espera la respuesta dos días y, si no contesta, sale un recordatorio.",
       "createTitle": "Nuevo flujo",
       "createFlow": "Crear flujo",
       "name": "Nombre",

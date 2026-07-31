@@ -16,6 +16,18 @@ export async function listConversations(ctx: TenantContext) {
   });
 }
 
+/** Conversations belonging to one contact — the contact detail's
+ * conversation tab, where the thread is shown in the contact's context
+ * rather than the inbox's. */
+export async function listConversationsForContact(ctx: TenantContext, contactId: string) {
+  const rows = await tenantDb(ctx).select(conversations, eq(conversations.contactId, contactId));
+  return rows.sort((a, b) => {
+    const at = a.lastMessageAt?.getTime() ?? 0;
+    const bt = b.lastMessageAt?.getTime() ?? 0;
+    return bt - at;
+  });
+}
+
 export async function getConversation(ctx: TenantContext, id: string) {
   const [row] = await tenantDb(ctx).select(conversations, eq(conversations.id, id));
   return row ?? null;

@@ -148,6 +148,19 @@
         "form_submission": "Formulario recibido",
         "quote_sent": "Presupuesto enviado",
         "system": "Sistema"
+      },
+      "editTitle": "Datos del contacto",
+      "conversationEmpty": "Todavía no hay conversación",
+      "conversationEmptyBody": "Cuando esta persona te escriba por WhatsApp —o cuando vos le escribas primero con una plantilla— el chat aparece acá, sin salir del contacto.",
+      "timelineMessageIn": "Mensaje recibido",
+      "timelineMessageOut": "Mensaje enviado",
+      "timelineMedia": "Archivo adjunto",
+      "timelineQuote": "Presupuesto {number}",
+      "timelineLead": "Lead recibido",
+      "tabs": {
+        "conversacion": "Conversación",
+        "actividad": "Actividad",
+        "datos": "Datos"
       }
     },
     "pipeline": {
@@ -281,7 +294,8 @@
       "windowClosed": "La ventana de 24 horas está cerrada. Solo se pueden enviar plantillas aprobadas.",
       "windowOpen": "Ventana de 24 horas abierta — se cierra en {remaining}",
       "sendTemplate": "Enviar plantilla",
-      "noTemplates": "Todavía no hay plantillas aprobadas. Sincronizalas desde la página de WhatsApp."
+      "noTemplates": "Todavía no hay plantillas aprobadas. Sincronizalas desde la página de WhatsApp.",
+      "windowOpenShort": "Ventana de 24 horas abierta — se cierra en"
     },
     "sites": {
       "title": "Sitios",

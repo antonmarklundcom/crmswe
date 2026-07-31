@@ -667,6 +667,54 @@ no flow was ever built — manual connect is the only path today. Required befor
 tenants can connect their own numbers without the operator handling access tokens by
 hand, and therefore before SaaS sale.
 
+### 1O — AI auto-reply *(owner request; provider-neutral by design)*
+
+An LLM drafts or sends WhatsApp replies. The engine already has the hard
+parts — §7.1's node graph, the job queue, and the 24h-window rules — so this
+is a **new automation action node**, not a new subsystem. Sketch:
+
+- `src/lib/ai/` with a `generateReply(prompt, context)` interface and one
+  driver per provider, chosen by env exactly like `lib/storage`. **OpenAI and
+  Gemini are the intended drivers** (owner preference; unrelated to which
+  model builds this repo). Keep the interface boringly small — a prompt in, a
+  string out — so swapping providers is a config change, not a rewrite.
+- Tenant settings hold the business context the model needs: what the company
+  sells, tone, hours, what it must never promise (prices, delivery dates).
+- New node type `ai_reply` with a **draft vs. send** switch. Draft posts a
+  suggestion into the conversation for a rep to approve; send delivers it.
+  Start every tenant on draft — an LLM inventing a price in Guaraní is a real
+  commercial risk, and the trust has to be earned before it goes autonomous.
+- Guardrails that matter more than the model choice: never send outside the
+  24h window (templates only, and templates are pre-approved by Meta so an
+  LLM cannot author them), hard cap on replies per conversation per day, a
+  handoff keyword that permanently silences the bot for that contact, and
+  every AI message stored with its prompt and model for audit.
+- Cost is per-token and per-tenant, so meter it: store token counts on the
+  message row, expose a monthly total in settings.
+
+**Exit**: a tenant enables AI replies on one flow, sees drafts for a week,
+then switches that flow to autonomous with a per-conversation kill switch.
+
+### 1P — Google Business Profile *(idea; not scheduled)*
+
+GBP is where the owner's local-SEO work and this CRM meet: reviews, questions,
+and the "message" button all generate leads that currently live outside the
+system. Worth building eventually:
+
+- **Reviews into the CRM**: pull reviews per location, alert on ratings below
+  a threshold, draft replies with the same AI layer as 1O.
+- **Review requests**: automation action that asks for a review when a deal
+  hits a won stage — the highest-leverage half, and it needs no Google API at
+  all, just a link over WhatsApp. **Build this first**; it delivers most of
+  the value with none of the OAuth work.
+- **GBP messages** into the unified inbox, alongside WhatsApp.
+- **Posts** scheduled from the CRM.
+
+Cost note: the Business Profile APIs are free but **access is request-gated** —
+Google reviews each project before granting it, and turnaround is measured in
+weeks. Treat approval as a prerequisite with lead time, the same way §12 Q1
+treats Meta verification.
+
 ### Session estimate
 
 | Milestone | Sessions (cumulative) |
@@ -677,6 +725,8 @@ hand, and therefore before SaaS sale.
 | Operable without SSH (1I) | **~27** |
 | CRM surface parity (1J) | **~31** |
 | Sellable as SaaS (through 1N) | **~37** |
+| AI auto-reply (1O) | **~40** |
+| Google Business Profile (1P) | unscheduled |
 
 Estimates assume focused build sessions against this spec; Fable review gates (after
 1B, 1D, 1G) are separate short sessions, not counted above.

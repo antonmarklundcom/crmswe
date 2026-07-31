@@ -1,36 +1,92 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { requireTenantContext } from "@/modules/tenancy/context";
 import { getContact, listTags, listTagsForContact } from "@/modules/crm/contacts";
-import { listActivitiesForContact } from "@/modules/crm/activities";
+import { getContactTimeline, type TimelineEntry } from "@/modules/crm/timeline";
 import { listDealsForContact } from "@/modules/crm/deals";
+import {
+  listConversationsForContact,
+  listMessagesForConversation,
+  isWithinFreeFormWindow,
+} from "@/modules/whatsapp/inbox";
+import { listApprovedTemplates } from "@/modules/whatsapp/templates";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { ConversationThread, type ThreadLabels } from "./ConversationThread";
 import {
   addNoteAction,
   addTagToContactAction,
   removeTagFromContactAction,
+  sendContactMessageAction,
+  sendContactTemplateAction,
   updateContactAction,
 } from "../actions";
 
+// Contact record with the whole relationship in one place (PLAN.md §10 1J
+// #2): the WhatsApp conversation, the unified timeline, and the contact's
+// own data. Tabs are URL state rather than client state so each one is a
+// plain server render — no client bundle for what is fundamentally reading.
+
+const TABS = ["conversacion", "actividad", "datos"] as const;
+type Tab = (typeof TABS)[number];
+
+const dateTime = new Intl.DateTimeFormat("es-PY", {
+  day: "2-digit",
+  month: "2-digit",
+  hour: "2-digit",
+  minute: "2-digit",
+});
+
+const number = new Intl.NumberFormat("es-PY");
+
+/** Same countdown the inbox shows — accurate as of page load (§6.5). */
+function formatRemaining(lastInboundAt: Date | null): string {
+  if (!lastInboundAt) return "";
+  const msLeft = lastInboundAt.getTime() + 24 * 60 * 60 * 1000 - Date.now();
+  if (msLeft <= 0) return "";
+  const hours = Math.floor(msLeft / (60 * 60 * 1000));
+  const minutes = Math.floor((msLeft % (60 * 60 * 1000)) / (60 * 1000));
+  return hours > 0 ? `${hours}h ${minutes}min` : `${minutes}min`;
+}
+
 export default async function ContactDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ tab?: string }>;
 }) {
   const { id } = await params;
+  const { tab: rawTab } = await searchParams;
   const ctx = await requireTenantContext();
   const t = await getTranslations("app.contacts");
   const tc = await getTranslations("common");
+  const tq = await getTranslations("app.quotes");
+  const ti = await getTranslations("app.inbox");
 
   const contact = await getContact(ctx, id);
   if (!contact) notFound();
 
-  const [activities, deals, contactTags, allTags] = await Promise.all([
-    listActivitiesForContact(ctx, id),
+  const tab: Tab = TABS.includes(rawTab as Tab) ? (rawTab as Tab) : "conversacion";
+
+  const [timeline, deals, contactTags, allTags, conversations] = await Promise.all([
+    getContactTimeline(ctx, id),
     listDealsForContact(ctx, id),
     listTagsForContact(ctx, id),
     listTags(ctx),
+    listConversationsForContact(ctx, id),
   ]);
+
+  // One contact can in principle have a conversation per connected number;
+  // the most recent is the one worth showing inline.
+  const conversation = conversations[0] ?? null;
+  const [messages, templates] = conversation
+    ? await Promise.all([
+        listMessagesForConversation(ctx, conversation.id),
+        listApprovedTemplates(ctx, conversation.waAccountId),
+      ])
+    : [[], []];
 
   const availableTags = allTags.filter(
     (tag) => !contactTags.some((ct) => ct.id === tag.id),
@@ -40,13 +96,57 @@ export default async function ContactDetailPage({
   const addNote = addNoteAction.bind(null, id);
   const addTag = addTagToContactAction.bind(null, id);
 
-  return (
-    <div className="flex flex-col gap-8">
-      <section>
-        <h1 className="mb-4 text-xl font-semibold">{contact.name}</h1>
-        <p className="text-sm text-muted-foreground">{contact.phone}</p>
+  const threadLabels: ThreadLabels = {
+    empty: t("conversationEmpty"),
+    emptyBody: t("conversationEmptyBody"),
+    noMessages: ti("noMessages"),
+    placeholder: ti("messagePlaceholder"),
+    send: ti("send"),
+    windowOpen: ti("windowOpenShort"),
+    windowClosed: ti("windowClosed"),
+    sendTemplate: ti("sendTemplate"),
+    noTemplates: ti("noTemplates"),
+    media: t("timelineMedia"),
+  };
 
-        <div className="my-4 flex flex-wrap gap-2">
+  function describe(entry: TimelineEntry): { title: string; detail?: string } {
+    switch (entry.kind) {
+      case "activity":
+        return {
+          title: t(`activityTypes.${entry.activityType}` as "activityTypes.note"),
+          detail: entry.text,
+        };
+      case "message":
+        return {
+          title:
+            entry.direction === "in"
+              ? t("timelineMessageIn")
+              : t("timelineMessageOut"),
+          detail: entry.body ?? (entry.hasMedia ? t("timelineMedia") : undefined),
+        };
+      case "quote":
+        return {
+          title: t("timelineQuote", { number: entry.number }),
+          detail: `${tq(`statusValues.${entry.status}` as "statusValues.draft")} · ${number.format(entry.total)} ${entry.currency}`,
+        };
+      case "lead":
+        return {
+          title: t("timelineLead"),
+          detail: entry.campaign ?? entry.pageUrl ?? undefined,
+        };
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-6">
+      <header className="flex flex-col gap-2">
+        <h1 className="text-xl font-semibold">{contact.name}</h1>
+        <p className="text-sm text-muted-foreground">
+          {contact.phone}
+          {contact.email ? ` · ${contact.email}` : ""}
+          {contact.source ? ` · ${contact.source}` : ""}
+        </p>
+        <div className="flex flex-wrap gap-2">
           {contactTags.map((tag) => (
             <form key={tag.id} action={removeTagFromContactAction.bind(null, id, tag.id)}>
               <button
@@ -58,81 +158,151 @@ export default async function ContactDetailPage({
             </form>
           ))}
         </div>
+      </header>
 
-        {availableTags.length > 0 && (
-          <form action={addTag} className="flex max-w-xs gap-2">
-            <select name="tagId" className="flex-1 rounded-md border px-3 py-2 text-sm">
-              {availableTags.map((tag) => (
-                <option key={tag.id} value={tag.id}>
-                  {tag.name}
-                </option>
-              ))}
-            </select>
-            <Button type="submit" size="sm" variant="outline">
-              {t("addTag")}
-            </Button>
-          </form>
-        )}
+      <nav className="flex gap-1 border-b">
+        {TABS.map((candidate) => (
+          <Link
+            key={candidate}
+            href={`/contacts/${id}?tab=${candidate}`}
+            aria-current={candidate === tab ? "page" : undefined}
+            className={cn(
+              "-mb-px border-b-2 px-3 py-2 text-sm transition-colors",
+              candidate === tab
+                ? "border-foreground font-medium"
+                : "border-transparent text-muted-foreground hover:text-foreground",
+            )}
+          >
+            {t(`tabs.${candidate}` as "tabs.conversacion")}
+          </Link>
+        ))}
+      </nav>
 
-        <form action={updateAction} className="mt-6 flex max-w-sm flex-col gap-4">
-          <label className="flex flex-col gap-1 text-sm">
-            {t("name")}
-            <input name="name" defaultValue={contact.name} className="rounded-md border px-3 py-2" />
-          </label>
-          <label className="flex flex-col gap-1 text-sm">
-            {t("email")}
-            <input
-              name="email"
-              type="email"
-              defaultValue={contact.email ?? ""}
-              className="rounded-md border px-3 py-2"
-            />
-          </label>
-          <label className="flex flex-col gap-1 text-sm">
-            {t("notes")}
-            <textarea name="notes" defaultValue={contact.notes ?? ""} className="rounded-md border px-3 py-2" />
-          </label>
-          <Button type="submit">{tc("save")}</Button>
-        </form>
-      </section>
-
-      {deals.length > 0 && (
-        <section>
-          <h2 className="mb-4 text-lg font-semibold">{t("dealsTitle")}</h2>
-          <ul className="flex flex-col gap-2 text-sm">
-            {deals.map((deal) => (
-              <li key={deal.id} className="rounded-md border px-3 py-2">
-                {deal.title} — {deal.value} {deal.currency}
-              </li>
-            ))}
-          </ul>
-        </section>
+      {tab === "conversacion" && (
+        <ConversationThread
+          conversationId={conversation?.id ?? null}
+          messages={messages.map((message) => ({
+            id: message.id,
+            direction: message.direction,
+            body: message.body,
+            status: message.status,
+            hasMedia: Boolean(message.storageKey || message.mediaId),
+            at: message.createdAt,
+          }))}
+          windowOpen={isWithinFreeFormWindow(conversation?.lastInboundAt ?? null)}
+          remaining={formatRemaining(conversation?.lastInboundAt ?? null)}
+          templates={templates.map((template) => ({
+            name: template.name,
+            language: template.language,
+          }))}
+          labels={threadLabels}
+          sendMessage={sendContactMessageAction.bind(null, id)}
+          sendTemplate={sendContactTemplateAction.bind(null, id)}
+        />
       )}
 
-      <section>
-        <h2 className="mb-4 text-lg font-semibold">{t("timelineTitle")}</h2>
-        <form action={addNote} className="mb-4 flex max-w-sm flex-col gap-2">
-          <textarea name="note" required placeholder={t("notePlaceholder")} className="rounded-md border px-3 py-2 text-sm" />
-          <Button type="submit" size="sm">
-            {t("addNote")}
-          </Button>
-        </form>
-        <ul className="flex flex-col gap-2 text-sm">
-          {activities.map((activity) => (
-            <li key={activity.id} className="rounded-md border px-3 py-2">
-              <span className="font-medium">{t(`activityTypes.${activity.type}` as "activityTypes.note")}</span>
-              {" — "}
-              <span className="text-muted-foreground">{activity.createdAt.toLocaleString("es-PY")}</span>
-              {activity.type === "note" && (
-                <p>{(activity.payload as { text?: string }).text}</p>
-              )}
-            </li>
-          ))}
-          {activities.length === 0 && (
-            <li className="text-muted-foreground">{t("timelineEmpty")}</li>
+      {tab === "actividad" && (
+        <div className="flex flex-col gap-4">
+          <form action={addNote} className="flex max-w-sm flex-col gap-2">
+            <textarea
+              name="note"
+              required
+              placeholder={t("notePlaceholder")}
+              className="rounded-md border px-3 py-2 text-sm"
+            />
+            <Button type="submit" size="sm" className="w-fit">
+              {t("addNote")}
+            </Button>
+          </form>
+
+          <ul className="flex flex-col gap-2 text-sm">
+            {timeline.map((entry) => {
+              const { title, detail } = describe(entry);
+              return (
+                <li key={`${entry.kind}-${entry.id}`} className="rounded-md border px-3 py-2">
+                  <div className="flex flex-wrap items-baseline justify-between gap-2">
+                    <span className="font-medium">{title}</span>
+                    <span className="text-xs text-muted-foreground tabular-nums">
+                      {dateTime.format(entry.at)}
+                    </span>
+                  </div>
+                  {detail && <p className="text-muted-foreground">{detail}</p>}
+                </li>
+              );
+            })}
+            {timeline.length === 0 && (
+              <li className="text-muted-foreground">{t("timelineEmpty")}</li>
+            )}
+          </ul>
+        </div>
+      )}
+
+      {tab === "datos" && (
+        <div className="flex flex-col gap-8">
+          {deals.length > 0 && (
+            <section>
+              <h2 className="mb-3 text-lg font-semibold">{t("dealsTitle")}</h2>
+              <ul className="flex flex-col gap-2 text-sm">
+                {deals.map((deal) => (
+                  <li key={deal.id} className="rounded-md border px-3 py-2">
+                    {deal.title} — {number.format(deal.value)} {deal.currency}
+                  </li>
+                ))}
+              </ul>
+            </section>
           )}
-        </ul>
-      </section>
+
+          {availableTags.length > 0 && (
+            <section>
+              <h2 className="mb-3 text-lg font-semibold">{t("addTag")}</h2>
+              <form action={addTag} className="flex max-w-xs gap-2">
+                <select name="tagId" className="flex-1 rounded-md border px-3 py-2 text-sm">
+                  {availableTags.map((tag) => (
+                    <option key={tag.id} value={tag.id}>
+                      {tag.name}
+                    </option>
+                  ))}
+                </select>
+                <Button type="submit" size="sm" variant="outline">
+                  {t("addTag")}
+                </Button>
+              </form>
+            </section>
+          )}
+
+          <section>
+            <h2 className="mb-3 text-lg font-semibold">{t("editTitle")}</h2>
+            <form action={updateAction} className="flex max-w-sm flex-col gap-4">
+              <label className="flex flex-col gap-1 text-sm">
+                {t("name")}
+                <input
+                  name="name"
+                  defaultValue={contact.name}
+                  className="rounded-md border px-3 py-2"
+                />
+              </label>
+              <label className="flex flex-col gap-1 text-sm">
+                {t("email")}
+                <input
+                  name="email"
+                  type="email"
+                  defaultValue={contact.email ?? ""}
+                  className="rounded-md border px-3 py-2"
+                />
+              </label>
+              <label className="flex flex-col gap-1 text-sm">
+                {t("notes")}
+                <textarea
+                  name="notes"
+                  defaultValue={contact.notes ?? ""}
+                  className="rounded-md border px-3 py-2"
+                />
+              </label>
+              <Button type="submit">{tc("save")}</Button>
+            </form>
+          </section>
+        </div>
+      )}
     </div>
   );
 }

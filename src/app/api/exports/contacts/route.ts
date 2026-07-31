@@ -1,6 +1,7 @@
 import { getTenantContext, buildSystemTenantContext } from "@/modules/tenancy/context";
 import { resolveTenantByContactsFeedToken } from "@/modules/tenancy/settings";
 import { exportContactsCsv } from "@/modules/crm/export";
+import { parseContactOptions, parseContactQuery } from "@/app/(app)/contacts/query";
 import { checkRateLimit } from "@/lib/rate-limit";
 
 // Contacts CSV. One endpoint, two ways in:
@@ -61,10 +62,15 @@ export async function GET(request: Request) {
     return new Response("Rate limit exceeded", { status: 429 });
   }
 
-  const csv = await exportContactsCsv(ctx, {
-    search: url.searchParams.get("search") || undefined,
-    tagId: url.searchParams.get("tagId") || undefined,
-  });
+  // Same parser the list page uses, so the download is exactly the filtered
+  // set on screen — including sort-independent filters like date range and
+  // has-open-deal.
+  const params = Object.fromEntries(url.searchParams);
+  const csv = await exportContactsCsv(
+    ctx,
+    parseContactQuery(params),
+    parseContactOptions(params),
+  );
 
   return csvResponse(csv, { download: true });
 }

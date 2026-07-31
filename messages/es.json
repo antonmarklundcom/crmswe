@@ -161,7 +161,21 @@
         "conversacion": "Conversación",
         "actividad": "Actividad",
         "datos": "Datos"
-      }
+      },
+      "searchLabel": "Buscar",
+      "tag": "Etiqueta",
+      "allSources": "Todos los orígenes",
+      "owner": "Responsable",
+      "allOwners": "Todos los responsables",
+      "createdFrom": "Desde",
+      "createdTo": "Hasta",
+      "onlyOpenDeal": "Solo con negocio abierto",
+      "openDealBadge": "negocio abierto",
+      "created": "Creado",
+      "resultCount": "{count, plural, one {# contacto} other {# contactos}}",
+      "pageOf": "Página {page} de {pages}",
+      "previous": "Anterior",
+      "next": "Siguiente"
     },
     "pipeline": {
       "title": "Pipeline",

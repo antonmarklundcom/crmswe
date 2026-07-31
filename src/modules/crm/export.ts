@@ -1,5 +1,10 @@
 import type { TenantContext } from "@/modules/tenancy/context";
-import { listContacts, listTags, type ListContactsFilters } from "./contacts";
+import { listTags } from "./contacts";
+import {
+  queryContacts,
+  type ContactListOptions,
+  type ContactQuery,
+} from "./contact-list";
 import { listTenantUsers } from "@/modules/tenancy/users";
 import { tenantDb } from "@/modules/tenancy/db";
 import { contactTags } from "@/db/schema";
@@ -52,10 +57,18 @@ export function toCsv(headers: readonly string[], rows: readonly unknown[][]): s
  */
 export async function exportContactsCsv(
   ctx: TenantContext,
-  filters: ListContactsFilters = {},
+  query: ContactQuery = {},
+  options: ContactListOptions = {},
 ): Promise<string> {
-  const [contacts, tags, users, links] = await Promise.all([
-    listContacts(ctx, filters),
+  // Sort order carries over so the file opens in the order the rep was
+  // looking at, but pagination does not — an export is the whole filtered
+  // set, not the page that happened to be on screen.
+  const [page, tags, users, links] = await Promise.all([
+    queryContacts(ctx, query, {
+      ...options,
+      page: 1,
+      perPage: Number.MAX_SAFE_INTEGER,
+    }),
     listTags(ctx),
     listTenantUsers(ctx),
     tenantDb(ctx).select(contactTags),
@@ -73,7 +86,7 @@ export async function exportContactsCsv(
     else tagsByContact.set(link.contactId, [name]);
   }
 
-  const rows = contacts.map((contact) => [
+  const rows = page.rows.map((contact) => [
     contact.name,
     contact.phone,
     contact.email ?? "",

@@ -1,15 +1,11 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+import { isAiConfigured } from "@/lib/ai";
 import { evaluateGuards, resolveMode, type GuardInput } from "./reply";
 import { resolveAiConfig, DEFAULT_MAX_PER_CONVERSATION_PER_DAY } from "./config";
 
 // AI auto-reply (PLAN.md §10 1O). The guard evaluation and mode resolution
 // are pure and tested first; the rest needs a real MySQL because the daily
 // caps, the kill switch and the draft queue are all rows.
-
-// Selects the OpenAI driver for the DB-backed block below. Set before any
-// dynamic import of @/lib/config/env, which parses process.env once at load.
-process.env.AI_DRIVER = "openai";
-process.env.OPENAI_API_KEY = process.env.OPENAI_API_KEY ?? "sk-test-key";
 
 const allowed: GuardInput = {
   tenantAiEnabled: true,
@@ -116,9 +112,17 @@ describe("resolveAiConfig", () => {
   });
 });
 
+// Both come from the environment, never from a mutation in this file: the
+// env module parses process.env at import time, and ESM hoists the imports
+// above ahead of any statement here, so assigning process.env.AI_DRIVER in
+// this file would be dead code. CI sets both (.github/workflows/ci.yml);
+// locally, export them alongside DATABASE_URL. Missing either skips this
+// block rather than failing it, matching how every other DB-backed suite
+// treats a missing DATABASE_URL.
 const hasDb = !!process.env.DATABASE_URL;
+const canRunEndToEnd = hasDb && isAiConfigured();
 
-describe.skipIf(!hasDb)("ai_reply end to end", () => {
+describe.skipIf(!canRunEndToEnd)("ai_reply end to end", () => {
   let db: (typeof import("@/db/client"))["db"];
   let schema: typeof import("@/db/schema");
   let newId: (typeof import("@/lib/ids"))["newId"];

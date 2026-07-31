@@ -18,6 +18,10 @@ export type ContactQuery = ListContactsFilters & {
   hasOpenDeal?: boolean;
   createdFrom?: Date;
   createdTo?: Date;
+  /** Restricts to exactly these ids — "export selection" from the bulk
+   * action bar (§10 1J #1) reuses the same query path rather than a
+   * separate export function. */
+  ids?: string[];
 };
 
 export type ContactListOptions = {
@@ -77,6 +81,11 @@ export async function queryContacts(
       dateConditions.length === 1 ? dateConditions[0] : (and(...dateConditions) as SQL),
     );
     const allowed = new Set(dateFiltered.map((row) => row.id));
+    rows = rows.filter((row) => allowed.has(row.id));
+  }
+
+  if (query.ids) {
+    const allowed = new Set(query.ids);
     rows = rows.filter((row) => allowed.has(row.id));
   }
 

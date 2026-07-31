@@ -16,7 +16,13 @@ import { getTenant } from "@/modules/tenancy/tenants";
 import { getDashboardSummary } from "@/modules/dashboard/summary";
 import { Card } from "@/components/ui/card";
 import { PageHeader } from "@/components/page-header";
+import { TaskList, type TaskListLabels } from "@/components/task-list";
 import { cn } from "@/lib/utils";
+import {
+  completeTaskAction,
+  deleteTaskAction,
+  reopenTaskAction,
+} from "../contacts/tasks-actions";
 
 // Tenant home. Two jobs: tell someone who already works here what needs
 // attention today (the counters), and tell someone who just got their login
@@ -108,7 +114,14 @@ export default async function DashboardPage() {
     getDashboardSummary(ctx),
   ]);
 
-  const { stats, checklist, recentActivity, onboardingPending } = summary;
+  const { stats, checklist, recentActivity, dueTasks, onboardingPending } = summary;
+  const tTasks = await getTranslations("app.contacts.tasks");
+  const taskLabels: TaskListLabels = {
+    complete: tTasks("complete"),
+    reopen: tTasks("reopen"),
+    delete: tTasks("delete"),
+    overdue: tTasks("overdue"),
+  };
   const isAdmin = ctx.role === "admin";
 
   // Steps an `agent` can't act on (WhatsApp connection, automations — §3.2)
@@ -178,6 +191,26 @@ export default async function DashboardPage() {
           href="/contacts"
         />
       </section>
+
+      {dueTasks.length > 0 && (
+        <section className="flex flex-col gap-3">
+          <h2 className="text-lg font-semibold">{t("dueTasks.title")}</h2>
+          <TaskList
+            tasks={dueTasks.map((task) => ({
+              id: task.id,
+              title: task.title,
+              dueAt: task.dueAt,
+              completed: false,
+              contactId: task.contactId,
+              contactName: task.contactName,
+            }))}
+            labels={taskLabels}
+            onComplete={completeTaskAction.bind(null, "/dashboard")}
+            onReopen={reopenTaskAction.bind(null, "/dashboard")}
+            onDelete={deleteTaskAction.bind(null, "/dashboard")}
+          />
+        </section>
+      )}
 
       {onboardingPending && (
         <section className="flex flex-col gap-3">

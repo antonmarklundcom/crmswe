@@ -20,6 +20,8 @@ export type ContactSearchParams = {
   sort?: string;
   dir?: string;
   page?: string;
+  /** Comma-separated contact ids — "export selection" from the bulk bar. */
+  ids?: string;
 };
 
 function parseDate(value: string | undefined): Date | undefined {
@@ -41,6 +43,7 @@ export function parseContactQuery(params: ContactSearchParams): ContactQuery {
     hasOpenDeal: params.openDeal === "1",
     createdFrom: parseDate(params.from),
     createdTo,
+    ids: params.ids ? params.ids.split(",").filter(Boolean) : undefined,
   };
 }
 

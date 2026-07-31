@@ -10,10 +10,12 @@ import {
   type ContactSortField,
 } from "@/modules/crm/contact-list";
 import { listTenantUsers } from "@/modules/tenancy/users";
+import { listPipelines, listStagesForPipeline } from "@/modules/crm/pipelines";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
+import { ContactsTable, type StageOption } from "./ContactsTable";
 import { createContactAction, createTagAction } from "./actions";
 import {
   buildContactHref,
@@ -42,13 +44,30 @@ export default async function ContactsPage({
   const query = parseContactQuery(params);
   const options = parseContactOptions(params);
 
-  const [page, tags, sources, users, openDeals] = await Promise.all([
+  const [page, tags, sources, users, openDeals, pipelines] = await Promise.all([
     queryContacts(ctx, query, options),
     listTags(ctx),
     listContactSources(ctx),
     listTenantUsers(ctx),
     contactsWithOpenDeals(ctx),
+    listPipelines(ctx),
   ]);
+
+  // Bulk "add to pipeline" needs a flat stage list across every pipeline —
+  // same reasoning as /sites's routing picker: a tenant can run more than
+  // one pipeline, so the picker has to span them rather than assume one.
+  const stageOptions: StageOption[] = (
+    await Promise.all(
+      pipelines.map(async (pipeline) => {
+        const stages = await listStagesForPipeline(ctx, pipeline.id);
+        return stages.map((stage) => ({
+          id: stage.id,
+          pipelineId: pipeline.id,
+          label: `${pipeline.name} › ${stage.name}`,
+        }));
+      }),
+    )
+  ).flat();
 
   const filtered = hasActiveFilters(params);
   const isFirstTime = page.total === 0 && !filtered;
@@ -230,46 +249,45 @@ export default async function ContactsPage({
               {t("resultCount", { count: page.total })}
             </p>
 
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead>
-                  <tr className="border-b">
-                    <SortHeader field="name" label={t("name")} />
-                    <SortHeader field="phone" label={t("phone")} />
-                    <th className="py-2 font-medium">{t("email")}</th>
-                    <th className="py-2 font-medium">{t("source")}</th>
-                    <th className="py-2 font-medium">{t("owner")}</th>
-                    <SortHeader field="createdAt" label={t("created")} />
-                  </tr>
-                </thead>
-                <tbody>
-                  {page.rows.map((contact) => (
-                    <tr key={contact.id} className="border-b">
-                      <td className="py-2">
-                        <Link
-                          href={`/contacts/${contact.id}`}
-                          className="underline underline-offset-4"
-                        >
-                          {contact.name}
-                        </Link>
-                        {openDeals.has(contact.id) && (
-                          <span className="ml-2 rounded-full bg-muted px-2 py-0.5 text-[10px] whitespace-nowrap">
-                            {t("openDealBadge")}
-                          </span>
-                        )}
-                      </td>
-                      <td className="py-2 tabular-nums">{contact.phone}</td>
-                      <td className="py-2">{contact.email}</td>
-                      <td className="py-2">{contact.source}</td>
-                      <td className="py-2">
-                        {contact.ownerUserId ? userNames.get(contact.ownerUserId) : ""}
-                      </td>
-                      <td className="py-2 tabular-nums">{date.format(contact.createdAt)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <ContactsTable
+              rows={page.rows.map((contact) => ({
+                id: contact.id,
+                name: contact.name,
+                phone: contact.phone,
+                email: contact.email,
+                source: contact.source,
+                ownerName: contact.ownerUserId ? (userNames.get(contact.ownerUserId) ?? null) : null,
+                createdAtLabel: date.format(contact.createdAt),
+                hasOpenDeal: openDeals.has(contact.id),
+              }))}
+              nameHeader={<SortHeader field="name" label={t("name")} />}
+              phoneHeader={<SortHeader field="phone" label={t("phone")} />}
+              createdHeader={<SortHeader field="createdAt" label={t("created")} />}
+              tags={tags}
+              users={users}
+              stages={stageOptions}
+              exportBaseHref={exportHref}
+              labels={{
+                name: t("name"),
+                phone: t("phone"),
+                email: t("email"),
+                source: t("source"),
+                owner: t("owner"),
+                created: t("created"),
+                openDealBadge: t("openDealBadge"),
+                selectedCount: t("bulk.selectedCount"),
+                addTag: t("bulk.addTag"),
+                chooseTag: t("bulk.chooseTag"),
+                assignOwner: t("bulk.assignOwner"),
+                chooseOwner: t("bulk.chooseOwner"),
+                noOwner: t("bulk.noOwner"),
+                addToPipeline: t("bulk.addToPipeline"),
+                chooseStage: t("bulk.chooseStage"),
+                apply: t("bulk.apply"),
+                exportSelection: t("bulk.exportSelection"),
+                clearSelection: t("bulk.clearSelection"),
+              }}
+            />
 
             {page.pageCount > 1 && (
               <nav className="flex items-center justify-between gap-2 text-sm">

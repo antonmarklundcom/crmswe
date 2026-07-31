@@ -5,6 +5,7 @@ import { requireTenantContext } from "@/modules/tenancy/context";
 import { getContact, listTags, listTagsForContact } from "@/modules/crm/contacts";
 import { getContactTimeline, type TimelineEntry } from "@/modules/crm/timeline";
 import { listDealsForContact } from "@/modules/crm/deals";
+import { listTasksForContact } from "@/modules/crm/tasks";
 import {
   listConversationsForContact,
   listMessagesForConversation,
@@ -13,6 +14,9 @@ import {
 import { listApprovedTemplates } from "@/modules/whatsapp/templates";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { TaskList, type TaskListLabels } from "@/components/task-list";
+import { EmptyState } from "@/components/empty-state";
+import { ListTodo } from "lucide-react";
 import { ConversationThread, type ThreadLabels } from "./ConversationThread";
 import {
   addNoteAction,
@@ -22,13 +26,19 @@ import {
   sendContactTemplateAction,
   updateContactAction,
 } from "../actions";
+import {
+  completeTaskAction,
+  createTaskAction,
+  deleteTaskAction,
+  reopenTaskAction,
+} from "../tasks-actions";
 
 // Contact record with the whole relationship in one place (PLAN.md §10 1J
 // #2): the WhatsApp conversation, the unified timeline, and the contact's
 // own data. Tabs are URL state rather than client state so each one is a
 // plain server render — no client bundle for what is fundamentally reading.
 
-const TABS = ["conversacion", "actividad", "datos"] as const;
+const TABS = ["conversacion", "tareas", "actividad", "datos"] as const;
 type Tab = (typeof TABS)[number];
 
 const dateTime = new Intl.DateTimeFormat("es-PY", {
@@ -70,12 +80,13 @@ export default async function ContactDetailPage({
 
   const tab: Tab = TABS.includes(rawTab as Tab) ? (rawTab as Tab) : "conversacion";
 
-  const [timeline, deals, contactTags, allTags, conversations] = await Promise.all([
+  const [timeline, deals, contactTags, allTags, conversations, tasks] = await Promise.all([
     getContactTimeline(ctx, id),
     listDealsForContact(ctx, id),
     listTagsForContact(ctx, id),
     listTags(ctx),
     listConversationsForContact(ctx, id),
+    listTasksForContact(ctx, id),
   ]);
 
   // One contact can in principle have a conversation per connected number;
@@ -108,6 +119,17 @@ export default async function ContactDetailPage({
     noTemplates: ti("noTemplates"),
     media: t("timelineMedia"),
   };
+
+  const taskLabels: TaskListLabels = {
+    complete: t("tasks.complete"),
+    reopen: t("tasks.reopen"),
+    delete: t("tasks.delete"),
+    overdue: t("tasks.overdue"),
+  };
+
+  const redirectPath = `/contacts/${id}`;
+  const openTasks = tasks.filter((task) => !task.completedAt);
+  const doneTasks = tasks.filter((task) => task.completedAt);
 
   function describe(entry: TimelineEntry): { title: string; detail?: string } {
     switch (entry.kind) {
@@ -199,6 +221,94 @@ export default async function ContactDetailPage({
           sendMessage={sendContactMessageAction.bind(null, id)}
           sendTemplate={sendContactTemplateAction.bind(null, id)}
         />
+      )}
+
+      {tab === "tareas" && (
+        <div className="flex flex-col gap-6">
+          <form
+            action={createTaskAction.bind(null, id)}
+            className="flex max-w-lg flex-wrap items-end gap-2"
+          >
+            <label className="flex flex-1 flex-col gap-1 text-sm">
+              {t("tasks.title")}
+              <input
+                name="title"
+                required
+                placeholder={t("tasks.titlePlaceholder")}
+                className="rounded-md border px-3 py-2"
+              />
+            </label>
+            <label className="flex flex-col gap-1 text-sm">
+              {t("tasks.dueAt")}
+              <input
+                name="dueAt"
+                type="datetime-local"
+                required
+                className="rounded-md border px-3 py-2"
+              />
+            </label>
+            {deals.length > 0 && (
+              <label className="flex flex-col gap-1 text-sm">
+                {t("dealsTitle")}
+                <select name="dealId" className="rounded-md border px-3 py-2">
+                  <option value="">{t("tasks.noDeal")}</option>
+                  {deals.map((deal) => (
+                    <option key={deal.id} value={deal.id}>
+                      {deal.title}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
+            <Button type="submit" size="sm">
+              {t("tasks.create")}
+            </Button>
+          </form>
+
+          {openTasks.length === 0 && doneTasks.length === 0 ? (
+            <EmptyState
+              icon={ListTodo}
+              title={t("tasks.emptyTitle")}
+              description={t("tasks.emptyBody")}
+            />
+          ) : (
+            <>
+              <TaskList
+                tasks={openTasks.map((task) => ({
+                  id: task.id,
+                  title: task.title,
+                  dueAt: task.dueAt,
+                  completed: false,
+                }))}
+                labels={taskLabels}
+                onComplete={completeTaskAction.bind(null, redirectPath)}
+                onReopen={reopenTaskAction.bind(null, redirectPath)}
+                onDelete={deleteTaskAction.bind(null, redirectPath)}
+              />
+              {doneTasks.length > 0 && (
+                <details className="text-sm">
+                  <summary className="cursor-pointer text-muted-foreground">
+                    {t("tasks.showCompleted", { count: doneTasks.length })}
+                  </summary>
+                  <div className="mt-2">
+                    <TaskList
+                      tasks={doneTasks.map((task) => ({
+                        id: task.id,
+                        title: task.title,
+                        dueAt: task.dueAt,
+                        completed: true,
+                      }))}
+                      labels={taskLabels}
+                      onComplete={completeTaskAction.bind(null, redirectPath)}
+                      onReopen={reopenTaskAction.bind(null, redirectPath)}
+                      onDelete={deleteTaskAction.bind(null, redirectPath)}
+                    />
+                  </div>
+                </details>
+              )}
+            </>
+          )}
+        </div>
       )}
 
       {tab === "actividad" && (

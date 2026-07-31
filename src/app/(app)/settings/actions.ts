@@ -7,6 +7,7 @@ import {
   updateTenantBranding,
   updateTenantBusinessHours,
   updateTenantTimezone,
+  regenerateContactsFeedToken,
   type BusinessHours,
 } from "@/modules/tenancy/settings";
 
@@ -55,5 +56,14 @@ export async function updateTimezoneAction(formData: FormData) {
   const ctx = await requireTenantAdmin();
   const timezone = timezoneSchema.parse(formData.get("timezone"));
   await updateTenantTimezone(ctx, timezone);
+  revalidatePath("/settings");
+}
+
+// Contacts feed token (Google Sheets IMPORTDATA). No action state needed —
+// the settings page reads the token straight from tenant settings, so
+// revalidating is enough to show the new formula.
+export async function regenerateFeedTokenAction() {
+  const ctx = await requireTenantAdmin();
+  await regenerateContactsFeedToken(ctx);
   revalidatePath("/settings");
 }

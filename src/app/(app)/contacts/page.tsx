@@ -1,9 +1,10 @@
 import Link from "next/link";
-import { Users } from "lucide-react";
+import { Download, Users } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { requireTenantContext } from "@/modules/tenancy/context";
 import { listContacts, listTags } from "@/modules/crm/contacts";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
 import { createContactAction, createTagAction } from "./actions";
@@ -32,7 +33,26 @@ export default async function ContactsPage({
   return (
     <div className="flex flex-col gap-8">
       <section className="flex flex-col gap-4">
-        <PageHeader title={t("title")} description={t("intro")} />
+        <PageHeader
+          title={t("title")}
+          description={t("intro")}
+          action={
+            contacts.length > 0 ? (
+              // Carries the current filters, so "exportar" always means
+              // "what this list is showing".
+              <a
+                href={`/api/exports/contacts?${new URLSearchParams({
+                  ...(search ? { search } : {}),
+                  ...(tagId ? { tagId } : {}),
+                }).toString()}`}
+                className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
+              >
+                <Download className="size-4" aria-hidden="true" />
+                {t("exportCsv")}
+              </a>
+            ) : undefined
+          }
+        />
 
         {!isFirstTime && (
         <form className="flex flex-wrap gap-2" method="get">

@@ -132,6 +132,7 @@
       "noResults": "Ningún contacto coincide con la búsqueda",
       "noResultsBody": "Probá con otro nombre, teléfono o etiqueta.",
       "clearFilters": "Limpiar filtros",
+      "exportCsv": "Exportar CSV",
       "createTitle": "Nuevo contacto",
       "createTagTitle": "Nueva etiqueta",
       "addTag": "Agregar etiqueta",
@@ -220,6 +221,19 @@
       "primaryColor": "Color principal",
       "timezoneTitle": "Zona horaria",
       "businessHoursTitle": "Horario de atención",
+      "sheetsTitle": "Google Sheets",
+      "sheetsIntro": "Tus contactos en una planilla que se actualiza sola, sin conectar tu cuenta de Google y sin costo. La planilla lee un enlace privado de tu empresa; no le damos acceso a nadie más.",
+      "sheetsSteps": {
+        "generate": "Generá el enlace acá abajo. Es privado: cualquiera que lo tenga puede leer tus contactos, así que tratalo como una contraseña.",
+        "paste": "Abrí una planilla nueva en Google Sheets, hacé clic en la celda A1 y pegá la fórmula.",
+        "refresh": "Google actualiza la planilla sola, aproximadamente cada hora. Para forzarla, borrá la fórmula y volvé a pegarla."
+      },
+      "sheetsFormula": "Pegá esto en la celda A1",
+      "sheetsCopy": "Copiar",
+      "sheetsCopied": "Copiado",
+      "sheetsGenerate": "Generar enlace",
+      "sheetsRegenerate": "Generar enlace nuevo",
+      "sheetsRegenerateWarning": "Al generar uno nuevo, el anterior deja de funcionar al instante y las planillas que lo usaban dejan de actualizarse.",
       "days": {
         "mon": "Lunes",
         "tue": "Martes",

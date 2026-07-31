@@ -614,7 +614,33 @@ reachable by someone who isn't holding a terminal.
 agent, the agent accepts and signs in, and a site is connected end-to-end — all
 through the UI, no shell access.
 
-### 1J — Durable storage *(next; do before onboarding any external tenant)*
+### 1J — CRM surface parity *(the daily-driver gap)*
+
+1I made the app operable; this makes it pleasant to work in all day. The
+reference point is GoHighLevel's CRM surface, which the owner's team already
+knows — not its marketing/funnel half, which §11 keeps out of scope.
+
+1. **Contacts table that works like a table**: sortable columns (name, created,
+   last activity), filters beyond today's search + tag (source, owner, date
+   range, has-open-deal), pagination for lists past a screenful, column
+   visibility, and row selection driving **bulk actions** (tag, assign, add to
+   pipeline, export selection). Export already exists and must follow whatever
+   the table is currently showing.
+2. **Conversation tab on the contact**: `contacts/[id]` shows activities and
+   deals only, but §5 promises a unified view — the WhatsApp thread, quotes
+   sent, and form/lead submissions belong there too, so a rep opening a contact
+   sees the whole relationship without hopping between Bandeja and
+   Presupuestos. Reply inline, respecting the same 24h-window rules the inbox
+   enforces.
+3. **Tasks / reminders**: there is no `tasks` table and no "next action"
+   anywhere. A deal can sit untouched for weeks with nothing surfacing it.
+   Due-dated tasks against a contact or deal, an "owed today" list on the
+   dashboard, and an automation action that creates one.
+
+**Exit**: a rep can run a full day from Contactos and the contact detail view
+without needing another tab.
+
+### 1K — Durable storage *(do before onboarding any external tenant)*
 Implement the S3-compatible driver in `src/lib/storage` (Cloudflare R2). Today
 `STORAGE_DRIVER=s3` throws "not yet implemented", so quote PDFs and all inbound
 WhatsApp media live on Hostinger's local disk, which §2.1 says to treat as
@@ -622,20 +648,20 @@ non-durable. This is the only remaining item where waiting costs data that canno
 regenerated.
 **Exit**: media and quote PDFs survive a container rebuild; driver switchable by env.
 
-### 1K — Feedback & polish
+### 1L — Feedback & polish
 Server actions surface validation errors inline (`useActionState`, the shape
 `acceptInviteAction` already uses) instead of throwing to Next's error page; pending
 states on submit; inbox 5s revalidation per §6.5; pipeline switcher when a tenant has
 more than one pipeline; superadmin console brought up to the tenant app's visual
 standard.
 
-### 1L — Transactional email
+### 1M — Transactional email
 No email library is installed today, so invitations are links handed over by hand and
 a forgotten password is a DB edit. Add Resend (own domain, warmed): invitation
 delivery, password reset, subscription-expiry warnings. Unblocks self-service
 onboarding.
 
-### 1M — Embedded signup *(gated on Meta Tech Provider approval)*
+### 1N — Embedded signup *(gated on Meta Tech Provider approval)*
 §6.2's second connection path. `connected_via: 'embedded'` exists in the schema but
 no flow was ever built — manual connect is the only path today. Required before
 tenants can connect their own numbers without the operator handling access tokens by
@@ -649,7 +675,8 @@ hand, and therefore before SaaS sale.
 | Internal-tool milestone (1A–1F) | **~19** |
 | Full Phase 1 (through 1H) | **~26** |
 | Operable without SSH (1I) | **~27** |
-| Sellable as SaaS (through 1M) | **~33** |
+| CRM surface parity (1J) | **~31** |
+| Sellable as SaaS (through 1N) | **~37** |
 
 Estimates assume focused build sessions against this spec; Fable review gates (after
 1B, 1D, 1G) are separate short sessions, not counted above.

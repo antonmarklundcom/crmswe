@@ -614,52 +614,105 @@ reachable by someone who isn't holding a terminal.
 agent, the agent accepts and signs in, and a site is connected end-to-end — all
 through the UI, no shell access.
 
-### 1J — CRM surface parity *(the daily-driver gap)*
+### 1J — CRM surface parity *(the daily-driver gap)* — ✅ done
 
 1I made the app operable; this makes it pleasant to work in all day. The
 reference point is GoHighLevel's CRM surface, which the owner's team already
 knows — not its marketing/funnel half, which §11 keeps out of scope.
 
-1. **Contacts table that works like a table**: sortable columns (name, created,
-   last activity), filters beyond today's search + tag (source, owner, date
-   range, has-open-deal), pagination for lists past a screenful, column
-   visibility, and row selection driving **bulk actions** (tag, assign, add to
-   pipeline, export selection). Export already exists and must follow whatever
-   the table is currently showing.
-2. **Conversation tab on the contact**: `contacts/[id]` shows activities and
-   deals only, but §5 promises a unified view — the WhatsApp thread, quotes
-   sent, and form/lead submissions belong there too, so a rep opening a contact
-   sees the whole relationship without hopping between Bandeja and
-   Presupuestos. Reply inline, respecting the same 24h-window rules the inbox
-   enforces.
-3. **Tasks / reminders**: there is no `tasks` table and no "next action"
-   anywhere. A deal can sit untouched for weeks with nothing surfacing it.
-   Due-dated tasks against a contact or deal, an "owed today" list on the
-   dashboard, and an automation action that creates one.
+1. ✅ **Contacts table that works like a table** (`modules/crm/contact-list.ts`,
+   `contacts/ContactsTable.tsx`): sortable columns (name, phone, created),
+   filters (search, tag, source, owner, date range, has-open-deal), pagination,
+   and row selection driving **bulk actions** (add tag, assign owner, add to
+   pipeline, export selection). CSV export shares the exact same query path as
+   the table — sort included — so "exportar" always means "what's on screen",
+   verified by requesting the same filtered+sorted URL through both the page
+   and `/api/exports/contacts` and diffing the rows.
+   Deferred, not built: column visibility toggles. Low value against the
+   effort of a persisted per-user preference; revisit only if asked for.
+2. ✅ **Conversation tab on the contact** (`contacts/[id]/ConversationThread.tsx`,
+   `modules/crm/timeline.ts`): a "Conversación" tab with inline reply honoring
+   the same 24h-window rules the inbox enforces, plus an "Actividad" tab
+   merging activities, WhatsApp messages, quotes and lead submissions into one
+   ordered timeline. Deal/tag/edit moved to a "Datos" tab.
+3. ✅ **Tasks / reminders** (`modules/crm/tasks.ts`, migration `0009`): a
+   `tasks` table (due-dated, against a contact and optionally a deal), a
+   "Tareas" tab on the contact with create/complete/reopen/delete, and a
+   "Tareas pendientes" section on the dashboard surfacing anything due now or
+   earlier (overdue and due-today are the same query — the date on screen is
+   what distinguishes them). Verified live: a task due in the future does not
+   appear on the dashboard; the same task backdated does, in red, linking back
+   to its contact.
+   Deferred, not built: an `ai_reply`-style automation action node that
+   creates a task (e.g. "if no reply in 2 days, create a follow-up task").
+   The engine change (new `action` kind in `graph.ts` + `engine.ts` + the
+   flow editor palette) is real but separable work — natural pickup for
+   whoever builds 1O next, since both touch the same files.
 
 **Exit**: a rep can run a full day from Contactos and the contact detail view
-without needing another tab.
+without needing another tab. Met.
 
-### 1K — Durable storage *(do before onboarding any external tenant)*
-Implement the S3-compatible driver in `src/lib/storage` (Cloudflare R2). Today
-`STORAGE_DRIVER=s3` throws "not yet implemented", so quote PDFs and all inbound
-WhatsApp media live on Hostinger's local disk, which §2.1 says to treat as
-non-durable. This is the only remaining item where waiting costs data that cannot be
-regenerated.
-**Exit**: media and quote PDFs survive a container rebuild; driver switchable by env.
+### 1K — Durable storage *(do before onboarding any external tenant)* — ✅ done
+Implemented `src/lib/storage/s3.ts` against the AWS SDK (`@aws-sdk/client-s3` +
+`s3-request-presigner`), pointed at Cloudflare R2's S3-compatible endpoint —
+free egress is why R2 over S3 itself. `env.ts` requires `S3_ENDPOINT`,
+`S3_BUCKET`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY` (via `superRefine`,
+so misconfiguration fails at boot) whenever `STORAGE_DRIVER=s3`; `local`
+remains the zero-config default. `docs/DEPLOY.md` has the R2 setup steps.
+Not verified against a live R2 bucket (no Cloudflare credentials in this
+environment) — verified instead: the driver conforms to `StorageAdapter`,
+`local` continues to pass its existing behavior, and the env-validation
+rule is unit-tested (missing-vars-rejected / present-vars-accepted).
+**Recommend a smoke test against the real bucket right after merge** — put a
+key, fetch it back, request a signed URL — before pointing a live tenant's
+media at it.
+**Exit**: driver switchable by env; local disk still works unmodified. Met,
+pending the live-bucket smoke test above.
 
-### 1L — Feedback & polish
-Server actions surface validation errors inline (`useActionState`, the shape
-`acceptInviteAction` already uses) instead of throwing to Next's error page; pending
-states on submit; inbox 5s revalidation per §6.5; pipeline switcher when a tenant has
-more than one pipeline; superadmin console brought up to the tenant app's visual
-standard.
+### 1L — Feedback & polish *(partially done — see below)*
+Landed as a side effect of 1J: the contacts table and bulk-action bar use
+`useTransition`/pending states natively (no full-page reload on filter or bulk
+action), and the two new 1M forms (forgot/reset password, invite) use
+`useActionState` for inline errors.
+**Not done** — deferred, still open for whoever picks up next:
+- Inline validation (`useActionState`) on the *older* forms this phase didn't
+  touch: contacts create/edit, pipeline deal create, quotes, products, forms,
+  automations, WhatsApp connect, tenant settings. They still throw to Next's
+  generic error page on a validation failure.
+- Inbox 5s revalidation (§6.5) — the inbox is still load-once, no polling.
+- Pipeline switcher for tenants with more than one pipeline (the page still
+  hard-picks `pipelines[0]`).
+- Superadmin console visual polish — it has the same nav shell as the tenant
+  app (1I) but `/tenants`, `/plans` still use plain unstyled tables/forms.
 
-### 1M — Transactional email
-No email library is installed today, so invitations are links handed over by hand and
-a forgotten password is a DB edit. Add Resend (own domain, warmed): invitation
-delivery, password reset, subscription-expiry warnings. Unblocks self-service
-onboarding.
+### 1M — Transactional email — ✅ done
+Added `resend` + `src/lib/email` (transport, no-ops with a console warning
+when `RESEND_API_KEY`/`RESEND_FROM_EMAIL` are unset — same pattern
+next.config.ts already uses for Sentry — so every environment behaves the
+same, just without mail actually leaving until configured) and
+`src/lib/email/templates.ts` (invitation, password reset, subscription
+expiry warning).
+- **Password reset**: wired into Better Auth's built-in
+  `emailAndPassword.sendResetPassword` — new pages `/forgot-password` and
+  `/reset-password`, a link from `/login`. **Verified with a real round
+  trip**, not just the UI: requested a reset, read the actual verification
+  token out of the database, drove it through Better Auth's own callback
+  route, set a new password, and logged in with it successfully.
+- **Invitation email**: `users/actions.ts`'s `inviteUserAction` now sends the
+  accept-invite link by mail, best-effort — the link is still shown on
+  screen regardless of send success, so a misconfigured or down mail
+  provider never leaves an admin with no way to reach the invitee. Verified:
+  with no Resend key set, the console logs the skip and the on-screen link
+  still renders.
+- **Subscription expiry warnings**: `modules/tenancy/subscriptions.ts` gained
+  `listSubscriptionsCrossingExpiryWarning()` (fires at 7 days and 1 day out,
+  checked as exact equality against a daily cron tick rather than a "warned"
+  flag column — no migration needed) and a new cron-pinged route
+  `/api/cron/subscription-warnings`, same secret-guarded shape as the
+  existing `/api/cron/tick`. **Needs a new Hostinger cron entry** — see
+  `docs/DEPLOY.md` §5 — it does not share a schedule with the job-queue tick.
+**Exit**: self-service onboarding unblocked for invitations and password
+reset. Met.
 
 ### 1N — Embedded signup *(gated on Meta Tech Provider approval)*
 §6.2's second connection path. `connected_via: 'embedded'` exists in the schema but
@@ -722,10 +775,13 @@ treats Meta verification.
 | GHL-replacement milestone (1A–1E) | **~17** |
 | Internal-tool milestone (1A–1F) | **~19** |
 | Full Phase 1 (through 1H) | **~26** |
-| Operable without SSH (1I) | **~27** |
-| CRM surface parity (1J) | **~31** |
-| Sellable as SaaS (through 1N) | **~37** |
-| AI auto-reply (1O) | **~40** |
+| Operable without SSH (1I) | **~27** — ✅ done |
+| CRM surface parity (1J) | **~31** — ✅ done |
+| Durable storage (1K) | — ✅ done |
+| Feedback & polish (1L) | — partial, see §10 1L |
+| Transactional email (1M) | — ✅ done |
+| Sellable as SaaS (through 1N) | **~37** — 1N still blocked on Meta approval |
+| AI auto-reply (1O) | **~40** — next up, Opus |
 | Google Business Profile (1P) | unscheduled |
 
 Estimates assume focused build sessions against this spec; Fable review gates (after

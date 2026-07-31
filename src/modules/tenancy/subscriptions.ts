@@ -157,6 +157,59 @@ export async function listPaymentsForSubscription(subscriptionId: string) {
  * `trial` tenant, e.g. the owner's own bootstrap tenant) is treated as
  * active — billing hasn't started, not "expired".
  */
+/**
+ * Days out at which an expiry warning email fires (§10 1M). Checked as exact
+ * equality against a daily cron tick rather than a "warned" flag on the row
+ * (no migration needed): each threshold is crossed once per subscription as
+ * the days-remaining count ticks down, so a subscription due in 7 days gets
+ * exactly one email at the 7-day mark and one at the 1-day mark, as long as
+ * the cron fires at roughly the same time each day.
+ */
+export const EXPIRY_WARNING_THRESHOLDS_DAYS = [7, 1] as const;
+
+export type ExpiringSubscription = {
+  tenantId: string;
+  subscriptionId: string;
+  expiresAt: Date;
+  daysRemaining: number;
+};
+
+/**
+ * The latest subscription per tenant, filtered to ones about to cross a
+ * warning threshold. Reads the whole table rather than one query per
+ * tenant — the same platform-wide-is-small reasoning as listTenants()
+ * elsewhere in this module — then reduces to one row per tenant by taking
+ * the max startsAt, mirroring what getLatestSubscriptionForTenant does for
+ * a single tenant.
+ */
+export async function listSubscriptionsCrossingExpiryWarning(): Promise<ExpiringSubscription[]> {
+  const rows = await db.select().from(subscriptions);
+
+  const latestByTenant = new Map<string, (typeof rows)[number]>();
+  for (const row of rows) {
+    const current = latestByTenant.get(row.tenantId);
+    if (!current || row.startsAt > current.startsAt) {
+      latestByTenant.set(row.tenantId, row);
+    }
+  }
+
+  const now = Date.now();
+  const results: ExpiringSubscription[] = [];
+  for (const subscription of latestByTenant.values()) {
+    if (subscription.status !== "active") continue;
+    const daysRemaining = Math.ceil((subscription.expiresAt.getTime() - now) / 86_400_000);
+    if ((EXPIRY_WARNING_THRESHOLDS_DAYS as readonly number[]).includes(daysRemaining)) {
+      results.push({
+        tenantId: subscription.tenantId,
+        subscriptionId: subscription.id,
+        expiresAt: subscription.expiresAt,
+        daysRemaining,
+      });
+    }
+  }
+  return results;
+}
+
 export async function computeAccessStatus(tenantId: string, tenantStatus: string): Promise<AccessStatus> {
   if (tenantStatus === "suspended") return "locked";
 

@@ -4,8 +4,11 @@ import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { requireTenantAdmin } from "@/modules/tenancy/context";
 import { createInvitation, revokeInvitation } from "@/modules/tenancy/invitations";
-import { getUserByEmail } from "@/modules/tenancy/users";
+import { getUserByEmail, getUserById } from "@/modules/tenancy/users";
+import { getTenant } from "@/modules/tenancy/tenants";
 import { env } from "@/lib/config/env";
+import { sendEmail } from "@/lib/email";
+import { invitationEmail } from "@/lib/email/templates";
 
 // Tenant team management (PLAN.md §10 1I #2). Route handlers/server actions
 // validate and delegate — the invitation itself is created by the tenancy
@@ -18,8 +21,9 @@ const inviteSchema = z.object({
 
 export type InviteState = {
   error: string | null;
-  /** Accept-invite URL, shown once so the admin can send it by hand — there
-   * is no transactional email yet (§10 1L). */
+  /** Accept-invite URL, shown on screen regardless of whether the email
+   * actually sent — RESEND_API_KEY may not be configured, or delivery can
+   * fail, and the admin still needs a way to reach the invitee. */
   inviteUrl: string | null;
 };
 
@@ -49,11 +53,23 @@ export async function inviteUserAction(
     const invitation = await createInvitation(ctx, parsed.data);
     if (!invitation) return { error: "unknown", inviteUrl: null };
 
+    const inviteUrl = `${env.APP_URL}/accept-invite/${invitation.token}`;
+
+    // Best-effort: sendEmail never throws (§10 1M), and the invite link is
+    // always shown on screen too, so a delivery failure here never leaves
+    // the admin with no way to reach the invitee.
+    const [inviter, tenant] = await Promise.all([getUserById(ctx.userId), getTenant(ctx.tenantId)]);
+    if (inviter && tenant) {
+      const { subject, html } = invitationEmail({
+        tenantName: tenant.name,
+        inviterName: inviter.name,
+        acceptUrl: inviteUrl,
+      });
+      await sendEmail({ to: parsed.data.email, subject, html });
+    }
+
     revalidatePath("/users");
-    return {
-      error: null,
-      inviteUrl: `${env.APP_URL}/accept-invite/${invitation.token}`,
-    };
+    return { error: null, inviteUrl };
   } catch (err) {
     const message = err instanceof Error ? err.message : "unknown";
     // Grace/locked tenants are read-only at the write path (§10 1C #1).

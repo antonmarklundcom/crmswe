@@ -11,7 +11,15 @@ import { getSessionCookie } from "better-auth/cookies";
 // prefix, so we can't matcher-match on "/app/*" — instead this list is
 // checked in code against the actual pathname, failing closed (protect)
 // for anything not explicitly listed here.
-const PUBLIC_PREFIXES = ["/login", "/accept-invite", "/api", "/f/", "/q/"];
+const PUBLIC_PREFIXES = [
+  "/login",
+  "/accept-invite",
+  "/forgot-password",
+  "/reset-password",
+  "/api",
+  "/f/",
+  "/q/",
+];
 
 // Exact public paths, kept separate from the prefixes above so this stays a
 // narrow allowlist rather than "anything under /vc-*". The attribution

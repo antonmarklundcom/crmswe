@@ -588,6 +588,59 @@ Hostinger (env, migrations, process restart), smoke-test checklist, pass through
 for Spanish copy consistency.
 **Exit**: production deploy on Hostinger; owner's team onboarded.
 
+### 1I — Operability: the app can be run without SSH *(added after 1H shipped)*
+
+1A–1H built every feature the product sells, but an audit of the live app found the
+*operator* paths missing — the ones that don't appear in any feature list because
+they're assumed. The app could not be signed out of, a tenant admin could not add a
+teammate, and standing up a tenant required running `scripts/seed-tenant.ts` over SSH.
+None of that is a new feature; it's the wiring that makes the existing features
+reachable by someone who isn't holding a terminal.
+
+1. **Session shell**: user menu (name, email, role, tenant) + sign out, in both the
+   tenant app and the superadmin console. `signOut` had zero callers before this.
+2. **Tenant team management** (`/users`, admin-only): list members, invite by email +
+   role, copy the invite link, revoke a pending invite. `createInvitation` existed in
+   `modules/tenancy` with **no callers** — the accept-invite page was unreachable
+   because nothing could produce a token.
+3. **Superadmin creates tenant users directly**: name/email/password/role form on the
+   tenant detail page, so onboarding a tenant (and its first admin) never needs the
+   seed script. The script stays as the platform-bootstrap path.
+4. **Site connection guide** (`/sites`): numbered steps with copy-paste handlers for
+   the stacks the owner's network actually runs — static HTML + PHP, and Node.js —
+   rather than one generic `fetch` example.
+
+**Exit**: a superadmin creates a tenant, creates its admin, that admin invites an
+agent, the agent accepts and signs in, and a site is connected end-to-end — all
+through the UI, no shell access.
+
+### 1J — Durable storage *(next; do before onboarding any external tenant)*
+Implement the S3-compatible driver in `src/lib/storage` (Cloudflare R2). Today
+`STORAGE_DRIVER=s3` throws "not yet implemented", so quote PDFs and all inbound
+WhatsApp media live on Hostinger's local disk, which §2.1 says to treat as
+non-durable. This is the only remaining item where waiting costs data that cannot be
+regenerated.
+**Exit**: media and quote PDFs survive a container rebuild; driver switchable by env.
+
+### 1K — Feedback & polish
+Server actions surface validation errors inline (`useActionState`, the shape
+`acceptInviteAction` already uses) instead of throwing to Next's error page; pending
+states on submit; inbox 5s revalidation per §6.5; pipeline switcher when a tenant has
+more than one pipeline; superadmin console brought up to the tenant app's visual
+standard.
+
+### 1L — Transactional email
+No email library is installed today, so invitations are links handed over by hand and
+a forgotten password is a DB edit. Add Resend (own domain, warmed): invitation
+delivery, password reset, subscription-expiry warnings. Unblocks self-service
+onboarding.
+
+### 1M — Embedded signup *(gated on Meta Tech Provider approval)*
+§6.2's second connection path. `connected_via: 'embedded'` exists in the schema but
+no flow was ever built — manual connect is the only path today. Required before
+tenants can connect their own numbers without the operator handling access tokens by
+hand, and therefore before SaaS sale.
+
 ### Session estimate
 
 | Milestone | Sessions (cumulative) |
@@ -595,6 +648,8 @@ for Spanish copy consistency.
 | GHL-replacement milestone (1A–1E) | **~17** |
 | Internal-tool milestone (1A–1F) | **~19** |
 | Full Phase 1 (through 1H) | **~26** |
+| Operable without SSH (1I) | **~27** |
+| Sellable as SaaS (through 1M) | **~33** |
 
 Estimates assume focused build sessions against this spec; Fable review gates (after
 1B, 1D, 1G) are separate short sessions, not counted above.

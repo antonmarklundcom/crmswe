@@ -67,6 +67,9 @@ export async function createTenantAdminUser(input: {
   email: string;
   password: string;
   name: string;
+  /** Defaults to `admin` — the bootstrap case the seed script needs. 1I's
+   * superadmin console passes `agent` when standing up a whole team. */
+  role?: "admin" | "agent";
 }) {
   const userId = newId();
 
@@ -76,7 +79,7 @@ export async function createTenantAdminUser(input: {
     email: input.email,
     emailVerified: true,
     name: input.name,
-    role: "admin",
+    role: input.role ?? "admin",
     isSuperadmin: false,
   });
 

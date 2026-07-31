@@ -5,7 +5,8 @@
     "save": "Guardar",
     "cancel": "Cancelar",
     "create": "Crear",
-    "back": "Volver"
+    "back": "Volver",
+    "signOut": "Cerrar sesión"
   },
   "auth": {
     "login": {
@@ -51,6 +52,7 @@
       "facturaElectronica": "Factura electrónica",
       "soon": "Próximamente",
       "automations": "Automatizaciones",
+      "users": "Equipo",
       "groups": {
         "crm": "CRM",
         "capture": "Captación",
@@ -177,6 +179,38 @@
       "noStage": "Ninguna",
       "createForm": "Crear formulario"
     },
+    "users": {
+      "title": "Equipo",
+      "intro": "Las personas de tu empresa que usan el CRM. Los administradores configuran WhatsApp, sitios y automatizaciones; los agentes trabajan contactos, negocios, bandeja y presupuestos.",
+      "adminOnly": "Solo los administradores pueden ver esta página",
+      "membersTitle": "Miembros",
+      "name": "Nombre",
+      "email": "Correo electrónico",
+      "role": "Rol",
+      "you": "vos",
+      "roles": {
+        "admin": "Administrador",
+        "agent": "Agente"
+      },
+      "inviteTitle": "Invitar a alguien",
+      "inviteHelp": "Se genera un enlace de invitación válido por 7 días. Todavía no enviamos correos, así que copiá el enlace y mandáselo por WhatsApp o donde prefieras.",
+      "invite": "Generar invitación",
+      "linkTitle": "Enlace de invitación",
+      "linkHelp": "Mandáselo a la persona. Al abrirlo elige su contraseña y entra con el rol asignado.",
+      "copy": "Copiar",
+      "copied": "Copiado",
+      "pendingTitle": "Invitaciones pendientes",
+      "pendingEmptyTitle": "No hay invitaciones pendientes",
+      "pendingEmptyBody": "Cuando generes una invitación aparece acá hasta que la persona la acepte o venza.",
+      "expiresAt": "vence el {date}",
+      "revoke": "Anular",
+      "errors": {
+        "invalid": "Revisá el correo y el rol.",
+        "emailTaken": "Ese correo ya tiene una cuenta.",
+        "readOnly": "Tu suscripción venció: la cuenta está en modo solo lectura.",
+        "unknown": "No se pudo generar la invitación. Intentá de nuevo."
+      }
+    },
     "settings": {
       "title": "Configuración",
       "intro": "Los datos de tu empresa que usa el resto del sistema: la marca que sale en los PDF de presupuesto y el horario que respetan las automatizaciones.",
@@ -263,7 +297,40 @@
       "leadsWithDeal": "con negocio abierto",
       "byCampaign": "Leads por campaña",
       "howToTitle": "Cómo conectar un sitio",
-      "howToIntro": "Desde el backend del sitio (nunca desde el navegador — así la clave no queda expuesta):"
+      "howToIntro": "Desde el backend del sitio (nunca desde el navegador — así la clave no queda expuesta):",
+      "guide": {
+        "title": "Cómo conectar un sitio",
+        "intro": "Cuatro pasos. El formulario de tu sitio manda los datos a tu propio servidor, y tu servidor los reenvía acá con la clave del sitio.",
+        "steps": {
+          "create": {
+            "title": "Creá el sitio acá y copiá la clave",
+            "body": "Usá el formulario de arriba. La clave se muestra una sola vez: guardala apenas la veas. Si la perdés, rotala y actualizá el sitio."
+          },
+          "env": {
+            "title": "Guardá la clave en el entorno del sitio",
+            "body": "Como VENDERCRM_API_KEY en el .env o en las variables de entorno del hosting. Nunca en el HTML, en el JavaScript del navegador ni en el repositorio."
+          },
+          "handler": {
+            "title": "Pegá el handler en tu servidor",
+            "body": "Elegí tu tecnología abajo y copiá el código. El formulario apunta a tu propio endpoint y ese endpoint es el que llama a VenderCRM."
+          },
+          "verify": {
+            "title": "Probá con un envío real",
+            "body": "Completá el formulario con tu propio número. En segundos aparece el contacto y, si configuraste etapa destino, el negocio en el pipeline. Si no aparece, revisá el log de tu servidor: la respuesta trae el motivo."
+          }
+        },
+        "snippetTitle": "Código para tu sitio",
+        "copy": "Copiar",
+        "copied": "Copiado",
+        "securityTitle": "Cinco cosas que conviene no saltear",
+        "security": {
+          "serverSide": "La clave vive en el servidor del sitio. Si va en el navegador, cualquiera puede leerla y escribir en tu pipeline.",
+          "idempotency": "Mandá siempre idempotency_key. Con la misma clave, un reintento o un doble clic no crea un contacto duplicado.",
+          "phone": "El teléfono es obligatorio y es la identidad del contacto. Aceptamos formato local paraguayo (0981 123 456) y lo normalizamos a +595.",
+          "spam": "Poné el honeypot y, si podés, Cloudflare Turnstile. El spam se frena en tu sitio, no adentro del CRM.",
+          "nonBlocking": "Si VenderCRM no responde, igual mostrale la página de gracias al visitante y registrá el error en tu log. Nunca pierdas el lead por un timeout."
+        }
+      }
     },
     "products": {
       "title": "Productos",
@@ -397,7 +464,29 @@
     "nav": {
       "tenants": "Empresas",
       "plans": "Planes",
-      "whatsappHealth": "WhatsApp"
+      "whatsappHealth": "WhatsApp",
+      "superadmin": "Superadministrador"
+    },
+    "tenantUsers": {
+      "title": "Usuarios de la empresa",
+      "intro": "Creá acá el primer administrador de la empresa. Después esa persona puede invitar al resto de su equipo desde su propia cuenta.",
+      "noUsers": "Esta empresa todavía no tiene usuarios: creá el administrador abajo.",
+      "createTitle": "Crear usuario",
+      "name": "Nombre",
+      "email": "Correo electrónico",
+      "password": "Contraseña inicial",
+      "role": "Rol",
+      "roles": {
+        "admin": "Administrador",
+        "agent": "Agente"
+      },
+      "submit": "Crear usuario",
+      "created": "Usuario creado. Pasale el correo y la contraseña:",
+      "errors": {
+        "invalid": "Revisá los datos: la contraseña necesita al menos 8 caracteres.",
+        "emailTaken": "Ese correo ya tiene una cuenta.",
+        "unknown": "No se pudo crear el usuario. Intentá de nuevo."
+      }
     },
     "tenants": {
       "title": "Empresas",

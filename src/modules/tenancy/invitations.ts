@@ -79,6 +79,16 @@ export async function hasValidInvitationForEmail(email: string): Promise<boolean
   return !!row;
 }
 
+/**
+ * Cancels a pending invitation (1I): the link stops working immediately and
+ * the email is no longer allowed through Better Auth's invite-gated sign-up
+ * (`hasValidInvitationForEmail` above). Tenant-scoped — an admin can only
+ * revoke their own tenant's invitations.
+ */
+export async function revokeInvitation(ctx: TenantContext, id: string) {
+  await tenantDb(ctx).delete(invitations, eq(invitations.id, id));
+}
+
 export async function markInvitationAccepted(invitationId: string) {
   await db
     .update(invitations)

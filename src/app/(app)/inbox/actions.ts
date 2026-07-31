@@ -5,6 +5,8 @@ import { revalidatePath } from "next/cache";
 import { requireTenantContext } from "@/modules/tenancy/context";
 import { sendText, sendTemplate } from "@/modules/whatsapp/send";
 import { markConversationRead } from "@/modules/whatsapp/inbox";
+import { deliverReply } from "@/modules/ai/reply";
+import { markReplyDiscarded, setConversationAiEnabled } from "@/modules/ai/replies";
 
 const sendTextSchema = z.object({
   conversationId: z.string().min(1),
@@ -44,6 +46,49 @@ export async function sendTemplateAction(formData: FormData) {
     language: input.template.slice(separator + 1),
   });
   revalidatePath(`/inbox/${input.conversationId}`);
+}
+
+// --- AI auto-reply (PLAN.md §10 1O) --------------------------------------
+// Approving a draft is a *send*, so it goes through modules/ai's deliverReply
+// rather than sendText directly: that re-checks the window, the kill switch
+// and the opt-out tag, all of which may have changed since the draft was
+// written.
+
+const replyIdSchema = z.object({
+  replyId: z.string().min(1),
+  conversationId: z.string().min(1),
+});
+
+export async function approveAiDraftAction(formData: FormData) {
+  const ctx = await requireTenantContext();
+  const input = replyIdSchema.parse({
+    replyId: formData.get("replyId"),
+    conversationId: formData.get("conversationId"),
+  });
+
+  await deliverReply(ctx, input.replyId, ctx.userId);
+  revalidatePath(`/inbox/${input.conversationId}`);
+}
+
+export async function discardAiDraftAction(formData: FormData) {
+  const ctx = await requireTenantContext();
+  const input = replyIdSchema.parse({
+    replyId: formData.get("replyId"),
+    conversationId: formData.get("conversationId"),
+  });
+
+  await markReplyDiscarded(ctx, input.replyId, ctx.userId);
+  revalidatePath(`/inbox/${input.conversationId}`);
+}
+
+/** Per-conversation kill switch — any agent can pull it, not admins only. */
+export async function setConversationAiAction(formData: FormData) {
+  const ctx = await requireTenantContext();
+  const conversationId = z.string().min(1).parse(formData.get("conversationId"));
+  const enabled = formData.get("enabled") === "true";
+
+  await setConversationAiEnabled(ctx, conversationId, enabled);
+  revalidatePath(`/inbox/${conversationId}`);
 }
 
 export async function markReadAction(conversationId: string) {

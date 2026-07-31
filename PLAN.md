@@ -720,7 +720,7 @@ no flow was ever built — manual connect is the only path today. Required befor
 tenants can connect their own numbers without the operator handling access tokens by
 hand, and therefore before SaaS sale.
 
-### 1O — AI auto-reply *(owner request; provider-neutral by design)*
+### 1O — AI auto-reply *(owner request; provider-neutral by design)* — ✅ done
 
 An LLM drafts or sends WhatsApp replies. The engine already has the hard
 parts — §7.1's node graph, the job queue, and the 24h-window rules — so this
@@ -747,6 +747,65 @@ is a **new automation action node**, not a new subsystem. Sketch:
 
 **Exit**: a tenant enables AI replies on one flow, sees drafts for a week,
 then switches that flow to autonomous with a per-conversation kill switch.
+Met — the mechanism is in place and verified end-to-end; the "for a week"
+part is calendar, not code.
+
+**As built** (differences from the sketch above, and the decisions worth
+keeping):
+
+- `src/lib/ai/` — `types.ts` (a prompt in, a string out, plus token counts),
+  `openai.ts`, `gemini.ts`, `prompt.ts` (pure prompt assembly + the Spanish
+  guardrail block), `index.ts` (driver-by-env). Unlike `lib/storage`, which
+  always resolves to some adapter, `AI_DRIVER=none` is the default and
+  resolves to **null** — AI is opt-in, and an unconfigured deploy must still
+  boot and run every other automation. Added `AI_BASE_URL` (not in the
+  sketch) for Azure/OpenAI-compatible gateways; it is also what let the
+  browser pass exercise the real driver against a stub instead of a billable
+  endpoint.
+- Migration `0010_add_ai_replies` — an `ai_replies` table (prompt, body,
+  provider, model, prompt/completion tokens, status, flow_run_id/node_id,
+  approver, error) plus `conversations.ai_disabled_at`. Deliberately separate
+  from `messages`: most rows never become a WhatsApp message, and the ones
+  that do point at theirs via `message_id`. The row is the audit trail and
+  the cost meter at once.
+- `modules/ai/` — `config.ts` (safe defaults resolved at *read*, so a tenant
+  row written before 1O behaves like a new one), `replies.ts` (persistence,
+  the two daily counters, monthly totals, kill switch), `reply.ts` (the
+  guarded path everything goes through).
+- **The tenant mode is a ceiling, not a default.** A flow node may stay on
+  draft while the tenant is autonomous, but no node can send while the tenant
+  is on draft — so "start every tenant on draft" is a guarantee, and going
+  autonomous is a two-key operation (tenant setting + node setting). A
+  hand-edited graph JSON cannot bypass it.
+- **The 24h window is enforced three times**: generation is refused outright
+  (no tokens spent — a draft nobody could legally send is worthless), again
+  at delivery, and finally inside `whatsapp/send.ts`, which throws. Guard
+  refusals are `skipped` steps with a reason, never failed runs — the rest of
+  the flow must still run.
+- Caps count *provider calls*, drafts included, since a draft costs the same
+  tokens as a send. Added a per-tenant daily cap alongside the
+  per-conversation one from the sketch: cost is per-tenant, and a flow
+  triggering on every inbound message would otherwise be bounded only by
+  conversation count. Both have hard ceilings the settings form can't exceed.
+- Handoff keyword lives next to the `BAJA`/`STOP` opt-out in
+  `automations/triggers.ts`, for the same reason: it must work for a customer
+  asking for a human whether or not the tenant ever built a flow. It silences
+  only the AI — reps keep replying in the same thread.
+
+**Verified live**, not just by unit test: a real HMAC-signed Meta webhook →
+trigger → flow run → `ai_reply` node → prompt carrying the tenant's business
+context, guardrails and actual conversation history → draft in the inbox with
+provider/model/token counts → rep approves → message sent. Also verified in
+the browser: the draft offers no approve button once the window has closed
+(and `deliverReply` refuses it server-side), the per-conversation kill switch
+toggles both ways, an inbound `humano` silences the bot and every subsequent
+run skips with `conversation_ai_disabled`, and the settings token meter
+counts up.
+
+**Not done, deliberately**: no per-tenant spend cap in currency (tokens are
+metered, guaraníes are not — needs per-model pricing that changes under us);
+no streaming; no RAG over the tenant's own documents; no AI drafting in the
+inbox on demand, only via a flow node.
 
 ### 1P — Google Business Profile *(idea; not scheduled)*
 
@@ -781,7 +840,7 @@ treats Meta verification.
 | Feedback & polish (1L) | — partial, see §10 1L |
 | Transactional email (1M) | — ✅ done |
 | Sellable as SaaS (through 1N) | **~37** — 1N still blocked on Meta approval |
-| AI auto-reply (1O) | **~40** — next up, Opus |
+| AI auto-reply (1O) | **~40** — ✅ done |
 | Google Business Profile (1P) | unscheduled |
 
 Estimates assume focused build sessions against this spec; Fable review gates (after

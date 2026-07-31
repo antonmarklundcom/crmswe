@@ -35,6 +35,7 @@ const PALETTE: Array<{ type: "condition" | "action" | "delay"; kind: string }> =
   { type: "action", kind: "move_deal_stage" },
   { type: "action", kind: "assign_user" },
   { type: "action", kind: "create_note" },
+  { type: "action", kind: "ai_reply" },
   { type: "condition", kind: "has_tag" },
   { type: "condition", kind: "deal_in_stage" },
   { type: "condition", kind: "business_hours" },
@@ -306,6 +307,36 @@ function NodeConfigPanel({
             className="rounded-md border px-2 py-1"
           />
         </label>
+      )}
+
+      {kind === "ai_reply" && (
+        <>
+          <label className="flex flex-1 flex-col gap-1">
+            {t("fields.instructions")}
+            <textarea
+              value={String(config.instructions ?? "")}
+              onChange={(e) => set("instructions", e.target.value)}
+              placeholder={t("fields.instructionsPlaceholder")}
+              className="rounded-md border px-2 py-1"
+            />
+          </label>
+          <label className="flex flex-col gap-1">
+            {t("fields.aiMode")}
+            <select
+              value={config.mode === "send" ? "send" : "draft"}
+              onChange={(e) => set("mode", e.target.value)}
+              className="rounded-md border px-2 py-1"
+            >
+              <option value="draft">{t("fields.aiModeDraft")}</option>
+              <option value="send">{t("fields.aiModeSend")}</option>
+            </select>
+          </label>
+          {/* The tenant-level mode is a ceiling over this one, so picking
+              "send" here does nothing until an admin also turns the tenant
+              autonomous in Configuración — say so rather than let it look
+              like the switch did nothing. */}
+          <p className="w-full text-xs text-muted-foreground">{t("fields.aiModeHint")}</p>
+        </>
       )}
 
       {kind === "send_template" && (

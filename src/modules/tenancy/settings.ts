@@ -40,10 +40,36 @@ export type TenantExports = {
   contactsToken?: string;
 };
 
+/**
+ * AI auto-reply configuration (PLAN.md §10 1O). Lives in tenant settings for
+ * the same reason the export token does — no migration, and it is tenant
+ * *configuration* rather than tenant data. The defaults that matter are
+ * applied in modules/ai (not here), so a tenant row written before 1O
+ * behaves identically to one that has never touched this form: AI off, and
+ * draft mode if it is ever turned on.
+ */
+export type TenantAiSettings = {
+  enabled?: boolean;
+  /** Falls back to the tenant name when unset. */
+  businessName?: string;
+  about?: string;
+  tone?: string;
+  hours?: string;
+  /** Prices, delivery dates — whatever the model must never commit to. */
+  neverPromise?: string;
+  /** Draft-before-send switch. Absent means draft (§10 1O). */
+  mode?: "draft" | "send";
+  maxRepliesPerConversationPerDay?: number;
+  maxRepliesPerTenantPerDay?: number;
+  /** Inbound message equal to this permanently silences the bot for that contact. */
+  handoffKeyword?: string;
+};
+
 export type TenantSettings = {
   branding?: TenantBranding;
   businessHours?: BusinessHours;
   exports?: TenantExports;
+  ai?: TenantAiSettings;
 };
 
 export async function updateTenantBranding(ctx: TenantContext, branding: TenantBranding) {
@@ -52,6 +78,10 @@ export async function updateTenantBranding(ctx: TenantContext, branding: TenantB
 
 export async function updateTenantBusinessHours(ctx: TenantContext, businessHours: BusinessHours) {
   return mergeTenantSettings(ctx, { businessHours });
+}
+
+export async function updateTenantAiSettings(ctx: TenantContext, ai: TenantAiSettings) {
+  return mergeTenantSettings(ctx, { ai });
 }
 
 export async function updateTenantTimezone(ctx: TenantContext, timezone: string) {
@@ -114,6 +144,7 @@ async function mergeTenantSettings(ctx: TenantContext, patch: Partial<TenantSett
     branding: { ...current.branding, ...patch.branding },
     businessHours: patch.businessHours ?? current.businessHours,
     exports: patch.exports ?? current.exports,
+    ai: patch.ai ? { ...current.ai, ...patch.ai } : current.ai,
   };
 
   await db.update(tenants).set({ settings: merged }).where(eq(tenants.id, ctx.tenantId));

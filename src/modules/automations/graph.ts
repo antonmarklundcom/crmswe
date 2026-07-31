@@ -45,7 +45,18 @@ export const flowNodeSchema = z.discriminatedUnion("type", [
           "move_deal_stage",
           "assign_user",
           "create_note",
+          // AI auto-reply (PLAN.md §10 1O). An action node like any other —
+          // the engine change is this enum entry; the guards live in
+          // modules/ai/reply.ts.
+          "ai_reply",
         ]),
+        /**
+         * Only meaningful on `ai_reply`. Absent means draft, and the tenant
+         * setting is a ceiling over this either way (modules/ai/reply.ts
+         * `resolveMode`), so a graph JSON edited by hand cannot make a
+         * draft-mode tenant send.
+         */
+        mode: z.enum(["draft", "send"]).optional(),
       })
       .passthrough(),
   }),

@@ -9,8 +9,15 @@ import {
 } from "@/modules/whatsapp/inbox";
 import { getContact } from "@/modules/crm/contacts";
 import { listApprovedTemplates } from "@/modules/whatsapp/templates";
+import { listPendingDrafts } from "@/modules/ai/replies";
 import { Button } from "@/components/ui/button";
-import { sendTextAction, sendTemplateAction } from "../actions";
+import {
+  sendTextAction,
+  sendTemplateAction,
+  approveAiDraftAction,
+  discardAiDraftAction,
+  setConversationAiAction,
+} from "../actions";
 
 // Window countdown (§6.5). Rendered server-side, so it's accurate as of
 // page load rather than ticking — the inbox is a server component and
@@ -36,10 +43,11 @@ export default async function ConversationPage({
   const conversation = await getConversation(ctx, id);
   if (!conversation) notFound();
 
-  const [contact, messages, templates] = await Promise.all([
+  const [contact, messages, templates, aiDrafts] = await Promise.all([
     getContact(ctx, conversation.contactId),
     listMessagesForConversation(ctx, id),
     listApprovedTemplates(ctx, conversation.waAccountId),
+    listPendingDrafts(ctx, id),
   ]);
 
   if (conversation.unreadCount > 0) {
@@ -48,11 +56,66 @@ export default async function ConversationPage({
 
   const windowOpen = isWithinFreeFormWindow(conversation.lastInboundAt);
   const sendAction = sendTextAction;
+  const aiDisabled = !!conversation.aiDisabledAt;
 
   return (
     <div className="flex flex-col gap-4">
       <h1 className="text-xl font-semibold">{contact?.name ?? conversation.contactId}</h1>
       <p className="text-sm text-muted-foreground">{contact?.phone}</p>
+
+      {/* Per-conversation kill switch (§10 1O). Deliberately on the thread
+          itself rather than buried in settings: the moment a rep needs it is
+          the moment they're reading the conversation going wrong. */}
+      <form action={setConversationAiAction} className="flex items-center gap-2 text-sm">
+        <input type="hidden" name="conversationId" value={id} />
+        <input type="hidden" name="enabled" value={aiDisabled ? "true" : "false"} />
+        <span className={aiDisabled ? "text-muted-foreground" : "text-green-700"}>
+          {aiDisabled ? t("aiOff") : t("aiOn")}
+        </span>
+        <Button type="submit" size="sm" variant="outline">
+          {aiDisabled ? t("aiEnable") : t("aiDisable")}
+        </Button>
+      </form>
+
+      {aiDrafts.length > 0 && (
+        <section className="flex flex-col gap-2 rounded-md border border-blue-300 bg-blue-50 p-3">
+          <h2 className="text-sm font-medium text-blue-900">{t("aiDraftsTitle")}</h2>
+          {aiDrafts.map((draft) => (
+            <div key={draft.id} className="flex flex-col gap-2 rounded-md bg-white p-3 text-sm">
+              <p>{draft.body}</p>
+              <p className="text-xs text-muted-foreground">
+                {draft.provider} · {draft.model} ·{" "}
+                {t("aiTokens", {
+                  tokens: draft.promptTokens + draft.completionTokens,
+                })}
+              </p>
+              <div className="flex gap-2">
+                {/* Approving is only offered while the window is open —
+                    outside it the only legal message is a Meta-approved
+                    template, which an LLM cannot author (§6.4, §10 1O). */}
+                {windowOpen ? (
+                  <form action={approveAiDraftAction}>
+                    <input type="hidden" name="replyId" value={draft.id} />
+                    <input type="hidden" name="conversationId" value={id} />
+                    <Button type="submit" size="sm">
+                      {t("aiApprove")}
+                    </Button>
+                  </form>
+                ) : (
+                  <span className="text-xs text-amber-800">{t("aiDraftWindowClosed")}</span>
+                )}
+                <form action={discardAiDraftAction}>
+                  <input type="hidden" name="replyId" value={draft.id} />
+                  <input type="hidden" name="conversationId" value={id} />
+                  <Button type="submit" size="sm" variant="outline">
+                    {t("aiDiscard")}
+                  </Button>
+                </form>
+              </div>
+            </div>
+          ))}
+        </section>
+      )}
 
       <ul className="flex flex-col gap-2">
         {messages.map((message) => (

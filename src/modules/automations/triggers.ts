@@ -129,6 +129,7 @@ export function registerAutomationTriggers() {
     await resumeOnReply(ctx, contactId);
 
     await maybeOptOut(ctx, contactId, body);
+    await maybeAiHandoff(ctx, contactId, body);
 
     await fireTrigger({
       tenantId,
@@ -171,4 +172,31 @@ async function maybeOptOut(ctx: TenantContext, contactId: string, body: string) 
   const existing = tags.find((tag) => tag.name.toLowerCase() === OPTOUT_TAG);
   const tag = existing ?? (await createTag(ctx, { name: OPTOUT_TAG }));
   if (tag) await addTagToContact(ctx, contactId, tag.id);
+}
+
+/**
+ * AI handoff keyword (PLAN.md §10 1O): an inbound message equal to the
+ * tenant's keyword permanently silences the bot for that contact. Done here,
+ * next to opt-out and for the same reason — it has to work for a customer
+ * who asks for a human regardless of which flow (if any) is running, and
+ * regardless of whether the tenant ever built one.
+ *
+ * It silences only the AI. Reps keep replying in the same thread, which is
+ * the entire point of asking for a human.
+ */
+async function maybeAiHandoff(ctx: TenantContext, contactId: string, body: string) {
+  const normalized = body.trim().toLowerCase();
+  if (!normalized) return;
+
+  const { getAiConfig } = await import("@/modules/ai/config");
+  const config = await getAiConfig(ctx);
+  if (!config.handoffKeyword || normalized !== config.handoffKeyword) return;
+
+  const { listConversationsForContact } = await import("@/modules/whatsapp/inbox");
+  const { setConversationAiEnabled } = await import("@/modules/ai/replies");
+
+  for (const conversation of await listConversationsForContact(ctx, contactId)) {
+    if (conversation.aiDisabledAt) continue;
+    await setConversationAiEnabled(ctx, conversation.id, false);
+  }
 }

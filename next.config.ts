@@ -12,7 +12,7 @@ const nextConfig: NextConfig = {
   // trying to inline them. Needed as soon as any server module reaches the
   // db client (worker/instrumentation.ts already did in 1A; 1B adds many
   // more server components/actions that import it transitively).
-  serverExternalPackages: ["mysql2", "better-auth"],
+  serverExternalPackages: ["mysql2", "better-auth", "@aws-sdk/client-s3"],
   webpack: (config, { nextRuntime, webpack }) => {
     // 1B adds middleware.ts (edge runtime), which makes Next build an Edge
     // variant of instrumentation.ts's register() too — even though its own

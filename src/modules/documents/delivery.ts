@@ -1,0 +1,151 @@
+import { storage } from "@/lib/storage";
+import { env } from "@/lib/config/env";
+import type { TenantContext } from "@/modules/tenancy/context";
+import { getTenant } from "@/modules/tenancy/tenants";
+import type { TenantSettings } from "@/modules/tenancy/settings";
+import { getContact } from "@/modules/crm/contacts";
+import { createActivity } from "@/modules/crm/activities";
+import { getPrimaryAccount } from "@/modules/whatsapp/accounts";
+import { getOrCreateConversation } from "@/modules/whatsapp/inbox";
+import { sendDocument } from "@/modules/whatsapp/send";
+import {
+  amountPaid,
+  getDocument,
+  listDocumentItems,
+  setDocumentPdfKey,
+} from "./documents";
+import { renderDocumentPdf } from "./pdf";
+import { balanceOf, paymentStateOf, type DocumentStatus } from "./types";
+
+// Nota de venta delivery (PLAN.md §10 1Q) — the same shape as quote
+// delivery (§8): render the PDF with tenant branding, store it via the
+// storage adapter, send it as a WhatsApp document, with the public link
+// /d/[token] as the fallback and preview.
+
+export function publicDocumentUrl(token: string): string {
+  return `${env.APP_URL}/d/${token}`;
+}
+
+/** Meta fetches this URL itself, so it has to be reachable without a session. */
+export function publicDocumentPdfUrl(token: string): string {
+  return `${env.APP_URL}/d/${token}/pdf`;
+}
+
+export async function generateDocumentPdf(
+  ctx: TenantContext,
+  documentId: string,
+): Promise<Buffer> {
+  const document = await getDocument(ctx, documentId);
+  if (!document) throw new Error(`Nota de venta ${documentId} no encontrada`);
+
+  const [items, contact, tenant, paid] = await Promise.all([
+    listDocumentItems(ctx, document.id),
+    getContact(ctx, document.contactId),
+    getTenant(ctx.tenantId),
+    amountPaid(ctx, document.id),
+  ]);
+  if (!contact) throw new Error("Contacto no encontrado");
+
+  const settings = (tenant?.settings ?? {}) as TenantSettings;
+
+  const pdf = await renderDocumentPdf({
+    number: document.number,
+    tenantName: tenant?.name ?? "",
+    branding: settings.branding ?? {},
+    contactName: contact.name,
+    contactPhone: contact.phone,
+    currency: document.currency,
+    subtotal: document.subtotal,
+    discount: document.discount,
+    total: document.total,
+    amountPaid: paid,
+    balance: balanceOf(document.total, paid),
+    state: paymentStateOf(document.status as DocumentStatus, document.total, paid),
+    dueAt: document.dueAt,
+    issuedAt: document.issuedAt,
+    notes: document.notes,
+    createdAt: document.createdAt,
+    items: items.map((item) => ({
+      description: item.description,
+      qty: item.qty,
+      unitPrice: item.unitPrice,
+      lineTotal: item.lineTotal,
+    })),
+  });
+
+  const key = `documents/${ctx.tenantId}/${document.id}.pdf`;
+  await storage.put(key, pdf, "application/pdf");
+  await setDocumentPdfKey(ctx, document.id, key);
+
+  return pdf;
+}
+
+export type SendDocumentResult = {
+  /** Null when WhatsApp couldn't be used — the public link is then the delivery. */
+  messageId: string | null;
+  publicUrl: string;
+  whatsappError?: string;
+};
+
+/**
+ * Sends the nota de venta over WhatsApp. A closed 24h window is an expected
+ * outcome, not a failure: the PDF and public link still exist, so the send
+ * is reported as partial rather than throwing (§8's precedent).
+ *
+ * Deliberately does *not* change the document's status. Issuing is a
+ * separate, explicit act — sending a PDF is delivery, not agreement, and
+ * conflating them would let a WhatsApp hiccup decide whether a sale is on
+ * the books.
+ */
+export async function sendDocumentToContact(
+  ctx: TenantContext,
+  documentId: string,
+): Promise<SendDocumentResult> {
+  const document = await getDocument(ctx, documentId);
+  if (!document) throw new Error(`Nota de venta ${documentId} no encontrada`);
+  if (document.status === "void") {
+    throw new Error("No se puede enviar una nota de venta anulada");
+  }
+
+  await generateDocumentPdf(ctx, document.id);
+
+  const publicUrl = publicDocumentUrl(document.publicToken);
+  let messageId: string | null = null;
+  let whatsappError: string | undefined;
+
+  const account = await getPrimaryAccount(ctx);
+  if (!account) {
+    whatsappError = "No hay un número de WhatsApp conectado";
+  } else {
+    try {
+      const conversation = await getOrCreateConversation(ctx, account.id, document.contactId);
+      messageId = await sendDocument(ctx, {
+        conversationId: conversation.id,
+        link: publicDocumentPdfUrl(document.publicToken),
+        filename: `${document.number}.pdf`,
+        caption: `Nota de venta ${document.number}`,
+      });
+    } catch (err) {
+      whatsappError = err instanceof Error ? err.message : String(err);
+    }
+  }
+
+  await createActivity(ctx, {
+    contactId: document.contactId,
+    dealId: document.dealId ?? undefined,
+    type: "system",
+    payload: {
+      kind: "document_sent",
+      documentId: document.id,
+      number: document.number,
+      total: document.total,
+      currency: document.currency,
+      publicUrl,
+      viaWhatsapp: messageId !== null,
+      whatsappError,
+    },
+    userId: ctx.userId,
+  });
+
+  return { messageId, publicUrl, whatsappError };
+}

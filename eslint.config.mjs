@@ -66,6 +66,13 @@ const eslintConfig = defineConfig([
       // only raw-db use here; the items and everything else are read back
       // through tenantDb once the tenant is known.
       "src/modules/quotes/**/*.{ts,tsx}",
+      // Same rationale as quotes: the public nota de venta view /d/[token]
+      // resolves an unguessable token to its document — and therefore its
+      // tenant — before any TenantContext exists (PLAN.md §10 1Q). That
+      // single lookup is the only raw-db use here; items, payments and
+      // everything else are read back through tenantDb once the tenant is
+      // known.
+      "src/modules/documents/**/*.{ts,tsx}",
       // JUDGMENT CALL (flagged for Fable review, not explicit in PLAN.md
       // §3.3's exemption list): the Better Auth instance (src/lib/auth/server.ts)
       // is infra wiring handed the raw `db` client by the Drizzle adapter,

@@ -142,3 +142,8 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
+
+# Local object-storage driver data (STORAGE_LOCAL_PATH). Tenant-generated
+# PDFs — customer names, phone numbers, amounts — land here in dev. This is
+# tenant data, not source, and must never be committed.
+.storage/

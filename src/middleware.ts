@@ -11,7 +11,7 @@ import { getSessionCookie } from "better-auth/cookies";
 // prefix, so we can't matcher-match on "/app/*" — instead this list is
 // checked in code against the actual pathname, failing closed (protect)
 // for anything not explicitly listed here.
-const PUBLIC_PREFIXES = [
+export const PUBLIC_PREFIXES = [
   "/login",
   "/accept-invite",
   "/forgot-password",
@@ -19,22 +19,38 @@ const PUBLIC_PREFIXES = [
   "/api",
   "/f/",
   "/q/",
+  // Public nota de venta view + PDF (§10 1Q). The /pdf path in particular
+  // is fetched by *Meta* when delivering the document over WhatsApp, so a
+  // redirect to /login here doesn't look like an auth bug — it looks like
+  // WhatsApp silently not delivering attachments.
+  "/d/",
 ];
 
 // Exact public paths, kept separate from the prefixes above so this stays a
 // narrow allowlist rather than "anything under /vc-*". The attribution
 // snippet (§5.1) is loaded by connected sites' visitors, who by definition
 // have no session here — without this it would be redirected to /login.
-const PUBLIC_EXACT = ["/vc-attribution.js"];
+export const PUBLIC_EXACT = ["/vc-attribution.js"];
+
+/**
+ * Extracted and exported so the allowlist is unit-testable without booting
+ * Next. Every public surface that an *external* system fetches (Meta pulling
+ * a PDF, a site visitor loading a form) fails closed if it's missing from
+ * the lists above, and fails in a way that looks like a different bug —
+ * so it gets a test rather than trust.
+ */
+export function isPublicPath(pathname: string): boolean {
+  return (
+    pathname === "/" ||
+    PUBLIC_EXACT.includes(pathname) ||
+    PUBLIC_PREFIXES.some((p) => pathname.startsWith(p))
+  );
+}
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  if (
-    pathname === "/" ||
-    PUBLIC_EXACT.includes(pathname) ||
-    PUBLIC_PREFIXES.some((p) => pathname.startsWith(p))
-  ) {
+  if (isPublicPath(pathname)) {
     return NextResponse.next();
   }
 

@@ -13,6 +13,7 @@ import {
 import type { TenantContext } from "@/modules/tenancy/context";
 import { tenantDb } from "@/modules/tenancy/db";
 import type { ActivityType } from "@/modules/crm/activities";
+import { listOpenTasksDueBy } from "@/modules/crm/tasks";
 
 // Tenant dashboard read model (PLAN.md §10 1C "dashboard"): summary counters
 // plus the onboarding checklist state a brand-new tenant lands on.
@@ -64,10 +65,22 @@ export type RecentActivity = {
   createdAt: Date;
 };
 
+export type DueTask = {
+  id: string;
+  title: string;
+  dueAt: Date;
+  contactId: string;
+  contactName: string;
+};
+
 export type DashboardSummary = {
   stats: DashboardStats;
   checklist: OnboardingChecklist;
   recentActivity: RecentActivity[];
+  /** Open tasks due now or earlier — overdue and due-today are the same
+   * query (§10 1J #3), so the dashboard renders one list and lets the date
+   * itself signal which is which. */
+  dueTasks: DueTask[];
   /** True until every checklist step is done — drives showing the guide. */
   onboardingPending: boolean;
 };
@@ -88,6 +101,7 @@ export async function getDashboardSummary(
     siteRows,
     formRows,
     flowRows,
+    dueTaskRows,
   ] = await Promise.all([
     db.select(deals),
     db.select(stages),
@@ -99,6 +113,7 @@ export async function getDashboardSummary(
     db.select(sites),
     db.select(forms),
     db.select(flows),
+    listOpenTasksDueBy(ctx),
   ]);
 
   const closedStageIds = new Set(
@@ -147,6 +162,13 @@ export async function getDashboardSummary(
     },
     checklist,
     recentActivity,
+    dueTasks: dueTaskRows.map((task) => ({
+      id: task.id,
+      title: task.title,
+      dueAt: task.dueAt,
+      contactId: task.contactId,
+      contactName: contactNames.get(task.contactId) ?? task.contactId,
+    })),
     onboardingPending: Object.values(checklist).some((done) => !done),
   };
 }

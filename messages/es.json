@@ -5,7 +5,8 @@
     "save": "Guardar",
     "cancel": "Cancelar",
     "create": "Crear",
-    "back": "Volver"
+    "back": "Volver",
+    "signOut": "Cerrar sesión"
   },
   "auth": {
     "login": {
@@ -13,7 +14,8 @@
       "email": "Correo electrónico",
       "password": "Contraseña",
       "submit": "Entrar",
-      "error": "Correo o contraseña incorrectos"
+      "error": "Correo o contraseña incorrectos",
+      "forgotPassword": "¿Olvidaste tu contraseña?"
     },
     "acceptInvite": {
       "title": "Aceptar invitación",
@@ -22,6 +24,22 @@
       "submit": "Crear cuenta",
       "invalid": "Esta invitación no es válida o ya expiró",
       "success": "Cuenta creada. Ya podés iniciar sesión."
+    },
+    "forgotPassword": {
+      "title": "Recuperar contraseña",
+      "intro": "Ingresá tu correo y te mandamos un enlace para elegir una contraseña nueva.",
+      "email": "Correo electrónico",
+      "submit": "Enviar enlace",
+      "sent": "Si ese correo tiene una cuenta, te llegó un enlace para restablecer la contraseña. Revisá tu bandeja de entrada.",
+      "backToLogin": "Volver a iniciar sesión"
+    },
+    "resetPassword": {
+      "title": "Elegir nueva contraseña",
+      "newPassword": "Contraseña nueva",
+      "submit": "Guardar contraseña",
+      "error": "No se pudo restablecer la contraseña. El enlace puede haber vencido.",
+      "invalidToken": "Este enlace no es válido o ya venció.",
+      "requestNew": "Pedir un enlace nuevo"
     }
   },
   "tenancy": {
@@ -51,6 +69,7 @@
       "facturaElectronica": "Factura electrónica",
       "soon": "Próximamente",
       "automations": "Automatizaciones",
+      "users": "Equipo",
       "groups": {
         "crm": "CRM",
         "capture": "Captación",
@@ -110,6 +129,9 @@
       "activity": {
         "title": "Actividad reciente",
         "empty": "Todavía no hay actividad. Apenas cargues un contacto o recibas un mensaje, aparece acá."
+      },
+      "dueTasks": {
+        "title": "Tareas pendientes"
       }
     },
     "contacts": {
@@ -130,6 +152,7 @@
       "noResults": "Ningún contacto coincide con la búsqueda",
       "noResultsBody": "Probá con otro nombre, teléfono o etiqueta.",
       "clearFilters": "Limpiar filtros",
+      "exportCsv": "Exportar CSV",
       "createTitle": "Nuevo contacto",
       "createTagTitle": "Nueva etiqueta",
       "addTag": "Agregar etiqueta",
@@ -145,6 +168,61 @@
         "form_submission": "Formulario recibido",
         "quote_sent": "Presupuesto enviado",
         "system": "Sistema"
+      },
+      "editTitle": "Datos del contacto",
+      "conversationEmpty": "Todavía no hay conversación",
+      "conversationEmptyBody": "Cuando esta persona te escriba por WhatsApp —o cuando vos le escribas primero con una plantilla— el chat aparece acá, sin salir del contacto.",
+      "timelineMessageIn": "Mensaje recibido",
+      "timelineMessageOut": "Mensaje enviado",
+      "timelineMedia": "Archivo adjunto",
+      "timelineQuote": "Presupuesto {number}",
+      "timelineLead": "Lead recibido",
+      "tabs": {
+        "conversacion": "Conversación",
+        "actividad": "Actividad",
+        "datos": "Datos",
+        "tareas": "Tareas"
+      },
+      "searchLabel": "Buscar",
+      "tag": "Etiqueta",
+      "allSources": "Todos los orígenes",
+      "owner": "Responsable",
+      "allOwners": "Todos los responsables",
+      "createdFrom": "Desde",
+      "createdTo": "Hasta",
+      "onlyOpenDeal": "Solo con negocio abierto",
+      "openDealBadge": "negocio abierto",
+      "created": "Creado",
+      "resultCount": "{count, plural, one {# contacto} other {# contactos}}",
+      "pageOf": "Página {page} de {pages}",
+      "previous": "Anterior",
+      "next": "Siguiente",
+      "tasks": {
+        "title": "Título",
+        "titlePlaceholder": "Llamar para confirmar la visita",
+        "dueAt": "Vence",
+        "noDeal": "Sin negocio asociado",
+        "create": "Crear tarea",
+        "complete": "Marcar hecha",
+        "reopen": "Reabrir",
+        "delete": "Eliminar",
+        "overdue": "vencida",
+        "emptyTitle": "Todavía no hay tareas",
+        "emptyBody": "Creá un recordatorio con fecha —llamar, confirmar, hacer seguimiento— y aparece acá y en tu panel hasta que lo marques como hecho.",
+        "showCompleted": "Ver {count} completadas"
+      },
+      "bulk": {
+        "selectedCount": "{count} seleccionados",
+        "addTag": "Agregar etiqueta",
+        "chooseTag": "Elegir etiqueta",
+        "assignOwner": "Asignar responsable",
+        "chooseOwner": "Elegir responsable",
+        "noOwner": "Sin responsable",
+        "addToPipeline": "Agregar al pipeline",
+        "chooseStage": "Elegir etapa",
+        "apply": "Aplicar",
+        "exportSelection": "Exportar selección",
+        "clearSelection": "Quitar selección"
       }
     },
     "pipeline": {
@@ -177,6 +255,38 @@
       "noStage": "Ninguna",
       "createForm": "Crear formulario"
     },
+    "users": {
+      "title": "Equipo",
+      "intro": "Las personas de tu empresa que usan el CRM. Los administradores configuran WhatsApp, sitios y automatizaciones; los agentes trabajan contactos, negocios, bandeja y presupuestos.",
+      "adminOnly": "Solo los administradores pueden ver esta página",
+      "membersTitle": "Miembros",
+      "name": "Nombre",
+      "email": "Correo electrónico",
+      "role": "Rol",
+      "you": "vos",
+      "roles": {
+        "admin": "Administrador",
+        "agent": "Agente"
+      },
+      "inviteTitle": "Invitar a alguien",
+      "inviteHelp": "Se genera un enlace de invitación válido por 7 días. Todavía no enviamos correos, así que copiá el enlace y mandáselo por WhatsApp o donde prefieras.",
+      "invite": "Generar invitación",
+      "linkTitle": "Enlace de invitación",
+      "linkHelp": "Mandáselo a la persona. Al abrirlo elige su contraseña y entra con el rol asignado.",
+      "copy": "Copiar",
+      "copied": "Copiado",
+      "pendingTitle": "Invitaciones pendientes",
+      "pendingEmptyTitle": "No hay invitaciones pendientes",
+      "pendingEmptyBody": "Cuando generes una invitación aparece acá hasta que la persona la acepte o venza.",
+      "expiresAt": "vence el {date}",
+      "revoke": "Anular",
+      "errors": {
+        "invalid": "Revisá el correo y el rol.",
+        "emailTaken": "Ese correo ya tiene una cuenta.",
+        "readOnly": "Tu suscripción venció: la cuenta está en modo solo lectura.",
+        "unknown": "No se pudo generar la invitación. Intentá de nuevo."
+      }
+    },
     "settings": {
       "title": "Configuración",
       "intro": "Los datos de tu empresa que usa el resto del sistema: la marca que sale en los PDF de presupuesto y el horario que respetan las automatizaciones.",
@@ -186,6 +296,19 @@
       "primaryColor": "Color principal",
       "timezoneTitle": "Zona horaria",
       "businessHoursTitle": "Horario de atención",
+      "sheetsTitle": "Google Sheets",
+      "sheetsIntro": "Tus contactos en una planilla que se actualiza sola, sin conectar tu cuenta de Google y sin costo. La planilla lee un enlace privado de tu empresa; no le damos acceso a nadie más.",
+      "sheetsSteps": {
+        "generate": "Generá el enlace acá abajo. Es privado: cualquiera que lo tenga puede leer tus contactos, así que tratalo como una contraseña.",
+        "paste": "Abrí una planilla nueva en Google Sheets, hacé clic en la celda A1 y pegá la fórmula.",
+        "refresh": "Google actualiza la planilla sola, aproximadamente cada hora. Para forzarla, borrá la fórmula y volvé a pegarla."
+      },
+      "sheetsFormula": "Pegá esto en la celda A1",
+      "sheetsCopy": "Copiar",
+      "sheetsCopied": "Copiado",
+      "sheetsGenerate": "Generar enlace",
+      "sheetsRegenerate": "Generar enlace nuevo",
+      "sheetsRegenerateWarning": "Al generar uno nuevo, el anterior deja de funcionar al instante y las planillas que lo usaban dejan de actualizarse.",
       "days": {
         "mon": "Lunes",
         "tue": "Martes",
@@ -233,7 +356,8 @@
       "windowClosed": "La ventana de 24 horas está cerrada. Solo se pueden enviar plantillas aprobadas.",
       "windowOpen": "Ventana de 24 horas abierta — se cierra en {remaining}",
       "sendTemplate": "Enviar plantilla",
-      "noTemplates": "Todavía no hay plantillas aprobadas. Sincronizalas desde la página de WhatsApp."
+      "noTemplates": "Todavía no hay plantillas aprobadas. Sincronizalas desde la página de WhatsApp.",
+      "windowOpenShort": "Ventana de 24 horas abierta — se cierra en"
     },
     "sites": {
       "title": "Sitios",
@@ -263,7 +387,40 @@
       "leadsWithDeal": "con negocio abierto",
       "byCampaign": "Leads por campaña",
       "howToTitle": "Cómo conectar un sitio",
-      "howToIntro": "Desde el backend del sitio (nunca desde el navegador — así la clave no queda expuesta):"
+      "howToIntro": "Desde el backend del sitio (nunca desde el navegador — así la clave no queda expuesta):",
+      "guide": {
+        "title": "Cómo conectar un sitio",
+        "intro": "Cuatro pasos. El formulario de tu sitio manda los datos a tu propio servidor, y tu servidor los reenvía acá con la clave del sitio.",
+        "steps": {
+          "create": {
+            "title": "Creá el sitio acá y copiá la clave",
+            "body": "Usá el formulario de arriba. La clave se muestra una sola vez: guardala apenas la veas. Si la perdés, rotala y actualizá el sitio."
+          },
+          "env": {
+            "title": "Guardá la clave en el entorno del sitio",
+            "body": "Como VENDERCRM_API_KEY en el .env o en las variables de entorno del hosting. Nunca en el HTML, en el JavaScript del navegador ni en el repositorio."
+          },
+          "handler": {
+            "title": "Pegá el handler en tu servidor",
+            "body": "Elegí tu tecnología abajo y copiá el código. El formulario apunta a tu propio endpoint y ese endpoint es el que llama a VenderCRM."
+          },
+          "verify": {
+            "title": "Probá con un envío real",
+            "body": "Completá el formulario con tu propio número. En segundos aparece el contacto y, si configuraste etapa destino, el negocio en el pipeline. Si no aparece, revisá el log de tu servidor: la respuesta trae el motivo."
+          }
+        },
+        "snippetTitle": "Código para tu sitio",
+        "copy": "Copiar",
+        "copied": "Copiado",
+        "securityTitle": "Cinco cosas que conviene no saltear",
+        "security": {
+          "serverSide": "La clave vive en el servidor del sitio. Si va en el navegador, cualquiera puede leerla y escribir en tu pipeline.",
+          "idempotency": "Mandá siempre idempotency_key. Con la misma clave, un reintento o un doble clic no crea un contacto duplicado.",
+          "phone": "El teléfono es obligatorio y es la identidad del contacto. Aceptamos formato local paraguayo (0981 123 456) y lo normalizamos a +595.",
+          "spam": "Poné el honeypot y, si podés, Cloudflare Turnstile. El spam se frena en tu sitio, no adentro del CRM.",
+          "nonBlocking": "Si VenderCRM no responde, igual mostrale la página de gracias al visitante y registrá el error en tu log. Nunca pierdas el lead por un timeout."
+        }
+      }
     },
     "products": {
       "title": "Productos",
@@ -397,7 +554,29 @@
     "nav": {
       "tenants": "Empresas",
       "plans": "Planes",
-      "whatsappHealth": "WhatsApp"
+      "whatsappHealth": "WhatsApp",
+      "superadmin": "Superadministrador"
+    },
+    "tenantUsers": {
+      "title": "Usuarios de la empresa",
+      "intro": "Creá acá el primer administrador de la empresa. Después esa persona puede invitar al resto de su equipo desde su propia cuenta.",
+      "noUsers": "Esta empresa todavía no tiene usuarios: creá el administrador abajo.",
+      "createTitle": "Crear usuario",
+      "name": "Nombre",
+      "email": "Correo electrónico",
+      "password": "Contraseña inicial",
+      "role": "Rol",
+      "roles": {
+        "admin": "Administrador",
+        "agent": "Agente"
+      },
+      "submit": "Crear usuario",
+      "created": "Usuario creado. Pasale el correo y la contraseña:",
+      "errors": {
+        "invalid": "Revisá los datos: la contraseña necesita al menos 8 caracteres.",
+        "emailTaken": "Ese correo ya tiene una cuenta.",
+        "unknown": "No se pudo crear el usuario. Intentá de nuevo."
+      }
     },
     "tenants": {
       "title": "Empresas",

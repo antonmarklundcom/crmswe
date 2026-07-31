@@ -11,6 +11,7 @@ import {
   removeTagFromContact,
 } from "@/modules/crm/contacts";
 import { createActivity } from "@/modules/crm/activities";
+import { sendText, sendTemplate } from "@/modules/whatsapp/send";
 
 const createContactSchema = z.object({
   name: z.string().min(1).max(200),
@@ -78,5 +79,45 @@ export async function addTagToContactAction(contactId: string, formData: FormDat
 export async function removeTagFromContactAction(contactId: string, tagId: string) {
   const ctx = await requireTenantContext();
   await removeTagFromContact(ctx, contactId, tagId);
+  revalidatePath(`/contacts/${contactId}`);
+}
+
+// Replying from the contact's conversation tab. Same services the inbox
+// uses (§6.5 window rules included) — only the revalidation target differs,
+// so the rep stays on the contact record instead of being bounced to /inbox.
+const sendMessageSchema = z.object({
+  conversationId: z.string().min(1),
+  body: z.string().min(1).max(4096),
+});
+
+export async function sendContactMessageAction(contactId: string, formData: FormData) {
+  const ctx = await requireTenantContext();
+  const input = sendMessageSchema.parse({
+    conversationId: formData.get("conversationId"),
+    body: formData.get("body"),
+  });
+
+  await sendText(ctx, input);
+  revalidatePath(`/contacts/${contactId}`);
+}
+
+const sendContactTemplateSchema = z.object({
+  conversationId: z.string().min(1),
+  template: z.string().min(1).includes("|"),
+});
+
+export async function sendContactTemplateAction(contactId: string, formData: FormData) {
+  const ctx = await requireTenantContext();
+  const input = sendContactTemplateSchema.parse({
+    conversationId: formData.get("conversationId"),
+    template: formData.get("template"),
+  });
+
+  const separator = input.template.lastIndexOf("|");
+  await sendTemplate(ctx, {
+    conversationId: input.conversationId,
+    templateName: input.template.slice(0, separator),
+    language: input.template.slice(separator + 1),
+  });
   revalidatePath(`/contacts/${contactId}`);
 }

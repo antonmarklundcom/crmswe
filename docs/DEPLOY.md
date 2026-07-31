@@ -23,13 +23,23 @@ first deploy and every routine redeploy after it.
    - `APP_ENCRYPTION_KEY` — 32-byte hex, generate with
      `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`
    - `APP_URL` — the final deployed URL (Hostinger subdomain or custom domain)
-   - `STORAGE_DRIVER` / `STORAGE_LOCAL_PATH` — leave as `local`. Setting
-     `s3` throws at boot: the R2 driver isn't written yet
-     (`src/lib/storage/index.ts`, PLAN.md §2.1), so no Cloudflare account is
-     needed to launch. What `local` costs today is only that stored quote
-     PDFs don't survive a redeploy — the public quote route re-renders them
-     on demand, so nothing is actually lost. Write the S3 driver before
-     onboarding tenants beyond the owner's own.
+   - `STORAGE_DRIVER` — `local` works to launch with no Cloudflare account
+     needed, but treat Hostinger disk as non-durable (PLAN.md §2.1): quote
+     PDFs re-render on demand so those are recoverable, but inbound
+     WhatsApp media is downloaded once from Meta's expiring URL and is gone
+     for good if the disk is. Switch to `s3` before onboarding any tenant
+     beyond the owner's own.
+   - `STORAGE_LOCAL_PATH` — only read when `STORAGE_DRIVER=local`.
+   - `S3_ENDPOINT`, `S3_BUCKET`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY` —
+     required when `STORAGE_DRIVER=s3`; the app fails to boot without them
+     (validated in `src/lib/config/env.ts`). For Cloudflare R2: dashboard →
+     R2 → create a bucket, then **Manage R2 API Tokens** → create a token
+     with read+write on that bucket. `S3_ENDPOINT` is
+     `https://<account-id>.r2.cloudflarestorage.com` (account ID is in the R2
+     dashboard URL). `S3_REGION` defaults to `auto`, which is what R2
+     expects — leave it unset. R2's free tier (10GB storage, **no egress
+     fee** — the reason it's the recommended provider here over S3 itself)
+     covers this workload comfortably.
    - `CRON_SECRET` — arbitrary long random string, shared with the Hostinger
      cron job set up in §5
    - `BETTER_AUTH_SECRET` — >=32 chars, generate the same way as the
@@ -40,6 +50,11 @@ first deploy and every routine redeploy after it.
      optional; leave unset to run without error tracking
    - `SENTRY_ORG`, `SENTRY_PROJECT`, `SENTRY_AUTH_TOKEN` — optional, only
      needed to upload source maps at build time
+   - `RESEND_API_KEY`, `RESEND_FROM_EMAIL` — optional; leave unset to run
+     with invites/password-reset shown as an on-screen link instead of
+     emailed (PLAN.md §10 1M). Get a key from resend.com, verify the sending
+     domain there, then set `RESEND_FROM_EMAIL` to an address on it (e.g.
+     `no-reply@tudominio.com`) — an unverified domain's sends are rejected.
 5. **Deploy** once so the app and its build exist, then map the custom
    domain (hPanel → domain mapping on the app, SSL is automatic). Update
    `APP_URL` to match once the domain is live, then redeploy.
@@ -118,6 +133,20 @@ backstop if the in-process loop ever stalls. It also indirectly keeps the
 `webhook_events` pruning chain (PLAN.md §10 1H #3) alive if the worker loop
 itself isn't running for some reason, since a stalled worker means both the
 regular loop and the pruning chain are stuck at the same time.
+
+### Subscription expiry warnings (§10 1M)
+
+A second, independent cron entry — once a day is enough, this isn't a queue:
+
+```
+GET https://<app-domain>/api/cron/subscription-warnings
+Header: x-cron-secret: <CRON_SECRET>
+```
+
+Emails every admin of a tenant whose subscription crosses 7 days or 1 day
+from expiry. No-ops silently (logs instead) if `RESEND_API_KEY` /
+`RESEND_FROM_EMAIL` aren't set — safe to add this cron entry before email is
+configured.
 
 ## 6. Process restart
 

@@ -588,6 +588,186 @@ Hostinger (env, migrations, process restart), smoke-test checklist, pass through
 for Spanish copy consistency.
 **Exit**: production deploy on Hostinger; owner's team onboarded.
 
+### 1I — Operability: the app can be run without SSH *(added after 1H shipped)*
+
+1A–1H built every feature the product sells, but an audit of the live app found the
+*operator* paths missing — the ones that don't appear in any feature list because
+they're assumed. The app could not be signed out of, a tenant admin could not add a
+teammate, and standing up a tenant required running `scripts/seed-tenant.ts` over SSH.
+None of that is a new feature; it's the wiring that makes the existing features
+reachable by someone who isn't holding a terminal.
+
+1. **Session shell**: user menu (name, email, role, tenant) + sign out, in both the
+   tenant app and the superadmin console. `signOut` had zero callers before this.
+2. **Tenant team management** (`/users`, admin-only): list members, invite by email +
+   role, copy the invite link, revoke a pending invite. `createInvitation` existed in
+   `modules/tenancy` with **no callers** — the accept-invite page was unreachable
+   because nothing could produce a token.
+3. **Superadmin creates tenant users directly**: name/email/password/role form on the
+   tenant detail page, so onboarding a tenant (and its first admin) never needs the
+   seed script. The script stays as the platform-bootstrap path.
+4. **Site connection guide** (`/sites`): numbered steps with copy-paste handlers for
+   the stacks the owner's network actually runs — static HTML + PHP, and Node.js —
+   rather than one generic `fetch` example.
+
+**Exit**: a superadmin creates a tenant, creates its admin, that admin invites an
+agent, the agent accepts and signs in, and a site is connected end-to-end — all
+through the UI, no shell access.
+
+### 1J — CRM surface parity *(the daily-driver gap)* — ✅ done
+
+1I made the app operable; this makes it pleasant to work in all day. The
+reference point is GoHighLevel's CRM surface, which the owner's team already
+knows — not its marketing/funnel half, which §11 keeps out of scope.
+
+1. ✅ **Contacts table that works like a table** (`modules/crm/contact-list.ts`,
+   `contacts/ContactsTable.tsx`): sortable columns (name, phone, created),
+   filters (search, tag, source, owner, date range, has-open-deal), pagination,
+   and row selection driving **bulk actions** (add tag, assign owner, add to
+   pipeline, export selection). CSV export shares the exact same query path as
+   the table — sort included — so "exportar" always means "what's on screen",
+   verified by requesting the same filtered+sorted URL through both the page
+   and `/api/exports/contacts` and diffing the rows.
+   Deferred, not built: column visibility toggles. Low value against the
+   effort of a persisted per-user preference; revisit only if asked for.
+2. ✅ **Conversation tab on the contact** (`contacts/[id]/ConversationThread.tsx`,
+   `modules/crm/timeline.ts`): a "Conversación" tab with inline reply honoring
+   the same 24h-window rules the inbox enforces, plus an "Actividad" tab
+   merging activities, WhatsApp messages, quotes and lead submissions into one
+   ordered timeline. Deal/tag/edit moved to a "Datos" tab.
+3. ✅ **Tasks / reminders** (`modules/crm/tasks.ts`, migration `0009`): a
+   `tasks` table (due-dated, against a contact and optionally a deal), a
+   "Tareas" tab on the contact with create/complete/reopen/delete, and a
+   "Tareas pendientes" section on the dashboard surfacing anything due now or
+   earlier (overdue and due-today are the same query — the date on screen is
+   what distinguishes them). Verified live: a task due in the future does not
+   appear on the dashboard; the same task backdated does, in red, linking back
+   to its contact.
+   Deferred, not built: an `ai_reply`-style automation action node that
+   creates a task (e.g. "if no reply in 2 days, create a follow-up task").
+   The engine change (new `action` kind in `graph.ts` + `engine.ts` + the
+   flow editor palette) is real but separable work — natural pickup for
+   whoever builds 1O next, since both touch the same files.
+
+**Exit**: a rep can run a full day from Contactos and the contact detail view
+without needing another tab. Met.
+
+### 1K — Durable storage *(do before onboarding any external tenant)* — ✅ done
+Implemented `src/lib/storage/s3.ts` against the AWS SDK (`@aws-sdk/client-s3` +
+`s3-request-presigner`), pointed at Cloudflare R2's S3-compatible endpoint —
+free egress is why R2 over S3 itself. `env.ts` requires `S3_ENDPOINT`,
+`S3_BUCKET`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY` (via `superRefine`,
+so misconfiguration fails at boot) whenever `STORAGE_DRIVER=s3`; `local`
+remains the zero-config default. `docs/DEPLOY.md` has the R2 setup steps.
+Not verified against a live R2 bucket (no Cloudflare credentials in this
+environment) — verified instead: the driver conforms to `StorageAdapter`,
+`local` continues to pass its existing behavior, and the env-validation
+rule is unit-tested (missing-vars-rejected / present-vars-accepted).
+**Recommend a smoke test against the real bucket right after merge** — put a
+key, fetch it back, request a signed URL — before pointing a live tenant's
+media at it.
+**Exit**: driver switchable by env; local disk still works unmodified. Met,
+pending the live-bucket smoke test above.
+
+### 1L — Feedback & polish *(partially done — see below)*
+Landed as a side effect of 1J: the contacts table and bulk-action bar use
+`useTransition`/pending states natively (no full-page reload on filter or bulk
+action), and the two new 1M forms (forgot/reset password, invite) use
+`useActionState` for inline errors.
+**Not done** — deferred, still open for whoever picks up next:
+- Inline validation (`useActionState`) on the *older* forms this phase didn't
+  touch: contacts create/edit, pipeline deal create, quotes, products, forms,
+  automations, WhatsApp connect, tenant settings. They still throw to Next's
+  generic error page on a validation failure.
+- Inbox 5s revalidation (§6.5) — the inbox is still load-once, no polling.
+- Pipeline switcher for tenants with more than one pipeline (the page still
+  hard-picks `pipelines[0]`).
+- Superadmin console visual polish — it has the same nav shell as the tenant
+  app (1I) but `/tenants`, `/plans` still use plain unstyled tables/forms.
+
+### 1M — Transactional email — ✅ done
+Added `resend` + `src/lib/email` (transport, no-ops with a console warning
+when `RESEND_API_KEY`/`RESEND_FROM_EMAIL` are unset — same pattern
+next.config.ts already uses for Sentry — so every environment behaves the
+same, just without mail actually leaving until configured) and
+`src/lib/email/templates.ts` (invitation, password reset, subscription
+expiry warning).
+- **Password reset**: wired into Better Auth's built-in
+  `emailAndPassword.sendResetPassword` — new pages `/forgot-password` and
+  `/reset-password`, a link from `/login`. **Verified with a real round
+  trip**, not just the UI: requested a reset, read the actual verification
+  token out of the database, drove it through Better Auth's own callback
+  route, set a new password, and logged in with it successfully.
+- **Invitation email**: `users/actions.ts`'s `inviteUserAction` now sends the
+  accept-invite link by mail, best-effort — the link is still shown on
+  screen regardless of send success, so a misconfigured or down mail
+  provider never leaves an admin with no way to reach the invitee. Verified:
+  with no Resend key set, the console logs the skip and the on-screen link
+  still renders.
+- **Subscription expiry warnings**: `modules/tenancy/subscriptions.ts` gained
+  `listSubscriptionsCrossingExpiryWarning()` (fires at 7 days and 1 day out,
+  checked as exact equality against a daily cron tick rather than a "warned"
+  flag column — no migration needed) and a new cron-pinged route
+  `/api/cron/subscription-warnings`, same secret-guarded shape as the
+  existing `/api/cron/tick`. **Needs a new Hostinger cron entry** — see
+  `docs/DEPLOY.md` §5 — it does not share a schedule with the job-queue tick.
+**Exit**: self-service onboarding unblocked for invitations and password
+reset. Met.
+
+### 1N — Embedded signup *(gated on Meta Tech Provider approval)*
+§6.2's second connection path. `connected_via: 'embedded'` exists in the schema but
+no flow was ever built — manual connect is the only path today. Required before
+tenants can connect their own numbers without the operator handling access tokens by
+hand, and therefore before SaaS sale.
+
+### 1O — AI auto-reply *(owner request; provider-neutral by design)*
+
+An LLM drafts or sends WhatsApp replies. The engine already has the hard
+parts — §7.1's node graph, the job queue, and the 24h-window rules — so this
+is a **new automation action node**, not a new subsystem. Sketch:
+
+- `src/lib/ai/` with a `generateReply(prompt, context)` interface and one
+  driver per provider, chosen by env exactly like `lib/storage`. **OpenAI and
+  Gemini are the intended drivers** (owner preference; unrelated to which
+  model builds this repo). Keep the interface boringly small — a prompt in, a
+  string out — so swapping providers is a config change, not a rewrite.
+- Tenant settings hold the business context the model needs: what the company
+  sells, tone, hours, what it must never promise (prices, delivery dates).
+- New node type `ai_reply` with a **draft vs. send** switch. Draft posts a
+  suggestion into the conversation for a rep to approve; send delivers it.
+  Start every tenant on draft — an LLM inventing a price in Guaraní is a real
+  commercial risk, and the trust has to be earned before it goes autonomous.
+- Guardrails that matter more than the model choice: never send outside the
+  24h window (templates only, and templates are pre-approved by Meta so an
+  LLM cannot author them), hard cap on replies per conversation per day, a
+  handoff keyword that permanently silences the bot for that contact, and
+  every AI message stored with its prompt and model for audit.
+- Cost is per-token and per-tenant, so meter it: store token counts on the
+  message row, expose a monthly total in settings.
+
+**Exit**: a tenant enables AI replies on one flow, sees drafts for a week,
+then switches that flow to autonomous with a per-conversation kill switch.
+
+### 1P — Google Business Profile *(idea; not scheduled)*
+
+GBP is where the owner's local-SEO work and this CRM meet: reviews, questions,
+and the "message" button all generate leads that currently live outside the
+system. Worth building eventually:
+
+- **Reviews into the CRM**: pull reviews per location, alert on ratings below
+  a threshold, draft replies with the same AI layer as 1O.
+- **Review requests**: automation action that asks for a review when a deal
+  hits a won stage — the highest-leverage half, and it needs no Google API at
+  all, just a link over WhatsApp. **Build this first**; it delivers most of
+  the value with none of the OAuth work.
+- **GBP messages** into the unified inbox, alongside WhatsApp.
+- **Posts** scheduled from the CRM.
+
+Cost note: the Business Profile APIs are free but **access is request-gated** —
+Google reviews each project before granting it, and turnaround is measured in
+weeks. Treat approval as a prerequisite with lead time, the same way §12 Q1
+treats Meta verification.
+
 ### Session estimate
 
 | Milestone | Sessions (cumulative) |
@@ -595,6 +775,14 @@ for Spanish copy consistency.
 | GHL-replacement milestone (1A–1E) | **~17** |
 | Internal-tool milestone (1A–1F) | **~19** |
 | Full Phase 1 (through 1H) | **~26** |
+| Operable without SSH (1I) | **~27** — ✅ done |
+| CRM surface parity (1J) | **~31** — ✅ done |
+| Durable storage (1K) | — ✅ done |
+| Feedback & polish (1L) | — partial, see §10 1L |
+| Transactional email (1M) | — ✅ done |
+| Sellable as SaaS (through 1N) | **~37** — 1N still blocked on Meta approval |
+| AI auto-reply (1O) | **~40** — next up, Opus |
+| Google Business Profile (1P) | unscheduled |
 
 Estimates assume focused build sessions against this spec; Fable review gates (after
 1B, 1D, 1G) are separate short sessions, not counted above.

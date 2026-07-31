@@ -8,6 +8,8 @@ import * as schema from "@/db/schema";
 import { env } from "@/lib/config/env";
 import { newId } from "@/lib/ids";
 import { hasValidInvitationForEmail } from "@/modules/tenancy/invitations";
+import { sendEmail } from "@/lib/email";
+import { passwordResetEmail } from "@/lib/email/templates";
 
 // Better Auth instance (Drizzle adapter + admin plugin for impersonation —
 // PLAN.md §2.3, §3.2). This file is infra wiring analogous to db/client.ts
@@ -38,6 +40,17 @@ export const auth = betterAuth({
   },
   emailAndPassword: {
     enabled: true,
+    // Enables POST /forget-password + /reset-password (PLAN.md §10 1M).
+    // sendResetPassword firing is what turns those routes on at all — Better
+    // Auth's own guard rejects the request with RESET_PASSWORD_DISABLED
+    // otherwise. If Resend isn't configured yet, sendEmail logs and returns
+    // false rather than throwing, so this never blocks the (generic,
+    // timing-safe) response the route always gives regardless of whether
+    // the address exists.
+    sendResetPassword: async ({ user, url }) => {
+      const { subject, html } = passwordResetEmail({ resetUrl: url });
+      await sendEmail({ to: user.email, subject, html });
+    },
   },
   user: {
     additionalFields: {

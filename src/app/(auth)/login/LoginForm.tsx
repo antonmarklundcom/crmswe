@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { authClient } from "@/lib/auth/client";
@@ -66,6 +67,9 @@ export function LoginForm() {
       <Button type="submit" disabled={pending}>
         {t("submit")}
       </Button>
+      <Link href="/forgot-password" className="text-center text-sm underline underline-offset-4">
+        {t("forgotPassword")}
+      </Link>
     </form>
   );
 }

@@ -192,3 +192,37 @@ export const activities = mysqlTable(
     index("activities_tenant_deal_idx").on(table.tenantId, table.dealId),
   ],
 );
+
+// Follow-ups (PLAN.md §10 1J #3): the missing "who do I call today" surface —
+// without this a deal can sit untouched for weeks with nothing surfacing it.
+// Attaches to a contact always and optionally to a deal, same shape as
+// activities above. `assignedUserId` is nullable (unassigned = anyone's) but
+// `dueAt` is not — a task with no due date is just a note, which activities
+// already cover.
+export const tasks = mysqlTable(
+  "tasks",
+  {
+    id: char("id", { length: 26 }).primaryKey(),
+    tenantId: char("tenant_id", { length: 26 }).notNull(),
+    contactId: char("contact_id", { length: 26 }).notNull(),
+    dealId: char("deal_id", { length: 26 }),
+    title: varchar("title", { length: 300 }).notNull(),
+    dueAt: datetime("due_at").notNull(),
+    assignedUserId: char("assigned_user_id", { length: 26 }),
+    completedAt: datetime("completed_at"),
+    createdAt: datetime("created_at")
+      .notNull()
+      .default(sql`CURRENT_TIMESTAMP`),
+    updatedAt: datetime("updated_at")
+      .notNull()
+      .default(sql`CURRENT_TIMESTAMP`),
+  },
+  (table) => [
+    index("tasks_tenant_contact_idx").on(table.tenantId, table.contactId),
+    index("tasks_tenant_deal_idx").on(table.tenantId, table.dealId),
+    // The dashboard "due today / overdue" list filters on tenant + open +
+    // due date — this index is what keeps that query cheap as tasks pile up.
+    index("tasks_tenant_due_idx").on(table.tenantId, table.completedAt, table.dueAt),
+    index("tasks_tenant_assigned_idx").on(table.tenantId, table.assignedUserId),
+  ],
+);

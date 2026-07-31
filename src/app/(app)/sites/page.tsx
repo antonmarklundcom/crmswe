@@ -1,6 +1,7 @@
 import { Globe } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { requireTenantContext } from "@/modules/tenancy/context";
+import { getTenant } from "@/modules/tenancy/tenants";
 import { listSites } from "@/modules/sites/sites";
 import { listPipelines, listStagesForPipeline } from "@/modules/crm/pipelines";
 import { listAccountsForTenant } from "@/modules/whatsapp/accounts";
@@ -9,6 +10,7 @@ import { env } from "@/lib/config/env";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
+import { SiteGuide, type GuideLabels } from "./SiteGuide";
 import { NewSiteForm, RotateKeyButton, type KeyLabels } from "./SiteKeyForms";
 import { toggleSiteActiveAction, updateSiteRoutingAction } from "./actions";
 
@@ -20,11 +22,14 @@ export default async function SitesPage() {
     return <p className="text-muted-foreground">{t("adminOnly")}</p>;
   }
 
-  const [sites, pipelines, waAccounts, stats] = await Promise.all([
+  const tg = await getTranslations("app.sites.guide");
+
+  const [sites, pipelines, waAccounts, stats, tenant] = await Promise.all([
     listSites(ctx),
     listPipelines(ctx),
     listAccountsForTenant(ctx),
     getLeadStats(ctx),
+    getTenant(ctx.tenantId),
   ]);
 
   // Stages across every pipeline — each site normally routes into its own
@@ -53,6 +58,22 @@ export default async function SitesPage() {
     none: t("none"),
     create: t("createSite"),
     rotate: t("rotateKey"),
+  };
+
+  const guideLabels: GuideLabels = {
+    title: tg("title"),
+    intro: tg("intro"),
+    steps: (["create", "env", "handler", "verify"] as const).map((key) => ({
+      title: tg(`steps.${key}.title`),
+      body: tg(`steps.${key}.body`),
+    })),
+    snippetTitle: tg("snippetTitle"),
+    copy: tg("copy"),
+    copied: tg("copied"),
+    securityTitle: tg("securityTitle"),
+    securityPoints: (["serverSide", "idempotency", "phone", "spam", "nonBlocking"] as const).map(
+      (key) => tg(`security.${key}`),
+    ),
   };
 
   const leadsBySite = new Map(stats.bySite.map((bucket) => [bucket.key, bucket.count]));
@@ -161,31 +182,11 @@ export default async function SitesPage() {
         />
       </section>
 
-      <section>
-        <h2 className="mb-2 text-lg font-semibold">{t("howToTitle")}</h2>
-        <p className="mb-3 max-w-2xl text-sm text-muted-foreground">{t("howToIntro")}</p>
-        <pre className="overflow-x-auto rounded-md border bg-muted p-3 text-xs">
-          <code>{`// The site's own server (never the browser — keeps the key private)
-await fetch("${env.APP_URL}/api/v1/leads", {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-    "X-Api-Key": process.env.VENDERCRM_API_KEY,
-  },
-  body: JSON.stringify({
-    phone: form.phone,            // required
-    name: form.name,
-    email: form.email,
-    message: form.message,
-    page_url: pageUrl,
-    referrer: referrer,
-    utm_source: utm.source,       // from the first-touch cookie
-    utm_campaign: utm.campaign,
-    idempotency_key: submissionId, // retry-safe: same key = same lead
-  }),
-});`}</code>
-        </pre>
-      </section>
+      <SiteGuide
+        appUrl={env.APP_URL}
+        formEndpointExample={`${env.APP_URL}/f/${tenant?.slug ?? "tu-empresa"}/contacto`}
+        labels={guideLabels}
+      />
 
       {stats.byCampaign.length > 0 && (
         <section>

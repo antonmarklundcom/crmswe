@@ -4,6 +4,8 @@ import { getTenant } from "@/modules/tenancy/tenants";
 import type { BusinessHours, TenantSettings } from "@/modules/tenancy/settings";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/page-header";
+import { contactsFeedUrl } from "@/modules/crm/feed-url";
+import { SheetsFeed, type SheetsLabels } from "./SheetsFeed";
 import { updateBrandingAction, updateBusinessHoursAction, updateTimezoneAction } from "./actions";
 
 const DAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"] as const;
@@ -29,6 +31,18 @@ export default async function SettingsPage() {
       sat: null,
       sun: null,
     };
+
+  const sheetsLabels: SheetsLabels = {
+    formulaLabel: t("sheetsFormula"),
+    copy: t("sheetsCopy"),
+    copied: t("sheetsCopied"),
+    generate: t("sheetsGenerate"),
+    regenerate: t("sheetsRegenerate"),
+    regenerateWarning: t("sheetsRegenerateWarning"),
+    steps: (["generate", "paste", "refresh"] as const).map((key) =>
+      t(`sheetsSteps.${key}`),
+    ),
+  };
 
   return (
     <div className="flex flex-col gap-8">
@@ -105,6 +119,19 @@ export default async function SettingsPage() {
             {tc("save")}
           </Button>
         </form>
+      </section>
+
+      <section>
+        <h2 className="mb-2 text-lg font-semibold">{t("sheetsTitle")}</h2>
+        <p className="mb-4 max-w-2xl text-sm text-muted-foreground">{t("sheetsIntro")}</p>
+        <SheetsFeed
+          currentUrl={
+            settings.exports?.contactsToken
+              ? contactsFeedUrl(settings.exports.contactsToken)
+              : null
+          }
+          labels={sheetsLabels}
+        />
       </section>
     </div>
   );

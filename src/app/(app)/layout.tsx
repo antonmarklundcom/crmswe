@@ -1,7 +1,10 @@
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { getTenantContext } from "@/modules/tenancy/context";
+import { getUserById } from "@/modules/tenancy/users";
+import { getTenant } from "@/modules/tenancy/tenants";
 import { AppNav, type NavGroup } from "@/components/app-nav";
+import { UserMenu } from "@/components/user-menu";
 
 // Tenant suspension/expiry enforcement (PLAN.md §10 1B: "grace → read-only
 // banner → locked"). Runs server-side, in the Node.js runtime, so it can
@@ -37,7 +40,13 @@ export default async function AppLayout({
 
   const t = await getTranslations("app.nav");
   const tc = await getTranslations("common");
+  const tRoles = await getTranslations("app.users.roles");
   const isAdmin = ctx.role === "admin";
+
+  const [user, tenant] = await Promise.all([
+    getUserById(ctx.userId),
+    getTenant(ctx.tenantId),
+  ]);
 
   // Grouped so the nav reads as a product rather than a list of routes: what
   // you work in daily, what feeds it, and what you configure once.
@@ -72,6 +81,7 @@ export default async function AppLayout({
         ...(isAdmin
           ? [
               { href: "/whatsapp", label: t("whatsapp"), icon: "whatsapp" as const },
+              { href: "/users", label: t("users"), icon: "users" as const },
               { href: "/settings", label: t("settings"), icon: "settings" as const },
             ]
           : []),
@@ -88,11 +98,23 @@ export default async function AppLayout({
     },
   ];
 
+  const identity = {
+    name: user?.name ?? "",
+    email: user?.email ?? "",
+    subtitle: [tenant?.name, tRoles(ctx.role)].filter(Boolean).join(" · "),
+    signOutLabel: tc("signOut"),
+  };
+
   return (
     <div className="flex flex-1 flex-col">
       {graceBanner}
       <div className="flex flex-1 flex-col md:flex-row">
-        <AppNav groups={groups} appName={tc("appName")} />
+        <AppNav
+          groups={groups}
+          appName={tc("appName")}
+          footer={<UserMenu {...identity} />}
+          mobileHeader={<UserMenu {...identity} variant="bar" />}
+        />
         <div className="min-w-0 flex-1 p-6">{children}</div>
       </div>
     </div>

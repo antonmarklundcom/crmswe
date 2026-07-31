@@ -13,6 +13,7 @@ import {
   Settings,
   Smartphone,
   SquareKanban,
+  UserCog,
   Users,
   Workflow,
   type LucideIcon,
@@ -38,6 +39,7 @@ const ICONS = {
   forms: ClipboardList,
   sites: Globe,
   whatsapp: Smartphone,
+  users: UserCog,
   settings: Settings,
   facturaElectronica: Receipt,
 } satisfies Record<string, LucideIcon>;
@@ -106,7 +108,19 @@ function NavLink({ item, active }: { item: NavItem; active: boolean }) {
   );
 }
 
-export function AppNav({ groups, appName }: { groups: NavGroup[]; appName: string }) {
+export function AppNav({
+  groups,
+  appName,
+  footer,
+  mobileHeader,
+}: {
+  groups: NavGroup[];
+  appName: string;
+  /** Sits at the bottom of the desktop sidebar — the user menu. */
+  footer?: React.ReactNode;
+  /** Same identity, in the single-row form, above the mobile nav strip. */
+  mobileHeader?: React.ReactNode;
+}) {
   const pathname = usePathname();
   const flatItems = groups.flatMap((group) => group.items);
 
@@ -129,15 +143,20 @@ export function AppNav({ groups, appName }: { groups: NavGroup[]; appName: strin
             </div>
           ))}
         </nav>
+        {footer && <div className="mt-auto">{footer}</div>}
       </aside>
 
-      {/* Mobile: one scrollable strip — grouping costs more than it buys on
-          a phone, but the icons and the active state still carry over. */}
-      <nav className="flex gap-1 overflow-x-auto border-b px-3 py-2 md:hidden">
-        {flatItems.map((item) => (
-          <NavLink key={item.href} item={item} active={isActive(pathname, item.href)} />
-        ))}
-      </nav>
+      {/* Mobile: identity row, then one scrollable strip — grouping costs
+          more than it buys on a phone, but the icons and the active state
+          still carry over. */}
+      <div className="flex flex-col md:hidden">
+        {mobileHeader}
+        <nav className="flex gap-1 overflow-x-auto border-b px-3 py-2">
+          {flatItems.map((item) => (
+            <NavLink key={item.href} item={item} active={isActive(pathname, item.href)} />
+          ))}
+        </nav>
+      </div>
     </>
   );
 }

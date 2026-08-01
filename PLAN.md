@@ -807,7 +807,7 @@ metered, guaraníes are not — needs per-model pricing that changes under us);
 no streaming; no RAG over the tenant's own documents; no AI drafting in the
 inbox on demand, only via a flow node.
 
-### 1Q — Non-fiscal documents: notas de venta *(owner request)* — 🟡 engine done, UI pending
+### 1Q — Non-fiscal documents: notas de venta *(owner request)* — 🟡 engine done & merged; UI is 1R #2
 
 Quotes (1F) stop at "here's what it would cost". Nothing in the app records
 that a sale *happened* or that money came in, so the owner's team tracked
@@ -874,6 +874,61 @@ detail with the payment ledger, "convertir presupuesto", nav entry, i18n
 strings). The engine is callable and tested; nothing renders it inside the
 app yet.
 
+### 1R — Daily-driver readiness *(Sonnet; the owner's own dogfooding run)* — ⏭ next
+
+The decision driving this phase: **the owner runs his own Paraguayan lead-gen
+network (dentista.com.py, tasacion.com.py, pozo.com.py) on VenderCRM before
+selling it as SaaS.** That is the §5.1 cutover discipline applied to the whole
+product rather than to one site. Everything here is either a wall that blocks
+that run or friction that makes it unpleasant; nothing here is new product
+surface.
+
+Ordered by what actually blocks the run, not by size:
+
+1. **Pipeline switcher — the one hard blocker.** `pipeline/page.tsx` and
+   `forms/page.tsx` both hard-pick `pipelines[0]`. Dental leads, property
+   valuations and well drilling are three different sales motions wanting
+   three pipelines with different stages, and today only the first is
+   reachable. Selection belongs in the URL (`?pipeline=<id>`), not component
+   state, so it survives refresh and can be shared. Listed under 1L as a
+   nicety; this use case promotes it.
+2. **Notas de venta UI** — the Sonnet half of 1Q. The engine is built,
+   tested and callable; nothing renders it. List, draft builder, detail with
+   the payment ledger, issue/void/send actions, "convertir presupuesto" on a
+   quote, nav entry, i18n. The UI must mirror the engine's rules (no editing
+   an issued document, no payments on a draft, no voiding with payments) so
+   users meet a disabled control rather than a 500.
+3. **Inbox 5s polling** (§6.5, deferred since 1D). The inbox is load-once,
+   and this is where a rep spends the day. Must not clobber a half-typed
+   reply or reset scroll on refresh — that is the whole risk.
+4. **Phone normalization is hardcoded to Paraguay.** `normalizePhone` maps a
+   leading `0` to `+595`, so a Swedish `070-123 45 67` silently becomes a
+   Paraguayan number. Harmless while the network is Paraguay-only, and
+   corrupting on the first Swedish tenant. Needs a per-site/per-tenant
+   default country. Found while writing the client integration guide.
+5. **GBP review requests** (1P's first half — build it here). An automation
+   action that sends a Google review link over WhatsApp when a deal hits a
+   won stage. No Google API, no OAuth, no approval gate: it is a link. Most
+   of 1P's value for none of its lead time, and a real differentiator when
+   selling to dentists and plumbers.
+6. **1L leftovers**: `useActionState` inline validation on the older forms
+   (contacts, deals, quotes, products, forms, automations, WhatsApp connect,
+   settings — the 1M forms are the pattern), and superadmin console polish.
+
+**Operator tasks, not code** — these gate putting real client leads in, and
+none of them are done:
+- **Verify MySQL backups actually restore.** 1H listed backup verification;
+  it has never been exercised. Restore into a scratch database and check row
+  counts before a real lead depends on it.
+- **1K's live R2 smoke test** — put a key, read it back, sign a URL. Until
+  then `STORAGE_DRIVER=local` means WhatsApp media and quote/document PDFs
+  sit on Hostinger disk, which §2.1 says to treat as non-durable.
+- **Deploy and migrate**: 1O and 1Q add migrations `0010` and `0011`.
+
+**Exit**: the owner runs a full day — leads arriving from a live site into
+the right pipeline, WhatsApp follow-up in a self-refreshing inbox, a nota de
+venta issued and paid — without opening a terminal or another tab.
+
 ### 1P — Google Business Profile *(idea; not scheduled)*
 
 GBP is where the owner's local-SEO work and this CRM meet: reviews, questions,
@@ -907,7 +962,9 @@ treats Meta verification.
 | Feedback & polish (1L) | — partial, see §10 1L |
 | Transactional email (1M) | — ✅ done |
 | Sellable as SaaS (through 1N) | **~37** — 1N still blocked on Meta approval |
-| AI auto-reply (1O) | **~40** — ✅ done |
+| AI auto-reply (1O) | **~40** — ✅ done, merged |
+| Notas de venta engine (1Q) | — ✅ engine done, merged; UI is 1R |
+| Daily-driver readiness (1R) | ⏭ **next up, Sonnet** — the owner's dogfooding run |
 | Google Business Profile (1P) | unscheduled |
 
 Estimates assume focused build sessions against this spec; Fable review gates (after

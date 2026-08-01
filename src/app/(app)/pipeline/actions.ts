@@ -2,8 +2,10 @@
 
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { requireTenantContext } from "@/modules/tenancy/context";
 import { moveDeal, createDeal } from "@/modules/crm/deals";
+import { createPipelineWithDefaultStages } from "@/modules/crm/pipelines";
 
 const moveDealSchema = z.object({
   dealId: z.string().min(1),
@@ -41,4 +43,16 @@ export async function createDealAction(formData: FormData) {
   });
   await createDeal(ctx, input);
   revalidatePath("/pipeline");
+}
+
+const createPipelineSchema = z.object({
+  name: z.string().min(1).max(100),
+});
+
+export async function createPipelineAction(formData: FormData) {
+  const ctx = await requireTenantContext();
+  const input = createPipelineSchema.parse({ name: formData.get("name") });
+  const pipeline = await createPipelineWithDefaultStages(ctx, input.name);
+  revalidatePath("/pipeline");
+  if (pipeline) redirect(`/pipeline?pipeline=${pipeline.id}`);
 }

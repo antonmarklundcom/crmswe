@@ -8,11 +8,14 @@ import { contactsFeedUrl } from "@/modules/crm/feed-url";
 import { isAiConfigured } from "@/lib/ai";
 import { resolveAiConfig } from "@/modules/ai/config";
 import { monthlyTokenUsage } from "@/modules/ai/replies";
+import { COUNTRY_CODES, DEFAULT_COUNTRY } from "@/lib/phone";
 import { SheetsFeed, type SheetsLabels } from "./SheetsFeed";
 import {
   updateBrandingAction,
   updateBusinessHoursAction,
   updateTimezoneAction,
+  updateDefaultCountryAction,
+  updateReviewLinkAction,
   updateAiSettingsAction,
 } from "./actions";
 
@@ -91,6 +94,46 @@ export default async function SettingsPage() {
           <input
             name="timezone"
             defaultValue={tenant?.timezone ?? "America/Asuncion"}
+            className="flex-1 rounded-md border px-3 py-2 text-sm"
+          />
+          <Button type="submit" variant="outline">
+            {tc("save")}
+          </Button>
+        </form>
+      </section>
+
+      <section>
+        <h2 className="mb-4 text-lg font-semibold">{t("defaultCountryTitle")}</h2>
+        <p className="mb-4 max-w-2xl text-sm text-muted-foreground">
+          {t("defaultCountryIntro")}
+        </p>
+        <form action={updateDefaultCountryAction} className="flex max-w-sm gap-2">
+          <select
+            name="defaultCountry"
+            defaultValue={settings.defaultCountry ?? DEFAULT_COUNTRY}
+            className="flex-1 rounded-md border px-3 py-2 text-sm"
+          >
+            {COUNTRY_CODES.map((code) => (
+              <option key={code} value={code}>
+                {t(`countryNames.${code}` as "countryNames.PY")}
+              </option>
+            ))}
+          </select>
+          <Button type="submit" variant="outline">
+            {tc("save")}
+          </Button>
+        </form>
+      </section>
+
+      <section>
+        <h2 className="mb-4 text-lg font-semibold">{t("reviewLinkTitle")}</h2>
+        <p className="mb-4 max-w-2xl text-sm text-muted-foreground">{t("reviewLinkIntro")}</p>
+        <form action={updateReviewLinkAction} className="flex max-w-md gap-2">
+          <input
+            name="reviewLink"
+            type="url"
+            defaultValue={settings.reviewLink ?? ""}
+            placeholder="https://g.page/r/.../review"
             className="flex-1 rounded-md border px-3 py-2 text-sm"
           />
           <Button type="submit" variant="outline">

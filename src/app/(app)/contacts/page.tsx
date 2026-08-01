@@ -275,7 +275,11 @@ export default async function ContactsPage({
                 owner: t("owner"),
                 created: t("created"),
                 openDealBadge: t("openDealBadge"),
-                selectedCount: t("bulk.selectedCount"),
+                // Raw (not t()): the client component does its own
+                // "{count}" substitution as selection changes, so this must
+                // stay an unformatted template — t() would eagerly demand a
+                // count argument and throw FORMATTING_ERROR on every render.
+                selectedCount: t.raw("bulk.selectedCount"),
                 addTag: t("bulk.addTag"),
                 chooseTag: t("bulk.chooseTag"),
                 assignOwner: t("bulk.assignOwner"),

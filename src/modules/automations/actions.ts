@@ -2,6 +2,8 @@ import { eq } from "drizzle-orm";
 import { messages } from "@/db/schema";
 import type { TenantContext } from "@/modules/tenancy/context";
 import { tenantDb } from "@/modules/tenancy/db";
+import { getTenant } from "@/modules/tenancy/tenants";
+import type { TenantSettings } from "@/modules/tenancy/settings";
 import {
   addTagToContact,
   removeTagFromContact,
@@ -50,6 +52,13 @@ export async function executeAction(
 
   if (kind === "ai_reply") {
     return aiReplyAction(ctx, node.id, config, contactId, runId);
+  }
+
+  if (kind === "send_review_request") {
+    if (await hasOptedOut(ctx, contactId)) {
+      return { skipped: true, detail: { reason: "contact_opted_out" } };
+    }
+    return sendReviewRequestAction(ctx, config, contactId, runId);
   }
 
   switch (kind) {
@@ -121,6 +130,49 @@ async function sendWhatsappAction(
       conversationId: conversation.id,
       body: renderTemplateVars(String(config.text ?? ""), await getContact(ctx, contactId)),
     });
+    await stampAutomationRun(ctx, messageId, runId);
+    return { skipped: false, detail: { messageId } };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    if (message.includes("ventana de 24 horas")) {
+      return { skipped: true, detail: { reason: "window_closed" } };
+    }
+    throw err;
+  }
+}
+
+const DEFAULT_REVIEW_REQUEST_TEXT =
+  "¡Gracias por confiar en nosotros! Si tenés un minuto, nos ayudaría mucho que dejes una reseña: {{review_link}}";
+
+/**
+ * GBP review request (PLAN.md §10 1R #5 / §10 1P). No Google API, no OAuth —
+ * the tenant's own review link, sent like any other free-form WhatsApp send,
+ * so it inherits every guard that already applies to one (opt-out above,
+ * 24h window below).
+ */
+async function sendReviewRequestAction(
+  ctx: TenantContext,
+  config: Record<string, unknown>,
+  contactId: string,
+  runId: string,
+): Promise<ActionResult> {
+  const tenant = await getTenant(ctx.tenantId);
+  const settings = (tenant?.settings ?? {}) as TenantSettings;
+  const reviewLink = settings.reviewLink;
+  if (!reviewLink) return { skipped: true, detail: { reason: "no_review_link" } };
+
+  const account = await getPrimaryAccount(ctx);
+  if (!account) return { skipped: true, detail: { reason: "no_whatsapp_account" } };
+
+  const conversation = await getOrCreateConversation(ctx, account.id, contactId);
+  if (!conversation) return { skipped: true, detail: { reason: "no_conversation" } };
+
+  const template = String(config.text ?? DEFAULT_REVIEW_REQUEST_TEXT);
+  const contact = await getContact(ctx, contactId);
+  const body = renderTemplateVars(template, contact).replaceAll("{{review_link}}", reviewLink);
+
+  try {
+    const messageId = await sendText(ctx, { conversationId: conversation.id, body });
     await stampAutomationRun(ctx, messageId, runId);
     return { skipped: false, detail: { messageId } };
   } catch (err) {

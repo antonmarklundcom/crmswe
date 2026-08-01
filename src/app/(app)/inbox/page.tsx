@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { MessagesSquare, Smartphone } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { requireTenantContext } from "@/modules/tenancy/context";
@@ -7,6 +6,7 @@ import { listAccountsForTenant } from "@/modules/whatsapp/accounts";
 import { getContact } from "@/modules/crm/contacts";
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
+import { InboxList } from "./InboxList";
 
 export default async function InboxPage() {
   const ctx = await requireTenantContext();
@@ -50,26 +50,15 @@ export default async function InboxPage() {
           />
         )
       ) : (
-        <ul className="flex flex-col gap-2 text-sm">
-          {withContacts.map(({ conversation, contact }) => (
-            <li key={conversation.id}>
-              <Link
-                href={`/inbox/${conversation.id}`}
-                className="flex items-center justify-between rounded-md border px-3 py-2 hover:bg-accent"
-              >
-                <span>
-                  <span className="font-medium">{contact?.name ?? conversation.contactId}</span>{" "}
-                  <span className="text-muted-foreground">{contact?.phone}</span>
-                </span>
-                {conversation.unreadCount > 0 && (
-                  <span className="rounded-full bg-primary px-2 py-0.5 text-xs text-primary-foreground">
-                    {conversation.unreadCount}
-                  </span>
-                )}
-              </Link>
-            </li>
-          ))}
-        </ul>
+        <InboxList
+          initial={withContacts.map(({ conversation, contact }) => ({
+            id: conversation.id,
+            contactId: conversation.contactId,
+            contactName: contact?.name ?? conversation.contactId,
+            contactPhone: contact?.phone ?? "",
+            unreadCount: conversation.unreadCount,
+          }))}
+        />
       )}
     </div>
   );

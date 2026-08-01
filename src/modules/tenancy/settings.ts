@@ -2,6 +2,7 @@ import { randomBytes, timingSafeEqual } from "node:crypto";
 import { eq } from "drizzle-orm";
 import { db } from "@/db/client";
 import { tenants } from "@/db/schema";
+import type { CountryCode } from "@/lib/phone";
 import type { TenantContext } from "./context";
 import { assertTenantWritable } from "./db";
 import { getTenant } from "./tenants";
@@ -70,6 +71,21 @@ export type TenantSettings = {
   businessHours?: BusinessHours;
   exports?: TenantExports;
   ai?: TenantAiSettings;
+  /**
+   * Default country for phone normalization (PLAN.md §10 1R #4). Lives here
+   * for the same no-migration reason as `ai` — configuration, not tenant
+   * data. Unset behaves exactly as before this field existed: Paraguay
+   * (`lib/phone.ts`'s `DEFAULT_COUNTRY`).
+   */
+  defaultCountry?: CountryCode;
+  /**
+   * Google review link for the `send_review_request` automation action
+   * (PLAN.md §10 1R #5 — the GBP review-request half of §10 1P, built here
+   * because it needs no Google API: it's a link). A tenant's Google Business
+   * Profile "get more reviews" short link, e.g.
+   * `https://g.page/r/.../review`.
+   */
+  reviewLink?: string;
 };
 
 export async function updateTenantBranding(ctx: TenantContext, branding: TenantBranding) {
@@ -82,6 +98,14 @@ export async function updateTenantBusinessHours(ctx: TenantContext, businessHour
 
 export async function updateTenantAiSettings(ctx: TenantContext, ai: TenantAiSettings) {
   return mergeTenantSettings(ctx, { ai });
+}
+
+export async function updateTenantDefaultCountry(ctx: TenantContext, defaultCountry: CountryCode) {
+  return mergeTenantSettings(ctx, { defaultCountry });
+}
+
+export async function updateTenantReviewLink(ctx: TenantContext, reviewLink: string) {
+  return mergeTenantSettings(ctx, { reviewLink });
 }
 
 export async function updateTenantTimezone(ctx: TenantContext, timezone: string) {
@@ -145,6 +169,8 @@ async function mergeTenantSettings(ctx: TenantContext, patch: Partial<TenantSett
     businessHours: patch.businessHours ?? current.businessHours,
     exports: patch.exports ?? current.exports,
     ai: patch.ai ? { ...current.ai, ...patch.ai } : current.ai,
+    defaultCountry: patch.defaultCountry ?? current.defaultCountry,
+    reviewLink: patch.reviewLink ?? current.reviewLink,
   };
 
   await db.update(tenants).set({ settings: merged }).where(eq(tenants.id, ctx.tenantId));

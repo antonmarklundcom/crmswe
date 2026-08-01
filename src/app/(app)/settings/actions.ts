@@ -7,6 +7,8 @@ import {
   updateTenantBranding,
   updateTenantBusinessHours,
   updateTenantTimezone,
+  updateTenantDefaultCountry,
+  updateTenantReviewLink,
   regenerateContactsFeedToken,
   updateTenantAiSettings,
   type BusinessHours,
@@ -15,6 +17,7 @@ import {
   MAX_PER_CONVERSATION_PER_DAY_LIMIT,
   MAX_PER_TENANT_PER_DAY_LIMIT,
 } from "@/modules/ai/config";
+import { COUNTRY_CODES } from "@/lib/phone";
 
 const DAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"] as const;
 
@@ -61,6 +64,24 @@ export async function updateTimezoneAction(formData: FormData) {
   const ctx = await requireTenantAdmin();
   const timezone = timezoneSchema.parse(formData.get("timezone"));
   await updateTenantTimezone(ctx, timezone);
+  revalidatePath("/settings");
+}
+
+const defaultCountrySchema = z.enum(COUNTRY_CODES);
+
+export async function updateDefaultCountryAction(formData: FormData) {
+  const ctx = await requireTenantAdmin();
+  const defaultCountry = defaultCountrySchema.parse(formData.get("defaultCountry"));
+  await updateTenantDefaultCountry(ctx, defaultCountry);
+  revalidatePath("/settings");
+}
+
+const reviewLinkSchema = z.string().url().max(500);
+
+export async function updateReviewLinkAction(formData: FormData) {
+  const ctx = await requireTenantAdmin();
+  const reviewLink = reviewLinkSchema.parse(formData.get("reviewLink"));
+  await updateTenantReviewLink(ctx, reviewLink);
   revalidatePath("/settings");
 }
 

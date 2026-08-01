@@ -36,6 +36,7 @@ const PALETTE: Array<{ type: "condition" | "action" | "delay"; kind: string }> =
   { type: "action", kind: "assign_user" },
   { type: "action", kind: "create_note" },
   { type: "action", kind: "ai_reply" },
+  { type: "action", kind: "send_review_request" },
   { type: "condition", kind: "has_tag" },
   { type: "condition", kind: "deal_in_stage" },
   { type: "condition", kind: "business_hours" },
@@ -306,6 +307,21 @@ function NodeConfigPanel({
             placeholder={t("fields.textPlaceholder", { tag: "{{contact.name}}" })}
             className="rounded-md border px-2 py-1"
           />
+        </label>
+      )}
+
+      {kind === "send_review_request" && (
+        <label className="flex flex-1 flex-col gap-1">
+          {t("fields.text")}
+          <textarea
+            value={String(config.text ?? "")}
+            onChange={(e) => set("text", e.target.value)}
+            placeholder={t("fields.reviewTextPlaceholder", { tag: "{{review_link}}" })}
+            className="rounded-md border px-2 py-1"
+          />
+          {/* Left blank uses a sensible Spanish default with the link —
+              see modules/automations/actions.ts DEFAULT_REVIEW_REQUEST_TEXT. */}
+          <span className="text-xs text-muted-foreground">{t("fields.reviewTextHint")}</span>
         </label>
       )}
 

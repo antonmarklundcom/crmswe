@@ -49,6 +49,10 @@ export const flowNodeSchema = z.discriminatedUnion("type", [
           // the engine change is this enum entry; the guards live in
           // modules/ai/reply.ts.
           "ai_reply",
+          // GBP review request (PLAN.md §10 1R #5 / §10 1P). No Google API —
+          // it sends the tenant's own review link over WhatsApp, same
+          // free-form-send guards as send_whatsapp.
+          "send_review_request",
         ]),
         /**
          * Only meaningful on `ai_reply`. Absent means draft, and the tenant

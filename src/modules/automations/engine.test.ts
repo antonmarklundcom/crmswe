@@ -156,6 +156,38 @@ describe.skipIf(!hasDb)("automation engine (MySQL)", () => {
     expect(tags.some((t) => t.id === tag!.id)).toBe(true);
   });
 
+  // GBP review request (PLAN.md §10 1R #5): an unconfigured send guard
+  // (no review link, no WhatsApp account) must be a skipped step, not a
+  // failed run — same guarantee send_whatsapp already has for a closed
+  // window (§7.2).
+  it("completes a send_review_request flow even with no review link configured", async () => {
+    const flow = await createFlow(ctx, { name: "Reseña", triggerType: "deal_stage_changed" });
+    await saveDraft(ctx, flow!.id, {
+      nodes: [
+        { id: "t1", type: "trigger", config: { triggerType: "deal_stage_changed" } },
+        { id: "a1", type: "action", config: { kind: "send_review_request" } },
+      ],
+      edges: [{ id: "e1", source: "t1", target: "a1", branch: "default" }],
+    });
+    const published = await publishFlow(ctx, flow!.id);
+    expect(published.ok).toBe(true);
+    if (!published.ok) return;
+
+    const contact = await newContact();
+    const runId = await startRun(ctx, {
+      flowId: flow!.id,
+      flowVersionId: published.versionId,
+      contactId: contact.id,
+      startedBy: {},
+    });
+    expect(runId).toBeTruthy();
+
+    await advanceRun(ctx, runId!);
+
+    const run = await getRun(ctx, runId!);
+    expect(run!.status).toBe("completed");
+  });
+
   it("refuses to publish an invalid graph, so a broken flow can never run", async () => {
     const flow = await createFlow(ctx, { name: "Rota", triggerType: "contact_created" });
     await saveDraft(ctx, flow!.id, {

@@ -8,6 +8,7 @@ import {
   updateTenantBusinessHours,
   updateTenantTimezone,
   updateTenantDefaultCountry,
+  updateTenantReviewLink,
   regenerateContactsFeedToken,
   updateTenantAiSettings,
   type BusinessHours,
@@ -72,6 +73,15 @@ export async function updateDefaultCountryAction(formData: FormData) {
   const ctx = await requireTenantAdmin();
   const defaultCountry = defaultCountrySchema.parse(formData.get("defaultCountry"));
   await updateTenantDefaultCountry(ctx, defaultCountry);
+  revalidatePath("/settings");
+}
+
+const reviewLinkSchema = z.string().url().max(500);
+
+export async function updateReviewLinkAction(formData: FormData) {
+  const ctx = await requireTenantAdmin();
+  const reviewLink = reviewLinkSchema.parse(formData.get("reviewLink"));
+  await updateTenantReviewLink(ctx, reviewLink);
   revalidatePath("/settings");
 }
 

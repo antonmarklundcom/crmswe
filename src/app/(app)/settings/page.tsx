@@ -15,6 +15,7 @@ import {
   updateBusinessHoursAction,
   updateTimezoneAction,
   updateDefaultCountryAction,
+  updateReviewLinkAction,
   updateAiSettingsAction,
 } from "./actions";
 
@@ -118,6 +119,23 @@ export default async function SettingsPage() {
               </option>
             ))}
           </select>
+          <Button type="submit" variant="outline">
+            {tc("save")}
+          </Button>
+        </form>
+      </section>
+
+      <section>
+        <h2 className="mb-4 text-lg font-semibold">{t("reviewLinkTitle")}</h2>
+        <p className="mb-4 max-w-2xl text-sm text-muted-foreground">{t("reviewLinkIntro")}</p>
+        <form action={updateReviewLinkAction} className="flex max-w-md gap-2">
+          <input
+            name="reviewLink"
+            type="url"
+            defaultValue={settings.reviewLink ?? ""}
+            placeholder="https://g.page/r/.../review"
+            className="flex-1 rounded-md border px-3 py-2 text-sm"
+          />
           <Button type="submit" variant="outline">
             {tc("save")}
           </Button>

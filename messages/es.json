@@ -312,6 +312,8 @@
         "SE": "Suecia",
         "US": "Estados Unidos"
       },
+      "reviewLinkTitle": "Enlace de reseña de Google",
+      "reviewLinkIntro": "El enlace de tu perfil de Google Business para pedir reseñas ('Recibir más reseñas' en Google Business Profile). Se usa en el nodo 'Pedir reseña de Google' de las automatizaciones.",
       "businessHoursTitle": "Horario de atención",
       "sheetsTitle": "Google Sheets",
       "sheetsIntro": "Tus contactos en una planilla que se actualiza sola, sin conectar tu cuenta de Google y sin costo. La planilla lee un enlace privado de tu empresa; no le damos acceso a nadie más.",
@@ -655,7 +657,8 @@
           "has_replied_since": "¿Respondió?",
           "wait_duration": "Esperar",
           "wait_for_reply": "Esperar respuesta",
-          "ai_reply": "Responder con IA"
+          "ai_reply": "Responder con IA",
+          "send_review_request": "Pedir reseña de Google"
         },
         "fields": {
           "text": "Texto",
@@ -671,7 +674,9 @@
           "aiMode": "Modo",
           "aiModeDraft": "Borrador (un asesor aprueba)",
           "aiModeSend": "Envío automático",
-          "aiModeHint": "El envío automático también requiere activarlo para toda la cuenta en Configuración. Mientras la cuenta esté en borrador, este nodo genera borradores."
+          "aiModeHint": "El envío automático también requiere activarlo para toda la cuenta en Configuración. Mientras la cuenta esté en borrador, este nodo genera borradores.",
+          "reviewTextPlaceholder": "¡Gracias por tu compra! Dejanos una reseña: {tag}",
+          "reviewTextHint": "Si lo dejás vacío, se envía un mensaje predeterminado con el enlace. Configurá el enlace de reseña en Configuración."
         }
       }
     }

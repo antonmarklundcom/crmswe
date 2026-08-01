@@ -807,6 +807,73 @@ metered, guaraníes are not — needs per-model pricing that changes under us);
 no streaming; no RAG over the tenant's own documents; no AI drafting in the
 inbox on demand, only via a flow node.
 
+### 1Q — Non-fiscal documents: notas de venta *(owner request)* — 🟡 engine done, UI pending
+
+Quotes (1F) stop at "here's what it would cost". Nothing in the app records
+that a sale *happened* or that money came in, so the owner's team tracked
+both outside the CRM. This adds a second document type for exactly that,
+**without** waiting for Phase 2's SIFEN engine.
+
+**The naming decision, and why it is not cosmetic.** In Paraguay a *factura*
+is a fiscal document requiring timbrado and SIFEN clearance. A PDF that looks
+like one but isn't is not a valid tax document, and a tenant who files it as
+one has a real problem. So this ships as a **nota de venta** — a recognized
+non-fiscal commercial sales record — never labeled "factura", and both the
+PDF and the public page carry an explicit *"Documento no fiscal… no tiene
+validez tributaria"* notice on their face. The nav item **"Factura
+electrónica — Próximamente"** stays exactly as it is; this does not fulfill
+it and must not be presented as if it does.
+
+**SIFEN boundary rule (load-bearing for Phase 2).** `documents` is a
+non-fiscal record. Phase 2's fiscal invoices get their own tables per §4/§9
+and are **not** a status or a `type` value on this table. A nota de venta may
+later be *referenced by* a fiscal invoice (`invoices.document_id`), exactly
+as §4 already allows for quotes. Never add `timbrado`, `cdc`, `de_xml`,
+establishment/point-of-sale codes, or fiscal numbering ranges here — if a
+field only makes sense for a SIFEN document, it belongs in Phase 2's tables.
+This is the rule that stops Phase 2 being retrofitted into 1Q's schema.
+
+**As built** (`src/modules/documents/`, migration `0011`):
+
+- `documents` / `document_items` / `document_payments` / `document_sequences`.
+- **Immutability is the invariant the module exists to enforce.** A quote is
+  an offer and may be edited freely; a nota de venta is the record of an
+  agreed sale, and a customer holding the PDF must be able to trust the copy
+  in the system says the same thing. `status` is lifecycle only —
+  `draft → issued → (void)` — and past `issued` the number, lines and totals
+  are frozen at the service layer, not by UI convention.
+- **Payment state is derived, never stored.** The sum of `document_payments`
+  *is* the amount paid; `paid`/`partial`/`unpaid` and the balance are
+  computed. A denormalized paid-amount column on the header is the classic
+  source of drift between a ledger and its summary, and this avoids it by
+  construction. Overpayment reads as `paid` with a zero balance, never
+  `partial` with a negative one.
+- **Void requires an empty ledger.** Money that came in has to be accounted
+  for; silently detaching it from its document is how a ledger stops
+  reconciling. Delete the payments first if they were recorded in error.
+  Voiding also stops the public link resolving.
+- **Quote → nota de venta copies lines by value**, and takes totals from the
+  quote as stored rather than recomputing them, so the document says exactly
+  what the customer agreed to even if the arithmetic rules change later.
+  Test-covered by mutating the quote underneath and asserting the document
+  doesn't move.
+- Sending is deliberately **decoupled from issuing**: a WhatsApp hiccup must
+  not decide whether a sale is on the books.
+- Line math moved to `src/lib/money.ts`, shared with quotes, so a discount
+  can't behave one way on a quote and another on the document it becomes.
+- Separate `document_sequences` rather than generalizing `quote_sequences`:
+  that table is live and numbers documents customers already hold, so
+  changing it in place to save one table is a bad trade.
+
+**Done**: schema, migration, module services, PDF renderer, WhatsApp +
+public-link delivery, public view `/d/[token]` (+ `/pdf`), unit tests and the
+§3.3 cross-tenant isolation suite for the three new tables.
+
+**Not done — the Sonnet half**: the in-app UI (documents list, builder,
+detail with the payment ledger, "convertir presupuesto", nav entry, i18n
+strings). The engine is callable and tested; nothing renders it inside the
+app yet.
+
 ### 1P — Google Business Profile *(idea; not scheduled)*
 
 GBP is where the owner's local-SEO work and this CRM meet: reviews, questions,

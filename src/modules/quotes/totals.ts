@@ -1,22 +1,13 @@
-// Pure quote line math (PLAN.md §8), kept free of the db client so it can be
-// imported — and unit-tested — without a configured environment.
+// Quote line math (PLAN.md §8). The arithmetic itself now lives in
+// lib/money, shared with notas de venta (§10 1Q) so both document types
+// clamp and total identically — a discount that behaved one way on a quote
+// and another on the document it converts into would be a real defect.
+// This file stays as the quotes-facing name for it; the existing quote
+// tests cover the behavior unchanged.
 
-export type QuoteLineInput = {
-  productId?: string;
-  description: string;
-  qty: number;
-  unitPrice: number;
-};
+import { computeLineTotals, type LineInput } from "@/lib/money";
+
+export type QuoteLineInput = LineInput;
 
 /** Totals are derived here, never taken from the client. */
-export function computeTotals(items: QuoteLineInput[], discount = 0) {
-  const lines = items.map((item) => ({
-    ...item,
-    lineTotal: item.qty * item.unitPrice,
-  }));
-  const subtotal = lines.reduce((sum, line) => sum + line.lineTotal, 0);
-  // A discount larger than the subtotal would produce a negative total,
-  // which is never a real quote — clamp instead of trusting the input.
-  const appliedDiscount = Math.min(Math.max(discount, 0), subtotal);
-  return { lines, subtotal, discount: appliedDiscount, total: subtotal - appliedDiscount };
-}
+export const computeTotals = computeLineTotals;

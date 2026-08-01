@@ -24,25 +24,78 @@ export async function moveDealAction(input: {
   revalidatePath("/pipeline");
 }
 
+// The create-deal form is useActionState-shaped (PLAN.md §10 1R #6): a bad
+// value or a missing title comes back as state rendered next to the input,
+// not as Next's generic error page. The state carries a message *key* that
+// the client resolves through next-intl — no copy lives in this file.
+export type DealField = "title" | "contactId" | "stageId" | "value";
+
+export type DealFormState = {
+  error: string | null;
+  field: DealField | null;
+  created: boolean;
+  /** Echoed back so a rejected submit doesn't blank the form: React resets
+   * an uncontrolled form once its action resolves, and the client feeds
+   * these back in as defaultValue. */
+  values: Record<string, string>;
+};
+
+const DEAL_FIELD_ERRORS: Record<DealField, string> = {
+  title: "titleRequired",
+  contactId: "contactRequired",
+  stageId: "stageRequired",
+  value: "valueInvalid",
+};
+
 const createDealSchema = z.object({
   contactId: z.string().min(1),
   pipelineId: z.string().min(1),
   stageId: z.string().min(1),
   title: z.string().min(1).max(200),
+  // Guaraníes are integer minor units (§2.3) — a "1.5" typed into the value
+  // box is a user mistake with a message, not a server crash.
   value: z.coerce.number().int().min(0).optional(),
 });
 
-export async function createDealAction(formData: FormData) {
+export async function createDealAction(
+  _prevState: DealFormState,
+  formData: FormData,
+): Promise<DealFormState> {
   const ctx = await requireTenantContext();
-  const input = createDealSchema.parse({
+  const parsed = createDealSchema.safeParse({
     contactId: formData.get("contactId"),
     pipelineId: formData.get("pipelineId"),
     stageId: formData.get("stageId"),
     title: formData.get("title"),
     value: formData.get("value") || undefined,
   });
-  await createDeal(ctx, input);
+
+  const values = Object.fromEntries(
+    [...formData.entries()].filter(
+      (entry): entry is [string, string] => typeof entry[1] === "string",
+    ),
+  );
+
+  if (!parsed.success) {
+    const field = parsed.error.issues[0]?.path[0];
+    if (typeof field === "string" && field in DEAL_FIELD_ERRORS) {
+      const key = field as DealField;
+      return { error: DEAL_FIELD_ERRORS[key], field: key, created: false, values };
+    }
+    // pipelineId comes from a hidden input, so a failure there is not a
+    // field the user can fix — it belongs in the form-level slot.
+    return { error: "unknown", field: null, created: false, values };
+  }
+
+  try {
+    await createDeal(ctx, parsed.data);
+  } catch {
+    return { error: "unknown", field: null, created: false, values };
+  }
+
   revalidatePath("/pipeline");
+  // Cleared on success: the deal is now a card on the board above.
+  return { error: null, field: null, created: true, values: {} };
 }
 
 const createPipelineSchema = z.object({

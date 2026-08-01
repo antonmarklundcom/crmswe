@@ -18,6 +18,7 @@ import { TaskList, type TaskListLabels } from "@/components/task-list";
 import { EmptyState } from "@/components/empty-state";
 import { ListTodo } from "lucide-react";
 import { ConversationThread, type ThreadLabels } from "./ConversationThread";
+import { ContactEditForm } from "./ContactEditForm";
 import {
   addNoteAction,
   addTagToContactAction,
@@ -71,7 +72,6 @@ export default async function ContactDetailPage({
   const { tab: rawTab } = await searchParams;
   const ctx = await requireTenantContext();
   const t = await getTranslations("app.contacts");
-  const tc = await getTranslations("common");
   const tq = await getTranslations("app.quotes");
   const ti = await getTranslations("app.inbox");
 
@@ -382,34 +382,14 @@ export default async function ContactDetailPage({
 
           <section>
             <h2 className="mb-3 text-lg font-semibold">{t("editTitle")}</h2>
-            <form action={updateAction} className="flex max-w-sm flex-col gap-4">
-              <label className="flex flex-col gap-1 text-sm">
-                {t("name")}
-                <input
-                  name="name"
-                  defaultValue={contact.name}
-                  className="rounded-md border px-3 py-2"
-                />
-              </label>
-              <label className="flex flex-col gap-1 text-sm">
-                {t("email")}
-                <input
-                  name="email"
-                  type="email"
-                  defaultValue={contact.email ?? ""}
-                  className="rounded-md border px-3 py-2"
-                />
-              </label>
-              <label className="flex flex-col gap-1 text-sm">
-                {t("notes")}
-                <textarea
-                  name="notes"
-                  defaultValue={contact.notes ?? ""}
-                  className="rounded-md border px-3 py-2"
-                />
-              </label>
-              <Button type="submit">{tc("save")}</Button>
-            </form>
+            <ContactEditForm
+              action={updateAction}
+              defaults={{
+                name: contact.name,
+                email: contact.email ?? "",
+                notes: contact.notes ?? "",
+              }}
+            />
           </section>
         </div>
       )}

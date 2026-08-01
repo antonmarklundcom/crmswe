@@ -8,8 +8,13 @@ import {
   updateTenantBusinessHours,
   updateTenantTimezone,
   regenerateContactsFeedToken,
+  updateTenantAiSettings,
   type BusinessHours,
 } from "@/modules/tenancy/settings";
+import {
+  MAX_PER_CONVERSATION_PER_DAY_LIMIT,
+  MAX_PER_TENANT_PER_DAY_LIMIT,
+} from "@/modules/ai/config";
 
 const DAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"] as const;
 
@@ -56,6 +61,46 @@ export async function updateTimezoneAction(formData: FormData) {
   const ctx = await requireTenantAdmin();
   const timezone = timezoneSchema.parse(formData.get("timezone"));
   await updateTenantTimezone(ctx, timezone);
+  revalidatePath("/settings");
+}
+
+// AI auto-reply settings (PLAN.md §10 1O). Admin-only via requireTenantAdmin
+// like every other setting here — an agent can pull the per-conversation kill
+// switch from the inbox, but only an admin decides whether the tenant sends
+// autonomously at all.
+const aiSettingsSchema = z.object({
+  enabled: z.boolean(),
+  businessName: z.string().max(200).optional(),
+  about: z.string().max(2000).optional(),
+  tone: z.string().max(500).optional(),
+  hours: z.string().max(500).optional(),
+  neverPromise: z.string().max(1000).optional(),
+  mode: z.enum(["draft", "send"]),
+  maxRepliesPerConversationPerDay: z.coerce
+    .number()
+    .int()
+    .min(0)
+    .max(MAX_PER_CONVERSATION_PER_DAY_LIMIT),
+  maxRepliesPerTenantPerDay: z.coerce.number().int().min(0).max(MAX_PER_TENANT_PER_DAY_LIMIT),
+  handoffKeyword: z.string().min(1).max(50),
+});
+
+export async function updateAiSettingsAction(formData: FormData) {
+  const ctx = await requireTenantAdmin();
+  const input = aiSettingsSchema.parse({
+    enabled: formData.get("enabled") === "on",
+    businessName: formData.get("businessName") || undefined,
+    about: formData.get("about") || undefined,
+    tone: formData.get("tone") || undefined,
+    hours: formData.get("hours") || undefined,
+    neverPromise: formData.get("neverPromise") || undefined,
+    mode: formData.get("mode") || "draft",
+    maxRepliesPerConversationPerDay: formData.get("maxRepliesPerConversationPerDay") || 3,
+    maxRepliesPerTenantPerDay: formData.get("maxRepliesPerTenantPerDay") || 200,
+    handoffKeyword: formData.get("handoffKeyword") || "humano",
+  });
+
+  await updateTenantAiSettings(ctx, input);
   revalidatePath("/settings");
 }
 

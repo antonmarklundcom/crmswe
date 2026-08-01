@@ -1,0 +1,180 @@
+import { and, eq, gte } from "drizzle-orm";
+import { aiReplies, conversations } from "@/db/schema";
+import { newId } from "@/lib/ids";
+import type { TenantContext } from "@/modules/tenancy/context";
+import { tenantDb } from "@/modules/tenancy/db";
+
+// Storage + read paths for AI-drafted replies (PLAN.md §10 1O). Generation
+// and the guards live in ./reply.ts; this file is the persistence half —
+// including the two counters the daily caps are enforced against and the
+// monthly token total settings shows.
+
+export type AiReplyRow = typeof aiReplies.$inferSelect;
+
+export type RecordReplyInput = {
+  conversationId: string;
+  contactId: string;
+  mode: "draft" | "send";
+  status: "draft" | "sent" | "failed";
+  prompt: string;
+  body?: string | null;
+  provider?: string;
+  model?: string;
+  promptTokens?: number;
+  completionTokens?: number;
+  flowRunId?: string;
+  nodeId?: string;
+  messageId?: string;
+  error?: string;
+};
+
+export async function recordReply(ctx: TenantContext, input: RecordReplyInput) {
+  const id = newId();
+  await tenantDb(ctx)
+    .insert(aiReplies)
+    .values({
+      id,
+      conversationId: input.conversationId,
+      contactId: input.contactId,
+      mode: input.mode,
+      status: input.status,
+      // The full prompt is the audit record; truncated only against the
+      // column's practical limit, never dropped.
+      prompt: input.prompt.slice(0, 60_000),
+      body: input.body ?? null,
+      provider: input.provider,
+      model: input.model,
+      promptTokens: input.promptTokens ?? 0,
+      completionTokens: input.completionTokens ?? 0,
+      flowRunId: input.flowRunId,
+      nodeId: input.nodeId,
+      messageId: input.messageId,
+      sentAt: input.status === "sent" ? new Date() : null,
+      error: input.error?.slice(0, 2000),
+    });
+  return getReply(ctx, id);
+}
+
+export async function getReply(ctx: TenantContext, id: string) {
+  const [row] = await tenantDb(ctx).select(aiReplies, eq(aiReplies.id, id));
+  return row ?? null;
+}
+
+/** Drafts awaiting a rep's approval in one conversation, oldest first. */
+export async function listPendingDrafts(ctx: TenantContext, conversationId: string) {
+  const rows = await tenantDb(ctx).select(
+    aiReplies,
+    and(eq(aiReplies.conversationId, conversationId), eq(aiReplies.status, "draft")),
+  );
+  return rows.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+}
+
+export async function listRepliesForConversation(ctx: TenantContext, conversationId: string) {
+  const rows = await tenantDb(ctx).select(
+    aiReplies,
+    eq(aiReplies.conversationId, conversationId),
+  );
+  return rows.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+}
+
+export function startOfDay(now: Date = new Date()): Date {
+  const day = new Date(now);
+  day.setHours(0, 0, 0, 0);
+  return day;
+}
+
+/**
+ * Rows created today for one conversation. Every provider call writes a row
+ * — including failures — so this counts *attempts*, which is what a cost cap
+ * has to bound. Guard-rejected generations never reach the provider and
+ * never write a row, so they correctly don't consume the allowance.
+ */
+export async function countRepliesTodayForConversation(
+  ctx: TenantContext,
+  conversationId: string,
+  now: Date = new Date(),
+): Promise<number> {
+  const rows = await tenantDb(ctx).select(
+    aiReplies,
+    and(
+      eq(aiReplies.conversationId, conversationId),
+      gte(aiReplies.createdAt, startOfDay(now)),
+    ),
+  );
+  return rows.length;
+}
+
+export async function countRepliesTodayForTenant(
+  ctx: TenantContext,
+  now: Date = new Date(),
+): Promise<number> {
+  const rows = await tenantDb(ctx).select(aiReplies, gte(aiReplies.createdAt, startOfDay(now)));
+  return rows.length;
+}
+
+export type TokenUsage = { promptTokens: number; completionTokens: number; replies: number };
+
+/** Monthly token total for the settings meter (§10 1O "expose a monthly total"). */
+export async function monthlyTokenUsage(
+  ctx: TenantContext,
+  now: Date = new Date(),
+): Promise<TokenUsage> {
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const rows = await tenantDb(ctx).select(aiReplies, gte(aiReplies.createdAt, monthStart));
+
+  return rows.reduce<TokenUsage>(
+    (total, row) => ({
+      promptTokens: total.promptTokens + row.promptTokens,
+      completionTokens: total.completionTokens + row.completionTokens,
+      replies: total.replies + 1,
+    }),
+    { promptTokens: 0, completionTokens: 0, replies: 0 },
+  );
+}
+
+export async function markReplySent(
+  ctx: TenantContext,
+  id: string,
+  messageId: string,
+  approvedByUserId?: string,
+) {
+  await tenantDb(ctx)
+    .update(aiReplies)
+    .set({ status: "sent", messageId, sentAt: new Date(), approvedByUserId })
+    .where(eq(aiReplies.id, id));
+}
+
+export async function markReplyDiscarded(ctx: TenantContext, id: string, userId?: string) {
+  await tenantDb(ctx)
+    .update(aiReplies)
+    .set({ status: "discarded", approvedByUserId: userId })
+    .where(eq(aiReplies.id, id));
+}
+
+export async function markReplyFailed(ctx: TenantContext, id: string, error: string) {
+  await tenantDb(ctx)
+    .update(aiReplies)
+    .set({ status: "failed", error: error.slice(0, 2000) })
+    .where(eq(aiReplies.id, id));
+}
+
+// --- Per-conversation kill switch (§10 1O) -------------------------------
+
+export async function setConversationAiEnabled(
+  ctx: TenantContext,
+  conversationId: string,
+  enabled: boolean,
+) {
+  await tenantDb(ctx)
+    .update(conversations)
+    .set({ aiDisabledAt: enabled ? null : new Date() })
+    .where(eq(conversations.id, conversationId));
+}
+
+export async function isConversationAiDisabled(
+  ctx: TenantContext,
+  conversationId: string,
+): Promise<boolean> {
+  const [row] = await tenantDb(ctx).select(conversations, eq(conversations.id, conversationId));
+  return !!row?.aiDisabledAt;
+}

@@ -59,3 +59,53 @@ describe("storage env validation", () => {
     expect(result.success).toBe(true);
   });
 });
+
+// Same shape for the AI driver (PLAN.md §10 1O), rebuilt for the same
+// reason. The behavior that matters is that `none` — the default — needs no
+// key at all: AI is opt-in, so an unconfigured deployment must still boot.
+const aiRequirementSchema = z
+  .object({
+    AI_DRIVER: z.enum(["none", "openai", "gemini"]).default("none"),
+    OPENAI_API_KEY: z.string().min(1).optional(),
+    GEMINI_API_KEY: z.string().min(1).optional(),
+  })
+  .superRefine((value, ctx) => {
+    if (value.AI_DRIVER === "openai" && !value.OPENAI_API_KEY) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["OPENAI_API_KEY"],
+        message: "required",
+      });
+    }
+    if (value.AI_DRIVER === "gemini" && !value.GEMINI_API_KEY) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["GEMINI_API_KEY"],
+        message: "required",
+      });
+    }
+  });
+
+describe("ai env validation", () => {
+  it("defaults to no driver and needs no key", () => {
+    const result = aiRequirementSchema.safeParse({});
+    expect(result.success).toBe(true);
+    if (result.success) expect(result.data.AI_DRIVER).toBe("none");
+  });
+
+  it("requires only the selected driver's key", () => {
+    expect(aiRequirementSchema.safeParse({ AI_DRIVER: "openai" }).success).toBe(false);
+    expect(aiRequirementSchema.safeParse({ AI_DRIVER: "gemini" }).success).toBe(false);
+
+    // A Gemini key does not satisfy the OpenAI driver, and vice versa.
+    expect(
+      aiRequirementSchema.safeParse({ AI_DRIVER: "openai", GEMINI_API_KEY: "g" }).success,
+    ).toBe(false);
+    expect(
+      aiRequirementSchema.safeParse({ AI_DRIVER: "openai", OPENAI_API_KEY: "sk" }).success,
+    ).toBe(true);
+    expect(
+      aiRequirementSchema.safeParse({ AI_DRIVER: "gemini", GEMINI_API_KEY: "g" }).success,
+    ).toBe(true);
+  });
+});

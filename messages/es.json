@@ -317,7 +317,28 @@
         "fri": "Viernes",
         "sat": "Sábado",
         "sun": "Domingo"
-      }
+      },
+      "aiTitle": "Respuestas con IA",
+      "aiIntro": "La IA redacta respuestas de WhatsApp usando el contexto de tu negocio. Empezá en modo borrador: un asesor revisa cada mensaje antes de que salga. Nunca se envía fuera de la ventana de 24 horas.",
+      "aiNotConfigured": "Todavía no hay un proveedor de IA configurado en el servidor. Podés guardar la configuración, pero no se van a generar respuestas hasta que el operador la habilite.",
+      "aiEnabled": "Activar respuestas con IA",
+      "aiMode": "Modo de respuesta",
+      "aiModeDraft": "Borrador — un asesor aprueba cada mensaje",
+      "aiModeSend": "Envío automático",
+      "aiModeHelp": "En borrador, la IA deja el mensaje en la conversación y un asesor decide. Recomendamos usar borrador al menos una semana antes de pasar a envío automático.",
+      "aiBusinessName": "Nombre del negocio",
+      "aiAbout": "Qué vende el negocio",
+      "aiAboutPlaceholder": "Instalación y mantenimiento de aire acondicionado en Asunción y alrededores.",
+      "aiTone": "Tono",
+      "aiTonePlaceholder": "Cercano, tuteo, sin tecnicismos",
+      "aiHours": "Horario que puede mencionar",
+      "aiNeverPromise": "Qué nunca debe prometer",
+      "aiNeverPromisePlaceholder": "Precios, plazos de entrega, descuentos, disponibilidad de stock",
+      "aiMaxPerConversation": "Máx. respuestas por conversación al día",
+      "aiMaxPerTenant": "Máx. respuestas por día (toda la cuenta)",
+      "aiHandoffKeyword": "Palabra para pasar a un humano",
+      "aiUsageTitle": "Consumo del mes",
+      "aiUsageBody": "{replies} respuestas · {prompt} tokens de entrada · {completion} tokens de salida · {total} en total."
     },
     "whatsapp": {
       "title": "WhatsApp",
@@ -357,7 +378,16 @@
       "windowOpen": "Ventana de 24 horas abierta — se cierra en {remaining}",
       "sendTemplate": "Enviar plantilla",
       "noTemplates": "Todavía no hay plantillas aprobadas. Sincronizalas desde la página de WhatsApp.",
-      "windowOpenShort": "Ventana de 24 horas abierta — se cierra en"
+      "windowOpenShort": "Ventana de 24 horas abierta — se cierra en",
+      "aiOn": "Respuestas con IA activadas en esta conversación",
+      "aiOff": "Respuestas con IA desactivadas en esta conversación",
+      "aiEnable": "Reactivar IA",
+      "aiDisable": "Desactivar IA",
+      "aiDraftsTitle": "Borradores de la IA — revisá antes de enviar",
+      "aiApprove": "Aprobar y enviar",
+      "aiDiscard": "Descartar",
+      "aiTokens": "{tokens} tokens",
+      "aiDraftWindowClosed": "No se puede enviar: la ventana de 24 horas está cerrada."
     },
     "sites": {
       "title": "Sitios",
@@ -535,7 +565,8 @@
           "business_hours": "¿Horario de atención?",
           "has_replied_since": "¿Respondió?",
           "wait_duration": "Esperar",
-          "wait_for_reply": "Esperar respuesta"
+          "wait_for_reply": "Esperar respuesta",
+          "ai_reply": "Responder con IA"
         },
         "fields": {
           "text": "Texto",
@@ -545,7 +576,13 @@
           "tagId": "ID de etiqueta",
           "stageId": "ID de etapa",
           "userId": "ID de usuario",
-          "minutes": "Minutos"
+          "minutes": "Minutos",
+          "instructions": "Instrucciones para la IA",
+          "instructionsPlaceholder": "Respondé la consulta y ofrecé agendar una visita.",
+          "aiMode": "Modo",
+          "aiModeDraft": "Borrador (un asesor aprueba)",
+          "aiModeSend": "Envío automático",
+          "aiModeHint": "El envío automático también requiere activarlo para toda la cuenta en Configuración. Mientras la cuenta esté en borrador, este nodo genera borradores."
         }
       }
     }

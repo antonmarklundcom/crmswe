@@ -48,6 +48,10 @@ export async function executeAction(
     return sendWhatsappAction(ctx, kind, config, contactId, runId);
   }
 
+  if (kind === "ai_reply") {
+    return aiReplyAction(ctx, node.id, config, contactId, runId);
+  }
+
   switch (kind) {
     case "add_tag":
       await addTagToContact(ctx, contactId, String(config.tagId));
@@ -125,6 +129,50 @@ async function sendWhatsappAction(
       return { skipped: true, detail: { reason: "window_closed" } };
     }
     throw err;
+  }
+}
+
+/**
+ * AI auto-reply node (PLAN.md §10 1O). Every rule — tenant enablement, the
+ * draft/send ceiling, the 24h window, the daily caps, the per-conversation
+ * kill switch — is enforced inside modules/ai, not here: this node is a thin
+ * call into it so no future caller can reach the model around the guards.
+ *
+ * A guard refusal is a `skipped` step with a reason, never a failed run:
+ * "the AI declined to answer this one" must not stop the follow-up branch
+ * of a flow from running, exactly like a closed window on a free-form send.
+ */
+async function aiReplyAction(
+  ctx: TenantContext,
+  nodeId: string,
+  config: Record<string, unknown>,
+  contactId: string,
+  runId: string,
+): Promise<ActionResult> {
+  const { generateAiReply } = await import("@/modules/ai/reply");
+
+  const outcome = await generateAiReply(ctx, {
+    contactId,
+    instructions: config.instructions ? String(config.instructions) : undefined,
+    mode: config.mode === "send" ? "send" : "draft",
+    flowRunId: runId,
+    nodeId,
+  });
+
+  switch (outcome.status) {
+    case "sent":
+      return {
+        skipped: false,
+        detail: { replyId: outcome.replyId, messageId: outcome.messageId, mode: "send" },
+      };
+    case "draft":
+      return { skipped: false, detail: { replyId: outcome.replyId, mode: "draft" } };
+    case "skipped":
+      return { skipped: true, detail: { reason: outcome.reason } };
+    case "failed":
+      // Also a skip rather than a throw: an OpenAI 500 shouldn't kill a run
+      // whose remaining steps (tagging, notifying a rep) still make sense.
+      return { skipped: true, detail: { reason: "ai_failed", error: outcome.reason } };
   }
 }
 

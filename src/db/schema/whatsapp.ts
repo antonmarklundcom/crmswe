@@ -102,6 +102,14 @@ export const conversations = mysqlTable(
     // Drives the 24h free-form-vs-template send window (§6.4).
     lastInboundAt: datetime("last_inbound_at"),
     unreadCount: int("unread_count").notNull().default(0),
+    /**
+     * Per-conversation AI kill switch (PLAN.md §10 1O). Non-null means the
+     * bot is silenced for this contact — set by a rep from the inbox, or
+     * automatically when the contact sends the tenant's handoff keyword.
+     * A timestamp rather than a boolean so "when did we hand this off" is
+     * answerable without a separate audit read.
+     */
+    aiDisabledAt: datetime("ai_disabled_at"),
     createdAt: datetime("created_at")
       .notNull()
       .default(sql`CURRENT_TIMESTAMP`),

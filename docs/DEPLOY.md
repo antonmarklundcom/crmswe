@@ -148,6 +148,38 @@ from expiry. No-ops silently (logs instead) if `RESEND_API_KEY` /
 `RESEND_FROM_EMAIL` aren't set — safe to add this cron entry before email is
 configured.
 
+### AI auto-reply (§10 1O)
+
+Off by default and safe to deploy unconfigured: with `AI_DRIVER=none` the
+`ai_reply` automation node skips with reason `ai_not_configured` and nothing
+else changes.
+
+To enable, set on the app's environment:
+
+| Var | Value |
+|---|---|
+| `AI_DRIVER` | `openai` or `gemini` |
+| `OPENAI_API_KEY` / `GEMINI_API_KEY` | only the selected driver's key is required — the app refuses to boot if it's missing |
+| `AI_MODEL` | optional; defaults to `gpt-4o-mini` / `gemini-2.0-flash` |
+| `AI_BASE_URL` | optional; for Azure OpenAI or an OpenAI-compatible gateway |
+
+**Cost is per-token and per-tenant.** The provider bill is the platform's, not
+the tenant's, so treat these as spend controls, not preferences:
+
+- Every tenant starts with AI **off**, and on **draft** mode if turned on. A
+  flow node cannot send autonomously while the tenant is on draft — both
+  switches have to be flipped, deliberately, by a tenant admin.
+- The per-conversation and per-tenant daily caps (Configuración → Respuestas
+  con IA) bound provider calls, drafts included. Defaults: 3 per conversation,
+  200 per tenant, per day; hard ceilings of 20 and 2000 that the form cannot
+  exceed.
+- Monthly token totals per tenant are on the same settings page. Check them
+  after the first week of any tenant you switch to autonomous.
+
+Nothing is ever sent outside the WhatsApp 24-hour window — outside it the only
+legal message is a Meta-approved template, which an LLM cannot author, so
+generation is refused rather than drafted.
+
 ## 6. Process restart
 
 hPanel → the app → **Restart**. Required after any environment variable

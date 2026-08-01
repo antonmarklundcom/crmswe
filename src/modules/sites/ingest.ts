@@ -1,6 +1,9 @@
 import { z } from "zod";
 import { buildSystemTenantContext } from "@/modules/tenancy/context";
+import { getTenant } from "@/modules/tenancy/tenants";
+import type { TenantSettings } from "@/modules/tenancy/settings";
 import { normalizePhone } from "@/modules/crm/contacts";
+import { DEFAULT_COUNTRY } from "@/lib/phone";
 import { recordLeadSubmission, type RecordLeadResult } from "@/modules/leads/submissions";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { resolveSiteByApiKey } from "./keys";
@@ -74,10 +77,13 @@ export async function ingestLead(
   const ctx = await buildSystemTenantContext(site.tenantId);
   if (!ctx) return { ok: false, status: 403, error: "Tenant unavailable" };
 
+  const tenant = await getTenant(site.tenantId);
+  const tenantSettings = (tenant?.settings ?? {}) as TenantSettings;
+
   try {
     const result = await recordLeadSubmission(ctx, {
       siteId: site.id,
-      phone: normalizePhone(body.phone),
+      phone: normalizePhone(body.phone, tenantSettings.defaultCountry ?? DEFAULT_COUNTRY),
       name: body.name,
       email: body.email,
       message: body.message,

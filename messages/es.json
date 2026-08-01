@@ -303,6 +303,15 @@
       "logoUrl": "URL del logo",
       "primaryColor": "Color principal",
       "timezoneTitle": "Zona horaria",
+      "defaultCountryTitle": "País por defecto",
+      "defaultCountryIntro": "Se usa para completar el código de país cuando cargás un teléfono sin +, por ejemplo un 0981... paraguayo o un 070... sueco.",
+      "countryNames": {
+        "PY": "Paraguay",
+        "AR": "Argentina",
+        "BR": "Brasil",
+        "SE": "Suecia",
+        "US": "Estados Unidos"
+      },
       "businessHoursTitle": "Horario de atención",
       "sheetsTitle": "Google Sheets",
       "sheetsIntro": "Tus contactos en una planilla que se actualiza sola, sin conectar tu cuenta de Google y sin costo. La planilla lee un enlace privado de tu empresa; no le damos acceso a nadie más.",

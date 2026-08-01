@@ -1,6 +1,7 @@
 import { and, eq, like, or, type SQL } from "drizzle-orm";
 import { contactTags, contacts, tags } from "@/db/schema";
 import { newId } from "@/lib/ids";
+import { normalizePhone, DEFAULT_COUNTRY, type CountryCode } from "@/lib/phone";
 import type { TenantContext } from "@/modules/tenancy/context";
 import { tenantDb } from "@/modules/tenancy/db";
 import { crmEvents } from "./events";
@@ -8,20 +9,7 @@ import { crmEvents } from "./events";
 // Contacts (PLAN.md §4 "crm", §5): phone (E.164) is the primary identity
 // key, unique per tenant.
 
-/**
- * JUDGMENT CALL (not specified in PLAN.md — flagged for Fable review):
- * normalizes Paraguayan local input (e.g. "0981 123 456") to E.164
- * ("+595981123456"). Numbers already starting with "+" pass through
- * untouched so other-country contacts aren't mangled.
- */
-export function normalizePhone(raw: string): string {
-  const digits = raw.replace(/[^\d+]/g, "");
-  if (digits.startsWith("+")) return digits;
-  if (digits.startsWith("00")) return `+${digits.slice(2)}`;
-  if (digits.startsWith("0")) return `+595${digits.slice(1)}`;
-  if (digits.startsWith("595")) return `+${digits}`;
-  return `+595${digits}`;
-}
+export { normalizePhone };
 
 export type CreateContactInput = {
   name: string;
@@ -45,9 +33,13 @@ export type ListContactsFilters = {
   source?: string;
 };
 
-export async function createContact(ctx: TenantContext, input: CreateContactInput) {
+export async function createContact(
+  ctx: TenantContext,
+  input: CreateContactInput,
+  defaultCountry: CountryCode = DEFAULT_COUNTRY,
+) {
   const id = newId();
-  const phone = normalizePhone(input.phone);
+  const phone = normalizePhone(input.phone, defaultCountry);
 
   await tenantDb(ctx)
     .insert(contacts)
@@ -70,9 +62,10 @@ export async function updateContact(
   ctx: TenantContext,
   id: string,
   input: UpdateContactInput,
+  defaultCountry: CountryCode = DEFAULT_COUNTRY,
 ) {
   const values: Partial<typeof contacts.$inferInsert> = { ...input };
-  if (input.phone) values.phone = normalizePhone(input.phone);
+  if (input.phone) values.phone = normalizePhone(input.phone, defaultCountry);
 
   await tenantDb(ctx).update(contacts).set(values).where(eq(contacts.id, id));
   return getContact(ctx, id);
@@ -83,8 +76,14 @@ export async function getContact(ctx: TenantContext, id: string) {
   return row ?? null;
 }
 
-export async function getContactByPhone(ctx: TenantContext, phone: string) {
-  const [row] = await tenantDb(ctx).select(contacts, eq(contacts.phone, normalizePhone(phone)));
+export async function getContactByPhone(
+  ctx: TenantContext,
+  phone: string,
+  defaultCountry: CountryCode = DEFAULT_COUNTRY,
+) {
+  const [row] = await tenantDb(
+    ctx,
+  ).select(contacts, eq(contacts.phone, normalizePhone(phone, defaultCountry)));
   return row ?? null;
 }
 

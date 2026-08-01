@@ -6,6 +6,8 @@ import { tenantDb } from "@/modules/tenancy/db";
 import { normalizePhone } from "@/modules/crm/contacts";
 import { recordLeadSubmission } from "@/modules/leads/submissions";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { DEFAULT_COUNTRY } from "@/lib/phone";
+import type { TenantSettings } from "@/modules/tenancy/settings";
 import type { FormSettings } from "./forms";
 
 // Public form submission (PLAN.md §5). Unauthenticated by nature — the
@@ -73,10 +75,11 @@ export async function submitForm(
   const name = nameField ? input.data[nameField.key] : undefined;
 
   const settings = form.settings as FormSettings;
+  const tenantSettings = (tenant.settings ?? {}) as TenantSettings;
 
   const result = await recordLeadSubmission(ctx, {
     formId: form.id,
-    phone: normalizePhone(phone),
+    phone: normalizePhone(phone, tenantSettings.defaultCountry ?? DEFAULT_COUNTRY),
     name,
     email: valueOfType("email"),
     message: valueOfType("textarea"),

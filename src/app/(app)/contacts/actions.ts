@@ -3,6 +3,9 @@
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { requireTenantContext } from "@/modules/tenancy/context";
+import { getTenant } from "@/modules/tenancy/tenants";
+import type { TenantSettings } from "@/modules/tenancy/settings";
+import { DEFAULT_COUNTRY } from "@/lib/phone";
 import {
   createContact,
   updateContact,
@@ -29,7 +32,10 @@ export async function createContactAction(formData: FormData) {
     source: formData.get("source") || undefined,
   });
 
-  await createContact(ctx, input);
+  const tenant = await getTenant(ctx.tenantId);
+  const tenantSettings = (tenant?.settings ?? {}) as TenantSettings;
+
+  await createContact(ctx, input, tenantSettings.defaultCountry ?? DEFAULT_COUNTRY);
   revalidatePath("/contacts");
 }
 

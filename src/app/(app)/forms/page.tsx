@@ -9,16 +9,21 @@ import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
 import { createFormAction } from "./actions";
 
-export default async function FormsPage() {
+export default async function FormsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ pipeline?: string }>;
+}) {
   const ctx = await requireTenantContext();
   const t = await getTranslations("app.forms");
+  const { pipeline: pipelineParam } = await searchParams;
 
   const [tenant, forms, pipelines] = await Promise.all([
     getTenant(ctx.tenantId),
     listForms(ctx),
     listPipelines(ctx),
   ]);
-  const pipeline = pipelines[0];
+  const pipeline = pipelines.find((p) => p.id === pipelineParam) ?? pipelines[0];
   const stages = pipeline ? await listStagesForPipeline(ctx, pipeline.id) : [];
 
   return (
@@ -50,6 +55,29 @@ export default async function FormsPage() {
 
       <section id="nuevo-formulario" className="scroll-mt-6">
         <h2 className="mb-4 text-lg font-semibold">{t("createTitle")}</h2>
+
+        {pipelines.length > 1 && pipeline && (
+          <form method="get" className="mb-4 flex items-end gap-2 text-sm">
+            <label className="flex flex-col gap-1">
+              {t("targetPipeline")}
+              <select
+                name="pipeline"
+                defaultValue={pipeline.id}
+                className="rounded-md border px-3 py-2"
+              >
+                {pipelines.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <Button type="submit" variant="outline">
+              {t("targetPipelineApply")}
+            </Button>
+          </form>
+        )}
+
         <form action={createFormAction} className="flex max-w-sm flex-col gap-4">
           <label className="flex flex-col gap-1 text-sm">
             {t("name")}

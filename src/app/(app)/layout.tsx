@@ -62,6 +62,7 @@ export default async function AppLayout({
         { href: "/pipeline", label: t("pipeline"), icon: "pipeline" },
         { href: "/inbox", label: t("inbox"), icon: "inbox" },
         { href: "/quotes", label: t("quotes"), icon: "quotes" },
+        { href: "/documents", label: t("documents"), icon: "documents" },
         { href: "/products", label: t("products"), icon: "products" },
       ],
     },

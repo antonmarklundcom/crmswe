@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { requireTenantContext } from "@/modules/tenancy/context";
 import { createQuote, setQuoteStatus } from "@/modules/quotes/quotes";
 import { sendQuote } from "@/modules/quotes/delivery";
+import { createDocumentFromQuote } from "@/modules/documents/documents";
 
 const lineSchema = z.object({
   description: z.string().min(1).max(500),
@@ -79,4 +80,12 @@ export async function setQuoteStatusAction(formData: FormData) {
     .parse(formData.get("status"));
   await setQuoteStatus(ctx, quoteId, status);
   revalidatePath(`/quotes/${quoteId}`);
+}
+
+export async function convertQuoteToDocumentAction(formData: FormData) {
+  const ctx = await requireTenantContext();
+  const quoteId = z.string().min(1).parse(formData.get("quoteId"));
+  const document = await createDocumentFromQuote(ctx, quoteId);
+  revalidatePath(`/quotes/${quoteId}`);
+  redirect(`/documents/${document!.id}`);
 }

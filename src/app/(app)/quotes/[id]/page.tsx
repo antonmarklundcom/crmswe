@@ -1,11 +1,13 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { requireTenantContext } from "@/modules/tenancy/context";
 import { getQuote, listQuoteItems } from "@/modules/quotes/quotes";
 import { publicQuoteUrl } from "@/modules/quotes/delivery";
+import { getDocumentByQuote } from "@/modules/documents/documents";
 import { getContact } from "@/modules/crm/contacts";
 import { Button } from "@/components/ui/button";
-import { sendQuoteAction, setQuoteStatusAction } from "../actions";
+import { sendQuoteAction, setQuoteStatusAction, convertQuoteToDocumentAction } from "../actions";
 
 export default async function QuoteDetailPage({
   params,
@@ -15,13 +17,15 @@ export default async function QuoteDetailPage({
   const { id } = await params;
   const ctx = await requireTenantContext();
   const t = await getTranslations("app.quotes");
+  const td = await getTranslations("app.documents");
 
   const quote = await getQuote(ctx, id);
   if (!quote) notFound();
 
-  const [items, contact] = await Promise.all([
+  const [items, contact, existingDocument] = await Promise.all([
     listQuoteItems(ctx, quote.id),
     getContact(ctx, quote.contactId),
+    getDocumentByQuote(ctx, quote.id),
   ]);
 
   const fmt = (n: number) => `${new Intl.NumberFormat("es-PY").format(n)} ${quote.currency}`;
@@ -95,7 +99,7 @@ export default async function QuoteDetailPage({
         </a>
       </section>
 
-      <section className="flex gap-2">
+      <section className="flex flex-wrap items-center gap-2">
         {(["accepted", "rejected"] as const).map((status) => (
           <form key={status} action={setQuoteStatusAction}>
             <input type="hidden" name="quoteId" value={quote.id} />
@@ -105,6 +109,22 @@ export default async function QuoteDetailPage({
             </Button>
           </form>
         ))}
+
+        {existingDocument ? (
+          <Link
+            href={`/documents/${existingDocument.id}`}
+            className="text-sm underline underline-offset-4"
+          >
+            {td("viewDocument")} ({existingDocument.number})
+          </Link>
+        ) : (
+          <form action={convertQuoteToDocumentAction}>
+            <input type="hidden" name="quoteId" value={quote.id} />
+            <Button type="submit" size="sm" variant="outline">
+              {td("convertFromQuote")}
+            </Button>
+          </form>
+        )}
       </section>
     </div>
   );

@@ -18,8 +18,19 @@ const DEFAULT_STAGES: Array<{ name: string; isWon?: boolean; isLost?: boolean }>
 ];
 
 export async function seedDefaultPipeline(ctx: TenantContext) {
+  return createPipelineWithDefaultStages(ctx, "Ventas");
+}
+
+// A tenant running several sales motions (§10 1R #1 — dental leads, property
+// valuations, well drilling) needs more than the one pipeline seeded at
+// tenant creation. New pipelines start with the same default stage set so
+// the board isn't empty; stages can be edited afterward like any other.
+export async function createPipelineWithDefaultStages(ctx: TenantContext, name: string) {
   const pipelineId = newId();
-  await tenantDb(ctx).insert(pipelines).values({ id: pipelineId, name: "Ventas", position: 0 });
+  const existing = await listPipelines(ctx);
+  await tenantDb(ctx)
+    .insert(pipelines)
+    .values({ id: pipelineId, name, position: existing.length });
 
   for (const [index, stage] of DEFAULT_STAGES.entries()) {
     await tenantDb(ctx)

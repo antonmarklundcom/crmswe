@@ -170,6 +170,12 @@ export async function listDocumentsForContact(ctx: TenantContext, contactId: str
   return rows.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 }
 
+/** Used by the quote detail page to offer "convertir" only once per quote. */
+export async function getDocumentByQuote(ctx: TenantContext, quoteId: string) {
+  const [row] = await tenantDb(ctx).select(documents, eq(documents.quoteId, quoteId));
+  return row ?? null;
+}
+
 export async function listDocumentItems(ctx: TenantContext, documentId: string) {
   const rows = await tenantDb(ctx).select(
     documentItems,

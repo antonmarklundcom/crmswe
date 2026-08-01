@@ -6,25 +6,34 @@ import { listPipelines, listStagesForPipeline } from "@/modules/crm/pipelines";
 import { listDealsForPipeline } from "@/modules/crm/deals";
 import { listContacts } from "@/modules/crm/contacts";
 import { PipelineBoard } from "./PipelineBoard";
-import { createDealAction } from "./actions";
+import { createDealAction, createPipelineAction } from "./actions";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
 
-export default async function PipelinePage() {
+export default async function PipelinePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ pipeline?: string }>;
+}) {
   const ctx = await requireTenantContext();
   const t = await getTranslations("app.pipeline");
+  const { pipeline: pipelineParam } = await searchParams;
 
   const pipelines = await listPipelines(ctx);
-  const pipeline = pipelines[0];
+  const pipeline =
+    pipelines.find((p) => p.id === pipelineParam) ?? pipelines[0];
 
   if (!pipeline) {
     return (
-      <EmptyState
-        icon={SquareKanban}
-        title={t("noPipeline")}
-        description={t("noPipelineBody")}
-      />
+      <div className="flex flex-col gap-8">
+        <EmptyState
+          icon={SquareKanban}
+          title={t("noPipeline")}
+          description={t("noPipelineBody")}
+        />
+        <NewPipelineForm t={t} />
+      </div>
     );
   }
 
@@ -39,6 +48,24 @@ export default async function PipelinePage() {
   return (
     <div className="flex flex-col gap-8">
       <PageHeader title={pipeline.name} description={t("intro")} />
+
+      {pipelines.length > 1 && (
+        <nav className="flex flex-wrap gap-2" aria-label={t("switcherLabel")}>
+          {pipelines.map((p) => (
+            <Link
+              key={p.id}
+              href={`/pipeline?pipeline=${p.id}`}
+              className={`rounded-full border px-3 py-1 text-sm ${
+                p.id === pipeline.id
+                  ? "border-primary bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:bg-accent"
+              }`}
+            >
+              {p.name}
+            </Link>
+          ))}
+        </nav>
+      )}
 
       {deals.length === 0 ? (
         <EmptyState
@@ -104,6 +131,34 @@ export default async function PipelinePage() {
           </form>
         )}
       </section>
+
+      <NewPipelineForm t={t} />
     </div>
+  );
+}
+
+function NewPipelineForm({
+  t,
+}: {
+  t: Awaited<ReturnType<typeof getTranslations>>;
+}) {
+  return (
+    <section id="nueva-pipeline" className="scroll-mt-6">
+      <h2 className="mb-4 text-lg font-semibold">{t("newPipelineTitle")}</h2>
+      <form action={createPipelineAction} className="flex max-w-sm flex-col gap-4">
+        <label className="flex flex-col gap-1 text-sm">
+          {t("newPipelineName")}
+          <input
+            name="name"
+            required
+            placeholder={t("newPipelineNamePlaceholder")}
+            className="rounded-md border px-3 py-2"
+          />
+        </label>
+        <Button type="submit" variant="outline" className="w-fit">
+          {t("newPipelineCreate")}
+        </Button>
+      </form>
+    </section>
   );
 }

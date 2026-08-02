@@ -35,9 +35,14 @@ export async function connectAccountAction(
   formData: FormData,
 ): Promise<ConnectFormState> {
   const ctx = await requireTenantAdmin();
+  // accessToken is dropped rather than echoed: this state is serialized back
+  // to the browser, and the token is a per-tenant secret (§3.4) that only
+  // ever belongs in wa_accounts encrypted. The form deliberately has no
+  // defaultValue for it either — a secret is worth retyping.
   const values = Object.fromEntries(
     [...formData.entries()].filter(
-      (entry): entry is [string, string] => typeof entry[1] === "string",
+      (entry): entry is [string, string] =>
+        typeof entry[1] === "string" && entry[0] !== "accessToken",
     ),
   );
 

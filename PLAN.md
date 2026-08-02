@@ -677,8 +677,8 @@ action), and the two new 1M forms (forgot/reset password, invite) use
 **Closed out by 1R #6** (PRs #18 and #19 — see 1R below for what shipped):
 - ~~Inline validation (`useActionState`) on the *older* forms this phase didn't
   touch~~ — done for contacts create/edit, pipeline deal create, quotes,
-  products, forms, automations, WhatsApp connect and tenant settings. Two
-  known gaps remain, both recorded under 1R #6.
+  products, forms, automations, WhatsApp connect and tenant settings. The two
+  gaps it left in the quote and document builders are closed too — see 1R #6.
 - ~~Superadmin console visual polish~~ — `/tenants` and `/plans` now use the
   same `PageHeader` shell as the tenant app.
 
@@ -944,21 +944,47 @@ Ordered by what actually blocks the run, not by size:
      blocks a decimal before the server's message can run. Use
      `inputMode="numeric"` and let the server answer.
 
-   **Two gaps left open, both known and neither a blocker:**
-   - `QuoteBuilder.tsx` and `DocumentBuilder.tsx` still use
-     `type="number"` on qty/unit-price/discount. Verified in a browser: a
-     decimal unit price trips `stepMismatch` and Chromium refuses to submit,
-     showing an English bubble on a Spanish-only app. The fix is not a
-     one-line attribute swap — those inputs are controlled by numeric React
-     state (`onChange={… Number(e.target.value)}`) feeding the live subtotal,
-     so dropping `type="number"` means moving line state to strings and
-     parsing for display. That is money-path work (§2.3) and wants its own
-     change, not a drive-by.
-   - Where a line item is the thing at fault, the builders' server fallback
-     reports `itemsRequired` ("add at least one item") regardless — a
-     decimal price and an empty builder produce the same message. Worth a
-     distinct key once the above is fixed and the message can actually be
-     reached.
+   **The two gaps left open above are now closed** — both in
+   `QuoteBuilder.tsx` and `DocumentBuilder.tsx`, in the follow-up change
+   this entry was written to schedule:
+   - **`type="number"` is gone from qty, unit price and discount**; they use
+     `inputMode="numeric"` like every other form, so the server's Spanish
+     message is what a user meets instead of a `stepMismatch` bubble in the
+     browser's language. As predicted, this was money-path work rather than
+     an attribute swap: line state now holds **raw strings**, and the live
+     subtotal parses them through `parseMinorUnits` / `previewTotals` in
+     `lib/money.ts`, which read a posted value exactly the way the actions'
+     zod schemas will. Where the server would reject the input the preview
+     renders "—", so **a displayed total is either the one that will be
+     stored or nothing at all** — the builder never invents a third number.
+     The wire format is deliberately unchanged: the client still posts
+     description/qty/unitPrice as typed and never a float or a computed
+     total, and `createQuote`/`createDocument` still recompute from those
+     three fields (§2.3 keeps amounts integer minor units).
+   - **A rejected line no longer borrows the empty-builder message.** Now
+     that it can actually be reached, an invalid line gets `itemInvalid` and
+     an invalid discount — which had the same defect — gets
+     `discountInvalid`, both message keys resolved client-side through
+     next-intl with the copy in `messages/es.json`.
+
+   **Verified in a browser**, since no test in the suite touches form
+   behavior: Chromium with the locale forced to `en-US`, which is what
+   exposes a browser-language bubble, against a seeded tenant. A decimal
+   unit price now passes `checkValidity()`, submits, and comes back as the
+   Spanish `itemInvalid` with the line items and the typed value still on
+   screen; an empty builder still says `itemsRequired`, a decimal discount
+   says `discountInvalid`. On the valid submit the builder showed
+   300.000 / 250.000 and the stored quote rendered 300.000 − 50.000 =
+   250.000 PYG; the nota de venta matched the same way in both the create
+   and edit-draft builders. `lib/money.test.ts` pins the parse and preview
+   rules against `computeLineTotals`.
+
+   **One leftover in the same area, pre-existing and not touched here**: on
+   a rejected submit the contact `<select>` loses its selection — React
+   resets the uncontrolled field once the action resolves, and unlike the
+   `defaultValue` inputs the echo doesn't take on a `<select>` — so a second
+   submit fails on `contactRequired` first. The line items themselves are
+   React state and do survive.
 
    Actions reachable only from a hidden id (issue/send/suspend/toggle) were
    converted to `safeParse` + silent return rather than given form state:

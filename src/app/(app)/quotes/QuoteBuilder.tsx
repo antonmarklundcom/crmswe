@@ -4,6 +4,7 @@ import { useActionState, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { parseMinorUnits, previewTotals } from "@/lib/money";
+import { useEchoGeneration } from "@/lib/use-echo-generation";
 import { createQuoteAction, type QuoteFormState } from "./actions";
 
 // Declared here, not in actions.ts: a "use server" module may only export
@@ -53,6 +54,7 @@ export function QuoteBuilder({
   const [lines, setLines] = useState<Line[]>([blankLine()]);
   const [discount, setDiscount] = useState("0");
   const [state, formAction, pending] = useActionState(createQuoteAction, initialState);
+  const generation = useEchoGeneration(state);
 
   function update(key: number, patch: Partial<Line>) {
     setLines((prev) => prev.map((line) => (line.key === key ? { ...line, ...patch } : line)));
@@ -85,7 +87,12 @@ export function QuoteBuilder({
     <form action={formAction} className="flex flex-col gap-4">
       <label className="flex max-w-sm flex-col gap-1 text-sm">
         {labels.contact}
+        {/* Remounted per action result so the echoed contact survives a
+            rejected submit — see useEchoGeneration for why `defaultValue`
+            alone, and a controlled value, both fail here. Without it a
+            second submit failed on contactRequired first. */}
         <select
+          key={generation}
           name="contactId"
           defaultValue={state.values.contactId}
           className="rounded-md border px-3 py-2"

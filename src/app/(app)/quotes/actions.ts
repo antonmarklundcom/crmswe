@@ -107,27 +107,50 @@ export async function createQuoteAction(
   redirect(`/quotes/${quote!.id}`);
 }
 
+// Hidden-id-only actions (PLAN.md §10 1R #6): every field these three post
+// is a hidden input rendered from the quote already on screen — the id, and
+// for the status buttons a fixed status — so a rejected submit has no
+// user-fillable field to sit under. safeParse + a silent return, like the
+// document issue/send buttons, rather than form state with nowhere to show
+// it. None of them hides a refusal the user needs to read either: sendQuote
+// records a WhatsApp failure on the activity and still marks the quote sent
+// rather than throwing, and a quote with no items cannot exist, since
+// createQuote requires at least one.
 export async function sendQuoteAction(formData: FormData) {
   const ctx = await requireTenantContext();
-  const quoteId = z.string().min(1).parse(formData.get("quoteId"));
-  await sendQuote(ctx, quoteId);
-  revalidatePath(`/quotes/${quoteId}`);
+  const parsed = z.string().min(1).safeParse(formData.get("quoteId"));
+  if (!parsed.success) return;
+  await sendQuote(ctx, parsed.data);
+  revalidatePath(`/quotes/${parsed.data}`);
 }
 
 export async function setQuoteStatusAction(formData: FormData) {
   const ctx = await requireTenantContext();
-  const quoteId = z.string().min(1).parse(formData.get("quoteId"));
-  const status = z
-    .enum(["draft", "sent", "accepted", "rejected", "expired"])
-    .parse(formData.get("status"));
-  await setQuoteStatus(ctx, quoteId, status);
-  revalidatePath(`/quotes/${quoteId}`);
+  const parsed = z
+    .object({
+      quoteId: z.string().min(1),
+      status: z.enum(["draft", "sent", "accepted", "rejected", "expired"]),
+    })
+    .safeParse({ quoteId: formData.get("quoteId"), status: formData.get("status") });
+  if (!parsed.success) return;
+
+  await setQuoteStatus(ctx, parsed.data.quoteId, parsed.data.status);
+  revalidatePath(`/quotes/${parsed.data.quoteId}`);
 }
 
 export async function convertQuoteToDocumentAction(formData: FormData) {
   const ctx = await requireTenantContext();
-  const quoteId = z.string().min(1).parse(formData.get("quoteId"));
-  const document = await createDocumentFromQuote(ctx, quoteId);
-  revalidatePath(`/quotes/${quoteId}`);
+  const parsed = z.string().min(1).safeParse(formData.get("quoteId"));
+  if (!parsed.success) return;
+
+  // redirect() throws for control flow, so it stays outside the try.
+  let document;
+  try {
+    document = await createDocumentFromQuote(ctx, parsed.data);
+  } catch {
+    return;
+  }
+
+  revalidatePath(`/quotes/${parsed.data}`);
   redirect(`/documents/${document!.id}`);
 }

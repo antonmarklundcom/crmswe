@@ -5,23 +5,66 @@ import { revalidatePath } from "next/cache";
 import { requireTenantContext } from "@/modules/tenancy/context";
 import { sendText, sendTemplate } from "@/modules/whatsapp/send";
 import { markConversationRead } from "@/modules/whatsapp/inbox";
-import { deliverReply } from "@/modules/ai/reply";
+import { deliverReply, type AiReplyOutcome } from "@/modules/ai/reply";
 import { markReplyDiscarded, setConversationAiEnabled } from "@/modules/ai/replies";
+
+// useActionState-shaped (PLAN.md §10 1R #6). The inbox is the awkward case
+// for that pattern because it also polls every 5s (§10 1R #3): a returned
+// error has to outlive the next refresh. It does, because the action state
+// is React state that SWR never touches — the refresh replaces `data`, not
+// the form state, and the reply box is remounted only when a new action
+// result arrives.
+//
+// Copy stays out of the actions as everywhere else: they return a message
+// key the client resolves through next-intl (§1.2).
 
 const sendTextSchema = z.object({
   conversationId: z.string().min(1),
   body: z.string().min(1).max(4096),
 });
 
-export async function sendTextAction(formData: FormData) {
-  const ctx = await requireTenantContext();
-  const input = sendTextSchema.parse({
-    conversationId: formData.get("conversationId"),
-    body: formData.get("body"),
-  });
+export type SendTextState = {
+  error: string | null;
+  /** Distinguishes a delivered send from the initial state, so the client
+   *  clears the box only once the server actually accepted it. */
+  sent: boolean;
+  values: { body: string };
+};
 
-  await sendText(ctx, input);
-  revalidatePath(`/inbox/${input.conversationId}`);
+export async function sendTextAction(
+  _prevState: SendTextState,
+  formData: FormData,
+): Promise<SendTextState> {
+  const ctx = await requireTenantContext();
+  const body = String(formData.get("body") ?? "");
+
+  const parsed = sendTextSchema.safeParse({
+    conversationId: formData.get("conversationId"),
+    body,
+  });
+  if (!parsed.success) {
+    const tooLong = parsed.error.issues.some(
+      (issue) => issue.path[0] === "body" && issue.code === "too_big",
+    );
+    return { error: tooLong ? "bodyTooLong" : "bodyRequired", sent: false, values: { body } };
+  }
+
+  try {
+    await sendText(ctx, parsed.data);
+  } catch (err) {
+    // sendText throws when the 24h window has closed (§6.4). That guard is
+    // not weakened here — it is only reported, instead of reaching Next's
+    // error page and taking the half-typed reply with it.
+    const message = err instanceof Error ? err.message : "";
+    return {
+      error: message.includes("ventana de 24 horas") ? "windowClosed" : "sendFailed",
+      sent: false,
+      values: { body },
+    };
+  }
+
+  revalidatePath(`/inbox/${parsed.data.conversationId}`);
+  return { error: null, sent: true, values: { body: "" } };
 }
 
 // The picker submits "name|language" as one value — the pair is the
@@ -32,20 +75,39 @@ const sendTemplateSchema = z.object({
   template: z.string().min(1).includes("|"),
 });
 
-export async function sendTemplateAction(formData: FormData) {
-  const ctx = await requireTenantContext();
-  const input = sendTemplateSchema.parse({
-    conversationId: formData.get("conversationId"),
-    template: formData.get("template"),
-  });
+export type SendTemplateState = {
+  error: string | null;
+  values: { template: string };
+};
 
-  const separator = input.template.lastIndexOf("|");
-  await sendTemplate(ctx, {
-    conversationId: input.conversationId,
-    templateName: input.template.slice(0, separator),
-    language: input.template.slice(separator + 1),
+export async function sendTemplateAction(
+  _prevState: SendTemplateState,
+  formData: FormData,
+): Promise<SendTemplateState> {
+  const ctx = await requireTenantContext();
+  const template = String(formData.get("template") ?? "");
+
+  const parsed = sendTemplateSchema.safeParse({
+    conversationId: formData.get("conversationId"),
+    template,
   });
-  revalidatePath(`/inbox/${input.conversationId}`);
+  if (!parsed.success) {
+    return { error: "templateRequired", values: { template } };
+  }
+
+  const separator = parsed.data.template.lastIndexOf("|");
+  try {
+    await sendTemplate(ctx, {
+      conversationId: parsed.data.conversationId,
+      templateName: parsed.data.template.slice(0, separator),
+      language: parsed.data.template.slice(separator + 1),
+    });
+  } catch {
+    return { error: "sendFailed", values: { template } };
+  }
+
+  revalidatePath(`/inbox/${parsed.data.conversationId}`);
+  return { error: null, values: { template: "" } };
 }
 
 // --- AI auto-reply (PLAN.md §10 1O) --------------------------------------
@@ -59,36 +121,85 @@ const replyIdSchema = z.object({
   conversationId: z.string().min(1),
 });
 
-export async function approveAiDraftAction(formData: FormData) {
-  const ctx = await requireTenantContext();
-  const input = replyIdSchema.parse({
-    replyId: formData.get("replyId"),
-    conversationId: formData.get("conversationId"),
-  });
+export type ApproveDraftState = { error: string | null };
 
-  await deliverReply(ctx, input.replyId, ctx.userId);
-  revalidatePath(`/inbox/${input.conversationId}`);
+/**
+ * The one hidden-id-only action here that still gets form state, because the
+ * usual test cuts the other way: deliverReply *returns* its refusals rather
+ * than throwing, and those refusals are things the rep needs to read — the
+ * 24h window closed while the draft sat there, or the kill switch was
+ * pulled, or the contact opted out. Discarding the return value would leave
+ * the draft on screen with nothing said, which is worse than no message at
+ * all. No guard in modules/ai is touched: this maps an outcome to a message
+ * key and nothing more.
+ */
+function draftFailureKey(outcome: AiReplyOutcome): string | null {
+  if (outcome.status === "sent") return null;
+  if (outcome.status === "skipped") {
+    switch (outcome.reason) {
+      case "window_closed":
+        return "aiWindowClosed";
+      case "conversation_ai_disabled":
+        return "aiConversationDisabled";
+      case "contact_opted_out":
+        return "aiOptedOut";
+      default:
+        return "aiSendFailed";
+    }
+  }
+  return "aiSendFailed";
 }
 
-export async function discardAiDraftAction(formData: FormData) {
+export async function approveAiDraftAction(
+  _prevState: ApproveDraftState,
+  formData: FormData,
+): Promise<ApproveDraftState> {
   const ctx = await requireTenantContext();
-  const input = replyIdSchema.parse({
+
+  const parsed = replyIdSchema.safeParse({
     replyId: formData.get("replyId"),
     conversationId: formData.get("conversationId"),
   });
+  if (!parsed.success) return { error: null };
 
-  await markReplyDiscarded(ctx, input.replyId, ctx.userId);
-  revalidatePath(`/inbox/${input.conversationId}`);
+  let outcome: AiReplyOutcome;
+  try {
+    outcome = await deliverReply(ctx, parsed.data.replyId, ctx.userId);
+  } catch {
+    return { error: "aiSendFailed" };
+  }
+
+  revalidatePath(`/inbox/${parsed.data.conversationId}`);
+  return { error: draftFailureKey(outcome) };
+}
+
+// Hidden-id-only with no refusal path to report: discarding a draft and
+// pulling the per-conversation kill switch are plain updates, and the only
+// way either fails is a tampered id, which has no field to sit under.
+// safeParse + silent return, like the issue/send/suspend buttons — the
+// client re-reads the conversation afterwards either way, so a no-op shows
+// up as the screen simply not changing.
+export async function discardAiDraftAction(formData: FormData) {
+  const ctx = await requireTenantContext();
+  const parsed = replyIdSchema.safeParse({
+    replyId: formData.get("replyId"),
+    conversationId: formData.get("conversationId"),
+  });
+  if (!parsed.success) return;
+
+  await markReplyDiscarded(ctx, parsed.data.replyId, ctx.userId);
+  revalidatePath(`/inbox/${parsed.data.conversationId}`);
 }
 
 /** Per-conversation kill switch — any agent can pull it, not admins only. */
 export async function setConversationAiAction(formData: FormData) {
   const ctx = await requireTenantContext();
-  const conversationId = z.string().min(1).parse(formData.get("conversationId"));
+  const parsed = z.string().min(1).safeParse(formData.get("conversationId"));
+  if (!parsed.success) return;
   const enabled = formData.get("enabled") === "true";
 
-  await setConversationAiEnabled(ctx, conversationId, enabled);
-  revalidatePath(`/inbox/${conversationId}`);
+  await setConversationAiEnabled(ctx, parsed.data, enabled);
+  revalidatePath(`/inbox/${parsed.data}`);
 }
 
 export async function markReadAction(conversationId: string) {

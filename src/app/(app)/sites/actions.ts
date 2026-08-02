@@ -3,7 +3,7 @@
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { requireTenantAdmin } from "@/modules/tenancy/context";
-import { createSite, updateSite, rotateApiKey } from "@/modules/sites/sites";
+import { createSite, updateSite, rotateApiKey, getSiteBySlug } from "@/modules/sites/sites";
 import { getStage } from "@/modules/crm/pipelines";
 
 // A stage already belongs to exactly one pipeline, so the UI only ever asks
@@ -28,17 +28,42 @@ const createSiteSchema = z.object({
     .string()
     .min(1)
     .max(100)
-    .regex(/^[a-z0-9-]+$/, "slug must be lowercase alphanumeric with dashes"),
+    .regex(/^[a-z0-9-]+$/),
   domain: z.string().max(255).optional().or(z.literal("")),
   defaultStageId: z.string().optional().or(z.literal("")),
   waAccountId: z.string().optional().or(z.literal("")),
 });
 
-// useActionState-shaped (prevState, formData) so the page can render the
-// one-time key that comes back without ever persisting it.
-export async function createSiteAction(_prev: string | null, formData: FormData) {
+// useActionState-shaped (PLAN.md §10 1R #6): a missing name or a bad slug
+// comes back inline instead of throwing to Next's error page. The one-time
+// API key still comes back the same way it always did — through state —
+// since it's never persisted in plaintext (§5.1).
+export type SiteField = "name" | "slug";
+
+export type CreateSiteFormState = {
+  error: string | null;
+  field: SiteField | null;
+  values: Record<string, string>;
+  apiKey: string | null;
+};
+
+const SITE_FIELD_ERRORS: Record<SiteField, string> = {
+  name: "nameRequired",
+  slug: "slugInvalid",
+};
+
+export async function createSiteAction(
+  _prevState: CreateSiteFormState,
+  formData: FormData,
+): Promise<CreateSiteFormState> {
   const ctx = await requireTenantAdmin();
-  const input = createSiteSchema.parse({
+  const values = Object.fromEntries(
+    [...formData.entries()].filter(
+      (entry): entry is [string, string] => typeof entry[1] === "string",
+    ),
+  );
+
+  const parsed = createSiteSchema.safeParse({
     name: formData.get("name"),
     slug: formData.get("slug"),
     domain: formData.get("domain") || undefined,
@@ -46,32 +71,54 @@ export async function createSiteAction(_prev: string | null, formData: FormData)
     waAccountId: formData.get("waAccountId") || undefined,
   });
 
-  const created = await createSite(ctx, {
-    name: input.name,
-    slug: input.slug,
-    domain: input.domain || undefined,
-    defaultStageId: input.defaultStageId || undefined,
-    defaultPipelineId: await pipelineForStage(ctx, input.defaultStageId || undefined),
-    waAccountId: input.waAccountId || undefined,
-  });
+  if (!parsed.success) {
+    const field = parsed.error.issues[0]?.path[0];
+    if (typeof field === "string" && field in SITE_FIELD_ERRORS) {
+      const key = field as SiteField;
+      return { error: SITE_FIELD_ERRORS[key], field: key, values, apiKey: null };
+    }
+    return { error: "unknown", field: null, values, apiKey: null };
+  }
+
+  const existing = await getSiteBySlug(ctx, parsed.data.slug);
+  if (existing) {
+    return { error: "slugTaken", field: "slug", values, apiKey: null };
+  }
+
+  let created;
+  try {
+    created = await createSite(ctx, {
+      name: parsed.data.name,
+      slug: parsed.data.slug,
+      domain: parsed.data.domain || undefined,
+      defaultStageId: parsed.data.defaultStageId || undefined,
+      defaultPipelineId: await pipelineForStage(ctx, parsed.data.defaultStageId || undefined),
+      waAccountId: parsed.data.waAccountId || undefined,
+    });
+  } catch {
+    // A lost race on the unique index is still not worth a 500 mid-form.
+    return { error: "slugTaken", field: "slug", values, apiKey: null };
+  }
 
   revalidatePath("/sites");
-  return created.apiKey;
+  return { error: null, field: null, values: {}, apiKey: created.apiKey };
 }
 
 export async function rotateApiKeyAction(_prev: string | null, formData: FormData) {
   const ctx = await requireTenantAdmin();
-  const siteId = z.string().min(1).parse(formData.get("siteId"));
-  const key = await rotateApiKey(ctx, siteId);
+  const parsed = z.string().min(1).safeParse(formData.get("siteId"));
+  if (!parsed.success) return null;
+  const key = await rotateApiKey(ctx, parsed.data);
   revalidatePath("/sites");
   return key;
 }
 
 export async function toggleSiteActiveAction(formData: FormData) {
   const ctx = await requireTenantAdmin();
-  const siteId = z.string().min(1).parse(formData.get("siteId"));
+  const parsed = z.string().min(1).safeParse(formData.get("siteId"));
+  if (!parsed.success) return;
   const isActive = formData.get("isActive") === "true";
-  await updateSite(ctx, siteId, { isActive });
+  await updateSite(ctx, parsed.data, { isActive });
   revalidatePath("/sites");
 }
 
@@ -83,16 +130,17 @@ const routingSchema = z.object({
 
 export async function updateSiteRoutingAction(formData: FormData) {
   const ctx = await requireTenantAdmin();
-  const input = routingSchema.parse({
+  const parsed = routingSchema.safeParse({
     siteId: formData.get("siteId"),
     defaultStageId: formData.get("defaultStageId") || undefined,
     waAccountId: formData.get("waAccountId") || undefined,
   });
+  if (!parsed.success) return;
 
-  await updateSite(ctx, input.siteId, {
-    defaultStageId: input.defaultStageId || undefined,
-    defaultPipelineId: await pipelineForStage(ctx, input.defaultStageId || undefined),
-    waAccountId: input.waAccountId || undefined,
+  await updateSite(ctx, parsed.data.siteId, {
+    defaultStageId: parsed.data.defaultStageId || undefined,
+    defaultPipelineId: await pipelineForStage(ctx, parsed.data.defaultStageId || undefined),
+    waAccountId: parsed.data.waAccountId || undefined,
   });
   revalidatePath("/sites");
 }

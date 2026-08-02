@@ -3,6 +3,7 @@
     "appName": "VenderCRM",
     "loading": "Cargando…",
     "save": "Guardar",
+    "saved": "Cambios guardados",
     "cancel": "Cancelar",
     "create": "Crear",
     "back": "Volver",
@@ -277,7 +278,12 @@
       "targetPipelineApply": "Actualizar",
       "targetStage": "Etapa destino",
       "noStage": "Ninguna",
-      "createForm": "Crear formulario"
+      "createForm": "Crear formulario",
+      "errors": {
+        "nameRequired": "Poné un nombre para el formulario.",
+        "slugInvalid": "El slug va en minúsculas, sin espacios ni acentos (ej: contacto-general).",
+        "unknown": "No se pudo crear el formulario. Intentá de nuevo."
+      }
     },
     "users": {
       "title": "Equipo",
@@ -373,7 +379,17 @@
       "aiMaxPerTenant": "Máx. respuestas por día (toda la cuenta)",
       "aiHandoffKeyword": "Palabra para pasar a un humano",
       "aiUsageTitle": "Consumo del mes",
-      "aiUsageBody": "{replies} respuestas · {prompt} tokens de entrada · {completion} tokens de salida · {total} en total."
+      "aiUsageBody": "{replies} respuestas · {prompt} tokens de entrada · {completion} tokens de salida · {total} en total.",
+      "errors": {
+        "logoUrlInvalid": "Esa URL de logo no parece válida.",
+        "primaryColorInvalid": "El color va en formato #RRGGBB.",
+        "timezoneRequired": "Poné una zona horaria válida.",
+        "defaultCountryInvalid": "Elegí un país válido.",
+        "reviewLinkInvalid": "Ese enlace no parece válido.",
+        "aiLimitInvalid": "Ese límite no es un número válido.",
+        "aiHandoffKeywordRequired": "Poné una palabra para pasar a un humano.",
+        "unknown": "No se pudo guardar. Intentá de nuevo."
+      }
     },
     "whatsapp": {
       "title": "WhatsApp",
@@ -395,7 +411,13 @@
       "accessToken": "Token de acceso",
       "connect": "Conectar",
       "syncTemplates": "Sincronizar plantillas",
-      "templateCount": "{approved} de {total} plantillas aprobadas"
+      "templateCount": "{approved} de {total} plantillas aprobadas",
+      "errors": {
+        "wabaIdRequired": "Ingresá el WABA ID.",
+        "phoneNumberIdRequired": "Ingresá el Phone Number ID.",
+        "accessTokenRequired": "Ingresá el token de acceso.",
+        "unknown": "No se pudo conectar el número. Intentá de nuevo."
+      }
     },
     "inbox": {
       "title": "Bandeja de entrada",
@@ -451,6 +473,12 @@
       "totalLeads": "leads en total",
       "leadsWithDeal": "con negocio abierto",
       "byCampaign": "Leads por campaña",
+      "errors": {
+        "nameRequired": "Poné un nombre para el sitio.",
+        "slugInvalid": "El slug va en minúsculas, sin espacios ni acentos (ej: dentista-asuncion).",
+        "slugTaken": "Ya tenés un sitio con ese slug.",
+        "unknown": "No se pudo crear el sitio. Intentá de nuevo."
+      },
       "howToTitle": "Cómo conectar un sitio",
       "howToIntro": "Desde el backend del sitio (nunca desde el navegador — así la clave no queda expuesta):",
       "guide": {
@@ -499,7 +527,12 @@
       "unitPrice": "Precio unitario (PYG)",
       "inactive": "inactivo",
       "activate": "Activar",
-      "deactivate": "Desactivar"
+      "deactivate": "Desactivar",
+      "errors": {
+        "nameRequired": "Poné un nombre para el producto.",
+        "unitPriceInvalid": "El precio va en guaraníes enteros, sin decimales ni signos.",
+        "unknown": "No se pudo guardar el producto. Intentá de nuevo."
+      }
     },
     "quotes": {
       "title": "Presupuestos",
@@ -540,6 +573,11 @@
       "markAs": {
         "accepted": "Marcar aceptado",
         "rejected": "Marcar rechazado"
+      },
+      "errors": {
+        "contactRequired": "Elegí a qué contacto pertenece el presupuesto.",
+        "itemsRequired": "Agregá al menos un ítem con descripción.",
+        "unknown": "No se pudo crear el presupuesto. Intentá de nuevo."
       }
     },
     "documents": {
@@ -612,7 +650,14 @@
       "voidedNotice": "Anulada: {reason}",
       "editTitle": "Editar borrador",
       "convertFromQuote": "Convertir a nota de venta",
-      "viewDocument": "Ver nota de venta"
+      "viewDocument": "Ver nota de venta",
+      "errors": {
+        "contactRequired": "Elegí a qué contacto pertenece la nota de venta.",
+        "itemsRequired": "Agregá al menos un ítem con descripción.",
+        "voidReasonRequired": "Poné el motivo de la anulación.",
+        "amountInvalid": "El monto va en guaraníes enteros, mayor que cero.",
+        "unknown": "No se pudo guardar. Intentá de nuevo."
+      }
     },
     "automations": {
       "title": "Automatizaciones",
@@ -651,6 +696,10 @@
         "completed": "Completado",
         "failed": "Falló",
         "cancelled": "Cancelado"
+      },
+      "errors": {
+        "nameRequired": "Poné un nombre para la automatización.",
+        "unknown": "No se pudo crear la automatización. Intentá de nuevo."
       },
       "editor": {
         "triggerNode": "Disparador",
@@ -727,6 +776,7 @@
     },
     "tenants": {
       "title": "Empresas",
+      "intro": "Todas las empresas que usan VenderCRM: creá una nueva, suspendé el acceso o entrá como ella para dar soporte.",
       "createTitle": "Nueva empresa",
       "name": "Nombre",
       "slug": "Slug",
@@ -738,7 +788,13 @@
       },
       "suspend": "Suspender",
       "activate": "Activar",
-      "impersonate": "Ver como"
+      "impersonate": "Ver como",
+      "errors": {
+        "nameRequired": "Poné un nombre para la empresa.",
+        "slugInvalid": "El slug va en minúsculas, sin espacios ni acentos (ej: mi-empresa).",
+        "slugTaken": "Ya existe una empresa con ese slug.",
+        "unknown": "No se pudo crear la empresa. Intentá de nuevo."
+      }
     },
     "subscriptions": {
       "title": "Suscripción",
@@ -761,11 +817,17 @@
     },
     "plans": {
       "title": "Planes",
+      "intro": "Los planes que las empresas pueden contratar, con su duración y precio.",
       "createTitle": "Nuevo plan",
       "name": "Nombre",
       "durationMonths": "Duración (meses)",
       "price": "Precio (PYG)",
-      "active": "Activo"
+      "active": "Activo",
+      "errors": {
+        "nameRequired": "Poné un nombre para el plan.",
+        "priceInvalid": "El precio va en guaraníes enteros, mayor que cero.",
+        "unknown": "No se pudo crear el plan. Intentá de nuevo."
+      }
     },
     "whatsappHealth": {
       "title": "Salud de WhatsApp",

@@ -1,8 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useActionState, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
-import { createQuoteAction } from "./actions";
+import { createQuoteAction, type QuoteFormState } from "./actions";
+
+// Declared here, not in actions.ts: a "use server" module may only export
+// async functions.
+const initialState: QuoteFormState = { error: null, field: null, values: { contactId: "" } };
 
 type Contact = { id: string; label: string };
 type Product = { id: string; name: string; unitPrice: number };
@@ -39,8 +44,10 @@ export function QuoteBuilder({
   products: Product[];
   labels: BuilderLabels;
 }) {
+  const t = useTranslations("app.quotes");
   const [lines, setLines] = useState<Line[]>([blankLine()]);
   const [discount, setDiscount] = useState(0);
+  const [state, formAction, pending] = useActionState(createQuoteAction, initialState);
 
   function update(key: number, patch: Partial<Line>) {
     setLines((prev) => prev.map((line) => (line.key === key ? { ...line, ...patch } : line)));
@@ -61,16 +68,28 @@ export function QuoteBuilder({
   const fmt = (n: number) => new Intl.NumberFormat("es-PY").format(n);
 
   return (
-    <form action={createQuoteAction} className="flex flex-col gap-4">
+    <form action={formAction} className="flex flex-col gap-4">
       <label className="flex max-w-sm flex-col gap-1 text-sm">
         {labels.contact}
-        <select name="contactId" required className="rounded-md border px-3 py-2">
+        <select
+          name="contactId"
+          defaultValue={state.values.contactId}
+          className="rounded-md border px-3 py-2"
+        >
+          <option value="" disabled>
+            {labels.contact}
+          </option>
           {contacts.map((contact) => (
             <option key={contact.id} value={contact.id}>
               {contact.label}
             </option>
           ))}
         </select>
+        {state.field === "contactId" && state.error && (
+          <span role="alert" className="text-xs text-destructive">
+            {t(`errors.${state.error}` as "errors.unknown")}
+          </span>
+        )}
       </label>
 
       <div className="flex flex-col gap-2">
@@ -186,7 +205,13 @@ export function QuoteBuilder({
         </div>
       </div>
 
-      <Button type="submit" className="w-fit">
+      {state.error && state.field === null && (
+        <p role="alert" className="text-sm text-destructive">
+          {t(`errors.${state.error}` as "errors.unknown")}
+        </p>
+      )}
+
+      <Button type="submit" className="w-fit" disabled={pending}>
         {labels.create}
       </Button>
     </form>

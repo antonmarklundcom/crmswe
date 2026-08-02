@@ -1,8 +1,23 @@
 "use client";
 
-import { useState } from "react";
+import { useActionState, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
-import { createDocumentAction, updateDraftDocumentAction } from "./actions";
+import {
+  createDocumentAction,
+  updateDraftDocumentAction,
+  type DocumentFormState,
+  type UpdateDocumentFormState,
+} from "./actions";
+
+// Declared here, not in actions.ts: a "use server" module may only export
+// async functions.
+const createInitialState: DocumentFormState = {
+  error: null,
+  field: null,
+  values: { contactId: "" },
+};
+const updateInitialState: UpdateDocumentFormState = { error: null, values: { contactId: "" } };
 
 type Contact = { id: string; label: string };
 type Product = { id: string; name: string; unitPrice: number };
@@ -64,6 +79,7 @@ type EditProps = {
 
 export function DocumentBuilder(props: CreateProps | EditProps) {
   const { products, labels } = props;
+  const t = useTranslations("app.documents");
   const [lines, setLines] = useState<Line[]>(() =>
     props.mode === "edit" && props.initial.lines.length > 0
       ? props.initial.lines
@@ -72,6 +88,19 @@ export function DocumentBuilder(props: CreateProps | EditProps) {
   const [discount, setDiscount] = useState(
     props.mode === "edit" ? props.initial.discount : 0,
   );
+  // Both hooks run unconditionally — mode doesn't change once a builder is
+  // mounted — and the render below picks whichever the props say to use.
+  const [createState, createFormAction, createPending] = useActionState(
+    createDocumentAction,
+    createInitialState,
+  );
+  const [updateState, updateFormAction, updatePending] = useActionState(
+    updateDraftDocumentAction,
+    updateInitialState,
+  );
+  const state = props.mode === "create" ? createState : updateState;
+  const formAction = props.mode === "create" ? createFormAction : updateFormAction;
+  const pending = props.mode === "create" ? createPending : updatePending;
 
   function update(key: number, patch: Partial<Line>) {
     setLines((prev) => prev.map((line) => (line.key === key ? { ...line, ...patch } : line)));
@@ -91,10 +120,8 @@ export function DocumentBuilder(props: CreateProps | EditProps) {
   const appliedDiscount = Math.min(Math.max(discount, 0), subtotal);
   const fmt = (n: number) => new Intl.NumberFormat("es-PY").format(n);
 
-  const action = props.mode === "create" ? createDocumentAction : updateDraftDocumentAction;
-
   return (
-    <form action={action} className="flex flex-col gap-4">
+    <form action={formAction} className="flex flex-col gap-4">
       {props.mode === "edit" && (
         <input type="hidden" name="documentId" value={props.documentId} />
       )}
@@ -102,13 +129,25 @@ export function DocumentBuilder(props: CreateProps | EditProps) {
       {props.mode === "create" && (
         <label className="flex max-w-sm flex-col gap-1 text-sm">
           {labels.contact}
-          <select name="contactId" required className="rounded-md border px-3 py-2">
+          <select
+            name="contactId"
+            defaultValue={createState.values.contactId}
+            className="rounded-md border px-3 py-2"
+          >
+            <option value="" disabled>
+              {labels.contact}
+            </option>
             {props.contacts.map((contact) => (
               <option key={contact.id} value={contact.id}>
                 {contact.label}
               </option>
             ))}
           </select>
+          {createState.field === "contactId" && createState.error && (
+            <span role="alert" className="text-xs text-destructive">
+              {t(`errors.${createState.error}` as "errors.unknown")}
+            </span>
+          )}
         </label>
       )}
 
@@ -237,7 +276,13 @@ export function DocumentBuilder(props: CreateProps | EditProps) {
         </div>
       </div>
 
-      <Button type="submit" className="w-fit">
+      {state.error && !(props.mode === "create" && createState.field === "contactId") && (
+        <p role="alert" className="text-sm text-destructive">
+          {t(`errors.${state.error}` as "errors.unknown")}
+        </p>
+      )}
+
+      <Button type="submit" className="w-fit" disabled={pending}>
         {labels.submit}
       </Button>
     </form>

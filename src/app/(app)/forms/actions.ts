@@ -23,28 +23,69 @@ const createFormSchema = z.object({
     .string()
     .min(1)
     .max(100)
-    .regex(/^[a-z0-9-]+$/, "slug must be lowercase alphanumeric with dashes"),
+    .regex(/^[a-z0-9-]+$/),
   targetPipelineId: z.string().optional().or(z.literal("")),
   targetStageId: z.string().optional().or(z.literal("")),
 });
 
-export async function createFormAction(formData: FormData) {
+// useActionState-shaped (PLAN.md §10 1R #6): a missing name or a slug with
+// spaces/uppercase comes back inline instead of throwing to Next's error
+// page. Named FormCreateField, not FormField, to avoid clashing with the
+// lead-capture field type already exported from @/modules/forms/forms.
+export type FormCreateField = "name" | "slug";
+
+export type FormFormState = {
+  error: string | null;
+  field: FormCreateField | null;
+  values: Record<string, string>;
+};
+
+const FORM_FIELD_ERRORS: Record<FormCreateField, string> = {
+  name: "nameRequired",
+  slug: "slugInvalid",
+};
+
+export async function createFormAction(
+  _prevState: FormFormState,
+  formData: FormData,
+): Promise<FormFormState> {
   const ctx = await requireTenantContext();
-  const input = createFormSchema.parse({
+  const values = Object.fromEntries(
+    [...formData.entries()].filter(
+      (entry): entry is [string, string] => typeof entry[1] === "string",
+    ),
+  );
+
+  const parsed = createFormSchema.safeParse({
     name: formData.get("name"),
     slug: formData.get("slug"),
     targetPipelineId: formData.get("targetPipelineId") || undefined,
     targetStageId: formData.get("targetStageId") || undefined,
   });
 
-  await createForm(ctx, {
-    name: input.name,
-    slug: input.slug,
-    fields: STANDARD_FIELDS,
-    settings: {
-      targetPipelineId: input.targetPipelineId || undefined,
-      targetStageId: input.targetStageId || undefined,
-    },
-  });
+  if (!parsed.success) {
+    const field = parsed.error.issues[0]?.path[0];
+    if (typeof field === "string" && field in FORM_FIELD_ERRORS) {
+      const key = field as FormCreateField;
+      return { error: FORM_FIELD_ERRORS[key], field: key, values };
+    }
+    return { error: "unknown", field: null, values };
+  }
+
+  try {
+    await createForm(ctx, {
+      name: parsed.data.name,
+      slug: parsed.data.slug,
+      fields: STANDARD_FIELDS,
+      settings: {
+        targetPipelineId: parsed.data.targetPipelineId || undefined,
+        targetStageId: parsed.data.targetStageId || undefined,
+      },
+    });
+  } catch {
+    return { error: "unknown", field: null, values };
+  }
+
   revalidatePath("/forms");
+  return { error: null, field: null, values: {} };
 }

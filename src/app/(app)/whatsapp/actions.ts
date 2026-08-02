@@ -13,17 +13,58 @@ const connectSchema = z.object({
   accessToken: z.string().min(1),
 });
 
-export async function connectAccountAction(formData: FormData) {
+// useActionState-shaped (PLAN.md §10 1R #6): a missing field comes back
+// inline next to the offending input instead of throwing to Next's error
+// page.
+export type ConnectField = "wabaId" | "phoneNumberId" | "accessToken";
+
+export type ConnectFormState = {
+  error: string | null;
+  field: ConnectField | null;
+  values: Record<string, string>;
+};
+
+const CONNECT_FIELD_ERRORS: Record<ConnectField, string> = {
+  wabaId: "wabaIdRequired",
+  phoneNumberId: "phoneNumberIdRequired",
+  accessToken: "accessTokenRequired",
+};
+
+export async function connectAccountAction(
+  _prevState: ConnectFormState,
+  formData: FormData,
+): Promise<ConnectFormState> {
   const ctx = await requireTenantAdmin();
-  const input = connectSchema.parse({
+  const values = Object.fromEntries(
+    [...formData.entries()].filter(
+      (entry): entry is [string, string] => typeof entry[1] === "string",
+    ),
+  );
+
+  const parsed = connectSchema.safeParse({
     wabaId: formData.get("wabaId"),
     phoneNumberId: formData.get("phoneNumberId"),
     displayNumber: formData.get("displayNumber") || undefined,
     accessToken: formData.get("accessToken"),
   });
 
-  await connectAccountManually(ctx, input);
+  if (!parsed.success) {
+    const field = parsed.error.issues[0]?.path[0];
+    if (typeof field === "string" && field in CONNECT_FIELD_ERRORS) {
+      const key = field as ConnectField;
+      return { error: CONNECT_FIELD_ERRORS[key], field: key, values };
+    }
+    return { error: "unknown", field: null, values };
+  }
+
+  try {
+    await connectAccountManually(ctx, parsed.data);
+  } catch {
+    return { error: "unknown", field: null, values };
+  }
+
   revalidatePath("/whatsapp");
+  return { error: null, field: null, values: {} };
 }
 
 // Manual "sync" button (§6.4). Runs inline rather than through the
@@ -31,7 +72,8 @@ export async function connectAccountAction(formData: FormData) {
 // seed a second nightly chain alongside the one connect already started.
 export async function syncTemplatesAction(formData: FormData) {
   const ctx = await requireTenantAdmin();
-  const accountId = z.string().min(1).parse(formData.get("accountId"));
-  await syncTemplates(ctx, accountId);
+  const parsed = z.string().min(1).safeParse(formData.get("accountId"));
+  if (!parsed.success) return;
+  await syncTemplates(ctx, parsed.data);
   revalidatePath("/whatsapp");
 }

@@ -6,7 +6,8 @@ import { listTemplates } from "@/modules/whatsapp/templates";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
-import { connectAccountAction, syncTemplatesAction } from "./actions";
+import { syncTemplatesAction } from "./actions";
+import { WhatsappConnectForm } from "./WhatsappConnectForm";
 
 export default async function WhatsappPage() {
   const ctx = await requireTenantContext();
@@ -83,25 +84,7 @@ export default async function WhatsappPage() {
       <section id="conectar-numero" className="scroll-mt-6">
         <h2 className="mb-4 text-lg font-semibold">{t("connectTitle")}</h2>
         <p className="mb-4 max-w-md text-sm text-muted-foreground">{t("connectHelp")}</p>
-        <form action={connectAccountAction} className="flex max-w-sm flex-col gap-4">
-          <label className="flex flex-col gap-1 text-sm">
-            {t("wabaId")}
-            <input name="wabaId" required className="rounded-md border px-3 py-2" />
-          </label>
-          <label className="flex flex-col gap-1 text-sm">
-            {t("phoneNumberId")}
-            <input name="phoneNumberId" required className="rounded-md border px-3 py-2" />
-          </label>
-          <label className="flex flex-col gap-1 text-sm">
-            {t("displayNumber")}
-            <input name="displayNumber" className="rounded-md border px-3 py-2" />
-          </label>
-          <label className="flex flex-col gap-1 text-sm">
-            {t("accessToken")}
-            <input name="accessToken" type="password" required className="rounded-md border px-3 py-2" />
-          </label>
-          <Button type="submit">{t("connect")}</Button>
-        </form>
+        <WhatsappConnectForm />
       </section>
     </div>
   );

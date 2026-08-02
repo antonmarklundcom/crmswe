@@ -13,13 +13,49 @@ const createFlowSchema = z.object({
   triggerType: z.enum(TRIGGER_TYPES),
 });
 
-export async function createFlowAction(formData: FormData) {
+// useActionState-shaped (PLAN.md §10 1R #6): a missing name comes back
+// inline instead of throwing. The trigger select is always populated from
+// TRIGGER_TYPES, so it can't realistically fail once submitted from this
+// form — a failure there lands in the form-level slot.
+export type FlowField = "name";
+
+export type FlowFormState = {
+  error: string | null;
+  field: FlowField | null;
+  values: Record<string, string>;
+};
+
+export async function createFlowAction(
+  _prevState: FlowFormState,
+  formData: FormData,
+): Promise<FlowFormState> {
   const ctx = await requireTenantContext();
-  const input = createFlowSchema.parse({
+  const values = Object.fromEntries(
+    [...formData.entries()].filter(
+      (entry): entry is [string, string] => typeof entry[1] === "string",
+    ),
+  );
+
+  const parsed = createFlowSchema.safeParse({
     name: formData.get("name"),
     triggerType: formData.get("triggerType"),
   });
-  const flow = await createFlow(ctx, input);
+
+  if (!parsed.success) {
+    const field = parsed.error.issues[0]?.path[0];
+    if (field === "name") {
+      return { error: "nameRequired", field: "name", values };
+    }
+    return { error: "unknown", field: null, values };
+  }
+
+  let flow;
+  try {
+    flow = await createFlow(ctx, parsed.data);
+  } catch {
+    return { error: "unknown", field: null, values };
+  }
+
   revalidatePath("/automations");
   redirect(`/automations/${flow!.id}`);
 }
@@ -43,16 +79,20 @@ export async function publishFlowAction(flowId: string) {
 
 export async function setFlowStatusAction(formData: FormData) {
   const ctx = await requireTenantContext();
-  const flowId = z.string().min(1).parse(formData.get("flowId"));
-  const status = z.enum(["draft", "active", "paused"]).parse(formData.get("status"));
-  await setFlowStatus(ctx, flowId, status);
-  revalidatePath(`/automations/${flowId}`);
+  const parsed = z
+    .object({ flowId: z.string().min(1), status: z.enum(["draft", "active", "paused"]) })
+    .safeParse({ flowId: formData.get("flowId"), status: formData.get("status") });
+  if (!parsed.success) return;
+  await setFlowStatus(ctx, parsed.data.flowId, parsed.data.status);
+  revalidatePath(`/automations/${parsed.data.flowId}`);
 }
 
 export async function cancelRunAction(formData: FormData) {
   const ctx = await requireTenantContext();
-  const runId = z.string().min(1).parse(formData.get("runId"));
-  const flowId = z.string().min(1).parse(formData.get("flowId"));
-  await cancelRun(ctx, runId);
-  revalidatePath(`/automations/${flowId}`);
+  const parsed = z
+    .object({ runId: z.string().min(1), flowId: z.string().min(1) })
+    .safeParse({ runId: formData.get("runId"), flowId: formData.get("flowId") });
+  if (!parsed.success) return;
+  await cancelRun(ctx, parsed.data.runId);
+  revalidatePath(`/automations/${parsed.data.flowId}`);
 }

@@ -5,7 +5,8 @@ import { listProducts } from "@/modules/quotes/products";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
-import { createProductAction, toggleProductAction } from "./actions";
+import { toggleProductAction } from "./actions";
+import { ProductCreateForm } from "./ProductCreateForm";
 
 export default async function ProductsPage() {
   const ctx = await requireTenantContext();
@@ -69,21 +70,7 @@ export default async function ProductsPage() {
 
       <section id="nuevo-producto" className="scroll-mt-6">
         <h2 className="mb-4 text-lg font-semibold">{t("createTitle")}</h2>
-        <form action={createProductAction} className="flex max-w-sm flex-col gap-4">
-          <label className="flex flex-col gap-1 text-sm">
-            {t("name")}
-            <input name="name" required className="rounded-md border px-3 py-2" />
-          </label>
-          <label className="flex flex-col gap-1 text-sm">
-            {t("description")}
-            <textarea name="description" className="rounded-md border px-3 py-2" />
-          </label>
-          <label className="flex flex-col gap-1 text-sm">
-            {t("unitPrice")}
-            <input name="unitPrice" type="number" min={0} step={1} required className="rounded-md border px-3 py-2" />
-          </label>
-          <Button type="submit">{tc("create")}</Button>
-        </form>
+        <ProductCreateForm />
       </section>
     </div>
   );

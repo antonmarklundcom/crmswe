@@ -46,24 +46,53 @@ const createDocumentSchema = z.object({
   items: z.array(lineSchema).min(1),
 });
 
-export async function createDocumentAction(formData: FormData) {
-  const ctx = await requireTenantContext();
+// useActionState-shaped (PLAN.md §10 1R #6): the builder keeps its own line
+// items client-side, so the only field worth pointing an inline error at is
+// the contact picker — a bad line (empty items array) has no single input to
+// sit under and lands in the form-level slot instead.
+export type DocumentField = "contactId";
 
-  const input = createDocumentSchema.parse({
-    contactId: formData.get("contactId"),
+export type DocumentFormState = {
+  error: string | null;
+  field: DocumentField | null;
+  values: { contactId: string };
+};
+
+export async function createDocumentAction(
+  _prevState: DocumentFormState,
+  formData: FormData,
+): Promise<DocumentFormState> {
+  const ctx = await requireTenantContext();
+  const contactId = String(formData.get("contactId") ?? "");
+
+  const parsed = createDocumentSchema.safeParse({
+    contactId,
     discount: formData.get("discount") || 0,
     dueAt: formData.get("dueAt") || undefined,
     notes: formData.get("notes") || undefined,
     items: parseLines(formData),
   });
 
-  const document = await createDocument(ctx, {
-    contactId: input.contactId,
-    discount: input.discount,
-    dueAt: input.dueAt ? new Date(input.dueAt) : undefined,
-    notes: input.notes,
-    items: input.items,
-  });
+  if (!parsed.success) {
+    const field = parsed.error.issues[0]?.path[0];
+    if (field === "contactId") {
+      return { error: "contactRequired", field: "contactId", values: { contactId } };
+    }
+    return { error: "itemsRequired", field: null, values: { contactId } };
+  }
+
+  let document;
+  try {
+    document = await createDocument(ctx, {
+      contactId: parsed.data.contactId,
+      discount: parsed.data.discount,
+      dueAt: parsed.data.dueAt ? new Date(parsed.data.dueAt) : undefined,
+      notes: parsed.data.notes,
+      items: parsed.data.items,
+    });
+  } catch {
+    return { error: "unknown", field: null, values: { contactId } };
+  }
 
   revalidatePath("/documents");
   redirect(`/documents/${document!.id}`);
@@ -77,33 +106,54 @@ const updateDocumentSchema = z.object({
   items: z.array(lineSchema).min(1),
 });
 
-export async function updateDraftDocumentAction(formData: FormData) {
-  const ctx = await requireTenantContext();
+export type UpdateDocumentFormState = {
+  error: string | null;
+  values: { contactId: string };
+};
 
-  const input = updateDocumentSchema.parse({
-    documentId: formData.get("documentId"),
+export async function updateDraftDocumentAction(
+  _prevState: UpdateDocumentFormState,
+  formData: FormData,
+): Promise<UpdateDocumentFormState> {
+  const ctx = await requireTenantContext();
+  const documentId = String(formData.get("documentId") ?? "");
+
+  const parsed = updateDocumentSchema.safeParse({
+    documentId,
     discount: formData.get("discount") || 0,
     dueAt: formData.get("dueAt") || undefined,
     notes: formData.get("notes") || undefined,
     items: parseLines(formData),
   });
 
-  await updateDraftDocument(ctx, input.documentId, {
-    discount: input.discount,
-    dueAt: input.dueAt ? new Date(input.dueAt) : undefined,
-    notes: input.notes,
-    items: input.items,
-  });
+  if (!parsed.success) {
+    return { error: "itemsRequired", values: { contactId: "" } };
+  }
 
-  revalidatePath(`/documents/${input.documentId}`);
-  redirect(`/documents/${input.documentId}`);
+  try {
+    await updateDraftDocument(ctx, parsed.data.documentId, {
+      discount: parsed.data.discount,
+      dueAt: parsed.data.dueAt ? new Date(parsed.data.dueAt) : undefined,
+      notes: parsed.data.notes,
+      items: parsed.data.items,
+    });
+  } catch {
+    return { error: "unknown", values: { contactId: "" } };
+  }
+
+  revalidatePath(`/documents/${parsed.data.documentId}`);
+  redirect(`/documents/${parsed.data.documentId}`);
 }
 
+// Hidden-id-only actions: there's no field a user fills in for the server to
+// reject, so a bad submission (a tampered id) fails silently instead of
+// crashing — safeParse instead of parse, no state to render.
 export async function issueDocumentAction(formData: FormData) {
   const ctx = await requireTenantContext();
-  const documentId = z.string().min(1).parse(formData.get("documentId"));
-  await issueDocument(ctx, documentId);
-  revalidatePath(`/documents/${documentId}`);
+  const parsed = z.string().min(1).safeParse(formData.get("documentId"));
+  if (!parsed.success) return;
+  await issueDocument(ctx, parsed.data);
+  revalidatePath(`/documents/${parsed.data}`);
 }
 
 const voidDocumentSchema = z.object({
@@ -111,21 +161,40 @@ const voidDocumentSchema = z.object({
   reason: z.string().min(1).max(500),
 });
 
-export async function voidDocumentAction(formData: FormData) {
+export type VoidDocumentFormState = {
+  error: string | null;
+  values: { reason: string };
+};
+
+export async function voidDocumentAction(
+  _prevState: VoidDocumentFormState,
+  formData: FormData,
+): Promise<VoidDocumentFormState> {
   const ctx = await requireTenantContext();
-  const input = voidDocumentSchema.parse({
-    documentId: formData.get("documentId"),
-    reason: formData.get("reason"),
-  });
-  await voidDocument(ctx, input.documentId, input.reason);
-  revalidatePath(`/documents/${input.documentId}`);
+  const documentId = String(formData.get("documentId") ?? "");
+  const reason = String(formData.get("reason") ?? "");
+
+  const parsed = voidDocumentSchema.safeParse({ documentId, reason });
+  if (!parsed.success) {
+    return { error: "voidReasonRequired", values: { reason } };
+  }
+
+  try {
+    await voidDocument(ctx, parsed.data.documentId, parsed.data.reason);
+  } catch {
+    return { error: "unknown", values: { reason } };
+  }
+
+  revalidatePath(`/documents/${parsed.data.documentId}`);
+  return { error: null, values: { reason: "" } };
 }
 
 export async function sendDocumentAction(formData: FormData) {
   const ctx = await requireTenantContext();
-  const documentId = z.string().min(1).parse(formData.get("documentId"));
-  await sendDocumentToContact(ctx, documentId);
-  revalidatePath(`/documents/${documentId}`);
+  const parsed = z.string().min(1).safeParse(formData.get("documentId"));
+  if (!parsed.success) return;
+  await sendDocumentToContact(ctx, parsed.data);
+  revalidatePath(`/documents/${parsed.data}`);
 }
 
 const recordPaymentSchema = z.object({
@@ -137,9 +206,26 @@ const recordPaymentSchema = z.object({
   notes: z.string().max(500).optional(),
 });
 
-export async function recordPaymentAction(formData: FormData) {
+export type RecordPaymentField = "amount";
+
+export type RecordPaymentFormState = {
+  error: string | null;
+  field: RecordPaymentField | null;
+  values: Record<string, string>;
+};
+
+export async function recordPaymentAction(
+  _prevState: RecordPaymentFormState,
+  formData: FormData,
+): Promise<RecordPaymentFormState> {
   const ctx = await requireTenantContext();
-  const input = recordPaymentSchema.parse({
+  const values = Object.fromEntries(
+    [...formData.entries()].filter(
+      (entry): entry is [string, string] => typeof entry[1] === "string",
+    ),
+  );
+
+  const parsed = recordPaymentSchema.safeParse({
     documentId: formData.get("documentId"),
     amount: formData.get("amount"),
     method: formData.get("method") || undefined,
@@ -148,15 +234,28 @@ export async function recordPaymentAction(formData: FormData) {
     notes: formData.get("notes") || undefined,
   });
 
-  await recordPayment(ctx, input.documentId, {
-    amount: input.amount,
-    method: input.method,
-    reference: input.reference,
-    paidAt: input.paidAt ? new Date(input.paidAt) : undefined,
-    notes: input.notes,
-  });
+  if (!parsed.success) {
+    const field = parsed.error.issues[0]?.path[0];
+    if (field === "amount") {
+      return { error: "amountInvalid", field: "amount", values };
+    }
+    return { error: "unknown", field: null, values };
+  }
 
-  revalidatePath(`/documents/${input.documentId}`);
+  try {
+    await recordPayment(ctx, parsed.data.documentId, {
+      amount: parsed.data.amount,
+      method: parsed.data.method,
+      reference: parsed.data.reference,
+      paidAt: parsed.data.paidAt ? new Date(parsed.data.paidAt) : undefined,
+      notes: parsed.data.notes,
+    });
+  } catch {
+    return { error: "unknown", field: null, values };
+  }
+
+  revalidatePath(`/documents/${parsed.data.documentId}`);
+  return { error: null, field: null, values: {} };
 }
 
 const deletePaymentSchema = z.object({
@@ -166,10 +265,11 @@ const deletePaymentSchema = z.object({
 
 export async function deletePaymentAction(formData: FormData) {
   const ctx = await requireTenantContext();
-  const input = deletePaymentSchema.parse({
+  const parsed = deletePaymentSchema.safeParse({
     documentId: formData.get("documentId"),
     paymentId: formData.get("paymentId"),
   });
-  await deletePayment(ctx, input.documentId, input.paymentId);
-  revalidatePath(`/documents/${input.documentId}`);
+  if (!parsed.success) return;
+  await deletePayment(ctx, parsed.data.documentId, parsed.data.paymentId);
+  revalidatePath(`/documents/${parsed.data.documentId}`);
 }

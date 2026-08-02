@@ -77,6 +77,13 @@ export async function getSite(ctx: TenantContext, id: string) {
   return row ?? null;
 }
 
+/** Slug is unique per tenant (sites_tenant_slug_idx) — used to answer a
+ * duplicate slug inline instead of letting the index raise a 500. */
+export async function getSiteBySlug(ctx: TenantContext, slug: string) {
+  const [row] = await tenantDb(ctx).select(sites, eq(sites.slug, slug));
+  return row ?? null;
+}
+
 export function listSites(ctx: TenantContext) {
   return tenantDb(ctx)
     .select(sites)

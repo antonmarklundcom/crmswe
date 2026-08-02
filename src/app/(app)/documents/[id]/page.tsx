@@ -9,18 +9,12 @@ import {
   listPayments,
 } from "@/modules/documents/documents";
 import { publicDocumentUrl } from "@/modules/documents/delivery";
-import { PAYMENT_METHODS } from "@/modules/documents/types";
 import { listProducts } from "@/modules/quotes/products";
 import { getContact } from "@/modules/crm/contacts";
 import { Button } from "@/components/ui/button";
 import { DocumentBuilder, type DocumentBuilderLabels } from "../DocumentBuilder";
-import {
-  issueDocumentAction,
-  voidDocumentAction,
-  sendDocumentAction,
-  recordPaymentAction,
-  deletePaymentAction,
-} from "../actions";
+import { issueDocumentAction, sendDocumentAction, deletePaymentAction } from "../actions";
+import { RecordPaymentForm, VoidDocumentForm } from "./DocumentActionForms";
 
 export default async function DocumentDetailPage({
   params,
@@ -243,51 +237,7 @@ export default async function DocumentDetailPage({
             </table>
           )}
 
-          {document.status === "issued" && (
-            <form
-              action={recordPaymentAction}
-              className="flex max-w-md flex-wrap items-end gap-2 text-sm"
-            >
-              <input type="hidden" name="documentId" value={document.id} />
-              <label className="flex flex-col gap-1">
-                {t("amount")}
-                <input
-                  name="amount"
-                  type="number"
-                  min={1}
-                  step={1}
-                  required
-                  className="w-32 rounded-md border px-2 py-1"
-                />
-              </label>
-              <label className="flex flex-col gap-1">
-                {t("method")}
-                <select name="method" className="rounded-md border px-2 py-1">
-                  {PAYMENT_METHODS.map((method) => (
-                    <option key={method} value={method}>
-                      {t(`methodValues.${method}` as "methodValues.cash")}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="flex flex-col gap-1">
-                {t("reference")}
-                <input name="reference" className="rounded-md border px-2 py-1" />
-              </label>
-              <label className="flex flex-col gap-1">
-                {t("paidAt")}
-                <input
-                  name="paidAt"
-                  type="date"
-                  defaultValue={new Date().toISOString().slice(0, 10)}
-                  className="rounded-md border px-2 py-1"
-                />
-              </label>
-              <Button type="submit" size="sm">
-                {t("recordPayment")}
-              </Button>
-            </form>
-          )}
+          {document.status === "issued" && <RecordPaymentForm documentId={document.id} />}
         </section>
       )}
 
@@ -297,17 +247,7 @@ export default async function DocumentDetailPage({
           {payments.length > 0 ? (
             <p className="text-sm text-muted-foreground">{t("voidBlockedByPayments")}</p>
           ) : (
-            <form action={voidDocumentAction} className="flex max-w-sm flex-col gap-2 text-sm">
-              <p className="text-xs text-muted-foreground">{t("voidWarning")}</p>
-              <input type="hidden" name="documentId" value={document.id} />
-              <label className="flex flex-col gap-1">
-                {t("voidReason")}
-                <input name="reason" required className="rounded-md border px-3 py-2" />
-              </label>
-              <Button type="submit" variant="outline" size="sm" className="w-fit">
-                {t("voidAction")}
-              </Button>
-            </form>
+            <VoidDocumentForm documentId={document.id} />
           )}
         </section>
       )}

@@ -21,6 +21,24 @@ import { COUNTRY_CODES } from "@/lib/phone";
 
 const DAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"] as const;
 
+// Every settings form on this page shares the same shape (PLAN.md §10 1R
+// #6): safeParse instead of parse, an error *key* resolved client-side
+// through next-intl, and a "saved" flag so a successful save is visible even
+// though the form looks identical afterwards.
+export type SettingsFormState = {
+  error: string | null;
+  saved: boolean;
+  values: Record<string, string>;
+};
+
+function submitted(formData: FormData): Record<string, string> {
+  return Object.fromEntries(
+    [...formData.entries()].filter(
+      (entry): entry is [string, string] => typeof entry[1] === "string",
+    ),
+  );
+}
+
 const brandingSchema = z.object({
   logoUrl: z.string().url().optional().or(z.literal("")),
   primaryColor: z
@@ -30,21 +48,40 @@ const brandingSchema = z.object({
     .or(z.literal("")),
 });
 
-export async function updateBrandingAction(formData: FormData) {
+export async function updateBrandingAction(
+  _prevState: SettingsFormState,
+  formData: FormData,
+): Promise<SettingsFormState> {
   const ctx = await requireTenantAdmin();
-  const input = brandingSchema.parse({
+  const values = submitted(formData);
+  const parsed = brandingSchema.safeParse({
     logoUrl: formData.get("logoUrl") || undefined,
     primaryColor: formData.get("primaryColor") || undefined,
   });
-  await updateTenantBranding(ctx, {
-    logoUrl: input.logoUrl || undefined,
-    primaryColor: input.primaryColor || undefined,
-  });
+  if (!parsed.success) {
+    const field = parsed.error.issues[0]?.path[0];
+    return { error: field === "primaryColor" ? "primaryColorInvalid" : "logoUrlInvalid", saved: false, values };
+  }
+
+  try {
+    await updateTenantBranding(ctx, {
+      logoUrl: parsed.data.logoUrl || undefined,
+      primaryColor: parsed.data.primaryColor || undefined,
+    });
+  } catch {
+    return { error: "unknown", saved: false, values };
+  }
+
   revalidatePath("/settings");
+  return { error: null, saved: true, values };
 }
 
-export async function updateBusinessHoursAction(formData: FormData) {
+export async function updateBusinessHoursAction(
+  _prevState: SettingsFormState,
+  formData: FormData,
+): Promise<SettingsFormState> {
   const ctx = await requireTenantAdmin();
+  const values = submitted(formData);
 
   const businessHours = DAYS.reduce((acc, day) => {
     const enabled = formData.get(`${day}_enabled`) === "on";
@@ -54,35 +91,83 @@ export async function updateBusinessHoursAction(formData: FormData) {
     return acc;
   }, {} as BusinessHours);
 
-  await updateTenantBusinessHours(ctx, businessHours);
+  try {
+    await updateTenantBusinessHours(ctx, businessHours);
+  } catch {
+    return { error: "unknown", saved: false, values };
+  }
+
   revalidatePath("/settings");
+  return { error: null, saved: true, values };
 }
 
 const timezoneSchema = z.string().min(1).max(60);
 
-export async function updateTimezoneAction(formData: FormData) {
+export async function updateTimezoneAction(
+  _prevState: SettingsFormState,
+  formData: FormData,
+): Promise<SettingsFormState> {
   const ctx = await requireTenantAdmin();
-  const timezone = timezoneSchema.parse(formData.get("timezone"));
-  await updateTenantTimezone(ctx, timezone);
+  const values = submitted(formData);
+  const parsed = timezoneSchema.safeParse(formData.get("timezone"));
+  if (!parsed.success) {
+    return { error: "timezoneRequired", saved: false, values };
+  }
+
+  try {
+    await updateTenantTimezone(ctx, parsed.data);
+  } catch {
+    return { error: "unknown", saved: false, values };
+  }
+
   revalidatePath("/settings");
+  return { error: null, saved: true, values };
 }
 
 const defaultCountrySchema = z.enum(COUNTRY_CODES);
 
-export async function updateDefaultCountryAction(formData: FormData) {
+export async function updateDefaultCountryAction(
+  _prevState: SettingsFormState,
+  formData: FormData,
+): Promise<SettingsFormState> {
   const ctx = await requireTenantAdmin();
-  const defaultCountry = defaultCountrySchema.parse(formData.get("defaultCountry"));
-  await updateTenantDefaultCountry(ctx, defaultCountry);
+  const values = submitted(formData);
+  const parsed = defaultCountrySchema.safeParse(formData.get("defaultCountry"));
+  if (!parsed.success) {
+    return { error: "defaultCountryInvalid", saved: false, values };
+  }
+
+  try {
+    await updateTenantDefaultCountry(ctx, parsed.data);
+  } catch {
+    return { error: "unknown", saved: false, values };
+  }
+
   revalidatePath("/settings");
+  return { error: null, saved: true, values };
 }
 
 const reviewLinkSchema = z.string().url().max(500);
 
-export async function updateReviewLinkAction(formData: FormData) {
+export async function updateReviewLinkAction(
+  _prevState: SettingsFormState,
+  formData: FormData,
+): Promise<SettingsFormState> {
   const ctx = await requireTenantAdmin();
-  const reviewLink = reviewLinkSchema.parse(formData.get("reviewLink"));
-  await updateTenantReviewLink(ctx, reviewLink);
+  const values = submitted(formData);
+  const parsed = reviewLinkSchema.safeParse(formData.get("reviewLink"));
+  if (!parsed.success) {
+    return { error: "reviewLinkInvalid", saved: false, values };
+  }
+
+  try {
+    await updateTenantReviewLink(ctx, parsed.data);
+  } catch {
+    return { error: "unknown", saved: false, values };
+  }
+
   revalidatePath("/settings");
+  return { error: null, saved: true, values };
 }
 
 // AI auto-reply settings (PLAN.md §10 1O). Admin-only via requireTenantAdmin
@@ -106,9 +191,14 @@ const aiSettingsSchema = z.object({
   handoffKeyword: z.string().min(1).max(50),
 });
 
-export async function updateAiSettingsAction(formData: FormData) {
+export async function updateAiSettingsAction(
+  _prevState: SettingsFormState,
+  formData: FormData,
+): Promise<SettingsFormState> {
   const ctx = await requireTenantAdmin();
-  const input = aiSettingsSchema.parse({
+  const values = submitted(formData);
+
+  const parsed = aiSettingsSchema.safeParse({
     enabled: formData.get("enabled") === "on",
     businessName: formData.get("businessName") || undefined,
     about: formData.get("about") || undefined,
@@ -121,8 +211,25 @@ export async function updateAiSettingsAction(formData: FormData) {
     handoffKeyword: formData.get("handoffKeyword") || "humano",
   });
 
-  await updateTenantAiSettings(ctx, input);
+  if (!parsed.success) {
+    const field = parsed.error.issues[0]?.path[0];
+    const key =
+      field === "maxRepliesPerConversationPerDay" || field === "maxRepliesPerTenantPerDay"
+        ? "aiLimitInvalid"
+        : field === "handoffKeyword"
+          ? "aiHandoffKeywordRequired"
+          : "unknown";
+    return { error: key, saved: false, values };
+  }
+
+  try {
+    await updateTenantAiSettings(ctx, parsed.data);
+  } catch {
+    return { error: "unknown", saved: false, values };
+  }
+
   revalidatePath("/settings");
+  return { error: null, saved: true, values };
 }
 
 // Contacts feed token (Google Sheets IMPORTDATA). No action state needed —

@@ -13,16 +13,55 @@ const createSubscriptionSchema = z.object({
   planId: z.string().min(1),
 });
 
-export async function createSubscriptionAction(formData: FormData) {
+// useActionState-shaped (PLAN.md §10 1R #6): the plan picker is a real
+// user-fillable field, so a rejected submit comes back inline instead of
+// throwing to Next's error page.
+export type SubscriptionField = "planId";
+
+export type SubscriptionFormState = {
+  error: string | null;
+  field: SubscriptionField | null;
+  values: Record<string, string>;
+};
+
+export async function createSubscriptionAction(
+  _prevState: SubscriptionFormState,
+  formData: FormData,
+): Promise<SubscriptionFormState> {
   const ctx = await requireSuperadminContext();
-  const input = createSubscriptionSchema.parse({
+  const values = Object.fromEntries(
+    [...formData.entries()].filter(
+      (entry): entry is [string, string] => typeof entry[1] === "string",
+    ),
+  );
+
+  const parsed = createSubscriptionSchema.safeParse({
     tenantId: formData.get("tenantId"),
     planId: formData.get("planId"),
   });
-  await createSubscription(ctx, input);
-  revalidatePath(`/tenants/${input.tenantId}`);
+
+  if (!parsed.success) {
+    const field = parsed.error.issues[0]?.path[0];
+    if (field === "planId") return { error: "planRequired", field: "planId", values };
+    return { error: "unknown", field: null, values };
+  }
+
+  try {
+    await createSubscription(ctx, parsed.data);
+  } catch {
+    // createSubscription throws on an unknown plan id; that is the same
+    // "pick a real plan" problem from the user's side.
+    return { error: "planRequired", field: "planId", values };
+  }
+
+  revalidatePath(`/tenants/${parsed.data.tenantId}`);
+  return { error: null, field: null, values: {} };
 }
 
+// Amounts are integer minor units (§2.3) — the same rule the tenant-side
+// documents ledger follows, so the schema and the failure keys match
+// documents/actions.ts's recordPaymentAction rather than inventing a second
+// money shape for the superadmin console.
 const recordPaymentSchema = z.object({
   tenantId: z.string().min(1),
   subscriptionId: z.string().min(1),
@@ -32,9 +71,26 @@ const recordPaymentSchema = z.object({
   notes: z.string().max(2000).optional(),
 });
 
-export async function recordPaymentAction(formData: FormData) {
+export type RecordPaymentField = "amount";
+
+export type RecordPaymentFormState = {
+  error: string | null;
+  field: RecordPaymentField | null;
+  values: Record<string, string>;
+};
+
+export async function recordPaymentAction(
+  _prevState: RecordPaymentFormState,
+  formData: FormData,
+): Promise<RecordPaymentFormState> {
   const ctx = await requireSuperadminContext();
-  const input = recordPaymentSchema.parse({
+  const values = Object.fromEntries(
+    [...formData.entries()].filter(
+      (entry): entry is [string, string] => typeof entry[1] === "string",
+    ),
+  );
+
+  const parsed = recordPaymentSchema.safeParse({
     tenantId: formData.get("tenantId"),
     subscriptionId: formData.get("subscriptionId"),
     amount: formData.get("amount"),
@@ -43,14 +99,28 @@ export async function recordPaymentAction(formData: FormData) {
     notes: formData.get("notes") || undefined,
   });
 
-  await recordPayment(ctx, {
-    subscriptionId: input.subscriptionId,
-    amount: input.amount,
-    method: input.method,
-    reference: input.reference,
-    notes: input.notes,
-  });
-  revalidatePath(`/tenants/${input.tenantId}`);
+  if (!parsed.success) {
+    const field = parsed.error.issues[0]?.path[0];
+    if (field === "amount") {
+      return { error: "amountInvalid", field: "amount", values };
+    }
+    return { error: "unknown", field: null, values };
+  }
+
+  try {
+    await recordPayment(ctx, {
+      subscriptionId: parsed.data.subscriptionId,
+      amount: parsed.data.amount,
+      method: parsed.data.method,
+      reference: parsed.data.reference,
+      notes: parsed.data.notes,
+    });
+  } catch {
+    return { error: "unknown", field: null, values };
+  }
+
+  revalidatePath(`/tenants/${parsed.data.tenantId}`);
+  return { error: null, field: null, values: {} };
 }
 
 // Direct user creation (PLAN.md §10 1I #3). Before this, standing up a
@@ -106,8 +176,31 @@ const impersonateSchema = z.object({
   userId: z.string().min(1),
 });
 
+// Hidden-id-only, and deliberately *not* given form state (PLAN.md §10 1R
+// #6 leaves that judgment per action). Two reasons:
+//
+//  1. There is no user-fillable field. The id comes from the rendered user
+//     list, so a rejected submit has nothing to sit under — the same
+//     reasoning as the issue/send/suspend buttons.
+//  2. A rendered failure would answer "does this user id exist?" for
+//     anything posted at the endpoint. Silence is the only response that
+//     doesn't distinguish a missing user from a superadmin target from a
+//     malformed id.
+//
+// startImpersonation swaps the acting session, so ordering matters: the
+// parse, the lookup and the guards all run before Better Auth is touched,
+// and redirect() stays outside the try so its control-flow throw isn't
+// swallowed. Any rejection therefore returns with the session untouched and
+// the superadmin still on the tenant page — never half-swapped.
 export async function impersonateAction(formData: FormData) {
-  const input = impersonateSchema.parse({ userId: formData.get("userId") });
-  await startImpersonation(input.userId);
+  const parsed = impersonateSchema.safeParse({ userId: formData.get("userId") });
+  if (!parsed.success) return;
+
+  try {
+    await startImpersonation(parsed.data.userId);
+  } catch {
+    return;
+  }
+
   redirect("/dashboard");
 }

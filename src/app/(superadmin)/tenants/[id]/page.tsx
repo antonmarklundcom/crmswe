@@ -7,11 +7,8 @@ import { listUsersForTenant } from "@/modules/tenancy/users";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/page-header";
 import { CreateUserForm, type CreateUserLabels } from "./CreateUserForm";
-import {
-  createSubscriptionAction,
-  recordPaymentAction,
-  impersonateAction,
-} from "./actions";
+import { CreateSubscriptionForm, RecordPaymentForm } from "./SubscriptionForms";
+import { impersonateAction } from "./actions";
 
 export default async function TenantDetailPage({
   params,
@@ -75,57 +72,17 @@ export default async function TenantDetailPage({
       {!subscription && (
         <section>
           <h2 className="mb-2 text-lg font-semibold">{ts("createTitle")}</h2>
-          <form action={createSubscriptionAction} className="flex max-w-sm flex-col gap-4">
-            <input type="hidden" name="tenantId" value={tenant.id} />
-            <label className="flex flex-col gap-1 text-sm">
-              {ts("plan")}
-              <select name="planId" required className="rounded-md border px-3 py-2">
-                {plans.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <Button type="submit">{ts("submit")}</Button>
-          </form>
+          <CreateSubscriptionForm
+            tenantId={tenant.id}
+            plans={plans.map((p) => ({ id: p.id, name: p.name }))}
+          />
         </section>
       )}
 
       {subscription && (
         <section>
           <h2 className="mb-2 text-lg font-semibold">{ts("recordPaymentTitle")}</h2>
-          <form action={recordPaymentAction} className="flex max-w-sm flex-col gap-4">
-            <input type="hidden" name="tenantId" value={tenant.id} />
-            <input type="hidden" name="subscriptionId" value={subscription.id} />
-            <label className="flex flex-col gap-1 text-sm">
-              {ts("amount")}
-              <input
-                type="number"
-                name="amount"
-                min={1}
-                required
-                className="rounded-md border px-3 py-2"
-              />
-            </label>
-            <label className="flex flex-col gap-1 text-sm">
-              {ts("method")}
-              <select name="method" required className="rounded-md border px-3 py-2">
-                <option value="transfer">{ts("methodValues.transfer")}</option>
-                <option value="cash">{ts("methodValues.cash")}</option>
-                <option value="other">{ts("methodValues.other")}</option>
-              </select>
-            </label>
-            <label className="flex flex-col gap-1 text-sm">
-              {ts("reference")}
-              <input name="reference" className="rounded-md border px-3 py-2" />
-            </label>
-            <label className="flex flex-col gap-1 text-sm">
-              {ts("notes")}
-              <textarea name="notes" className="rounded-md border px-3 py-2" />
-            </label>
-            <Button type="submit">{ts("submit")}</Button>
-          </form>
+          <RecordPaymentForm tenantId={tenant.id} subscriptionId={subscription.id} />
         </section>
       )}
 

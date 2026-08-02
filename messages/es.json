@@ -817,7 +817,14 @@
       },
       "reference": "Referencia",
       "notes": "Notas",
-      "submit": "Registrar pago"
+      "submit": "Registrar pago",
+      "planPlaceholder": "Elegí un plan",
+      "createSubmit": "Crear suscripción",
+      "errors": {
+        "planRequired": "Elegí un plan de la lista.",
+        "amountInvalid": "El monto va en guaraníes enteros, sin decimales ni puntos (ej: 250000).",
+        "unknown": "No se pudo registrar. Intentá de nuevo."
+      }
     },
     "plans": {
       "title": "Planes",

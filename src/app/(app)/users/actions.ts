@@ -80,9 +80,15 @@ export async function inviteUserAction(
   }
 }
 
+// Hidden-id-only (PLAN.md §10 1R #6): the id comes from the rendered
+// pending-invitation list, so there is no user-fillable field for an error
+// to sit under — safeParse and a silent return instead of form state, the
+// same shape as the issue/send/suspend buttons. The delete is already
+// tenant-scoped, so an id from another tenant matches nothing.
 export async function revokeInvitationAction(formData: FormData) {
   const ctx = await requireTenantAdmin();
-  const id = z.string().min(1).parse(formData.get("invitationId"));
-  await revokeInvitation(ctx, id);
+  const parsed = z.string().min(1).safeParse(formData.get("invitationId"));
+  if (!parsed.success) return;
+  await revokeInvitation(ctx, parsed.data);
   revalidatePath("/users");
 }

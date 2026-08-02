@@ -6,7 +6,8 @@ import { listPipelines, listStagesForPipeline } from "@/modules/crm/pipelines";
 import { listDealsForPipeline } from "@/modules/crm/deals";
 import { listContacts } from "@/modules/crm/contacts";
 import { PipelineBoard } from "./PipelineBoard";
-import { createDealAction, createPipelineAction } from "./actions";
+import { CreateDealForm } from "./CreateDealForm";
+import { createPipelineAction } from "./actions";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
@@ -97,38 +98,11 @@ export default async function PipelinePage({
             </Link>
           </p>
         ) : (
-          <form action={createDealAction} className="flex max-w-sm flex-col gap-4">
-            <input type="hidden" name="pipelineId" value={pipeline.id} />
-            <label className="flex flex-col gap-1 text-sm">
-              {t("dealTitle")}
-              <input name="title" required className="rounded-md border px-3 py-2" />
-            </label>
-            <label className="flex flex-col gap-1 text-sm">
-              {t("contact")}
-              <select name="contactId" required className="rounded-md border px-3 py-2">
-                {contacts.map((contact) => (
-                  <option key={contact.id} value={contact.id}>
-                    {contact.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="flex flex-col gap-1 text-sm">
-              {t("stage")}
-              <select name="stageId" required className="rounded-md border px-3 py-2">
-                {stages.map((stage) => (
-                  <option key={stage.id} value={stage.id}>
-                    {stage.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="flex flex-col gap-1 text-sm">
-              {t("value")}
-              <input name="value" type="number" min={0} className="rounded-md border px-3 py-2" />
-            </label>
-            <Button type="submit">{t("createDeal")}</Button>
-          </form>
+          <CreateDealForm
+            pipelineId={pipeline.id}
+            contacts={contacts.map((contact) => ({ id: contact.id, name: contact.name }))}
+            stages={stages.map((stage) => ({ id: stage.id, name: stage.name }))}
+          />
         )}
       </section>
 

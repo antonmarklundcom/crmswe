@@ -224,6 +224,15 @@
         "apply": "Aplicar",
         "exportSelection": "Exportar selección",
         "clearSelection": "Quitar selección"
+      },
+      "saved": "Cambios guardados",
+      "errors": {
+        "nameRequired": "Poné un nombre para el contacto.",
+        "phoneRequired": "El teléfono es obligatorio: es la identidad del contacto.",
+        "phoneTaken": "Ya tenés un contacto con ese teléfono.",
+        "emailInvalid": "Ese correo no parece válido. Revisalo o dejalo vacío.",
+        "notesTooLong": "Las notas son demasiado largas.",
+        "unknown": "No se pudo guardar el contacto. Intentá de nuevo."
       }
     },
     "pipeline": {
@@ -245,7 +254,14 @@
       "newPipelineTitle": "Nueva pipeline",
       "newPipelineName": "Nombre",
       "newPipelineNamePlaceholder": "Ej: Tasaciones",
-      "newPipelineCreate": "Crear pipeline"
+      "newPipelineCreate": "Crear pipeline",
+      "errors": {
+        "titleRequired": "Poné un título para el negocio.",
+        "contactRequired": "Elegí a qué contacto pertenece el negocio.",
+        "stageRequired": "Elegí en qué etapa arranca el negocio.",
+        "valueInvalid": "El valor va en guaraníes enteros, sin decimales ni signos.",
+        "unknown": "No se pudo crear el negocio. Intentá de nuevo."
+      }
     },
     "forms": {
       "title": "Formularios",

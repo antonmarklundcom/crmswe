@@ -674,16 +674,18 @@ Landed as a side effect of 1J: the contacts table and bulk-action bar use
 `useTransition`/pending states natively (no full-page reload on filter or bulk
 action), and the two new 1M forms (forgot/reset password, invite) use
 `useActionState` for inline errors.
+**Closed out by 1R #6** (PRs #18 and #19 — see 1R below for what shipped):
+- ~~Inline validation (`useActionState`) on the *older* forms this phase didn't
+  touch~~ — done for contacts create/edit, pipeline deal create, quotes,
+  products, forms, automations, WhatsApp connect and tenant settings. Two
+  known gaps remain, both recorded under 1R #6.
+- ~~Superadmin console visual polish~~ — `/tenants` and `/plans` now use the
+  same `PageHeader` shell as the tenant app.
+
 **Not done** — deferred, still open for whoever picks up next:
-- Inline validation (`useActionState`) on the *older* forms this phase didn't
-  touch: contacts create/edit, pipeline deal create, quotes, products, forms,
-  automations, WhatsApp connect, tenant settings. They still throw to Next's
-  generic error page on a validation failure.
 - Inbox 5s revalidation (§6.5) — the inbox is still load-once, no polling.
 - Pipeline switcher for tenants with more than one pipeline (the page still
   hard-picks `pipelines[0]`).
-- Superadmin console visual polish — it has the same nav shell as the tenant
-  app (1I) but `/tenants`, `/plans` still use plain unstyled tables/forms.
 
 ### 1M — Transactional email — ✅ done
 Added `resend` + `src/lib/email` (transport, no-ops with a console warning
@@ -914,6 +916,55 @@ Ordered by what actually blocks the run, not by size:
 6. **1L leftovers**: `useActionState` inline validation on the older forms
    (contacts, deals, quotes, products, forms, automations, WhatsApp connect,
    settings — the 1M forms are the pattern), and superadmin console polish.
+   — ✅ done, across two PRs.
+
+   **What shipped.** PR #18 established the pattern on contacts
+   create/edit and the create-deal form; PR #19 carried it across everything
+   left: quotes, notas de venta (builder, record-payment, void), products,
+   lead-capture forms, automations, WhatsApp connect, every settings form,
+   sites (with a duplicate-slug precheck), and the superadmin plans/tenants
+   consoles — which also picked up the `PageHeader` shell, closing 1L's
+   polish item. The shape, for anything converted later:
+   - The action is `(prevState, formData)`, uses `safeParse`, and returns
+     state instead of throwing. Copy never lives in the action — it returns
+     a message *key* the client resolves through next-intl, so §1.2's
+     Spanish-only rule holds in one place.
+   - Submitted values are echoed back in that state and fed in as
+     `defaultValue`. React resets an uncontrolled form once its action
+     resolves, so without the echo a rejected submit hands back a blank
+     form. Checkboxes need `defaultChecked` fed the same way — an unticked
+     box sends no key at all, so a non-empty `values` is the signal that a
+     submit came back.
+   - Secrets are excluded from the echo. `values` is serialized to the
+     browser, so `connectAccountAction` drops `accessToken` (§3.4) and the
+     field has no `defaultValue` — a token is worth retyping.
+   - No HTML `required`, `type="email"`, `type="url"` or `type="number"` on
+     a server-validated field: the browser's bubble renders in the
+     *browser's* language, and `type="number"` implies `step="1"`, which
+     blocks a decimal before the server's message can run. Use
+     `inputMode="numeric"` and let the server answer.
+
+   **Two gaps left open, both known and neither a blocker:**
+   - `QuoteBuilder.tsx` and `DocumentBuilder.tsx` still use
+     `type="number"` on qty/unit-price/discount. Verified in a browser: a
+     decimal unit price trips `stepMismatch` and Chromium refuses to submit,
+     showing an English bubble on a Spanish-only app. The fix is not a
+     one-line attribute swap — those inputs are controlled by numeric React
+     state (`onChange={… Number(e.target.value)}`) feeding the live subtotal,
+     so dropping `type="number"` means moving line state to strings and
+     parsing for display. That is money-path work (§2.3) and wants its own
+     change, not a drive-by.
+   - Where a line item is the thing at fault, the builders' server fallback
+     reports `itemsRequired` ("add at least one item") regardless — a
+     decimal price and an empty builder produce the same message. Worth a
+     distinct key once the above is fixed and the message can actually be
+     reached.
+
+   Actions reachable only from a hidden id (issue/send/suspend/toggle) were
+   converted to `safeParse` + silent return rather than given form state:
+   there is no user-fillable field for an error to sit under. Forms outside
+   this pass still throw — `(superadmin)/tenants/[id]` (subscription,
+   payment, impersonate), `users`, `inbox`, and the quote status actions.
 
 **Operator tasks, not code** — these gate putting real client leads in, and
 none of them are done:

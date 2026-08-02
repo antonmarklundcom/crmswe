@@ -19,6 +19,15 @@ import {
 // async functions.
 const initialState: SettingsFormState = { error: null, saved: false, values: {} };
 
+// A checkbox that isn't ticked sends nothing at all, so an absent key can
+// mean either "unticked" or "never submitted". Every one of these forms
+// always posts at least one other field, so a non-empty `values` is the
+// reliable signal that a submit has come back — only then does the echo win
+// over the server-rendered prop.
+function echoedCheckbox(values: Record<string, string>, name: string, fallback: boolean) {
+  return Object.keys(values).length > 0 ? values[name] === "on" : fallback;
+}
+
 function ErrorOrSaved({
   state,
   tc,
@@ -177,21 +186,25 @@ export function BusinessHoursForm({ businessHours }: { businessHours: BusinessHo
             <input
               type="checkbox"
               name={`${day}_enabled`}
-              defaultChecked={!!businessHours[day]}
+              defaultChecked={echoedCheckbox(
+                state.values,
+                `${day}_enabled`,
+                !!businessHours[day],
+              )}
             />
             {t(`days.${day}` as "days.mon")}
           </label>
           <input
             type="time"
             name={`${day}_start`}
-            defaultValue={businessHours[day]?.start ?? "08:00"}
+            defaultValue={state.values[`${day}_start`] ?? businessHours[day]?.start ?? "08:00"}
             className="rounded-md border px-2 py-1"
           />
           <span>—</span>
           <input
             type="time"
             name={`${day}_end`}
-            defaultValue={businessHours[day]?.end ?? "18:00"}
+            defaultValue={state.values[`${day}_end`] ?? businessHours[day]?.end ?? "18:00"}
             className="rounded-md border px-2 py-1"
           />
         </div>
@@ -236,7 +249,11 @@ export function AiSettingsForm({
   return (
     <form action={formAction} className="flex max-w-2xl flex-col gap-4">
       <label className="flex items-center gap-2 text-sm">
-        <input type="checkbox" name="enabled" defaultChecked={enabled} />
+        <input
+          type="checkbox"
+          name="enabled"
+          defaultChecked={echoedCheckbox(state.values, "enabled", enabled)}
+        />
         {t("aiEnabled")}
       </label>
 

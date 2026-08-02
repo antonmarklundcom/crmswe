@@ -56,7 +56,11 @@ export function RecordPaymentForm({ documentId }: { documentId: string }) {
       </label>
       <label className="flex flex-col gap-1">
         {t("method")}
-        <select name="method" defaultValue={state.values.method ?? ""} className="rounded-md border px-2 py-1">
+        <select
+          name="method"
+          defaultValue={state.values.method ?? PAYMENT_METHODS[0]}
+          className="rounded-md border px-2 py-1"
+        >
           {PAYMENT_METHODS.map((method) => (
             <option key={method} value={method}>
               {t(`methodValues.${method}` as "methodValues.cash")}

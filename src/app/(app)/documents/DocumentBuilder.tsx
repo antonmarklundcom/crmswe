@@ -3,6 +3,7 @@
 import { useActionState, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
+import { parseMinorUnits, previewTotals } from "@/lib/money";
 import {
   createDocumentAction,
   updateDraftDocumentAction,
@@ -40,7 +41,21 @@ export type DocumentBuilderLabels = {
   submit: string;
 };
 
+// Amounts are held as raw strings, not numbers: the inputs are
+// inputMode="numeric" rather than type="number" (see the fields below), so
+// what the user typed is what gets posted, and the server is the only thing
+// that decides whether it's valid.
 type Line = {
+  key: number;
+  productId: string;
+  description: string;
+  qty: string;
+  unitPrice: string;
+};
+
+// What an existing draft supplies: real integers off the row, converted to
+// strings once as the builder's state is seeded.
+type InitialLine = {
   key: number;
   productId: string;
   description: string;
@@ -53,8 +68,8 @@ const blankLine = (): Line => ({
   key: nextKey++,
   productId: "",
   description: "",
-  qty: 1,
-  unitPrice: 0,
+  qty: "1",
+  unitPrice: "0",
 });
 
 type CreateProps = {
@@ -70,7 +85,7 @@ type EditProps = {
   products: Product[];
   labels: DocumentBuilderLabels;
   initial: {
-    lines: Line[];
+    lines: InitialLine[];
     discount: number;
     dueAt: string;
     notes: string;
@@ -82,11 +97,15 @@ export function DocumentBuilder(props: CreateProps | EditProps) {
   const t = useTranslations("app.documents");
   const [lines, setLines] = useState<Line[]>(() =>
     props.mode === "edit" && props.initial.lines.length > 0
-      ? props.initial.lines
+      ? props.initial.lines.map((line) => ({
+          ...line,
+          qty: String(line.qty),
+          unitPrice: String(line.unitPrice),
+        }))
       : [blankLine()],
   );
   const [discount, setDiscount] = useState(
-    props.mode === "edit" ? props.initial.discount : 0,
+    props.mode === "edit" ? String(props.initial.discount) : "0",
   );
   // Both hooks run unconditionally — mode doesn't change once a builder is
   // mounted — and the render below picks whichever the props say to use.
@@ -112,13 +131,22 @@ export function DocumentBuilder(props: CreateProps | EditProps) {
     const product = products.find((p) => p.id === productId);
     update(key, {
       productId,
-      ...(product ? { description: product.name, unitPrice: product.unitPrice } : {}),
+      ...(product ? { description: product.name, unitPrice: String(product.unitPrice) } : {}),
     });
   }
 
-  const subtotal = lines.reduce((sum, line) => sum + line.qty * line.unitPrice, 0);
-  const appliedDiscount = Math.min(Math.max(discount, 0), subtotal);
+  // The preview parses the same strings the server will, and goes blank
+  // wherever the server would refuse the value — a displayed total is either
+  // the one that will be stored or nothing at all.
+  const totals = previewTotals(lines, discount);
   const fmt = (n: number) => new Intl.NumberFormat("es-PY").format(n);
+  const blank = "—";
+  function lineTotal(line: Line) {
+    const qty = parseMinorUnits(line.qty);
+    const unitPrice = parseMinorUnits(line.unitPrice);
+    if (qty === null || qty < 1 || unitPrice === null || unitPrice < 0) return blank;
+    return fmt(qty * unitPrice);
+  }
 
   return (
     <form action={formAction} className="flex flex-col gap-4">
@@ -186,12 +214,15 @@ export function DocumentBuilder(props: CreateProps | EditProps) {
 
             <label className="flex w-20 flex-col gap-1">
               {labels.qty}
+              {/* Not type="number": its implicit step="1" rejects a decimal
+                  with a browser bubble in the *browser's* language, before
+                  the app's Spanish message can run (§1.2). The server
+                  answers instead. */}
               <input
                 name="qty"
-                type="number"
-                min={1}
+                inputMode="numeric"
                 value={line.qty}
-                onChange={(e) => update(line.key, { qty: Number(e.target.value) })}
+                onChange={(e) => update(line.key, { qty: e.target.value })}
                 className="rounded-md border px-2 py-1"
               />
             </label>
@@ -200,16 +231,14 @@ export function DocumentBuilder(props: CreateProps | EditProps) {
               {labels.unitPrice}
               <input
                 name="unitPrice"
-                type="number"
-                min={0}
-                step={1}
+                inputMode="numeric"
                 value={line.unitPrice}
-                onChange={(e) => update(line.key, { unitPrice: Number(e.target.value) })}
+                onChange={(e) => update(line.key, { unitPrice: e.target.value })}
                 className="rounded-md border px-2 py-1"
               />
             </label>
 
-            <span className="w-32 text-right">{fmt(line.qty * line.unitPrice)}</span>
+            <span className="w-32 text-right">{lineTotal(line)}</span>
 
             {lines.length > 1 && (
               <button
@@ -238,11 +267,9 @@ export function DocumentBuilder(props: CreateProps | EditProps) {
           {labels.discount}
           <input
             name="discount"
-            type="number"
-            min={0}
-            step={1}
+            inputMode="numeric"
             value={discount}
-            onChange={(e) => setDiscount(Number(e.target.value))}
+            onChange={(e) => setDiscount(e.target.value)}
             className="rounded-md border px-3 py-2"
           />
         </label>
@@ -268,11 +295,11 @@ export function DocumentBuilder(props: CreateProps | EditProps) {
       <div className="flex flex-col items-end gap-1 text-sm">
         <div className="flex w-56 justify-between">
           <span>{labels.subtotal}</span>
-          <span>{fmt(subtotal)}</span>
+          <span>{totals ? fmt(totals.subtotal) : blank}</span>
         </div>
         <div className="flex w-56 justify-between text-base font-semibold">
           <span>{labels.total}</span>
-          <span>{fmt(subtotal - appliedDiscount)}</span>
+          <span>{totals ? fmt(totals.total) : blank}</span>
         </div>
       </div>
 

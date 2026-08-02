@@ -70,9 +70,19 @@ export async function createQuoteAction(
   });
 
   if (!parsed.success) {
-    const field = parsed.error.issues[0]?.path[0];
-    if (field === "contactId") {
+    const issues = parsed.error.issues;
+    if (issues.some((issue) => issue.path[0] === "contactId")) {
       return { error: "contactRequired", field: "contactId", values: { contactId } };
+    }
+    // Now that the amount inputs are inputMode="numeric" and the browser no
+    // longer blocks the submit, these two failures are both reachable and
+    // must not share a message: a filled-in line the server rejects (a
+    // decimal price, qty 0) is a different problem from an empty builder.
+    if (issues.some((issue) => issue.path[0] === "items" && issue.path.length > 1)) {
+      return { error: "itemInvalid", field: null, values: { contactId } };
+    }
+    if (issues.some((issue) => issue.path[0] === "discount")) {
+      return { error: "discountInvalid", field: null, values: { contactId } };
     }
     // No line filled in with a description — a form-level failure, since
     // there's no single input the builder can point at.

@@ -52,6 +52,19 @@ const createDocumentSchema = z.object({
 // sit under and lands in the form-level slot instead.
 export type DocumentField = "contactId";
 
+// Now that the amount inputs are inputMode="numeric" and the browser no
+// longer blocks the submit, a rejected line reaches the server for the first
+// time — and must not borrow the empty-builder message. Not exported: a
+// "use server" module may only export async functions.
+function lineFailureKey(error: z.ZodError): "itemInvalid" | "discountInvalid" | "itemsRequired" {
+  const issues = error.issues;
+  if (issues.some((issue) => issue.path[0] === "items" && issue.path.length > 1)) {
+    return "itemInvalid";
+  }
+  if (issues.some((issue) => issue.path[0] === "discount")) return "discountInvalid";
+  return "itemsRequired";
+}
+
 export type DocumentFormState = {
   error: string | null;
   field: DocumentField | null;
@@ -74,11 +87,10 @@ export async function createDocumentAction(
   });
 
   if (!parsed.success) {
-    const field = parsed.error.issues[0]?.path[0];
-    if (field === "contactId") {
+    if (parsed.error.issues.some((issue) => issue.path[0] === "contactId")) {
       return { error: "contactRequired", field: "contactId", values: { contactId } };
     }
-    return { error: "itemsRequired", field: null, values: { contactId } };
+    return { error: lineFailureKey(parsed.error), field: null, values: { contactId } };
   }
 
   let document;
@@ -127,7 +139,7 @@ export async function updateDraftDocumentAction(
   });
 
   if (!parsed.success) {
-    return { error: "itemsRequired", values: { contactId: "" } };
+    return { error: lineFailureKey(parsed.error), values: { contactId: "" } };
   }
 
   try {

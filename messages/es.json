@@ -577,6 +577,8 @@
       "errors": {
         "contactRequired": "Elegí a qué contacto pertenece el presupuesto.",
         "itemsRequired": "Agregá al menos un ítem con descripción.",
+        "itemInvalid": "Revisá los ítems: la cantidad va desde 1 y el precio en guaraníes enteros, sin decimales ni signos.",
+        "discountInvalid": "El descuento va en guaraníes enteros, sin decimales ni signos.",
         "unknown": "No se pudo crear el presupuesto. Intentá de nuevo."
       }
     },
@@ -654,6 +656,8 @@
       "errors": {
         "contactRequired": "Elegí a qué contacto pertenece la nota de venta.",
         "itemsRequired": "Agregá al menos un ítem con descripción.",
+        "itemInvalid": "Revisá los ítems: la cantidad va desde 1 y el precio en guaraníes enteros, sin decimales ni signos.",
+        "discountInvalid": "El descuento va en guaraníes enteros, sin decimales ni signos.",
         "voidReasonRequired": "Poné el motivo de la anulación.",
         "amountInvalid": "El monto va en guaraníes enteros, mayor que cero.",
         "unknown": "No se pudo guardar. Intentá de nuevo."

@@ -1068,23 +1068,70 @@ Ordered by what actually blocks the run, not by size:
    and edit-draft builders. `lib/money.test.ts` pins the parse and preview
    rules against `computeLineTotals`.
 
-   **One leftover in the same area, pre-existing and not touched here**: on
-   a rejected submit the contact `<select>` loses its selection — React
-   resets the uncontrolled field once the action resolves, and unlike the
-   `defaultValue` inputs the echo doesn't take on a `<select>` — so a second
-   submit fails on `contactRequired` first. The line items themselves are
-   React state and do survive.
-
    Actions reachable only from a hidden id (issue/send/suspend/toggle) were
    converted to `safeParse` + silent return rather than given form state:
    there is no user-fillable field for an error to sit under. **Closed by
    1R #6's follow-up PR** (`createSubscriptionAction`, `recordPaymentAction`,
    `impersonateAction` on `(superadmin)/tenants/[id]`, and
-   `revokeInvitationAction` on `users`) — see that entry above. Forms outside
-   this pass still throw — `inbox` (`sendTextAction`'s reply body is a real
-   user-fillable field with no inline error path) and the quote status
-   actions (`sendQuoteAction`, `setQuoteStatusAction`,
-   `convertQuoteToDocumentAction` still use `.parse`, not `safeParse`).
+   `revokeInvitationAction` on `users`) — see that entry above.
+
+   **The three remaining leftovers this entry left open are now closed too**,
+   in a further follow-up:
+   - **The contact `<select>` losing its selection on a rejected submit** (in
+     both `QuoteBuilder.tsx` and `DocumentBuilder.tsx`) — a second submit was
+     failing on `contactRequired` before the user ever saw their real error.
+     Making the field controlled doesn't fix it: React's `form.reset()`
+     restores each `<option>`'s `selected` *attribute*, which a controlled
+     select never sets since React only assigns the value property, so the
+     reset lands on option 0 while React still believes its state is right
+     and never re-syncs. The fix is `src/lib/use-echo-generation.ts` —
+     remounting the field per action result with the echoed value as
+     `defaultValue`, since a fresh mount does set the attribute the reset
+     reads. Shared by both builders and, since the same defect applies
+     anywhere a `<select>` carries server-validated state, by the inbox
+     reply/template pickers and the superadmin subscription forms too.
+   - **`sendTextAction`** got the full `useActionState` treatment: `(prevState,
+     formData)`, `safeParse`, a message key the client resolves through
+     next-intl, values echoed back. The inbox is the one place this pattern
+     meets 5s polling (§10 1R #3), so the risk was the reply box getting
+     clobbered by a poll tick or a rejected send losing what was typed — it
+     doesn't, because the action state is React state SWR never touches, and
+     the reply `<input>` stays uncontrolled and remounts only when a new
+     action result lands, exactly like the 1R #3 guarantee this was built
+     not to violate. `sendTemplateAction` and `approveAiDraftAction` got the
+     same treatment alongside it: the latter posts only hidden ids, but
+     `deliverReply` *returns* its refusals (window closed, kill switch,
+     opted out) rather than throwing, and those are exactly what a rep needs
+     to read, so it gets form state whose only job is to render that
+     outcome. `discardAiDraftAction` and `setConversationAiAction` stay
+     hidden-id-only with `safeParse` + a silent return, same as the money
+     actions above.
+   - **`sendQuoteAction`, `setQuoteStatusAction` and
+     `convertQuoteToDocumentAction`** moved to `safeParse` + silent return,
+     not form state — every field they post is a hidden input off the quote
+     already on screen, so there's no field for an error to sit under, and
+     none of them hides a refusal worth reading: `sendQuote` records a
+     WhatsApp failure on the activity and still marks the quote sent rather
+     than throwing, and a quote with no items can't exist since `createQuote`
+     requires at least one. `convertQuoteToDocumentAction` keeps `redirect()`
+     outside its try block so that control-flow throw isn't swallowed by the
+     same catch.
+
+   **Verified in a browser**, since no test in the suite touches form
+   behavior: Chromium with the locale forced to `en-US`, against a seeded
+   tenant. In the quote and document builders, a decimal unit price now
+   comes back as `itemInvalid` with the contact still selected in the
+   `<select>`, and a second submit repeats `itemInvalid` instead of falling
+   back to `contactRequired`. In the inbox, an empty reply passes
+   `checkValidity()` and comes back as the Spanish "Escribí un mensaje antes
+   de enviar."; typing a reply and leaving it through more than two 5s poll
+   ticks left the text, the error, and the scroll position untouched; a real
+   send cleared the box and the message appeared in the thread. On the quote
+   detail page, "Enviar por WhatsApp", "Marcar aceptado" and "Convertir a
+   nota de venta" all completed with no thrown error and the expected status
+   change each time — send flipped the quote to *Enviado*, accept to
+   *Aceptado*, and convert produced a linked nota de venta and swapped the
+   action row for a link to it.
 
 **Operator tasks, not code** — these gate putting real client leads in, and
 none of them are done:

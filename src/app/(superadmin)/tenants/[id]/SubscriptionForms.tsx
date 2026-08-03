@@ -1,8 +1,9 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
+import { useEchoGeneration } from "@/lib/use-echo-generation";
 import {
   createSubscriptionAction,
   recordPaymentAction,
@@ -16,36 +17,6 @@ import {
 // amount), so both get the useActionState treatment from PLAN.md §10 1R #6
 // instead of throwing into Next's error page. Initial state lives here, not
 // in actions.ts: a "use server" module may only export async functions.
-
-// The echo does not take on a `<select>` the way it does on a `defaultValue`
-// input, and the reason is worth writing down because the obvious fixes
-// don't work:
-//
-//   * Plain `defaultValue` fails. React applies it by marking the matching
-//     option selected at *mount* and never re-applies it, so a rejected
-//     submit hands back a select still showing the old option.
-//   * Making it controlled fails too, and fails more confusingly. React
-//     resets the form once the action resolves, and `form.reset()` restores
-//     each option's `selected` *attribute* — which a controlled select never
-//     sets, since React only assigns the value property. The reset therefore
-//     lands on option 0 while React still believes the state is correct, so
-//     nothing re-syncs it. Verified in the browser, not reasoned about.
-//
-// What works is remounting on each new action state with the echoed value as
-// the `defaultValue`: a fresh mount does set the `selected` attribute, so the
-// reset that follows restores the echoed option instead of the first one.
-// Between submits the select is ordinary and uncontrolled.
-function useEchoGeneration<S>(state: S): number {
-  const [seenState, setSeenState] = useState(state);
-  const [generation, setGeneration] = useState(0);
-  // A render-phase adjustment rather than an effect, so the select never
-  // paints the wrong option for a frame first.
-  if (seenState !== state) {
-    setSeenState(state);
-    setGeneration((g) => g + 1);
-  }
-  return generation;
-}
 
 const subscriptionInitialState: SubscriptionFormState = {
   error: null,

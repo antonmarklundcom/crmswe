@@ -1,15 +1,19 @@
 "use client";
 
-import { useEffect, useRef, useState, useTransition } from "react";
-import useSWR from "swr";
+import { useActionState, useEffect, useRef, useTransition } from "react";
+import useSWR, { type KeyedMutator } from "swr";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
+import { useEchoGeneration } from "@/lib/use-echo-generation";
 import {
   sendTextAction,
   sendTemplateAction,
   approveAiDraftAction,
   discardAiDraftAction,
   setConversationAiAction,
+  type ApproveDraftState,
+  type SendTemplateState,
+  type SendTextState,
 } from "../actions";
 
 export type ConversationData = {
@@ -36,6 +40,12 @@ export type ConversationData = {
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
+// Declared here, not in actions.ts: a "use server" module may only export
+// async functions.
+const sendTextInitialState: SendTextState = { error: null, sent: false, values: { body: "" } };
+const sendTemplateInitialState: SendTemplateState = { error: null, values: { template: "" } };
+const approveInitialState: ApproveDraftState = { error: null };
+
 function formatRemaining(lastInboundAt: string | null): string {
   if (!lastInboundAt) return "";
   const msLeft = new Date(lastInboundAt).getTime() + 24 * 60 * 60 * 1000 - Date.now();
@@ -45,11 +55,18 @@ function formatRemaining(lastInboundAt: string | null): string {
   return hours > 0 ? `${hours}h ${minutes}min` : `${minutes}min`;
 }
 
-// Conversation thread, 5s polling (PLAN.md §6.5). The two things that must
-// never get clobbered by a poll landing mid-interaction: a half-typed reply
-// (kept in its own `replyBody` state, never overwritten by fetched data)
-// and scroll position (auto-scroll only fires when the rep was already at
-// the bottom before new messages arrived).
+// Conversation thread, 5s polling (PLAN.md §6.5). Three things must survive
+// a poll landing mid-interaction, and inline validation (§10 1R #6) adds the
+// third:
+//
+//   * a half-typed reply — the box is uncontrolled and remounted only when a
+//     new action result arrives, so a refresh re-rendering this tree never
+//     touches what is in it;
+//   * scroll position — auto-scroll only fires when the rep was already at
+//     the bottom before new messages arrived;
+//   * a rejected send's error — it lives in useActionState state, which SWR
+//     replaces nothing of. The refresh swaps `data`; the form state stays
+//     until the next submit answers.
 export function ConversationView({
   conversationId,
   initial,
@@ -68,8 +85,18 @@ export function ConversationView({
 
   const listRef = useRef<HTMLUListElement>(null);
   const prevCountRef = useRef(d.messages.length);
-  const [replyBody, setReplyBody] = useState("");
   const [pending, startTransition] = useTransition();
+
+  const [sendState, sendFormAction, sendPending] = useActionState(
+    sendTextAction,
+    sendTextInitialState,
+  );
+  const [templateState, templateFormAction, templatePending] = useActionState(
+    sendTemplateAction,
+    sendTemplateInitialState,
+  );
+  const sendGeneration = useEchoGeneration(sendState);
+  const templateGeneration = useEchoGeneration(templateState);
 
   useEffect(() => {
     const el = listRef.current;
@@ -81,35 +108,20 @@ export function ConversationView({
     prevCountRef.current = d.messages.length;
   }, [d.messages.length]);
 
+  // A send that landed should show up now rather than up to 5s from now.
+  // Re-reading on a *rejected* send is harmless and keeps one code path.
+  useEffect(() => {
+    if (sendState !== sendTextInitialState) void mutate();
+  }, [sendState, mutate]);
+  useEffect(() => {
+    if (templateState !== sendTemplateInitialState) void mutate();
+  }, [templateState, mutate]);
+
   function runAction(run: () => Promise<void>) {
     startTransition(async () => {
       await run();
       await mutate();
     });
-  }
-
-  function handleSend(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    const body = replyBody.trim();
-    if (!body) return;
-    const fd = new FormData();
-    fd.set("conversationId", conversationId);
-    fd.set("body", body);
-    setReplyBody("");
-    runAction(() => sendTextAction(fd));
-  }
-
-  function handleSendTemplate(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    const fd = new FormData(e.currentTarget);
-    runAction(() => sendTemplateAction(fd));
-  }
-
-  function handleApproveDraft(replyId: string) {
-    const fd = new FormData();
-    fd.set("replyId", replyId);
-    fd.set("conversationId", conversationId);
-    runAction(() => approveAiDraftAction(fd));
   }
 
   function handleDiscardDraft(replyId: string) {
@@ -127,6 +139,7 @@ export function ConversationView({
   }
 
   const aiDisabled = !!d.conversation.aiDisabledAt;
+  const busy = pending || sendPending || templatePending;
 
   return (
     <div className="flex flex-col gap-4">
@@ -137,7 +150,7 @@ export function ConversationView({
         <span className={aiDisabled ? "text-muted-foreground" : "text-green-700"}>
           {aiDisabled ? t("aiOff") : t("aiOn")}
         </span>
-        <Button type="button" size="sm" variant="outline" disabled={pending} onClick={handleToggleAi}>
+        <Button type="button" size="sm" variant="outline" disabled={busy} onClick={handleToggleAi}>
           {aiDisabled ? t("aiEnable") : t("aiDisable")}
         </Button>
       </div>
@@ -146,36 +159,15 @@ export function ConversationView({
         <section className="flex flex-col gap-2 rounded-md border border-blue-300 bg-blue-50 p-3">
           <h2 className="text-sm font-medium text-blue-900">{t("aiDraftsTitle")}</h2>
           {d.aiDrafts.map((draft) => (
-            <div key={draft.id} className="flex flex-col gap-2 rounded-md bg-white p-3 text-sm">
-              <p>{draft.body}</p>
-              <p className="text-xs text-muted-foreground">
-                {draft.provider} · {draft.model} ·{" "}
-                {t("aiTokens", { tokens: draft.promptTokens + draft.completionTokens })}
-              </p>
-              <div className="flex gap-2">
-                {d.windowOpen ? (
-                  <Button
-                    type="button"
-                    size="sm"
-                    disabled={pending}
-                    onClick={() => handleApproveDraft(draft.id)}
-                  >
-                    {t("aiApprove")}
-                  </Button>
-                ) : (
-                  <span className="text-xs text-amber-800">{t("aiDraftWindowClosed")}</span>
-                )}
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  disabled={pending}
-                  onClick={() => handleDiscardDraft(draft.id)}
-                >
-                  {t("aiDiscard")}
-                </Button>
-              </div>
-            </div>
+            <AiDraftCard
+              key={draft.id}
+              draft={draft}
+              conversationId={conversationId}
+              windowOpen={d.windowOpen}
+              busy={busy}
+              mutate={mutate}
+              onDiscard={() => handleDiscardDraft(draft.id)}
+            />
           ))}
         </section>
       )}
@@ -202,18 +194,30 @@ export function ConversationView({
           <p className="text-xs text-muted-foreground">
             {t("windowOpen", { remaining: formatRemaining(d.conversation.lastInboundAt) })}
           </p>
-          <form onSubmit={handleSend} className="flex gap-2">
-            <input
-              name="body"
-              required
-              value={replyBody}
-              onChange={(e) => setReplyBody(e.target.value)}
-              placeholder={t("messagePlaceholder")}
-              className="flex-1 rounded-md border px-3 py-2 text-sm"
-            />
-            <Button type="submit" disabled={pending}>
-              {t("send")}
-            </Button>
+          <form action={sendFormAction} className="flex flex-col gap-1">
+            <div className="flex gap-2">
+              <input type="hidden" name="conversationId" value={conversationId} />
+              {/* No `required`: the bubble would render in the browser's
+                  language on a Spanish-only app (§1.2). The server answers.
+                  Keyed so a rejected send hands the typed text back — and so
+                  a poll tick, which changes no action state, leaves a
+                  half-typed reply exactly where it is. */}
+              <input
+                key={sendGeneration}
+                name="body"
+                defaultValue={sendState.values.body}
+                placeholder={t("messagePlaceholder")}
+                className="flex-1 rounded-md border px-3 py-2 text-sm"
+              />
+              <Button type="submit" disabled={busy}>
+                {t("send")}
+              </Button>
+            </div>
+            {sendState.error && (
+              <span role="alert" className="text-xs text-destructive">
+                {t(`errors.${sendState.error}` as "errors.sendFailed")}
+              </span>
+            )}
           </form>
         </div>
       ) : (
@@ -222,23 +226,101 @@ export function ConversationView({
             {t("windowClosed")}
           </p>
           {d.templates.length > 0 ? (
-            <form onSubmit={handleSendTemplate} className="flex gap-2">
-              <input type="hidden" name="conversationId" value={conversationId} />
-              <select name="template" required className="flex-1 rounded-md border px-3 py-2 text-sm">
-                {d.templates.map((template) => (
-                  <option key={template.id} value={`${template.name}|${template.language}`}>
-                    {template.name} ({template.language})
-                  </option>
-                ))}
-              </select>
-              <Button type="submit" disabled={pending}>
-                {t("sendTemplate")}
-              </Button>
+            <form action={templateFormAction} className="flex flex-col gap-1">
+              <div className="flex gap-2">
+                <input type="hidden" name="conversationId" value={conversationId} />
+                <select
+                  key={templateGeneration}
+                  name="template"
+                  defaultValue={templateState.values.template}
+                  className="flex-1 rounded-md border px-3 py-2 text-sm"
+                >
+                  {d.templates.map((template) => (
+                    <option key={template.id} value={`${template.name}|${template.language}`}>
+                      {template.name} ({template.language})
+                    </option>
+                  ))}
+                </select>
+                <Button type="submit" disabled={busy}>
+                  {t("sendTemplate")}
+                </Button>
+              </div>
+              {templateState.error && (
+                <span role="alert" className="text-xs text-destructive">
+                  {t(`errors.${templateState.error}` as "errors.sendFailed")}
+                </span>
+              )}
             </form>
           ) : (
             <p className="text-sm text-muted-foreground">{t("noTemplates")}</p>
           )}
         </div>
+      )}
+    </div>
+  );
+}
+
+// Its own component so each draft carries its own approve state — hooks
+// cannot be called from inside the map above, and one shared state would
+// pin another draft's refusal to the wrong card.
+function AiDraftCard({
+  draft,
+  conversationId,
+  windowOpen,
+  busy,
+  mutate,
+  onDiscard,
+}: {
+  draft: ConversationData["aiDrafts"][number];
+  conversationId: string;
+  windowOpen: boolean;
+  busy: boolean;
+  mutate: KeyedMutator<ConversationData>;
+  onDiscard: () => void;
+}) {
+  const t = useTranslations("app.inbox");
+  const [state, formAction, pending] = useActionState(approveAiDraftAction, approveInitialState);
+
+  useEffect(() => {
+    if (state !== approveInitialState) void mutate();
+  }, [state, mutate]);
+
+  return (
+    <div className="flex flex-col gap-2 rounded-md bg-white p-3 text-sm">
+      <p>{draft.body}</p>
+      <p className="text-xs text-muted-foreground">
+        {draft.provider} · {draft.model} ·{" "}
+        {t("aiTokens", { tokens: draft.promptTokens + draft.completionTokens })}
+      </p>
+      <div className="flex gap-2">
+        {windowOpen ? (
+          <form action={formAction}>
+            <input type="hidden" name="replyId" value={draft.id} />
+            <input type="hidden" name="conversationId" value={conversationId} />
+            <Button type="submit" size="sm" disabled={busy || pending}>
+              {t("aiApprove")}
+            </Button>
+          </form>
+        ) : (
+          <span className="text-xs text-amber-800">{t("aiDraftWindowClosed")}</span>
+        )}
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          disabled={busy || pending}
+          onClick={onDiscard}
+        >
+          {t("aiDiscard")}
+        </Button>
+      </div>
+      {/* The refusals deliverReply returns rather than throws: the window
+          closed while the draft sat here, the kill switch was pulled, the
+          contact opted out. Reported, never worked around. */}
+      {state.error && (
+        <span role="alert" className="text-xs text-destructive">
+          {t(`errors.${state.error}` as "errors.sendFailed")}
+        </span>
       )}
     </div>
   );

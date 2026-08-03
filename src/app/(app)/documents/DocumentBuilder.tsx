@@ -4,6 +4,7 @@ import { useActionState, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { parseMinorUnits, previewTotals } from "@/lib/money";
+import { useEchoGeneration } from "@/lib/use-echo-generation";
 import {
   createDocumentAction,
   updateDraftDocumentAction,
@@ -118,6 +119,9 @@ export function DocumentBuilder(props: CreateProps | EditProps) {
     updateInitialState,
   );
   const state = props.mode === "create" ? createState : updateState;
+  // The contact picker only renders in create mode, but the generation has
+  // to follow whichever state is live so the hook is called unconditionally.
+  const generation = useEchoGeneration(state);
   const formAction = props.mode === "create" ? createFormAction : updateFormAction;
   const pending = props.mode === "create" ? createPending : updatePending;
 
@@ -157,7 +161,11 @@ export function DocumentBuilder(props: CreateProps | EditProps) {
       {props.mode === "create" && (
         <label className="flex max-w-sm flex-col gap-1 text-sm">
           {labels.contact}
+          {/* Remounted per action result so the echoed contact survives a
+              rejected submit — see useEchoGeneration for why `defaultValue`
+              alone, and a controlled value, both fail here. */}
           <select
+            key={generation}
             name="contactId"
             defaultValue={createState.values.contactId}
             className="rounded-md border px-3 py-2"

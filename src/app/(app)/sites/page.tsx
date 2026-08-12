@@ -5,6 +5,7 @@ import { getTenant } from "@/modules/tenancy/tenants";
 import { listSites } from "@/modules/sites/sites";
 import { listApiKeys, MAX_ACTIVE_KEYS_PER_SITE } from "@/modules/sites/keys";
 import { siteSettings, siteTurnstileSiteKey } from "@/modules/sites/settings";
+import { listHookCaptures, captureLeafPaths, siteHookMapping } from "@/modules/sites/hooks";
 import { listPipelines, listStagesForPipeline } from "@/modules/crm/pipelines";
 import { listAccountsForTenant } from "@/modules/whatsapp/accounts";
 import { getLeadStats } from "@/modules/leads/stats";
@@ -15,6 +16,7 @@ import { PageHeader } from "@/components/page-header";
 import { SiteGuide, type GuideLabels } from "./SiteGuide";
 import { NewSiteForm, SiteKeysPanel, type ApiKeyRow, type KeyLabels } from "./SiteKeyForms";
 import { SiteTurnstileForm } from "./SiteTurnstileForm";
+import { SiteHookForm, type HookPanelProps } from "./SiteHookForm";
 import { toggleSiteActiveAction, updateSiteRoutingAction } from "./actions";
 
 export default async function SitesPage() {
@@ -98,6 +100,31 @@ export default async function SitesPage() {
           revoked: !!key.revokedAt,
         })),
       ]),
+    ),
+  );
+
+  // Webhook lane (PLAN.md §5.2). The newest captured payload supplies the
+  // paths the mapping picker offers, so the admin chooses from their own test
+  // submission instead of typing a JSON path.
+  const hookPanels = new Map<string, HookPanelProps>(
+    await Promise.all(
+      sites.map(async (site): Promise<[string, HookPanelProps]> => {
+        const captures = site.hookTokenHash ? await listHookCaptures(ctx, site.id) : [];
+        return [
+          site.id,
+          {
+            siteId: site.id,
+            hookUrl: `${env.APP_URL}/api/v1/hooks/__TOKEN__`,
+            tokenPrefix: site.hookTokenPrefix,
+            lastUsedAt: site.hookTokenLastUsedAt
+              ? dateFormat.format(site.hookTokenLastUsedAt)
+              : null,
+            mapping: siteHookMapping(site),
+            captureCount: captures.length,
+            leaves: captureLeafPaths(captures[0]),
+          },
+        ];
+      }),
     ),
   );
 
@@ -190,6 +217,8 @@ export default async function SitesPage() {
                 labels={labels}
                 maxActive={MAX_ACTIVE_KEYS_PER_SITE}
               />
+
+              <SiteHookForm {...hookPanels.get(site.id)!} />
 
               <SiteTurnstileForm
                 siteId={site.id}

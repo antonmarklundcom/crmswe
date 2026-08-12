@@ -32,6 +32,17 @@ export type SiteTurnstileSettings = {
 
 export type SiteSettings = {
   turnstile?: SiteTurnstileSettings;
+  /**
+   * Per-site field mapping for the webhook lane (PLAN.md §5.2): dot/bracket
+   * paths into whatever JSON the client's form builder sends. Absent means
+   * capture mode — see modules/sites/hooks.ts.
+   */
+  hookMapping?: {
+    phone?: string;
+    name?: string;
+    email?: string;
+    message?: string;
+  };
 };
 
 export function siteSettings(site: { settings: unknown }): SiteSettings {

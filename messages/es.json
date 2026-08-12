@@ -555,6 +555,36 @@
           "tooManyKeys": "Ya tenés dos claves activas en este sitio.",
           "unknown": "No se pudo emitir la clave. Intentá de nuevo."
         }
+      },
+      "hook": {
+        "title": "Webhook para sitios de clientes (Elementor, Wix, Zapier)",
+        "intro": "Para sitios que no pueden guardar una clave en su servidor. Emitís una URL, la pegás en el formulario del cliente, mandás un envío de prueba y después elegís qué campo es cuál. La URL es secreta: cualquiera que la tenga puede cargar leads en este sitio.",
+        "statusOff": "— sin activar",
+        "statusCapturing": "— esperando envío de prueba",
+        "statusMapped": "— activo",
+        "copyNow": "Copiá esta URL ahora — no se vuelve a mostrar completa.",
+        "issue": "Emitir URL de webhook",
+        "reissue": "Emitir una URL nueva",
+        "revoke": "Revocar webhook",
+        "lastUsed": "último envío {when}",
+        "neverUsed": "todavía no recibió nada",
+        "mappingTitle": "Qué campo es cuál",
+        "noCaptures": "Mandá un envío de prueba desde el formulario del cliente. Guardamos lo que llegue y acá vas a poder elegir cada campo de la lista.",
+        "captureHelp": "Tenemos {count} envío(s) de prueba guardados. Elegí de la lista qué campo corresponde a cada dato.",
+        "manualPath": "O escribí la ruta",
+        "saveMapping": "Guardar campos",
+        "saved": "Listo, ya podés recibir leads por el webhook.",
+        "clearCaptures": "Borrar envíos de prueba guardados",
+        "fields": {
+          "phone": "Teléfono (obligatorio)",
+          "name": "Nombre",
+          "email": "Correo",
+          "message": "Mensaje"
+        },
+        "errors": {
+          "phoneRequired": "Elegí cuál es el teléfono: sin eso no podemos crear el contacto.",
+          "unknown": "No se pudo guardar. Intentá de nuevo."
+        }
       }
     },
     "products": {

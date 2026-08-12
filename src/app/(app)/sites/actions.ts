@@ -6,6 +6,12 @@ import { requireTenantAdmin } from "@/modules/tenancy/context";
 import { createSite, updateSite, getSiteBySlug } from "@/modules/sites/sites";
 import { issueApiKey, revokeApiKey } from "@/modules/sites/keys";
 import { setSiteTurnstile, clearSiteTurnstile } from "@/modules/sites/settings";
+import {
+  issueHookToken,
+  revokeHookToken,
+  setSiteHookMapping,
+  clearHookCaptures,
+} from "@/modules/sites/hooks";
 import { getStage } from "@/modules/crm/pipelines";
 
 // A stage already belongs to exactly one pipeline, so the UI only ever asks
@@ -236,4 +242,72 @@ export async function updateSiteRoutingAction(formData: FormData) {
     waAccountId: parsed.data.waAccountId || undefined,
   });
   revalidatePath("/sites");
+}
+
+// Inbound webhook lane (PLAN.md §5.2). The token is shown in full exactly
+// once, inside the URL the admin pastes into Elementor/Wix/Zapier — same
+// one-time-reveal rule as an API key (§5.1), since only its hash is stored.
+export type HookTokenState = { token: string | null; error: string | null };
+
+export async function issueHookTokenAction(
+  _prev: HookTokenState,
+  formData: FormData,
+): Promise<HookTokenState> {
+  const ctx = await requireTenantAdmin();
+  const parsed = z.string().min(1).safeParse(formData.get("siteId"));
+  if (!parsed.success) return { token: null, error: "unknown" };
+
+  const token = await issueHookToken(ctx, parsed.data);
+  revalidatePath("/sites");
+  return { token, error: null };
+}
+
+export async function revokeHookTokenAction(formData: FormData) {
+  const ctx = await requireTenantAdmin();
+  const parsed = z.string().min(1).safeParse(formData.get("siteId"));
+  if (!parsed.success) return;
+  await revokeHookToken(ctx, parsed.data);
+  revalidatePath("/sites");
+}
+
+export async function clearHookCapturesAction(formData: FormData) {
+  const ctx = await requireTenantAdmin();
+  const parsed = z.string().min(1).safeParse(formData.get("siteId"));
+  if (!parsed.success) return;
+  await clearHookCaptures(ctx, parsed.data);
+  revalidatePath("/sites");
+}
+
+export type HookMappingState = { error: string | null; saved: boolean };
+
+/** Each field arrives twice: a pick from the captured payload's paths, and a
+ * free-text path for anything capture didn't offer. The picked value wins
+ * when both are set — it's the one the user just chose from a list. */
+function mappingPath(formData: FormData, field: string): string | undefined {
+  const choice = (formData.get(`${field}Choice`) ?? "").toString().trim();
+  const manual = (formData.get(`${field}Path`) ?? "").toString().trim();
+  return choice || manual || undefined;
+}
+
+export async function saveHookMappingAction(
+  _prev: HookMappingState,
+  formData: FormData,
+): Promise<HookMappingState> {
+  const ctx = await requireTenantAdmin();
+  const siteId = z.string().min(1).safeParse(formData.get("siteId"));
+  if (!siteId.success) return { error: "unknown", saved: false };
+
+  const phone = mappingPath(formData, "phone");
+  // Phone is contact identity (§5): without it there is nothing to map onto,
+  // so a mapping without a phone path is refused rather than half-saved.
+  if (!phone) return { error: "phoneRequired", saved: false };
+
+  await setSiteHookMapping(ctx, siteId.data, {
+    phone,
+    name: mappingPath(formData, "name"),
+    email: mappingPath(formData, "email"),
+    message: mappingPath(formData, "message"),
+  });
+  revalidatePath("/sites");
+  return { error: null, saved: true };
 }

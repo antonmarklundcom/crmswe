@@ -481,7 +481,6 @@
       "activate": "Activar",
       "deactivate": "Desactivar",
       "saveRouting": "Guardar",
-      "rotateKey": "Rotar clave",
       "copyNow": "Copiá esta clave ahora — no se vuelve a mostrar.",
       "leads": "leads",
       "totalLeads": "leads en total",
@@ -501,7 +500,7 @@
         "steps": {
           "create": {
             "title": "Creá el sitio acá y copiá la clave",
-            "body": "Usá el formulario de arriba. La clave se muestra una sola vez: guardala apenas la veas. Si la perdés, rotala y actualizá el sitio."
+            "body": "Usá el formulario de arriba. La clave se muestra una sola vez: guardala apenas la veas. Si la perdés, emití otra clave y revocá la vieja cuando el sitio ya esté mandando con la nueva."
           },
           "env": {
             "title": "Guardá la clave en el entorno del sitio",
@@ -542,6 +541,19 @@
         "remove": "Quitar Turnstile",
         "errors": {
           "turnstileIncomplete": "Poné las dos claves: la del sitio y la secreta."
+        }
+      },
+      "keys": {
+        "issue": "Emitir otra clave",
+        "revoke": "Revocar",
+        "label": "Nota",
+        "labelPlaceholder": "ej: hosting nuevo",
+        "lastUsed": "último uso {when}",
+        "neverUsed": "sin usar todavía",
+        "maxReached": "Ya tenés dos claves activas. Revocá una para emitir otra.",
+        "errors": {
+          "tooManyKeys": "Ya tenés dos claves activas en este sitio.",
+          "unknown": "No se pudo emitir la clave. Intentá de nuevo."
         }
       }
     },

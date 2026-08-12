@@ -3,6 +3,7 @@ import { getTranslations } from "next-intl/server";
 import { requireTenantContext } from "@/modules/tenancy/context";
 import { getTenant } from "@/modules/tenancy/tenants";
 import { listSites } from "@/modules/sites/sites";
+import { listApiKeys, MAX_ACTIVE_KEYS_PER_SITE } from "@/modules/sites/keys";
 import { siteSettings, siteTurnstileSiteKey } from "@/modules/sites/settings";
 import { listPipelines, listStagesForPipeline } from "@/modules/crm/pipelines";
 import { listAccountsForTenant } from "@/modules/whatsapp/accounts";
@@ -12,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
 import { SiteGuide, type GuideLabels } from "./SiteGuide";
-import { NewSiteForm, RotateKeyButton, type KeyLabels } from "./SiteKeyForms";
+import { NewSiteForm, SiteKeysPanel, type ApiKeyRow, type KeyLabels } from "./SiteKeyForms";
 import { SiteTurnstileForm } from "./SiteTurnstileForm";
 import { toggleSiteActiveAction, updateSiteRoutingAction } from "./actions";
 
@@ -59,7 +60,6 @@ export default async function SitesPage() {
     waAccount: t("waAccount"),
     none: t("none"),
     create: t("createSite"),
-    rotate: t("rotateKey"),
   };
 
   const guideLabels: GuideLabels = {
@@ -79,6 +79,27 @@ export default async function SitesPage() {
   };
 
   const leadsBySite = new Map(stats.bySite.map((bucket) => [bucket.key, bucket.count]));
+
+  // Two-active-key rotation (PLAN.md §5.2). Dates are formatted here, on the
+  // server, so the client component stays a plain renderer.
+  const dateFormat = new Intl.DateTimeFormat("es-PY", {
+    dateStyle: "short",
+    timeStyle: "short",
+  });
+  const keysBySite = new Map<string, ApiKeyRow[]>(
+    await Promise.all(
+      sites.map(async (site): Promise<[string, ApiKeyRow[]]> => [
+        site.id,
+        (await listApiKeys(ctx, site.id)).map((key) => ({
+          id: key.id,
+          prefix: key.apiKeyPrefix,
+          label: key.label,
+          lastUsedAt: key.lastUsedAt ? dateFormat.format(key.lastUsedAt) : null,
+          revoked: !!key.revokedAt,
+        })),
+      ]),
+    ),
+  );
 
   return (
     <div className="flex flex-col gap-8">
@@ -114,7 +135,6 @@ export default async function SitesPage() {
                   </p>
                   <p className="text-sm text-muted-foreground">
                     {site.isActive ? t("active") : t("inactive")} ·{" "}
-                    <code className="font-mono text-xs">{site.apiKeyPrefix}…</code> ·{" "}
                     {leadsBySite.get(site.id) ?? 0} {t("leads")}
                   </p>
                 </div>
@@ -164,7 +184,12 @@ export default async function SitesPage() {
                 </Button>
               </form>
 
-              <RotateKeyButton siteId={site.id} labels={labels} />
+              <SiteKeysPanel
+                siteId={site.id}
+                keys={keysBySite.get(site.id) ?? []}
+                labels={labels}
+                maxActive={MAX_ACTIVE_KEYS_PER_SITE}
+              />
 
               <SiteTurnstileForm
                 siteId={site.id}

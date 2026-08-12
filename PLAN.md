@@ -420,6 +420,51 @@ null-settings site, the AES round trip with an assertion that the plaintext secr
 not appear in the stored JSON, and the undecryptable-secret degradation). Lint, typecheck
 and the full suite pass in CI, which runs the DB-backed suites against MySQL.
 
+#### 5.2.2 Two active keys per site, so rotation has no outage *(PR 2 — `claude/ingest-key-rotation`)*
+
+§5.1 said "rotation = issue new, revoke old", and the single `sites.api_key_hash` column
+made that a **cutover, not a rotation**: `rotateApiKey` overwrote the hash, so the old key
+died the instant the new one was minted and the site kept posting with a key the CRM had
+already forgotten — 401s for every lead until someone SSH'd in and redeployed. The window
+is small in theory and unbounded in practice, and every lead lost inside it is gone
+silently. With client sites (§5.2's whole point) it is worse: the owner does not control
+when a client redeploys.
+
+- **`site_api_keys`** is a new table, one row per key: hash, prefix, optional label,
+  `last_used_at`, `revoked_at`. The two columns on `sites` are gone. **Up to two live keys
+  per site** — enough for a rotation, few enough that "which keys are live" has a
+  glanceable answer; a third mostly means a key nobody remembers issuing is still
+  accepted. Revocation is a timestamp, not a delete, so which key was live when a lead
+  arrived survives the rotation.
+- **Migration `0012` backfills before it drops.** The generated SQL was hand-edited to
+  insert every existing site's key into the new table *between* the `CREATE TABLE` and the
+  `DROP COLUMN`s, so no already-deployed handler loses its key. The backfilled row reuses
+  the site's own ULID as its id — ids only need to be unique within `site_api_keys`, there
+  is exactly one row per site at that moment, and a deterministic value keeps the
+  migration re-runnable against a restored dump.
+- **`last_used_at` is the point of the feature, not decoration.** It is what lets the admin
+  *see* the site cut over before switching the old key off — revoking blind is exactly
+  what the old model forced. Written on the ingest path, **throttled to one write a
+  minute** per key so a busy site doesn't turn every lead into two writes, and
+  **best-effort**: a failed bookkeeping write is swallowed rather than costing the tenant
+  a lead. One minute of staleness is far finer than the human question it answers.
+- Keys stay **SHA-256 hashed and shown in plaintext exactly once** (§5.1) — the reveal path
+  is unchanged. Resolution still runs before any TenantContext exists (§3.3's documented
+  pre-context exemption, same as the WhatsApp webhook); it is now two indexed reads (key
+  hash → site) instead of one, and only unrevoked keys resolve.
+- **UI**: `/sites` lists each live key with its prefix, label and last-used timestamp,
+  issues a second one, and revokes either. The **last live key has no revoke button** —
+  revoking it would leave the site unable to post at all, the outage this PR exists to
+  prevent. Spanish copy in `messages/es.json`, including the connection guide's rotation
+  step, which described the old overwrite behavior.
+
+**Verified**: the `modules/sites` suite gained four cases — both keys accepted
+mid-rotation and only the revoked one dying afterwards (the assertion pair the old model
+made impossible); a third key refused with `tooManyKeys` and the slot freeing on revoke;
+`last_used_at` set on the key that actually posted and still null on the one that didn't;
+and cross-tenant isolation, where tenant B can neither list nor revoke tenant A's keys
+(§3.3 layer 3). Lint, typecheck, build and the full suite green in CI against MySQL.
+
 ---
 
 ## 6. WhatsApp integration (Opus-owned pipeline)

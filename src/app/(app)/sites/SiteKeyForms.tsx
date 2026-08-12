@@ -5,8 +5,10 @@ import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import {
   createSiteAction,
-  rotateApiKeyAction,
+  issueApiKeyAction,
+  revokeApiKeyAction,
   type CreateSiteFormState,
+  type IssueKeyState,
   type SiteField,
 } from "./actions";
 
@@ -44,7 +46,6 @@ export type KeyLabels = {
   waAccount: string;
   none: string;
   create: string;
-  rotate: string;
 };
 
 type Option = { id: string; label: string };
@@ -149,18 +150,94 @@ export function NewSiteForm({
   );
 }
 
-export function RotateKeyButton({ siteId, labels }: { siteId: string; labels: KeyLabels }) {
-  const [apiKey, formAction] = useActionState(rotateApiKeyAction, null);
+// Two-active-key rotation (PLAN.md §5.2). The panel exists to make the
+// rotation *provable*: it shows each live key's prefix and when it was last
+// used, so the admin can see the new key taking over before revoking the old
+// one. Revoking blind is what the old single-key rotation forced.
+const issueInitialState: IssueKeyState = { apiKey: null, error: null };
+
+export type ApiKeyRow = {
+  id: string;
+  prefix: string;
+  label: string | null;
+  lastUsedAt: string | null;
+  revoked: boolean;
+};
+
+export function SiteKeysPanel({
+  siteId,
+  keys,
+  labels,
+  maxActive,
+}: {
+  siteId: string;
+  keys: ApiKeyRow[];
+  labels: KeyLabels;
+  maxActive: number;
+}) {
+  const t = useTranslations("app.sites.keys");
+  const [state, formAction, pending] = useActionState(issueApiKeyAction, issueInitialState);
+
+  const active = keys.filter((key) => !key.revoked);
 
   return (
-    <div className="flex flex-col gap-2">
-      <form action={formAction}>
-        <input type="hidden" name="siteId" value={siteId} />
-        <Button type="submit" size="sm" variant="outline">
-          {labels.rotate}
-        </Button>
-      </form>
-      {apiKey && <KeyReveal apiKey={apiKey} labels={labels} />}
+    <div className="flex flex-col gap-2 text-sm">
+      {state.apiKey && <KeyReveal apiKey={state.apiKey} labels={labels} />}
+
+      <ul className="flex flex-col gap-1">
+        {active.map((key) => (
+          <li
+            key={key.id}
+            className="flex flex-wrap items-center justify-between gap-2 rounded-md border px-3 py-2"
+          >
+            <span>
+              <code className="font-mono text-xs">{key.prefix}…</code>
+              {key.label && <span className="text-muted-foreground"> · {key.label}</span>}
+              <span className="text-muted-foreground">
+                {" "}
+                · {key.lastUsedAt ? t("lastUsed", { when: key.lastUsedAt }) : t("neverUsed")}
+              </span>
+            </span>
+            {/* The last live key has no revoke button: revoking it would
+                leave the site unable to post at all, which is the outage
+                two-key rotation exists to prevent. */}
+            {active.length > 1 && (
+              <form action={revokeApiKeyAction}>
+                <input type="hidden" name="siteId" value={siteId} />
+                <input type="hidden" name="keyId" value={key.id} />
+                <Button type="submit" size="sm" variant="ghost">
+                  {t("revoke")}
+                </Button>
+              </form>
+            )}
+          </li>
+        ))}
+      </ul>
+
+      {active.length < maxActive ? (
+        <form action={formAction} className="flex flex-wrap items-end gap-2">
+          <input type="hidden" name="siteId" value={siteId} />
+          <label className="flex flex-col gap-1">
+            {t("label")}
+            <input
+              name="label"
+              placeholder={t("labelPlaceholder")}
+              className="rounded-md border px-2 py-1"
+            />
+          </label>
+          <Button type="submit" size="sm" variant="outline" disabled={pending}>
+            {t("issue")}
+          </Button>
+        </form>
+      ) : (
+        <p className="text-muted-foreground">{t("maxReached")}</p>
+      )}
+
+      {state.error && (
+        <p role="alert" className="text-destructive">
+          {t(`errors.${state.error}` as "errors.tooManyKeys")}
+        </p>
+      )}
     </div>
   );
 }

@@ -270,4 +270,30 @@ describe.skipIf(!hasDb)("lead ingest + sites isolation", () => {
     const outcome = await ingestLead(keyA, { name: "Sin teléfono", idempotency_key: "x".repeat(10) });
     expect(outcome).toMatchObject({ ok: false, status: 422 });
   });
+
+  // Per-site ingest health (PLAN.md §5.2) on the keyed lane. The failure it
+  // is built for is exactly this one: the site's handler starts posting a
+  // broken body, the CRM answers 422, and nothing in the pipeline says so.
+  it("records health for the keyed lane, and keeps the payload out of it", async () => {
+    const { getSiteHealth, siteHealthStatus } = await import("./health");
+    const site = await createSite(ctxA, {
+      name: "Salud",
+      slug: `salud-${newId()}`,
+      defaultPipelineId: pipelineAId,
+      defaultStageId: stageAId,
+    });
+
+    expect((await ingestLead(site.apiKey, body())).ok).toBe(true);
+    let health = await getSiteHealth(ctxA, site.id);
+    expect(siteHealthStatus(health)).toBe("ok");
+    expect(health!.lastSuccessLane).toBe("key");
+
+    await ingestLead(site.apiKey, { nombre: "sin teléfono", idempotency_key: "y".repeat(10) });
+    health = await getSiteHealth(ctxA, site.id);
+    expect(siteHealthStatus(health)).toBe("failing");
+    expect(health!.lastErrorStatus).toBe(422);
+    expect(health!.errorCount).toBe(1);
+    expect(health!.successCount).toBe(1);
+    expect(JSON.stringify(health)).not.toContain(site.apiKey);
+  });
 });

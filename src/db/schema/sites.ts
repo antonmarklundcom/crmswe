@@ -8,6 +8,7 @@ import {
   index,
   uniqueIndex,
   text,
+  int,
 } from "drizzle-orm/mysql-core";
 import { sql } from "drizzle-orm";
 
@@ -137,6 +138,47 @@ export const siteHookCaptures = mysqlTable(
   (table) => [
     index("site_hook_captures_tenant_id_idx").on(table.tenantId),
     index("site_hook_captures_site_id_idx").on(table.siteId),
+  ],
+);
+
+// Per-site ingest health (PLAN.md §5.2). One row per site, upserted on every
+// ingest attempt on either lane.
+//
+// The problem it solves: when a client site's integration breaks, it breaks
+// on THEIR server. The CRM simply stops receiving — and "no leads today" and
+// "no leads because the form has been 422ing since Tuesday" look identical
+// from the pipeline. The owner finds out days later, from the customer.
+//
+// Deliberately a summary, not a log: last success, last error (status +
+// short reason) and running counts. **No payloads and no credentials are
+// stored here** — a reason is a short code like "phone-missing", never the
+// submitted data and never a token.
+export const siteIngestHealth = mysqlTable(
+  "site_ingest_health",
+  {
+    id: char("id", { length: 26 }).primaryKey(),
+    tenantId: char("tenant_id", { length: 26 }).notNull(),
+    siteId: char("site_id", { length: 26 }).notNull(),
+    lastSuccessAt: datetime("last_success_at"),
+    /** Which lane the last success arrived on: "key" or "hook". */
+    lastSuccessLane: varchar("last_success_lane", { length: 10 }),
+    lastErrorAt: datetime("last_error_at"),
+    lastErrorStatus: int("last_error_status"),
+    lastErrorReason: varchar("last_error_reason", { length: 200 }),
+    lastErrorLane: varchar("last_error_lane", { length: 10 }),
+    successCount: int("success_count").notNull().default(0),
+    errorCount: int("error_count").notNull().default(0),
+    createdAt: datetime("created_at")
+      .notNull()
+      .default(sql`CURRENT_TIMESTAMP`),
+    updatedAt: datetime("updated_at")
+      .notNull()
+      .default(sql`CURRENT_TIMESTAMP`),
+  },
+  (table) => [
+    index("site_ingest_health_tenant_id_idx").on(table.tenantId),
+    // One row per site — the upsert target.
+    uniqueIndex("site_ingest_health_site_id_idx").on(table.siteId),
   ],
 );
 

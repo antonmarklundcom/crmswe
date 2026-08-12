@@ -356,6 +356,37 @@ describe.skipIf(!hasDb)("webhook ingest lane", () => {
     expect(limited).toBe(true);
   });
 
+  it("records per-site health: a success, then a mapping that stops matching", async () => {
+    const { siteId, token } = await makeSite({ phone: "phone", name: "name" });
+    const { getSiteHealth, siteHealthStatus } = await import("./health");
+
+    expect((await hooks.receiveHookPayload(token, GENERIC_FORM_PAYLOAD)).ok).toBe(true);
+    let health = await getSiteHealth(ctxA, siteId);
+    expect(siteHealthStatus(health)).toBe("ok");
+    expect(health!.successCount).toBe(1);
+    expect(health!.lastSuccessLane).toBe("hook");
+
+    // The client renames the field: the webhook still fires, the mapping no
+    // longer matches. This is the silent failure §5.2 exists to surface.
+    await hooks.receiveHookPayload(token, { telefono: "0981000111" });
+    health = await getSiteHealth(ctxA, siteId);
+    expect(siteHealthStatus(health)).toBe("failing");
+    expect(health!.lastErrorStatus).toBe(422);
+    expect(health!.lastErrorReason).toBe("phone-missing");
+    expect(health!.errorCount).toBe(1);
+
+    // Nothing submitted and no credential is stored on the health row.
+    expect(JSON.stringify(health)).not.toContain("0981000111");
+    expect(JSON.stringify(health)).not.toContain(token);
+
+    // A later good submission flips it back with no manual clearing.
+    expect((await hooks.receiveHookPayload(token, {
+      phone: "0981222111",
+      name: "Recuperado",
+    })).ok).toBe(true);
+    expect(siteHealthStatus(await getSiteHealth(ctxA, siteId))).toBe("ok");
+  });
+
   it("keeps tenants apart: a webhook lead lands only in its own tenant", async () => {
     const { token } = await makeSite({ phone: "phone", name: "name" }, ctxB);
 

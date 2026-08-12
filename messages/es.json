@@ -585,6 +585,23 @@
           "phoneRequired": "Elegí cuál es el teléfono: sin eso no podemos crear el contacto.",
           "unknown": "No se pudo guardar. Intentá de nuevo."
         }
+      },
+      "health": {
+        "idle": "Todavía no recibió ningún lead",
+        "ok": "Funcionando — último lead {when}",
+        "failing": "Con problemas — error {status} ({reason}) el {when}",
+        "errorCount": "{count} error(es) en total",
+        "reasons": {
+          "invalid-key": "clave inválida",
+          "site-inactive": "sitio desactivado",
+          "tenant-unavailable": "cuenta no disponible",
+          "tenant-read-only": "cuenta en solo lectura",
+          "rate-limited": "demasiados envíos",
+          "turnstile-failed": "no pasó la verificación anti-bots",
+          "invalid-body": "datos inválidos",
+          "phone-missing": "llegó sin teléfono o el campo cambió",
+          "unknown": "error desconocido"
+        }
       }
     },
     "products": {

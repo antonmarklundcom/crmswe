@@ -75,3 +75,77 @@ export function subscriptionExpiryWarningEmail(input: {
     `),
   };
 }
+
+/**
+ * Per-site ingest alert (PLAN.md §5.2.5). Deliberately says what broke, when,
+ * and where to look — and nothing else: no submitted data, no API key, no
+ * webhook token. The reason arrives as a short code from
+ * modules/sites/health.ts and is translated here, the same way this file
+ * already owns the Spanish for every other transactional email.
+ */
+const INGEST_REASONS: Record<string, string> = {
+  "invalid-key": "la clave que está usando el sitio no es válida",
+  "site-inactive": "el sitio está desactivado",
+  "tenant-unavailable": "la cuenta no está disponible",
+  "tenant-read-only": "la cuenta está en modo solo lectura",
+  "rate-limited": "llegaron demasiados envíos seguidos",
+  "turnstile-failed": "no pasó la verificación anti-bots",
+  "invalid-body": "los datos llegaron incompletos o con formato inválido",
+  "phone-missing": "llegó sin teléfono, o cambió el nombre del campo en el formulario",
+  unknown: "error desconocido",
+};
+
+export function siteIngestAlertEmail(input: {
+  siteName: string;
+  kind: "failing" | "stale";
+  reason?: string | null;
+  status?: number | null;
+  lastSuccessAt?: Date | null;
+  daysSilent?: number;
+  sitesUrl: string;
+}): { subject: string; html: string } {
+  const formatDate = (date: Date) =>
+    new Intl.DateTimeFormat("es-PY", {
+      day: "2-digit",
+      month: "long",
+      hour: "2-digit",
+      minute: "2-digit",
+    }).format(date);
+
+  const lastLead = input.lastSuccessAt
+    ? `El último lead entró el <strong>${formatDate(input.lastSuccessAt)}</strong>.`
+    : "Todavía no recibimos ningún lead de este sitio.";
+
+  if (input.kind === "stale") {
+    return {
+      subject: `${input.siteName}: hace ${input.daysSilent} días que no entra ningún lead`,
+      html: layout(`
+        <h1 style="font-size:18px;margin:0 0 8px;">${input.siteName} está en silencio</h1>
+        <p style="font-size:14px;line-height:1.5;color:#3f3f46;">
+          Hace <strong>${input.daysSilent} días</strong> que no entra un lead de este sitio, y antes entraban.
+          ${lastLead} Puede ser una racha tranquila, o que el formulario del sitio se haya roto sin avisar.
+          Vale la pena mandar un envío de prueba.
+        </p>
+        <p style="font-size:14px;line-height:1.5;color:#3f3f46;">
+          <a href="${input.sitesUrl}">Ver el estado de tus sitios</a>
+        </p>
+      `),
+    };
+  }
+
+  const reason = INGEST_REASONS[input.reason ?? "unknown"] ?? INGEST_REASONS.unknown;
+  return {
+    subject: `${input.siteName}: los leads no están entrando`,
+    html: layout(`
+      <h1 style="font-size:18px;margin:0 0 8px;">${input.siteName} no está pudiendo cargar leads</h1>
+      <p style="font-size:14px;line-height:1.5;color:#3f3f46;">
+        El último intento falló${input.status ? ` (error ${input.status})` : ""}: ${reason}.
+        Mientras siga así, los envíos de ese formulario no llegan al pipeline.
+      </p>
+      <p style="font-size:14px;line-height:1.5;color:#3f3f46;">${lastLead}</p>
+      <p style="font-size:14px;line-height:1.5;color:#3f3f46;">
+        <a href="${input.sitesUrl}">Revisar el sitio</a>
+      </p>
+    `),
+  };
+}

@@ -18,6 +18,7 @@ import { SiteGuide, type GuideLabels } from "./SiteGuide";
 import { NewSiteForm, SiteKeysPanel, type ApiKeyRow, type KeyLabels } from "./SiteKeyForms";
 import { SiteTurnstileForm } from "./SiteTurnstileForm";
 import { SiteHookForm, type HookPanelProps } from "./SiteHookForm";
+import { SiteHookGuide, type HookGuideLabels } from "./SiteHookGuide";
 import { toggleSiteActiveAction, updateSiteRoutingAction } from "./actions";
 
 /** Status line for one site: green when the last attempt worked, red with the
@@ -121,6 +122,22 @@ export default async function SitesPage() {
     securityPoints: (["serverSide", "idempotency", "phone", "spam", "nonBlocking"] as const).map(
       (key) => tg(`security.${key}`),
     ),
+  };
+
+  // Lane-2 connection guide (PLAN.md §5.2.5). Built here so the client
+  // component stays a renderer and every string still comes from next-intl.
+  const th = await getTranslations("app.sites.hookGuide");
+  const hookGuideLabels: HookGuideLabels = {
+    title: th("title"),
+    intro: th("intro"),
+    captureTitle: th("captureTitle"),
+    captureBody: th("captureBody"),
+    urlNote: th("urlNote"),
+    platforms: (["elementor", "wix", "zapier", "otro"] as const).map((id) => ({
+      id,
+      label: th(`platforms.${id}.label` as "platforms.elementor.label"),
+      steps: th.raw(`platforms.${id}.steps` as "platforms.elementor.steps") as string[],
+    })),
   };
 
   const leadsBySite = new Map(stats.bySite.map((bucket) => [bucket.key, bucket.count]));
@@ -288,6 +305,8 @@ export default async function SitesPage() {
           }))}
         />
       </section>
+
+      <SiteHookGuide labels={hookGuideLabels} />
 
       <SiteGuide
         appUrl={env.APP_URL}

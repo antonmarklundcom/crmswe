@@ -573,6 +573,52 @@ health row; on the webhook lane a success, then a client renaming the field (`ph
 status failing), with the submitted phone number and the token both absent from the row, then
 recovery flipping it back to green on its own.
 
+#### 5.2.5 Ingest alerts, and a connection guide for the second lane *(PR 5 — `claude/ingest-alerts`)*
+
+§5.2.4 recorded per-site health and put it on `/sites`. That is a page the owner opens
+*once he already suspects something* — which is the wrong half of the problem: the failure
+being fixed is "he finds out days later, from a customer". A status column shortens the
+investigation; it doesn't start it. So the signal now leaves the app on its own.
+
+- **`/api/cron/ingest-alerts`**, daily, same shape and secret as the existing
+  `subscription-warnings` entry (documented in `docs/DEPLOY.md`). Emails every tenant admin
+  when a site's **last** attempt failed, or when a site that *used to* produce leads has
+  been silent for 3+ days. Daily rather than hourly on purpose: the thing being detected is
+  "broken since Tuesday", and a client's broken form is not fixed faster by hearing about
+  it four times an hour.
+- **Staleness is its own alert**, because the worst version of this failure produces no
+  errors at all — the client removes the webhook action, or repoints the form, and the CRM
+  simply never hears from them again. Three days, not one: lead flow here has a weekly
+  rhythm and plenty of these sites are quiet over a weekend without anything being wrong.
+- **Notify on the transition, not every morning.** `site_ingest_health` gained
+  `alerted_for` / `alerted_at` — what was *sent*, kept deliberately separate from
+  `last_outcome`, which is what *happened*. A recovered site clears the flag so the next
+  breakage alerts again. Silence is also correct for two cases: a **deactivated** site (the
+  owner paused it; alerting about it teaches him to ignore alerts) and a site that has
+  **never** received anything (that's unfinished, not broken, and already reads "sin datos"
+  on `/sites`). A quiet site that then hard-fails *does* escalate — that's new information.
+- **Same two rules as §5.2.4**: the mail names the site, the status, the translated reason
+  and when it happened — no payloads, no keys, no tokens. And the alert path is a cron, so
+  it can never cost a lead.
+- **A connection guide for lane 2.** The existing `SiteGuide` documents lane 1 only — a
+  server-side handler with the key in env, exactly what a client on Elementor or Wix cannot
+  do. The new guide is click-by-click per platform (Elementor / Wix / Zapier-Make /
+  manual), in Spanish, written for the owner sitting with a client's site open or the
+  client following along over WhatsApp: the only technical step is pasting a URL the CRM
+  generated. It leads with the test submission, because capture mode is what makes the rest
+  work, and states plainly that the webhook URL is itself the credential.
+
+**Verified**: `modules/sites/alerts.test.ts` — 12 pure cases over the decision, with no
+database and no clock. **One of them caught a real defect before it shipped**: the first
+`shouldClearAlert` asked "does this site alert right now?", which is always false for a site
+already flagged, so a *still-silent* site had its flag cleared and would have re-alerted
+every single day — precisely the noise `alerted_for` exists to prevent. It now asks "would
+this alert if we had never told him?". The rest pin the dedupe, the recovery re-arm, the
+deactivated and never-used silences, the weekend tolerance, and the quiet→failing
+escalation. `i18n/messages.test.ts` now flattens arrays too, so every step string in the new
+guide is still covered by the empty-copy / spec-leak / ICU guards. Lint, typecheck, build
+and the full suite green in CI against MySQL.
+
 ---
 
 ## 6. WhatsApp integration (Opus-owned pipeline)
@@ -1434,7 +1480,7 @@ treats Meta verification.
 | AI auto-reply (1O) | **~40** — ✅ done, merged |
 | Notas de venta (1Q) | — ✅ done, engine + UI merged |
 | Daily-driver readiness (1R) | 🟡 **items #1-#6 done** — operator tasks (§10 1R) and the owner's dogfooding day still open |
-| Multi-lane ingest (§5.2: Turnstile, key rotation, webhook receiver, ingest health) | — ✅ done, four PRs merged |
+| Multi-lane ingest (§5.2: Turnstile, key rotation, webhook receiver, ingest health, alerts) | — ✅ done, five PRs merged |
 | Google Business Profile (1P) | unscheduled |
 
 Estimates assume focused build sessions against this spec; Fable review gates (after

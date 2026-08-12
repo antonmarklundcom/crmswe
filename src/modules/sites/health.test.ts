@@ -18,6 +18,8 @@ function health(overrides: Partial<SiteHealthRow>): SiteHealthRow {
     lastErrorStatus: null,
     lastErrorReason: null,
     lastErrorLane: null,
+    alertedFor: null,
+    alertedAt: null,
     successCount: 0,
     errorCount: 0,
     createdAt: new Date(0),

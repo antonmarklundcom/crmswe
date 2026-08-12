@@ -6,6 +6,7 @@ import { listSites } from "@/modules/sites/sites";
 import { listApiKeys, MAX_ACTIVE_KEYS_PER_SITE } from "@/modules/sites/keys";
 import { siteSettings, siteTurnstileSiteKey } from "@/modules/sites/settings";
 import { listHookCaptures, captureLeafPaths, siteHookMapping } from "@/modules/sites/hooks";
+import { listSiteHealth, siteHealthStatus } from "@/modules/sites/health";
 import { listPipelines, listStagesForPipeline } from "@/modules/crm/pipelines";
 import { listAccountsForTenant } from "@/modules/whatsapp/accounts";
 import { getLeadStats } from "@/modules/leads/stats";
@@ -19,6 +20,42 @@ import { SiteTurnstileForm } from "./SiteTurnstileForm";
 import { SiteHookForm, type HookPanelProps } from "./SiteHookForm";
 import { toggleSiteActiveAction, updateSiteRoutingAction } from "./actions";
 
+/** Status line for one site: green when the last attempt worked, red with the
+ * reason when it didn't, grey when the site has never been used. */
+async function SiteHealthBadge({
+  health,
+}: {
+  health: import("@/modules/sites/health").SiteHealthRow | null;
+}) {
+  const t = await getTranslations("app.sites.health");
+  const status = siteHealthStatus(health);
+  const format = new Intl.DateTimeFormat("es-PY", { dateStyle: "short", timeStyle: "short" });
+
+  if (status === "idle") {
+    return <p className="text-sm text-muted-foreground">● {t("idle")}</p>;
+  }
+
+  if (status === "failing" && health?.lastErrorAt) {
+    return (
+      <p className="text-sm text-destructive">
+        ●{" "}
+        {t("failing", {
+          status: health.lastErrorStatus ?? 0,
+          reason: t(`reasons.${health.lastErrorReason ?? "unknown"}` as "reasons.unknown"),
+          when: format.format(health.lastErrorAt),
+        })}
+      </p>
+    );
+  }
+
+  return (
+    <p className="text-sm text-emerald-700">
+      ● {t("ok", { when: health?.lastSuccessAt ? format.format(health.lastSuccessAt) : "" })}
+      {health?.errorCount ? ` · ${t("errorCount", { count: health.errorCount })}` : ""}
+    </p>
+  );
+}
+
 export default async function SitesPage() {
   const ctx = await requireTenantContext();
   const t = await getTranslations("app.sites");
@@ -29,13 +66,19 @@ export default async function SitesPage() {
 
   const tg = await getTranslations("app.sites.guide");
 
-  const [sites, pipelines, waAccounts, stats, tenant] = await Promise.all([
+  const [sites, pipelines, waAccounts, stats, tenant, health] = await Promise.all([
     listSites(ctx),
     listPipelines(ctx),
     listAccountsForTenant(ctx),
     getLeadStats(ctx),
     getTenant(ctx.tenantId),
+    listSiteHealth(ctx),
   ]);
+
+  // Per-site ingest health (PLAN.md §5.2): a client site that breaks fails on
+  // THEIR server, so the CRM's only symptom is silence. This is where that
+  // silence gets a name.
+  const healthBySite = new Map(health.map((row) => [row.siteId, row]));
 
   // Stages across every pipeline — each site normally routes into its own
   // pipeline (dentista vs materiales are different businesses), so the
@@ -164,6 +207,7 @@ export default async function SitesPage() {
                     {site.isActive ? t("active") : t("inactive")} ·{" "}
                     {leadsBySite.get(site.id) ?? 0} {t("leads")}
                   </p>
+                  <SiteHealthBadge health={healthBySite.get(site.id) ?? null} />
                 </div>
                 <form action={toggleSiteActiveAction}>
                   <input type="hidden" name="siteId" value={site.id} />

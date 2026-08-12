@@ -9,6 +9,7 @@ import { buildSystemTenantContext } from "@/modules/tenancy/context";
 import { tenantDb } from "@/modules/tenancy/db";
 import { ingestLeadForSite, type IngestOutcome, type SiteRow } from "./ingest";
 import { mergeSiteSettings, siteSettings } from "./settings";
+import { recordIngestFailure } from "./health";
 
 // Inbound webhook lane (PLAN.md §5.2) — the second ingest lane, for client
 // sites on Elementor, Wix, Webflow and Zapier/Make that cannot hold a
@@ -246,6 +247,11 @@ export async function receiveHookPayload(
 
   const phone = resolveString(payload, mapping.phone);
   if (!phone) {
+    // The most valuable broken-client signal there is: the webhook is live,
+    // the payload arrives, and the mapping no longer matches it (the client
+    // renamed a field, or added a step). Recorded here because it is decided
+    // before the shared engine runs — see modules/sites/health.ts.
+    await recordIngestFailure(site, "hook", 422, "phone-missing");
     return { ok: false, status: 422, error: "No phone value at the configured path" };
   }
 

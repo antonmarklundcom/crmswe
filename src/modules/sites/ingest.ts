@@ -10,6 +10,7 @@ import { verifyTurnstileToken } from "@/lib/turnstile";
 import type { sites } from "@/db/schema";
 import { resolveSiteByApiKey } from "./keys";
 import { siteSettings, siteTurnstileSecret } from "./settings";
+import { classifyIngestError, recordIngestFailure, recordIngestSuccess } from "./health";
 
 // Public ingest (PLAN.md §5.1). Server-to-server only: the site's own
 // backend posts with its key. This file owns authentication, validation and
@@ -103,6 +104,32 @@ export async function ingestLeadForSite(
   rawBody: unknown,
   meta: IngestRequestMeta = {},
   lane: IngestLane = "key",
+): Promise<IngestOutcome> {
+  const outcome = await runIngest(site, rawBody, meta, lane);
+
+  // Per-site health (§5.2). Recorded here, around the single engine, so both
+  // lanes are covered by one call site and no failure path can forget. Never
+  // awaited into the caller's error handling: bookkeeping must not fail an
+  // ingest, and it stores no payload and no credential.
+  if (outcome.ok) {
+    await recordIngestSuccess(site, lane);
+  } else {
+    await recordIngestFailure(
+      site,
+      lane,
+      outcome.status,
+      classifyIngestError(outcome.status, outcome.error),
+    );
+  }
+
+  return outcome;
+}
+
+async function runIngest(
+  site: SiteRow,
+  rawBody: unknown,
+  meta: IngestRequestMeta,
+  lane: IngestLane,
 ): Promise<IngestOutcome> {
   if (!site.isActive) return { ok: false, status: 403, error: "Site is inactive" };
 

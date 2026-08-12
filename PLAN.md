@@ -529,6 +529,50 @@ a mapping whose phone path finds nothing, the derived-key duplicate collapse (in
 same-phone-different-format and next-bucket), an inactive site, revocation leaving the
 API keys working, the tighter rate limit, and cross-tenant isolation (§3.3 layer 3).
 
+#### 5.2.4 Per-site ingest health *(PR 4 — `claude/ingest-health`)*
+
+The failure this closes: a client site's integration breaks **on their server**, so the
+CRM's only symptom is silence — and "a quiet week" and "the form has been 422ing since
+Tuesday" look identical from the pipeline. Today the owner finds out days later, from a
+customer. With the webhook lane (§5.2.3) it gets worse, because the client can rename a
+form field at any time and nothing in the CRM notices.
+
+- **`site_ingest_health`**, one row per site, upserted on every ingest attempt on **both**
+  lanes: last success (with which lane), last error (status + short reason + lane), and
+  running success/error counts. A summary, not a log — a log of every attempt is a table
+  nobody reads and a retention problem nobody scheduled.
+- **No payloads, no credentials.** The stored reason is a short stable code —
+  `phone-missing`, `turnstile-failed`, `rate-limited` — mapped from the failure by
+  `classifyIngestError`, never the underlying message. That message can carry zod field
+  paths and Cloudflare error strings; the column is rendered in the UI, so it gets a code
+  the UI translates to Spanish through next-intl and nothing else.
+- **Recorded around the shared engine**, so one call site covers both lanes and no failure
+  path can forget — plus one explicit call in the webhook receiver for the 422 that is
+  decided before the engine runs (the mapping no longer matching the payload, which is the
+  single most valuable broken-client signal). Every health write is **best-effort and
+  swallowed on failure**: bookkeeping must never be able to fail an ingest.
+- **The status is "did the last attempt work"**, not "have there ever been errors": a bot
+  that tripped a 422 last month must not paint a working site red, and a site that
+  recovers goes back to green with nobody clearing anything. That judgement reads an
+  explicit `last_outcome` column — **the first implementation compared `last_error_at`
+  against `last_success_at`, and CI caught it**: those are second-precision `datetime`s, so
+  a failure landing in the same second as the preceding success compares *equal* and the
+  site rendered green while broken. Exactly the silence this section exists to end, so the
+  ambiguity was removed rather than papered over with fractional seconds.
+- Surfaced on `/sites` as a per-site line — green with the last lead's timestamp, red with
+  the status, the translated reason and when it happened, grey for a site that has never
+  received anything.
+
+**Verified**: `modules/sites/health.test.ts` pins the two pure decisions — the failure→code
+mapping (including that a message containing submitted data never survives into the stored
+reason) and the last-attempt-wins status rule, including recovery and a regression case for
+the same-second collision above. The DB-backed suites add
+the end-to-end shape on both lanes: on the keyed lane a success then a 422, with counts and
+`lastSuccessLane` and an assertion that the site's API key does not appear anywhere in the
+health row; on the webhook lane a success, then a client renaming the field (`phone-missing`,
+status failing), with the submitted phone number and the token both absent from the row, then
+recovery flipping it back to green on its own.
+
 ---
 
 ## 6. WhatsApp integration (Opus-owned pipeline)
@@ -757,6 +801,13 @@ in §5.1.
 **Exit**: two real sites posting leads into one tenant; a replayed POST with the same
 `idempotency_key` is a no-op; leads filterable by site and campaign in the UI; a leaked
 key can't write outside its own site's configured pipeline/stage.
+
+**Extended after the fact by §5.2** (four merged PRs): 1E's ingest served the owner's own
+sites, whose backends can hold a secret. Client sites on Elementor/Wix/Webflow/Zapier
+cannot, so a second lane was added alongside it — Turnstile, two-active-key rotation, a
+webhook receiver with per-site field mapping, and per-site ingest health. 1E's own exit
+criteria are unchanged and still hold; see §5.2 for what was added and why the §5.1
+transport lock was reopened.
 
 > **★ GHL-replacement milestone**: after 1E the owner's Paraguay lead network runs capture
 > + WhatsApp follow-up on VenderCRM instead of GoHighLevel. Email, booking and SMS stay
@@ -1383,6 +1434,7 @@ treats Meta verification.
 | AI auto-reply (1O) | **~40** — ✅ done, merged |
 | Notas de venta (1Q) | — ✅ done, engine + UI merged |
 | Daily-driver readiness (1R) | 🟡 **items #1-#6 done** — operator tasks (§10 1R) and the owner's dogfooding day still open |
+| Multi-lane ingest (§5.2: Turnstile, key rotation, webhook receiver, ingest health) | — ✅ done, four PRs merged |
 | Google Business Profile (1P) | unscheduled |
 
 Estimates assume focused build sessions against this spec; Fable review gates (after
@@ -1435,6 +1487,7 @@ is planned, not discovered:
 7. **GHL export**: can existing contacts be exported to CSV now? A one-off import script
    is small, but it needs the real column shape to be written against.
 8. **Turnstile**: OK to add a Cloudflare account for Turnstile (free) on the sites?
-   Without it the honeypot alone carries spam defense.
+   Without it the honeypot alone carries spam defense. *(The code shipped in §5.2.1 and is
+   per-site optional — this is now purely "open the account and paste the two keys".)*
 9. **Email**: is any current GHL email flow load-bearing for the Paraguay sites? If yes,
    §11's email gap needs scheduling; if it's WhatsApp-only follow-up, it doesn't.

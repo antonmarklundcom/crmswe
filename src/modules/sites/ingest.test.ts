@@ -16,8 +16,11 @@ describe.skipIf(!hasDb)("lead ingest + sites isolation", () => {
   let listStagesForPipeline: (typeof import("@/modules/crm/pipelines"))["listStagesForPipeline"];
   let createSite: (typeof import("./sites"))["createSite"];
   let listSites: (typeof import("./sites"))["listSites"];
-  let rotateApiKey: (typeof import("./sites"))["rotateApiKey"];
   let updateSite: (typeof import("./sites"))["updateSite"];
+  let issueApiKey: (typeof import("./keys"))["issueApiKey"];
+  let revokeApiKey: (typeof import("./keys"))["revokeApiKey"];
+  let listApiKeys: (typeof import("./keys"))["listApiKeys"];
+  let listActiveApiKeys: (typeof import("./keys"))["listActiveApiKeys"];
   let ingestLead: (typeof import("./ingest"))["ingestLead"];
   let listContacts: (typeof import("@/modules/crm/contacts"))["listContacts"];
   let listDealsForPipeline: (typeof import("@/modules/crm/deals"))["listDealsForPipeline"];
@@ -40,7 +43,8 @@ describe.skipIf(!hasDb)("lead ingest + sites isolation", () => {
     ({ createTenant } = await import("@/modules/tenancy/tenants"));
     ({ buildSystemTenantContext } = await import("@/modules/tenancy/context"));
     ({ seedDefaultPipeline, listStagesForPipeline } = await import("@/modules/crm/pipelines"));
-    ({ createSite, listSites, rotateApiKey, updateSite } = await import("./sites"));
+    ({ createSite, listSites, updateSite } = await import("./sites"));
+    ({ issueApiKey, revokeApiKey, listApiKeys, listActiveApiKeys } = await import("./keys"));
     ({ ingestLead } = await import("./ingest"));
     ({ listContacts } = await import("@/modules/crm/contacts"));
     ({ listDealsForPipeline } = await import("@/modules/crm/deals"));
@@ -190,12 +194,69 @@ describe.skipIf(!hasDb)("lead ingest + sites isolation", () => {
     expect(sitesB.some((s) => s.id === siteAId)).toBe(false);
   });
 
-  it("rotating a key invalidates the old one immediately", async () => {
+  // Two-active-key rotation (PLAN.md §5.2). The old single-key model made
+  // these two assertions impossible at once: issuing a key used to kill the
+  // previous one on the spot, so every site was down for the window between
+  // "issued" and "deployed".
+  it("keeps both keys live through a rotation, then kills only the revoked one", async () => {
     const site = await createSite(ctxA, { name: "Rotar", slug: `rotar-${newId()}` });
-    const rotated = await rotateApiKey(ctxA, site.id);
+    const issued = await issueApiKey(ctxA, site.id, "clave nueva");
+    expect(issued.ok).toBe(true);
+    if (!issued.ok) return;
+
+    // Mid-rotation: the site is still deployed with the old key, the new one
+    // is already accepted. Neither request fails.
+    expect((await ingestLead(site.apiKey, body())).ok).toBe(true);
+    expect((await ingestLead(issued.plaintext, body())).ok).toBe(true);
+
+    const active = await listActiveApiKeys(ctxA, site.id);
+    expect(active).toHaveLength(2);
+
+    // Revoke the original once the new key is live on the site.
+    const original = active.find((key) => key.id !== issued.keyId)!;
+    await revokeApiKey(ctxA, site.id, original.id);
 
     expect(await ingestLead(site.apiKey, body())).toMatchObject({ ok: false, status: 401 });
-    expect((await ingestLead(rotated, body())).ok).toBe(true);
+    expect((await ingestLead(issued.plaintext, body())).ok).toBe(true);
+  });
+
+  it("refuses a third live key", async () => {
+    const site = await createSite(ctxA, { name: "Tres", slug: `tres-${newId()}` });
+    expect((await issueApiKey(ctxA, site.id)).ok).toBe(true);
+    expect(await issueApiKey(ctxA, site.id)).toMatchObject({ ok: false, error: "tooManyKeys" });
+
+    // …and revoking one frees the slot again.
+    const active = await listActiveApiKeys(ctxA, site.id);
+    await revokeApiKey(ctxA, site.id, active[0].id);
+    expect((await issueApiKey(ctxA, site.id)).ok).toBe(true);
+  });
+
+  it("records last-used-at per key, which is what makes revoking the old one safe", async () => {
+    const site = await createSite(ctxA, { name: "Uso", slug: `uso-${newId()}` });
+    const issued = await issueApiKey(ctxA, site.id, "nueva");
+    expect(issued.ok).toBe(true);
+    if (!issued.ok) return;
+
+    // Only the new key posts. The UI reads exactly this to prove the site
+    // has cut over before the old key is turned off.
+    expect((await ingestLead(issued.plaintext, body())).ok).toBe(true);
+
+    const keys = await listApiKeys(ctxA, site.id);
+    const fresh = keys.find((key) => key.id === issued.keyId)!;
+    const original = keys.find((key) => key.id !== issued.keyId)!;
+    expect(fresh.lastUsedAt).toBeTruthy();
+    expect(original.lastUsedAt).toBeNull();
+  });
+
+  it("keys are isolated per tenant — tenant B cannot list or revoke tenant A's", async () => {
+    const keysFromB = await listApiKeys(ctxB, siteAId);
+    expect(keysFromB).toHaveLength(0);
+
+    const [liveKeyA] = await listActiveApiKeys(ctxA, siteAId);
+    await revokeApiKey(ctxB, siteAId, liveKeyA.id);
+    // The write was scoped to tenant B, so tenant A's key is untouched and
+    // still works.
+    expect((await ingestLead(keyA, body())).ok).toBe(true);
   });
 
   it("an inactive site is refused with 403", async () => {

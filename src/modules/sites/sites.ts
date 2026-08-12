@@ -3,7 +3,7 @@ import { sites } from "@/db/schema";
 import { newId } from "@/lib/ids";
 import type { TenantContext } from "@/modules/tenancy/context";
 import { tenantDb } from "@/modules/tenancy/db";
-import { generateApiKey } from "./keys";
+import { issueApiKey } from "./keys";
 
 // Sites CRUD (PLAN.md §5.1). One tenant owns many sites — connecting a new
 // project is: create a site, copy the key once, point the site's form
@@ -31,7 +31,6 @@ export async function createSite(
   input: CreateSiteInput,
 ): Promise<CreatedSite> {
   const id = newId();
-  const key = generateApiKey();
 
   await tenantDb(ctx)
     .insert(sites)
@@ -40,8 +39,6 @@ export async function createSite(
       name: input.name,
       slug: input.slug,
       domain: input.domain,
-      apiKeyHash: key.hash,
-      apiKeyPrefix: key.displayPrefix,
       isActive: true,
       defaultPipelineId: input.defaultPipelineId,
       defaultStageId: input.defaultStageId,
@@ -50,7 +47,12 @@ export async function createSite(
       waAccountId: input.waAccountId,
     });
 
-  return { id, apiKey: key.plaintext };
+  // The site's first key. Keys live in their own table since §5.2 so a site
+  // can hold two at once; a brand-new site simply starts with one.
+  const issued = await issueApiKey(ctx, id, "inicial");
+  if (!issued.ok) throw new Error("No se pudo emitir la clave del sitio");
+
+  return { id, apiKey: issued.plaintext };
 }
 
 export type UpdateSiteInput = Partial<Omit<CreateSiteInput, "slug">> & {
@@ -60,16 +62,6 @@ export type UpdateSiteInput = Partial<Omit<CreateSiteInput, "slug">> & {
 export async function updateSite(ctx: TenantContext, id: string, input: UpdateSiteInput) {
   await tenantDb(ctx).update(sites).set(input).where(eq(sites.id, id));
   return getSite(ctx, id);
-}
-
-/** Rotation is issue-new + overwrite-hash; the old key stops working at once. */
-export async function rotateApiKey(ctx: TenantContext, id: string): Promise<string> {
-  const key = generateApiKey();
-  await tenantDb(ctx)
-    .update(sites)
-    .set({ apiKeyHash: key.hash, apiKeyPrefix: key.displayPrefix })
-    .where(eq(sites.id, id));
-  return key.plaintext;
 }
 
 export async function getSite(ctx: TenantContext, id: string) {

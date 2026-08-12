@@ -3,7 +3,8 @@
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { requireTenantAdmin } from "@/modules/tenancy/context";
-import { createSite, updateSite, rotateApiKey, getSiteBySlug } from "@/modules/sites/sites";
+import { createSite, updateSite, getSiteBySlug } from "@/modules/sites/sites";
+import { issueApiKey, revokeApiKey } from "@/modules/sites/keys";
 import { setSiteTurnstile, clearSiteTurnstile } from "@/modules/sites/settings";
 import { getStage } from "@/modules/crm/pipelines";
 
@@ -105,13 +106,52 @@ export async function createSiteAction(
   return { error: null, field: null, values: {}, apiKey: created.apiKey };
 }
 
-export async function rotateApiKeyAction(_prev: string | null, formData: FormData) {
+// Two-active-key rotation (PLAN.md §5.2). Issuing no longer overwrites: a
+// site can hold two live keys, so the sequence is issue → deploy → revoke
+// with no window where the live site holds a key the CRM rejects.
+export type IssueKeyState = {
+  /** Shown exactly once (§5.1) — never persisted in plaintext. */
+  apiKey: string | null;
+  error: string | null;
+};
+
+const issueKeySchema = z.object({
+  siteId: z.string().min(1),
+  label: z.string().max(100).optional(),
+});
+
+export async function issueApiKeyAction(
+  _prev: IssueKeyState,
+  formData: FormData,
+): Promise<IssueKeyState> {
   const ctx = await requireTenantAdmin();
-  const parsed = z.string().min(1).safeParse(formData.get("siteId"));
-  if (!parsed.success) return null;
-  const key = await rotateApiKey(ctx, parsed.data);
+  const parsed = issueKeySchema.safeParse({
+    siteId: formData.get("siteId"),
+    label: (formData.get("label") ?? "").toString().trim() || undefined,
+  });
+  if (!parsed.success) return { apiKey: null, error: "unknown" };
+
+  const issued = await issueApiKey(ctx, parsed.data.siteId, parsed.data.label);
+  if (!issued.ok) return { apiKey: null, error: issued.error };
+
   revalidatePath("/sites");
-  return key;
+  return { apiKey: issued.plaintext, error: null };
+}
+
+const revokeKeySchema = z.object({
+  siteId: z.string().min(1),
+  keyId: z.string().min(1),
+});
+
+export async function revokeApiKeyAction(formData: FormData) {
+  const ctx = await requireTenantAdmin();
+  const parsed = revokeKeySchema.safeParse({
+    siteId: formData.get("siteId"),
+    keyId: formData.get("keyId"),
+  });
+  if (!parsed.success) return;
+  await revokeApiKey(ctx, parsed.data.siteId, parsed.data.keyId);
+  revalidatePath("/sites");
 }
 
 // Per-site Cloudflare Turnstile (PLAN.md §5.2). useActionState-shaped like

@@ -4,6 +4,7 @@ import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { requireTenantAdmin } from "@/modules/tenancy/context";
 import { createSite, updateSite, rotateApiKey, getSiteBySlug } from "@/modules/sites/sites";
+import { setSiteTurnstile, clearSiteTurnstile } from "@/modules/sites/settings";
 import { getStage } from "@/modules/crm/pipelines";
 
 // A stage already belongs to exactly one pipeline, so the UI only ever asks
@@ -111,6 +112,58 @@ export async function rotateApiKeyAction(_prev: string | null, formData: FormDat
   const key = await rotateApiKey(ctx, parsed.data);
   revalidatePath("/sites");
   return key;
+}
+
+// Per-site Cloudflare Turnstile (PLAN.md §5.2). useActionState-shaped like
+// every other user-fillable form (§10 1R #6) — but the secret is excluded
+// from the echoed values, the same rule connectAccountAction follows for a
+// WhatsApp token (§3.4): `values` is serialized to the browser.
+export type TurnstileFormState = {
+  error: string | null;
+  saved: boolean;
+  values: { turnstileSiteKey?: string };
+};
+
+const turnstileSchema = z.object({
+  siteId: z.string().min(1),
+  siteKey: z.string().min(1).max(200),
+  secret: z.string().min(1).max(300),
+  requireOnIngest: z.boolean(),
+});
+
+export async function saveSiteTurnstileAction(
+  _prev: TurnstileFormState,
+  formData: FormData,
+): Promise<TurnstileFormState> {
+  const ctx = await requireTenantAdmin();
+  const siteKey = (formData.get("turnstileSiteKey") ?? "").toString().trim();
+
+  const parsed = turnstileSchema.safeParse({
+    siteId: formData.get("siteId"),
+    siteKey,
+    secret: (formData.get("turnstileSecret") ?? "").toString().trim(),
+    requireOnIngest: formData.get("requireOnIngest") === "on",
+  });
+
+  if (!parsed.success) {
+    return { error: "turnstileIncomplete", saved: false, values: { turnstileSiteKey: siteKey } };
+  }
+
+  await setSiteTurnstile(ctx, parsed.data.siteId, {
+    siteKey: parsed.data.siteKey,
+    secret: parsed.data.secret,
+    requireOnIngest: parsed.data.requireOnIngest,
+  });
+  revalidatePath("/sites");
+  return { error: null, saved: true, values: {} };
+}
+
+export async function clearSiteTurnstileAction(formData: FormData) {
+  const ctx = await requireTenantAdmin();
+  const parsed = z.string().min(1).safeParse(formData.get("siteId"));
+  if (!parsed.success) return;
+  await clearSiteTurnstile(ctx, parsed.data);
+  revalidatePath("/sites");
 }
 
 export async function toggleSiteActiveAction(formData: FormData) {

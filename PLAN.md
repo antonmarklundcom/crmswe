@@ -34,7 +34,7 @@ deliberately won't.
 | WhatsApp API | **Direct Meta Cloud API** (no BSP). Tenants connect their own numbers via Meta **embedded signup**; manual connect as bootstrap fallback (§6.2). |
 | Tenancy | Multi-tenant, single app: **superadmin** role manages all tenants; per-tenant logins with fully isolated data. |
 | Sites per tenant | **One tenant owns many sites.** The owner's whole lead-gen network is a single tenant with N `sites` rows; leads share one pipeline and carry `site_id` for filtering/attribution. Never one-tenant-per-site (§5.1). |
-| Lead ingest | **Server-to-server only**: the site's own backend POSTs to `/api/v1/leads` with `X-Api-Key`. Never from the browser. Hosted form pages stay available for sites with no backend. |
+| Lead ingest | **Server-to-server only**: the site's own backend POSTs to `/api/v1/leads` with `X-Api-Key`. Never from the browser. Hosted form pages stay available for sites with no backend. *Reopened and extended — not weakened — by §5.2: a second, no-secret lane exists for client sites on Elementor/Wix/Webflow/Zapier. `/api/v1/leads` itself is unchanged: still no CORS, still no browser-side key.* |
 | Traffic analytics | **Not built in this repo.** Self-host Umami as a separate app; the CRM stores lead-level attribution only. PostHog is ruled out — it needs ClickHouse+Redis+Postgres and can't run on Hostinger managed Node. |
 | In-tenant visibility | **Shared pipeline + assignment**: all tenant users see all contacts/deals; deals & conversations assignable to a rep. Roles: tenant `admin`, tenant `agent`. |
 | Automations | **Visual flow builder** (node canvas: triggers, conditions, delays, branches) in Phase 1. |
@@ -328,6 +328,97 @@ client-side code this project ships.
 **Cutover discipline**: point *one* site at VenderCRM and run it in parallel with GHL for
 2–3 weeks before migrating the rest. Existing GHL contacts come over as a one-off CSV
 import (§12).
+
+### 5.2 A second ingest lane for client sites *(deliberate reopening of §5.1's locked transport)*
+
+**What was locked, and why.** §5.1 fixed lead ingest as *server-to-server only*: the
+site's own backend posts to `/api/v1/leads` with a key from its env. That rules out
+CORS on the endpoint, a browser-side key, and the bot floods both invite. The lock was
+right and it stays: **everything in this section is additive, and `/api/v1/leads` is
+byte-for-byte as strict as it was.** No CORS headers were added to it. No public key
+was introduced. A credential in page source is precisely what §5.1 exists to prevent.
+
+**Why it was reopened anyway.** The lock quietly assumed every site has a backend the
+owner controls. That holds for his own network — hand-written HTML/PHP and Node/Next.js
+apps — and those stay on the existing lane unchanged, which is the priority. It does
+*not* hold for **client** sites: Elementor, Wix, Webflow, and the Zapier/Make glue
+between them cannot hold a server-side secret, and telling a client "add a PHP handler
+to your Wix site" is the same as telling them to stay on GHL. §5.1's own fallback —
+hosted form pages at `/f/[tenantSlug]/[formSlug]` — only helps a site willing to replace
+its form; a client who already has an Elementor form with their own styling and their own
+thank-you page will not.
+
+**The shape of the reopening.** Two lanes, one engine:
+
+| | Lane 1 — keyed *(§5.1, unchanged)* | Lane 2 — webhook *(§5.2, new)* |
+|---|---|---|
+| Who | the owner's own sites | client sites on hosted builders |
+| Credential | `X-Api-Key` header, from server env | long random token **in the URL path** |
+| Where it runs | the site's backend | Elementor/Wix/Zapier's servers |
+| Body | the §5.1 contract, validated by zod | **arbitrary JSON**, resolved by a per-site field mapping |
+| Idempotency | caller-supplied `idempotency_key` | derived (site + phone + time bucket) |
+| Rate limit | 60/min | tighter — the token travels in a URL and lands in third-party logs |
+| CORS | none | none |
+
+Both lanes end in the same `ingestLead()` / `recordLeadSubmission()` write. Lane 2 is a
+**translation layer in front of the existing engine, not a second ingest**: per-site
+routing (pipeline, stage, owner, tags) still comes from the site record and is never
+accepted from the caller, exactly as §5.1 requires. The token is still a secret — it is
+simply a *weaker* secret than a header key, which is why it gets its own rate limit, its
+own revocation, and its own hash column rather than sharing the API key's.
+
+Delivered as four merged PRs, recorded below in the order they shipped.
+
+#### 5.2.1 Cloudflare Turnstile, per site *(PR 1 — `claude/ingest-turnstile`)*
+
+§5.1 already listed Turnstile as something "each site must add"; it was never built, so
+spam defense on the public paths was the honeypot alone (§12 Q8 asked the owner to open a
+Cloudflare account for exactly this). Now it exists, and it is **per-site and optional**:
+a site with no Turnstile secret saved behaves *exactly* as it did before this PR — same
+code path, no extra request, nothing to configure. That was the acceptance bar, since
+every existing site is in that state.
+
+- **`lib/turnstile`** verifies a token against Cloudflare's siteverify. Pure: the caller
+  passes the secret and, in tests, the `fetch` implementation, so **the unit suite makes
+  no network call** — including two cases that assert `fetch` was never called at all
+  (missing token, missing secret), which is what keeps a bot flood cheap. Failure is
+  always a reason *string*, never a throw: both callers are public entry points that must
+  answer the visitor instead of 500. A siteverify outage is a **failure, not a silent
+  accept** — the caller decides what an unverifiable token means, and the request is
+  bounded by an `AbortController` so a hung Cloudflare can't hang a form submit.
+- **Storage**: `sites.settings.turnstile = { siteKey, secret, requireOnIngest }`. The
+  site key is public by design (it renders into page source); the **secret is encrypted
+  at rest with AES-256-GCM via `lib/crypto` per §3.4**, the same treatment a WhatsApp
+  token gets, and is never read back into the browser — the admin field is write-only and
+  blank on reload. A secret that stops decrypting (rotated `APP_ENCRYPTION_KEY`) degrades
+  to "no Turnstile" rather than taking a site's lead capture down with it. It lives in the
+  existing `settings` JSON rather than new columns for the reason `TenantSettings` does:
+  configuration, not data, and no migration.
+- **Hosted form pages** render the widget next to the existing honeypot and verify before
+  any contact is written. A hosted form has no site of its own, so `FormSettings`
+  gained `turnstileSiteId` — *which site's credentials this form borrows*. Deliberately
+  **not** the submission's `site_id`: attribution still says the lead came through a
+  hosted form, not through that site's backend. This link is credentials, not provenance.
+- **Ingest path**: `turnstile_token` is an optional body field — **available, not
+  mandatory**. Three states, in order: no secret configured → skipped entirely; configured
+  and a token present → verified, and a bad one is a 403 rather than a quietly accepted
+  lead; configured with no token → accepted unless the site ticked `requireOnIngest`. The
+  keyed lane already proves who is calling; the challenge is depth on top of that, not the
+  auth itself. Enforcement is a site setting, never a caller-supplied flag.
+- **UI**: a collapsed panel per site on `/sites`, plus a per-form site picker on `/forms`
+  that only offers sites which actually have credentials saved. Spanish copy in
+  `messages/es.json`; the save action is `useActionState`-shaped per §10 1R #6 with the
+  secret excluded from the echoed values (§3.4 — `values` is serialized to the browser),
+  and no HTML `required` on any server-validated field.
+
+**Verified**: `lib/turnstile/index.test.ts` (11 cases: accept, exact siteverify field
+encoding with and without `remoteip`, both no-network short circuits, Cloudflare error
+codes surfaced, code-less rejection, non-2xx, network error, timeout via a fetch that
+never resolves, and a malformed JSON body that must not read as success);
+`modules/sites/settings.test.ts` (the additive default on an unconfigured and a
+null-settings site, the AES round trip with an assertion that the plaintext secret does
+not appear in the stored JSON, and the undecryptable-secret degradation). Lint, typecheck
+and the full suite pass in CI, which runs the DB-backed suites against MySQL.
 
 ---
 

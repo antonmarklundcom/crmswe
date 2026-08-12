@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import Script from "next/script";
 import { getPublicForm } from "@/modules/forms/submissions";
 import type { FormField } from "@/modules/forms/forms";
 import { submitFormAction } from "./actions";
@@ -12,7 +13,7 @@ export default async function PublicFormPage({
   const resolved = await getPublicForm(tenantSlug, formSlug);
   if (!resolved) notFound();
 
-  const { form } = resolved;
+  const { form, turnstileSiteKey } = resolved;
   const fields = form.fields as FormField[];
   const action = submitFormAction.bind(null, tenantSlug, formSlug);
 
@@ -52,6 +53,21 @@ export default async function PublicFormPage({
             )}
           </label>
         ))}
+        {/* Turnstile, only when the form's linked site has it configured
+            (PLAN.md §5.2). The site key is public by design — the secret
+            never leaves the server. A form without it renders exactly as
+            it did before, honeypot alone. */}
+        {turnstileSiteKey && (
+          <>
+            <div className="cf-turnstile" data-sitekey={turnstileSiteKey} />
+            <Script
+              src="https://challenges.cloudflare.com/turnstile/v0/api.js"
+              async
+              defer
+              strategy="afterInteractive"
+            />
+          </>
+        )}
         <button type="submit" className="rounded-md bg-primary px-4 py-2 text-primary-foreground">
           Enviar
         </button>

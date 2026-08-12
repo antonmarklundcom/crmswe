@@ -10,13 +10,17 @@ import { createFormAction, type FormCreateField, type FormFormState } from "./ac
 const initialState: FormFormState = { error: null, field: null, values: {} };
 
 type Stage = { id: string; name: string };
+type TurnstileSite = { id: string; name: string };
 
 export function FormCreateForm({
   pipelineId,
   stages,
+  turnstileSites,
 }: {
   pipelineId: string | null;
   stages: Stage[];
+  /** Sites that have Turnstile credentials saved (PLAN.md §5.2). */
+  turnstileSites: TurnstileSite[];
 }) {
   const t = useTranslations("app.forms");
   const [state, formAction, pending] = useActionState(createFormAction, initialState);
@@ -69,6 +73,23 @@ export function FormCreateForm({
             </select>
           </label>
         </>
+      )}
+      {turnstileSites.length > 0 && (
+        <label className="flex flex-col gap-1 text-sm">
+          {t("turnstileSite")}
+          <select
+            name="turnstileSiteId"
+            defaultValue={state.values.turnstileSiteId ?? ""}
+            className="rounded-md border px-3 py-2"
+          >
+            <option value="">{t("turnstileNone")}</option>
+            {turnstileSites.map((site) => (
+              <option key={site.id} value={site.id}>
+                {site.name}
+              </option>
+            ))}
+          </select>
+        </label>
       )}
       {state.error && state.field === null && (
         <p role="alert" className="text-sm text-destructive">

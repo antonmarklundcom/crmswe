@@ -3,8 +3,8 @@
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { requireTenantContext } from "@/modules/tenancy/context";
-import { createForm } from "@/modules/forms/forms";
-import type { FormField } from "@/modules/forms/forms";
+import { createForm, getForm, updateForm } from "@/modules/forms/forms";
+import type { FormField, FormSettings } from "@/modules/forms/forms";
 
 // Standard field set (PLAN.md §4 "forms" allows text/phone/email/select/
 // textarea; the tenant-side field-order/type editor is left for a later
@@ -26,6 +26,7 @@ const createFormSchema = z.object({
     .regex(/^[a-z0-9-]+$/),
   targetPipelineId: z.string().optional().or(z.literal("")),
   targetStageId: z.string().optional().or(z.literal("")),
+  turnstileSiteId: z.string().optional().or(z.literal("")),
 });
 
 // useActionState-shaped (PLAN.md §10 1R #6): a missing name or a slug with
@@ -61,6 +62,7 @@ export async function createFormAction(
     slug: formData.get("slug"),
     targetPipelineId: formData.get("targetPipelineId") || undefined,
     targetStageId: formData.get("targetStageId") || undefined,
+    turnstileSiteId: formData.get("turnstileSiteId") || undefined,
   });
 
   if (!parsed.success) {
@@ -80,6 +82,9 @@ export async function createFormAction(
       settings: {
         targetPipelineId: parsed.data.targetPipelineId || undefined,
         targetStageId: parsed.data.targetStageId || undefined,
+        // Which site's Turnstile credentials this hosted form borrows
+        // (PLAN.md §5.2). Empty = honeypot only, as before.
+        turnstileSiteId: parsed.data.turnstileSiteId || undefined,
       },
     });
   } catch {
@@ -88,4 +93,31 @@ export async function createFormAction(
 
   revalidatePath("/forms");
   return { error: null, field: null, values: {} };
+}
+
+// Points an existing form at a site's Turnstile credentials — or unlinks it
+// (PLAN.md §5.2). Reachable only from a hidden form id plus a select, so it
+// follows the safeParse + silent-return shape (§10 1R #6) rather than
+// carrying form state: there is no user-typed field for an error to sit under.
+const formTurnstileSchema = z.object({
+  formId: z.string().min(1),
+  turnstileSiteId: z.string().optional().or(z.literal("")),
+});
+
+export async function updateFormTurnstileAction(formData: FormData) {
+  const ctx = await requireTenantContext();
+  const parsed = formTurnstileSchema.safeParse({
+    formId: formData.get("formId"),
+    turnstileSiteId: formData.get("turnstileSiteId") || undefined,
+  });
+  if (!parsed.success) return;
+
+  const form = await getForm(ctx, parsed.data.formId);
+  if (!form) return;
+
+  const settings = (form.settings ?? {}) as FormSettings;
+  await updateForm(ctx, form.id, {
+    settings: { ...settings, turnstileSiteId: parsed.data.turnstileSiteId || undefined },
+  });
+  revalidatePath("/forms");
 }

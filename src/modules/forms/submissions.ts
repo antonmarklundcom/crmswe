@@ -6,6 +6,9 @@ import { tenantDb } from "@/modules/tenancy/db";
 import { normalizePhone } from "@/modules/crm/contacts";
 import { recordLeadSubmission } from "@/modules/leads/submissions";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { verifyTurnstileToken } from "@/lib/turnstile";
+import { getSite } from "@/modules/sites/sites";
+import { siteTurnstileSecret, siteTurnstileSiteKey } from "@/modules/sites/settings";
 import { DEFAULT_COUNTRY } from "@/lib/phone";
 import type { TenantSettings } from "@/modules/tenancy/settings";
 import type { FormSettings } from "./forms";
@@ -30,13 +33,26 @@ export async function getPublicForm(tenantSlug: string, formSlug: string) {
   const [form] = await tenantDb(ctx).select(forms, eq(forms.slug, formSlug));
   if (!form || !form.isActive) return null;
 
-  return { tenant, form };
+  // Turnstile config, if this form is pointed at a site that has it (§5.2).
+  // Only the public site key is returned here — the page renders it; the
+  // secret is read separately, inside submitForm, and never leaves the
+  // server.
+  const turnstileSiteId = (form.settings as FormSettings).turnstileSiteId;
+  const turnstileSite = turnstileSiteId ? await getSite(ctx, turnstileSiteId) : null;
+
+  return {
+    tenant,
+    form,
+    turnstileSiteKey: turnstileSite ? siteTurnstileSiteKey(turnstileSite) : null,
+  };
 }
 
 export type SubmitFormInput = {
   data: Record<string, string>;
   ipAddress?: string;
   userAgent?: string;
+  /** Widget token, when the form's linked site has Turnstile on (§5.2). */
+  turnstileToken?: string;
 };
 
 // Per-IP fixed-window limit, form-scoped so one spammy form can't exhaust a
@@ -61,6 +77,24 @@ export async function submitForm(
 
   const ctx = await buildSystemTenantContext(tenant.id);
   if (!ctx) throw new Error("Formulario no encontrado");
+
+  // Turnstile (§5.2) sits next to the honeypot: a form whose linked site has
+  // no secret configured is unchanged, and one that does must pass before
+  // any contact is written. The message is Spanish because this throw is
+  // rendered to the visitor, the same way the rate-limit one above is.
+  const turnstileSiteId = (form.settings as FormSettings).turnstileSiteId;
+  const turnstileSite = turnstileSiteId ? await getSite(ctx, turnstileSiteId) : null;
+  const turnstileSecret = turnstileSite ? siteTurnstileSecret(turnstileSite) : null;
+  if (turnstileSecret) {
+    const verdict = await verifyTurnstileToken({
+      secret: turnstileSecret,
+      token: input.turnstileToken,
+      remoteIp: input.ipAddress,
+    });
+    if (!verdict.ok) {
+      throw new Error("No pudimos verificar que no seas un robot. Probá de nuevo.");
+    }
+  }
 
   const fields = form.fields as Array<{ key: string; type: string }>;
   const valueOfType = (type: string) => {

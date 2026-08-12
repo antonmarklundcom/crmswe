@@ -5,16 +5,22 @@ import messages from "../../messages/es.json";
 // Spanish copy consistency"). These are the three ways the file has actually
 // broken so far, not hypothetical ones.
 
-type MessageTree = { [key: string]: string | MessageTree };
+// Arrays are part of the shape since §5.2.5: the webhook connection guide
+// stores each platform's steps as an ordered list, read with t.raw(). They
+// flatten by index so every string in them is still covered by the guards
+// below — an empty step or a stray "§" in one must fail here too.
+type MessageNode = string | MessageNode[] | { [key: string]: MessageNode };
 
-function flatten(tree: MessageTree, prefix = ""): Array<[string, string]> {
-  return Object.entries(tree).flatMap(([key, value]) => {
-    const path = prefix ? `${prefix}.${key}` : key;
-    return typeof value === "string" ? [[path, value] as [string, string]] : flatten(value, path);
-  });
+function flatten(tree: MessageNode, prefix = ""): Array<[string, string]> {
+  if (typeof tree === "string") return prefix ? [[prefix, tree]] : [];
+  const entries: Array<[string, MessageNode]> = Array.isArray(tree)
+    ? tree.map((value, index) => [`${prefix}[${index}]`, value])
+    : Object.entries(tree).map(([key, value]) => [prefix ? `${prefix}.${key}` : key, value]);
+
+  return entries.flatMap(([path, value]) => flatten(value, path));
 }
 
-const entries = flatten(messages as MessageTree);
+const entries = flatten(messages as MessageNode);
 
 describe("messages/es.json", () => {
   it("has messages", () => {

@@ -602,6 +602,58 @@
           "phone-missing": "llegó sin teléfono o el campo cambió",
           "unknown": "error desconocido"
         }
+      },
+      "hookGuide": {
+        "title": "Conectar el sitio de un cliente (sin tocar su servidor)",
+        "intro": "Para Elementor, Wix, Webflow, Zapier o Make. No hace falta que el cliente instale nada ni que te dé acceso a su hosting: emitís la URL del webhook en el sitio de arriba, la pegan en su formulario, y listo.",
+        "captureTitle": "Primero un envío de prueba",
+        "captureBody": "Apenas la URL esté pegada, pedí un envío de prueba desde el formulario del cliente. Guardamos ese envío tal cual llegó y después elegís de una lista cuál campo es el teléfono, cuál el nombre y cuál el mensaje. Hasta que hagas eso, los envíos se guardan como prueba y no entran al pipeline.",
+        "urlNote": "La URL del webhook es secreta: cualquiera que la tenga puede cargar leads en ese sitio. Mandala por un canal privado y revocala desde acá si se filtra.",
+        "platforms": [
+          {
+            "id": "elementor",
+            "label": "Elementor",
+            "steps": [
+              "Abrí la página con el formulario y entrá a editarlo con Elementor.",
+              "Seleccioná el widget del formulario y andá a «Acciones después de enviar» (Actions After Submit).",
+              "Agregá la acción «Webhook».",
+              "Pegá la URL del webhook en el campo «Webhook URL» y guardá la página.",
+              "Mandá un envío de prueba desde la página publicada, no desde el editor."
+            ]
+          },
+          {
+            "id": "wix",
+            "label": "Wix",
+            "steps": [
+              "En el panel de Wix entrá a «Automatizaciones» y creá una nueva automatización.",
+              "Como disparador elegí «Se envía un formulario» y seleccioná el formulario del sitio.",
+              "Como acción elegí «Enviar solicitud HTTP» (o «Webhook»).",
+              "Método POST, pegá la URL del webhook y dejá el cuerpo con los datos del formulario.",
+              "Activá la automatización y mandá un envío de prueba desde el sitio publicado."
+            ]
+          },
+          {
+            "id": "zapier",
+            "label": "Zapier / Make",
+            "steps": [
+              "Creá un Zap (o escenario en Make) con el formulario del cliente como disparador.",
+              "Agregá el paso «Webhooks by Zapier» → «POST» (en Make: módulo HTTP → «Make a request»).",
+              "Pegá la URL del webhook y elegí JSON como formato del cuerpo.",
+              "Mapeá los campos del formulario al cuerpo tal como vienen; no hace falta renombrarlos, después elegís acá cuál es cuál.",
+              "Activá el Zap y corré una prueba."
+            ]
+          },
+          {
+            "id": "otro",
+            "label": "Otro / manual",
+            "steps": [
+              "Cualquier herramienta que pueda mandar un POST sirve: Webflow Logic, Formidable, Contact Form 7 con un plugin de webhooks, o el backend del sitio.",
+              "Mandá un POST a la URL del webhook con el contenido del formulario en JSON (también aceptamos formularios enviados como form-data).",
+              "No hace falta ningún encabezado especial ni clave aparte: la URL es la credencial.",
+              "Mandá un envío de prueba y volvé acá para elegir los campos."
+            ]
+          }
+        ]
       }
     },
     "products": {

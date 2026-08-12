@@ -148,6 +148,25 @@ from expiry. No-ops silently (logs instead) if `RESEND_API_KEY` /
 `RESEND_FROM_EMAIL` aren't set — safe to add this cron entry before email is
 configured.
 
+### Ingest alerts (§5.2.5)
+
+A third daily cron entry — the one that tells the owner a client site stopped
+delivering leads before a customer does:
+
+```
+GET https://<app-domain>/api/cron/ingest-alerts
+Header: x-cron-secret: <CRON_SECRET>
+```
+
+Emails every admin of a tenant when one of its sites' **last** ingest attempt
+failed, or when a site that used to produce leads has been silent for 3+ days.
+Notifies on the transition, not daily until it's fixed, and re-arms itself once
+the site recovers. Daily is the intended cadence: the failure being caught is
+"this has been broken since Tuesday", and a broken client form isn't fixed any
+faster by hearing about it hourly. Same optional-email behavior as the
+subscription warnings — safe to add before `RESEND_API_KEY` is configured, and
+the per-site status column on `/sites` is the fallback surface either way.
+
 ### AI auto-reply (§10 1O)
 
 Off by default and safe to deploy unconfigured: with `AI_DRIVER=none` the

@@ -175,6 +175,15 @@ export const siteIngestHealth = mysqlTable(
     lastErrorStatus: int("last_error_status"),
     lastErrorReason: varchar("last_error_reason", { length: 200 }),
     lastErrorLane: varchar("last_error_lane", { length: 10 }),
+    /**
+     * What the owner was last *told* about this site, so a daily alert run
+     * notifies on the transition rather than every day forever: "failing",
+     * "stale", or null once the site is healthy again (which re-arms it).
+     * Separate from lastOutcome — that is what happened, this is what was
+     * sent.
+     */
+    alertedFor: varchar("alerted_for", { length: 10 }),
+    alertedAt: datetime("alerted_at"),
     successCount: int("success_count").notNull().default(0),
     errorCount: int("error_count").notNull().default(0),
     createdAt: datetime("created_at")

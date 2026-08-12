@@ -465,6 +465,70 @@ made impossible); a third key refused with `tooManyKeys` and the slot freeing on
 and cross-tenant isolation, where tenant B can neither list nor revoke tenant A's keys
 (§3.3 layer 3). Lint, typecheck, build and the full suite green in CI against MySQL.
 
+#### 5.2.3 Inbound webhook receiver with per-site field mapping *(PR 3 — `claude/ingest-webhook-receiver`)*
+
+The load-bearing piece: `POST /api/v1/hooks/[token]`, the lane a client site on
+Elementor, Wix, Webflow or Zapier/Make can actually use. It is a **translation layer in
+front of the existing engine, not a second ingest** — it resolves a token to a site, maps
+an arbitrary payload onto the CRM's fields, and calls the same `ingestLeadForSite()` the
+keyed lane calls. Per-site routing (pipeline, stage, owner, tags) is read from the site
+record there, so §5.1's "a leaked credential can't reshape someone's pipeline" holds on
+both lanes with one implementation, not two.
+
+- **Credential**: a long random per-site token in the URL path, SHA-256 hashed at rest and
+  shown in full exactly once (§5.1), **distinct from the API keys and revoked
+  independently** — nulling `sites.hook_token_hash` kills the webhook without touching the
+  keys the owner's own sites run on. Resolution is the same pre-TenantContext platform
+  lookup as the API key and the WhatsApp webhook (§3.3's documented exemption). An unknown
+  token answers **404, not 401**: from a path segment that is all the caller can tell
+  anyway. Still no CORS — the caller is the builder's server, never a visitor's browser.
+- **Arbitrary JSON, resolved by a per-site mapping.** `lib/object-path` walks dot/bracket
+  paths — `fields.telefono.value`, `data.submissions[2].fieldValue`, `a["x.y"]` — written
+  by hand rather than pulled in as a dependency: the grammar is keys, dots and brackets,
+  the failure mode we need is `undefined` instead of a throw (a mistyped mapping must
+  produce "phone not found", not a 500), and a lodash-style `get` brings prototype-walk
+  semantics we would then have to defend against. It refuses `__proto__`/`constructor`
+  outright, since the *payload* is attacker-controlled.
+- **Nothing is lost**: the entire payload is stored on the submission's `fields`, so a
+  question the mapping doesn't name yet is still on the timeline.
+- **Idempotency is derived**, because callers on this lane cannot send one — Elementor has
+  no such field: `sha256(siteId + digits-only phone + 10-minute bucket)`. Stated plainly,
+  the trade-off is that a genuinely new enquiry from the same number inside ten minutes
+  collapses into the first lead, while a double-submit, a Zapier retry or a Make re-run
+  does too. The second case is frequent and costs a duplicate contact *and* a duplicate
+  deal in the kanban; the first is rare and costs one extra row on a timeline that already
+  has the contact. Digits-only means `0981 123-456` and `0981123456` dedupe against each
+  other; the site id in the hash means one client's submissions can never dedupe against
+  another's.
+- **Tighter rate limit**: 20/min versus the keyed lane's 60, in its own bucket so a noisy
+  webhook can't spend the site's own backend's budget. The token travels in a URL and
+  therefore ends up in third-party request logs, browser history and support tickets in a
+  way a header key never does.
+- **Capture mode is part of the feature, not a nicety.** While a site has no mapping, the
+  receiver stores the raw payload (newest 5 kept) and answers **202** — not an error: the
+  client's webhook *is* configured correctly, and an error would have them "fixing" a
+  working setup. The admin then picks each CRM field from a list built out of their own
+  test submission, showing `fields.nombre.value · Ana Giménez` rather than asking anyone
+  to type a JSON path from memory. A free-text path box remains for a field the test
+  submission left blank. Captured payloads are not leads: nothing is written to the CRM
+  until a mapping exists.
+- **Content types**: JSON, plus form-encoded/multipart flattened to a flat object, because
+  Elementor's Webhook action and several Make scenarios post form data. The mapping then
+  sees one shape regardless of how the builder sends it.
+
+**Verified**: `lib/object-path/index.test.ts` (11 pure cases — parsing, array indexes,
+quoted keys, every missing-value shape returning `undefined` rather than throwing,
+prototype-walk refusal, falsy-vs-missing leaves, and a round trip proving every path the
+UI offers resolves back to the value it previewed, plus bounds on deep/wide payloads).
+`modules/sites/hooks.test.ts` runs the whole lane against MySQL using the shapes these
+builders really send — **Elementor Pro** (`fields.telefono.value`, spaces and dashes
+normalized to `+595981123456`), **Wix Automations** (`data.submissions[1].fieldValue`),
+**Zapier** (nested contact object + answers array) and a **generic flat form builder** —
+and covers capture mode writing no lead, the capture cap, 404 on an unknown token, 422 on
+a mapping whose phone path finds nothing, the derived-key duplicate collapse (including
+same-phone-different-format and next-bucket), an inactive site, revocation leaving the
+API keys working, the tighter rate limit, and cross-tenant isolation (§3.3 layer 3).
+
 ---
 
 ## 6. WhatsApp integration (Opus-owned pipeline)

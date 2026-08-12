@@ -28,6 +28,16 @@ export const sites = mysqlTable(
     // rotation (§5.2); the migration backfills the existing key into that
     // table before dropping these columns, so no site loses its key.
     isActive: boolean("is_active").notNull().default(true),
+    // Inbound webhook lane (PLAN.md §5.2). A long random per-site token that
+    // travels in the URL path of POST /api/v1/hooks/[token], for client
+    // sites on Elementor/Wix/Webflow/Zapier that cannot hold a server-side
+    // secret. Hashed at rest exactly like an API key, but deliberately a
+    // *separate* credential: it is weaker (URLs leak into third-party logs),
+    // so it carries its own rate limit and is revoked on its own — setting
+    // this to null kills the webhook without touching the site's API keys.
+    hookTokenHash: char("hook_token_hash", { length: 64 }),
+    hookTokenPrefix: varchar("hook_token_prefix", { length: 16 }),
+    hookTokenLastUsedAt: datetime("hook_token_last_used_at"),
     // Per-site routing defaults, configured in the CRM and never accepted
     // from the caller — a leaked key can't reshape someone's pipeline.
     // Different sites are different businesses (dentista vs materiales), so
@@ -51,6 +61,9 @@ export const sites = mysqlTable(
   (table) => [
     index("sites_tenant_id_idx").on(table.tenantId),
     uniqueIndex("sites_tenant_slug_idx").on(table.tenantId, table.slug),
+    // MySQL allows repeated NULLs in a unique index, so every site without a
+    // webhook token coexists happily here.
+    uniqueIndex("sites_hook_token_hash_idx").on(table.hookTokenHash),
   ],
 );
 
@@ -94,6 +107,36 @@ export const siteApiKeys = mysqlTable(
     // Ingest routing is a single indexed equality match on the hash, exactly
     // as it was when the hash lived on `sites`.
     uniqueIndex("site_api_keys_hash_idx").on(table.apiKeyHash),
+  ],
+);
+
+// Capture mode (PLAN.md §5.2): the last N raw payloads a site's webhook
+// received while it had no field mapping yet. This is what makes the feature
+// usable by a non-developer — send one test submission from Elementor, then
+// build the mapping against the shape that actually arrived instead of
+// guessing at documentation.
+//
+// Deliberately bounded and deliberately temporary: capture only runs while a
+// site has no mapping, the oldest rows are trimmed past the cap, and nothing
+// here is a lead — a captured payload has not been written to the CRM.
+export const siteHookCaptures = mysqlTable(
+  "site_hook_captures",
+  {
+    id: char("id", { length: 26 }).primaryKey(),
+    tenantId: char("tenant_id", { length: 26 }).notNull(),
+    siteId: char("site_id", { length: 26 }).notNull(),
+    payload: json("payload").notNull().default({}),
+    contentType: varchar("content_type", { length: 100 }),
+    createdAt: datetime("created_at")
+      .notNull()
+      .default(sql`CURRENT_TIMESTAMP`),
+    updatedAt: datetime("updated_at")
+      .notNull()
+      .default(sql`CURRENT_TIMESTAMP`),
+  },
+  (table) => [
+    index("site_hook_captures_tenant_id_idx").on(table.tenantId),
+    index("site_hook_captures_site_id_idx").on(table.siteId),
   ],
 );
 

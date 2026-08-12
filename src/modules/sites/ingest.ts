@@ -7,6 +7,7 @@ import { DEFAULT_COUNTRY } from "@/lib/phone";
 import { recordLeadSubmission, type RecordLeadResult } from "@/modules/leads/submissions";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { verifyTurnstileToken } from "@/lib/turnstile";
+import type { sites } from "@/db/schema";
 import { resolveSiteByApiKey } from "./keys";
 import { siteSettings, siteTurnstileSecret } from "./settings";
 
@@ -46,14 +47,30 @@ export type IngestOutcome =
   | { ok: true; result: RecordLeadResult }
   | { ok: false; status: 401 | 403 | 422 | 429; error: string };
 
+/**
+ * Which lane a submission came in on (§5.2). The write is identical; the
+ * limits are not. The webhook lane's credential travels in a URL path, so it
+ * ends up in third-party request logs, browser history and support tickets
+ * in a way a header key never does — a leaked webhook token deserves to hit
+ * a wall sooner.
+ */
+export type IngestLane = "key" | "hook";
+
 // Per-site fixed-window limiter (see lib/rate-limit for the shared
 // implementation and its documented single-process limitation).
-const RATE_LIMIT = 60;
-const RATE_WINDOW_MS = 60_000;
+const RATE_LIMITS: Record<IngestLane, { limit: number; windowMs: number }> = {
+  key: { limit: 60, windowMs: 60_000 },
+  hook: { limit: 20, windowMs: 60_000 },
+};
 
-function rateLimited(siteId: string): boolean {
-  return checkRateLimit(`leads:${siteId}`, RATE_LIMIT, RATE_WINDOW_MS).limited;
+function rateLimited(lane: IngestLane, siteId: string): boolean {
+  const { limit, windowMs } = RATE_LIMITS[lane];
+  // Separate bucket per lane: a noisy webhook must not spend the site's own
+  // backend's budget.
+  return checkRateLimit(`leads:${lane}:${siteId}`, limit, windowMs).limited;
 }
+
+export type SiteRow = typeof sites.$inferSelect;
 
 export type IngestRequestMeta = {
   ipAddress?: string;
@@ -69,9 +86,27 @@ export async function ingestLead(
 
   const site = await resolveSiteByApiKey(apiKey);
   if (!site) return { ok: false, status: 401, error: "Invalid API key" };
+
+  return ingestLeadForSite(site, rawBody, meta, "key");
+}
+
+/**
+ * The engine both lanes end in (§5.2). `ingestLead` above resolves an
+ * `X-Api-Key` and calls this; the webhook receiver resolves its own token,
+ * translates an arbitrary payload into this body shape, and calls this.
+ * There is exactly one implementation of "an inbound lead becomes CRM data",
+ * and per-site routing is read from the site record here — never from the
+ * caller, on either lane.
+ */
+export async function ingestLeadForSite(
+  site: SiteRow,
+  rawBody: unknown,
+  meta: IngestRequestMeta = {},
+  lane: IngestLane = "key",
+): Promise<IngestOutcome> {
   if (!site.isActive) return { ok: false, status: 403, error: "Site is inactive" };
 
-  if (rateLimited(site.id)) {
+  if (rateLimited(lane, site.id)) {
     return { ok: false, status: 429, error: "Rate limit exceeded" };
   }
 

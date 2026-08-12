@@ -1,7 +1,7 @@
 {
   "version": "5",
   "dialect": "mysql",
-  "id": "96e2396f-51d6-4579-b895-b904a73263a3",
+  "id": "1f92b34f-14bb-4130-8c1b-7ede006e122c",
   "prevId": "2cae2278-5805-4bc5-a037-96d1a7d66c9a",
   "tables": {
     "audit_log": {
@@ -2462,6 +2462,13 @@
           "type": "char(26)",
           "primaryKey": false,
           "notNull": true,
+          "autoincrement": false
+        },
+        "last_outcome": {
+          "name": "last_outcome",
+          "type": "varchar(10)",
+          "primaryKey": false,
+          "notNull": false,
           "autoincrement": false
         },
         "last_success_at": {

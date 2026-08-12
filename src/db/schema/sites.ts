@@ -159,6 +159,15 @@ export const siteIngestHealth = mysqlTable(
     id: char("id", { length: 26 }).primaryKey(),
     tenantId: char("tenant_id", { length: 26 }).notNull(),
     siteId: char("site_id", { length: 26 }).notNull(),
+    /**
+     * Whether the LAST attempt succeeded: "ok" or "error". An explicit
+     * column rather than comparing the two timestamps below, because
+     * `datetime` has second precision — a failure in the same second as the
+     * preceding success compares equal, and the site reads as healthy while
+     * it is broken. (Caught by CI, not by hand: the two timestamps really do
+     * land in the same second on a fast test run.)
+     */
+    lastOutcome: varchar("last_outcome", { length: 10 }),
     lastSuccessAt: datetime("last_success_at"),
     /** Which lane the last success arrived on: "key" or "hook". */
     lastSuccessLane: varchar("last_success_lane", { length: 10 }),

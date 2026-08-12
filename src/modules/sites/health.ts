@@ -89,7 +89,11 @@ async function upsertHealth(
 }
 
 export function recordIngestSuccess(site: SiteRow, lane: IngestLane): Promise<void> {
-  return upsertHealth(site, { lastSuccessAt: new Date(), lastSuccessLane: lane }, "success");
+  return upsertHealth(
+    site,
+    { lastOutcome: "ok", lastSuccessAt: new Date(), lastSuccessLane: lane },
+    "success",
+  );
 }
 
 export function recordIngestFailure(
@@ -101,6 +105,7 @@ export function recordIngestFailure(
   return upsertHealth(
     site,
     {
+      lastOutcome: "error",
       lastErrorAt: new Date(),
       lastErrorStatus: status,
       lastErrorReason: reason,
@@ -130,10 +135,13 @@ export type SiteHealthStatus = "ok" | "failing" | "idle";
  * bot hitting a 422 once last month must not paint a working site red, and a
  * site that recovered on its own should go back to green without anyone
  * clearing anything.
+ *
+ * Read from `last_outcome` rather than by comparing the two timestamps: they
+ * are second-precision `datetime`s, so a failure landing in the same second
+ * as the preceding success compares equal and the site would read healthy
+ * while broken. The stored outcome has no such ambiguity.
  */
 export function siteHealthStatus(health: SiteHealthRow | null | undefined): SiteHealthStatus {
-  if (!health) return "idle";
-  if (!health.lastErrorAt) return health.lastSuccessAt ? "ok" : "idle";
-  if (!health.lastSuccessAt) return "failing";
-  return health.lastErrorAt > health.lastSuccessAt ? "failing" : "ok";
+  if (!health?.lastOutcome) return "idle";
+  return health.lastOutcome === "error" ? "failing" : "ok";
 }

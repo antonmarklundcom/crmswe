@@ -11,6 +11,7 @@ function health(overrides: Partial<SiteHealthRow>): SiteHealthRow {
     id: "h1",
     tenantId: "t1",
     siteId: "s1",
+    lastOutcome: null,
     lastSuccessAt: null,
     lastSuccessLane: null,
     lastErrorAt: null,
@@ -59,14 +60,36 @@ describe("siteHealthStatus", () => {
   });
 
   it("is ok when the last attempt succeeded", () => {
-    expect(siteHealthStatus(health({ lastSuccessAt: late }))).toBe("ok");
+    expect(siteHealthStatus(health({ lastOutcome: "ok", lastSuccessAt: late }))).toBe("ok");
     // Recovered on its own: an old error must not keep a working site red,
     // and nobody has to clear anything.
-    expect(siteHealthStatus(health({ lastErrorAt: early, lastSuccessAt: late }))).toBe("ok");
+    expect(
+      siteHealthStatus(health({ lastOutcome: "ok", lastErrorAt: early, lastSuccessAt: late })),
+    ).toBe("ok");
   });
 
   it("is failing when the last attempt failed", () => {
-    expect(siteHealthStatus(health({ lastErrorAt: late }))).toBe("failing");
-    expect(siteHealthStatus(health({ lastSuccessAt: early, lastErrorAt: late }))).toBe("failing");
+    expect(siteHealthStatus(health({ lastOutcome: "error", lastErrorAt: late }))).toBe("failing");
+    expect(
+      siteHealthStatus(health({ lastOutcome: "error", lastSuccessAt: early, lastErrorAt: late })),
+    ).toBe("failing");
+  });
+
+  it("does not decide by comparing the two timestamps", () => {
+    // The bug this column exists to prevent: `datetime` is second-precision,
+    // so a failure recorded in the same second as the previous success has
+    // lastErrorAt == lastSuccessAt. Ordering can't tell them apart; the
+    // stored outcome can.
+    const sameSecond = new Date("2026-08-01T12:00:00Z");
+    expect(
+      siteHealthStatus(
+        health({ lastOutcome: "error", lastSuccessAt: sameSecond, lastErrorAt: sameSecond }),
+      ),
+    ).toBe("failing");
+    expect(
+      siteHealthStatus(
+        health({ lastOutcome: "ok", lastSuccessAt: sameSecond, lastErrorAt: sameSecond }),
+      ),
+    ).toBe("ok");
   });
 });

@@ -2,6 +2,7 @@ CREATE TABLE `site_ingest_health` (
 	`id` char(26) NOT NULL,
 	`tenant_id` char(26) NOT NULL,
 	`site_id` char(26) NOT NULL,
+	`last_outcome` varchar(10),
 	`last_success_at` datetime,
 	`last_success_lane` varchar(10),
 	`last_error_at` datetime,

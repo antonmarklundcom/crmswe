@@ -553,14 +553,20 @@ form field at any time and nothing in the CRM notices.
   swallowed on failure**: bookkeeping must never be able to fail an ingest.
 - **The status is "did the last attempt work"**, not "have there ever been errors": a bot
   that tripped a 422 last month must not paint a working site red, and a site that
-  recovers goes back to green with nobody clearing anything.
+  recovers goes back to green with nobody clearing anything. That judgement reads an
+  explicit `last_outcome` column — **the first implementation compared `last_error_at`
+  against `last_success_at`, and CI caught it**: those are second-precision `datetime`s, so
+  a failure landing in the same second as the preceding success compares *equal* and the
+  site rendered green while broken. Exactly the silence this section exists to end, so the
+  ambiguity was removed rather than papered over with fractional seconds.
 - Surfaced on `/sites` as a per-site line — green with the last lead's timestamp, red with
   the status, the translated reason and when it happened, grey for a site that has never
   received anything.
 
 **Verified**: `modules/sites/health.test.ts` pins the two pure decisions — the failure→code
 mapping (including that a message containing submitted data never survives into the stored
-reason) and the last-attempt-wins status rule, including recovery. The DB-backed suites add
+reason) and the last-attempt-wins status rule, including recovery and a regression case for
+the same-second collision above. The DB-backed suites add
 the end-to-end shape on both lanes: on the keyed lane a success then a 422, with counts and
 `lastSuccessLane` and an assertion that the site's API key does not appear anywhere in the
 health row; on the webhook lane a success, then a client renaming the field (`phone-missing`,

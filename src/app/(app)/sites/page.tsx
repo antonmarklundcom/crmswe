@@ -3,6 +3,7 @@ import { getTranslations } from "next-intl/server";
 import { requireTenantContext } from "@/modules/tenancy/context";
 import { getTenant } from "@/modules/tenancy/tenants";
 import { listSites } from "@/modules/sites/sites";
+import { siteSettings, siteTurnstileSiteKey } from "@/modules/sites/settings";
 import { listPipelines, listStagesForPipeline } from "@/modules/crm/pipelines";
 import { listAccountsForTenant } from "@/modules/whatsapp/accounts";
 import { getLeadStats } from "@/modules/leads/stats";
@@ -12,6 +13,7 @@ import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
 import { SiteGuide, type GuideLabels } from "./SiteGuide";
 import { NewSiteForm, RotateKeyButton, type KeyLabels } from "./SiteKeyForms";
+import { SiteTurnstileForm } from "./SiteTurnstileForm";
 import { toggleSiteActiveAction, updateSiteRoutingAction } from "./actions";
 
 export default async function SitesPage() {
@@ -163,6 +165,13 @@ export default async function SitesPage() {
               </form>
 
               <RotateKeyButton siteId={site.id} labels={labels} />
+
+              <SiteTurnstileForm
+                siteId={site.id}
+                configured={!!siteSettings(site).turnstile}
+                siteKey={siteTurnstileSiteKey(site)}
+                requireOnIngest={siteSettings(site).turnstile?.requireOnIngest ?? false}
+              />
             </li>
           ))}
         </ul>

@@ -283,7 +283,10 @@
         "nameRequired": "Poné un nombre para el formulario.",
         "slugInvalid": "El slug va en minúsculas, sin espacios ni acentos (ej: contacto-general).",
         "unknown": "No se pudo crear el formulario. Intentá de nuevo."
-      }
+      },
+      "turnstileSite": "Anti-bots con las claves de este sitio",
+      "turnstileNone": "Sin protección extra",
+      "turnstileSave": "Guardar"
     },
     "users": {
       "title": "Equipo",
@@ -523,6 +526,22 @@
           "phone": "El teléfono es obligatorio y es la identidad del contacto. Aceptamos formato local paraguayo (0981 123 456) y lo normalizamos a +595.",
           "spam": "Poné el honeypot y, si podés, Cloudflare Turnstile. El spam se frena en tu sitio, no adentro del CRM.",
           "nonBlocking": "Si VenderCRM no responde, igual mostrale la página de gracias al visitante y registrá el error en tu log. Nunca pierdas el lead por un timeout."
+        }
+      },
+      "turnstile": {
+        "title": "Protección anti-bots (Cloudflare Turnstile)",
+        "intro": "Opcional. Si tu sitio muestra el widget de Turnstile, pegá acá las dos claves que te da Cloudflare. Sin esto el sitio sigue funcionando igual que hoy.",
+        "statusOn": "— configurada",
+        "statusOff": "— sin configurar",
+        "siteKey": "Clave del sitio (site key)",
+        "secret": "Clave secreta (secret key)",
+        "secretStored": "Ya guardada — pegala de nuevo si querés cambiarla",
+        "requireOnIngest": "Exigir el token también en los envíos desde el servidor del sitio",
+        "save": "Guardar Turnstile",
+        "saved": "Listo, Turnstile quedó guardado.",
+        "remove": "Quitar Turnstile",
+        "errors": {
+          "turnstileIncomplete": "Poné las dos claves: la del sitio y la secreta."
         }
       }
     },

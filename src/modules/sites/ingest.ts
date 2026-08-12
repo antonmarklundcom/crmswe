@@ -6,7 +6,9 @@ import { normalizePhone } from "@/modules/crm/contacts";
 import { DEFAULT_COUNTRY } from "@/lib/phone";
 import { recordLeadSubmission, type RecordLeadResult } from "@/modules/leads/submissions";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { verifyTurnstileToken } from "@/lib/turnstile";
 import { resolveSiteByApiKey } from "./keys";
+import { siteSettings, siteTurnstileSecret } from "./settings";
 
 // Public ingest (PLAN.md §5.1). Server-to-server only: the site's own
 // backend posts with its key. This file owns authentication, validation and
@@ -29,6 +31,11 @@ export const leadIngestSchema = z.object({
   page_url: z.string().max(2000).optional(),
   referrer: z.string().max(2000).optional(),
   idempotency_key: z.string().min(8).max(100),
+  // Optional Turnstile token (§5.2). Available, not mandatory: a site whose
+  // backend renders the widget can forward the token it received; one that
+  // doesn't behaves exactly as before. Enforcement is per-site
+  // (`turnstile.requireOnIngest`), never decided by the caller.
+  turnstile_token: z.string().max(4000).optional(),
   // Anything else the site wants preserved on the timeline.
   fields: z.record(z.string(), z.unknown()).optional(),
 });
@@ -73,6 +80,25 @@ export async function ingestLead(
     return { ok: false, status: 422, error: parsed.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join("; ") };
   }
   const body = parsed.data;
+
+  // Turnstile (§5.2), per-site and optional. Three states, in order:
+  //   1. no secret configured  → skipped entirely (every site before 5.2);
+  //   2. configured + a token in the body → verified, and a bad token is a
+  //      403 rather than a silently accepted lead;
+  //   3. configured + no token → accepted unless the site opted into
+  //      requireOnIngest. The keyed lane already proves who is calling; the
+  //      challenge is defense in depth on top of that, not the auth itself.
+  const turnstileSecret = siteTurnstileSecret(site);
+  if (turnstileSecret && (body.turnstile_token || siteSettings(site).turnstile?.requireOnIngest)) {
+    const verdict = await verifyTurnstileToken({
+      secret: turnstileSecret,
+      token: body.turnstile_token,
+      remoteIp: meta.ipAddress,
+    });
+    if (!verdict.ok) {
+      return { ok: false, status: 403, error: `Turnstile verification failed: ${verdict.reason}` };
+    }
+  }
 
   const ctx = await buildSystemTenantContext(site.tenantId);
   if (!ctx) return { ok: false, status: 403, error: "Tenant unavailable" };

@@ -20,6 +20,18 @@ export type FormSettings = {
   targetPipelineId?: string;
   targetStageId?: string;
   defaultTagIds?: string[];
+  /**
+   * Which site's Cloudflare Turnstile credentials this hosted form uses
+   * (PLAN.md §5.2). Turnstile is configured per *site*, and a hosted form
+   * has no site of its own, so the tenant points the form at one. Unset —
+   * the state every form created before §5.2 is in — means honeypot only,
+   * exactly as before.
+   *
+   * Deliberately *not* the submission's `site_id`: attribution still says
+   * this lead came through a hosted form, not through that site's own
+   * backend. This link is credentials, not provenance.
+   */
+  turnstileSiteId?: string;
 };
 
 export type CreateFormInput = {

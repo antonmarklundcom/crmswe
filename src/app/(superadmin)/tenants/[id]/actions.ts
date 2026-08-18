@@ -4,7 +4,14 @@ import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { requireSuperadminContext } from "@/modules/tenancy/context";
 import { createSubscription, recordPayment } from "@/modules/tenancy/subscriptions";
-import { createTenantAdminUser, getUserByEmail } from "@/modules/tenancy/users";
+import {
+  createTenantAdminUser,
+  getUserByEmail,
+  getUserById,
+  revokeUserSessions,
+  setUserPassword,
+} from "@/modules/tenancy/users";
+import { writeAuditLog } from "@/modules/tenancy/audit";
 import { startImpersonation } from "@/modules/auth/impersonation";
 import { redirect } from "next/navigation";
 
@@ -203,4 +210,46 @@ export async function impersonateAction(formData: FormData) {
   }
 
   redirect("/dashboard");
+}
+
+
+const setPasswordSchema = z.object({
+  tenantId: z.string().min(1).max(26),
+  userId: z.string().min(1).max(26),
+  password: z.string().min(8).max(200),
+});
+
+/**
+ * Superadmin escape hatch for a user who can't get in at all — no access to
+ * the invited mailbox, a reset mail that never arrives. setUserPassword has
+ * existed for the seed script since 1H and had no console caller
+ * (PLAN.md §13 H4). Every use is audited, since it is by definition taking
+ * over someone's account.
+ */
+export async function setTenantUserPasswordAction(formData: FormData) {
+  const ctx = await requireSuperadminContext();
+
+  const parsed = setPasswordSchema.safeParse({
+    tenantId: formData.get("tenantId"),
+    userId: formData.get("userId"),
+    password: formData.get("password"),
+  });
+  if (!parsed.success) return;
+
+  const target = await getUserById(parsed.data.userId);
+  if (!target || target.tenantId !== parsed.data.tenantId) return;
+
+  await setUserPassword(target.id, parsed.data.password);
+  await revokeUserSessions(target.id);
+
+  await writeAuditLog({
+    tenantId: target.tenantId,
+    actorUserId: ctx.userId,
+    action: "user.password_set",
+    entity: "user",
+    entityId: target.id,
+    payload: { email: target.email },
+  });
+
+  revalidatePath(`/tenants/${parsed.data.tenantId}`);
 }

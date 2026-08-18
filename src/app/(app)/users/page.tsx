@@ -8,13 +8,24 @@ import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
 import { InviteForm, type InviteLabels } from "./InviteForm";
-import { revokeInvitationAction } from "./actions";
+import {
+  revokeInvitationAction,
+  sendPasswordResetAction,
+  setUserActiveAction,
+  setUserRoleAction,
+} from "./actions";
 
 const date = new Intl.DateTimeFormat("es-PY", { day: "2-digit", month: "2-digit", year: "numeric" });
 
-export default async function UsersPage() {
+export default async function UsersPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ aviso?: string }>;
+}) {
+  const { aviso } = await searchParams;
   const ctx = await requireTenantContext();
   const t = await getTranslations("app.users");
+  const tc = await getTranslations("common");
 
   if (ctx.role !== "admin") {
     return <p className="text-muted-foreground">{t("adminOnly")}</p>;
@@ -24,6 +35,8 @@ export default async function UsersPage() {
     listTenantUsers(ctx),
     listInvitations(ctx),
   ]);
+
+  const activeAdmins = users.filter((user) => user.role === "admin" && !user.banned).length;
 
   const pending = invitations
     .filter((invitation) => !invitation.acceptedAt && invitation.expiresAt > new Date())
@@ -51,33 +64,103 @@ export default async function UsersPage() {
     <div className="flex flex-col gap-8">
       <PageHeader title={t("title")} description={t("intro")} />
 
+      {aviso === "reset" && (
+        <p className="rounded-md border border-green-300 bg-green-50 px-3 py-2 text-sm text-green-900">
+          {t("resetSent")}
+        </p>
+      )}
+
       <section className="flex flex-col gap-3">
         <h2 className="text-lg font-semibold">{t("membersTitle")}</h2>
-        <table className="w-full text-left text-sm">
-          <thead>
-            <tr className="border-b">
-              <th className="py-2">{t("name")}</th>
-              <th className="py-2">{t("email")}</th>
-              <th className="py-2">{t("role")}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {users.map((user) => (
-              <tr key={user.id} className="border-b">
-                <td className="py-2">
-                  {user.name}
-                  {user.id === ctx.userId && (
-                    <span className="ml-2 text-xs text-muted-foreground">({t("you")})</span>
-                  )}
-                </td>
-                <td className="py-2">{user.email}</td>
-                <td className="py-2">
-                  {user.role === "admin" ? t("roles.admin") : t("roles.agent")}
-                </td>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm">
+            <thead>
+              <tr className="border-b">
+                <th className="py-2">{t("name")}</th>
+                <th className="py-2">{t("email")}</th>
+                <th className="py-2">{t("role")}</th>
+                <th className="py-2">{t("stateColumn")}</th>
+                <th className="py-2 text-right">{t("actionsColumn")}</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {users.map((user) => {
+                const isSelf = user.id === ctx.userId;
+                // Demoting the last active admin would leave the tenant with
+                // nobody able to manage it — only a superadmin could undo
+                // that, so the option isn't offered. setTenantUserRole
+                // refuses it server-side regardless.
+                const wouldOrphanTenant =
+                  user.role === "admin" && !user.banned && activeAdmins <= 1;
+
+                return (
+                  <tr key={user.id} className="border-b align-top">
+                    <td className="py-2">
+                      {user.name}
+                      {isSelf && (
+                        <span className="ml-2 text-xs text-muted-foreground">({t("you")})</span>
+                      )}
+                    </td>
+                    <td className="py-2">{user.email}</td>
+                    <td className="py-2">
+                      {isSelf || wouldOrphanTenant ? (
+                        user.role === "admin" ? t("roles.admin") : t("roles.agent")
+                      ) : (
+                        <form action={setUserRoleAction} className="flex items-center gap-2">
+                          <input type="hidden" name="userId" value={user.id} />
+                          <select
+                            name="role"
+                            defaultValue={user.role ?? "agent"}
+                            className="rounded-md border px-2 py-1 text-sm"
+                            aria-label={t("role")}
+                          >
+                            <option value="admin">{t("roles.admin")}</option>
+                            <option value="agent">{t("roles.agent")}</option>
+                          </select>
+                          <Button type="submit" size="sm" variant="outline">
+                            {tc("save")}
+                          </Button>
+                        </form>
+                      )}
+                    </td>
+                    <td className="py-2">
+                      {user.banned ? (
+                        <span className="text-muted-foreground">{t("stateInactive")}</span>
+                      ) : (
+                        <span className="text-green-700">{t("stateActive")}</span>
+                      )}
+                    </td>
+                    <td className="py-2">
+                      {isSelf ? (
+                        <span className="text-xs text-muted-foreground">—</span>
+                      ) : (
+                        <div className="flex flex-wrap justify-end gap-2">
+                          <form action={setUserActiveAction}>
+                            <input type="hidden" name="userId" value={user.id} />
+                            <input
+                              type="hidden"
+                              name="active"
+                              value={user.banned ? "true" : "false"}
+                            />
+                            <Button type="submit" size="sm" variant="outline">
+                              {user.banned ? t("reactivate") : t("deactivate")}
+                            </Button>
+                          </form>
+                          <form action={sendPasswordResetAction}>
+                            <input type="hidden" name="userId" value={user.id} />
+                            <Button type="submit" size="sm" variant="outline">
+                              {t("sendReset")}
+                            </Button>
+                          </form>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       </section>
 
       <section className="flex flex-col gap-3">

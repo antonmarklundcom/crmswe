@@ -1,6 +1,7 @@
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth/server";
 import { getTenant } from "./tenants";
+import { getActiveTenantUser } from "./users";
 import { computeAccessStatus, type AccessStatus } from "./subscriptions";
 
 // The single sanctioned source of tenant identity (PLAN.md §3.3, layer 1).
@@ -57,6 +58,13 @@ export async function getTenantContext(): Promise<TenantContext | null> {
 
   const tenant = await getTenant(user.tenantId);
   if (!tenant) return null;
+
+  // Read the row, don't trust the session copy: a user deactivated (or moved
+  // out of this tenant) a second ago is still carrying a valid cookie that
+  // says otherwise (PLAN.md §13 H4). Their sessions are revoked at ban time
+  // too — this is the belt to that suspenders.
+  const row = await getActiveTenantUser(user.id, user.tenantId);
+  if (!row) return null;
 
   const impersonatedBy = (
     session.session as unknown as { impersonatedBy?: string | null }

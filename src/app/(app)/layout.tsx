@@ -6,6 +6,8 @@ import { getTenant } from "@/modules/tenancy/tenants";
 import { AppNav, type NavGroup } from "@/components/app-nav";
 import { UserMenu } from "@/components/user-menu";
 import { Toaster } from "@/components/ui/sonner";
+import { Button } from "@/components/ui/button";
+import { stopImpersonationAction } from "./actions";
 
 // Tenant suspension/expiry enforcement (PLAN.md §10 1B: "grace → read-only
 // banner → locked"). Runs server-side, in the Node.js runtime, so it can
@@ -33,6 +35,8 @@ export default async function AppLayout({
       </main>
     );
   }
+
+  const impersonationBanner = ctx.impersonatorUserId ? <ImpersonationBanner /> : null;
 
   const graceBanner =
     status === "grace" ? (
@@ -116,6 +120,7 @@ export default async function AppLayout({
 
   return (
     <div className="flex flex-1 flex-col">
+      {impersonationBanner}
       {graceBanner}
       <div className="flex flex-1 flex-col md:flex-row">
         <AppNav
@@ -127,6 +132,23 @@ export default async function AppLayout({
         <div className="min-w-0 flex-1 p-6">{children}</div>
       </div>
       <Toaster />
+    </div>
+  );
+}
+
+// Persistent, not dismissible: a superadmin acting as someone else must be
+// able to tell at any moment that what they are looking at is not their own
+// account, and get out in one click.
+async function ImpersonationBanner() {
+  const t = await getTranslations("tenancy.impersonation");
+  return (
+    <div className="flex w-full flex-wrap items-center justify-center gap-3 bg-blue-100 px-4 py-2 text-center text-sm text-blue-900">
+      <span>{t("banner")}</span>
+      <form action={stopImpersonationAction}>
+        <Button type="submit" size="sm" variant="outline">
+          {t("exit")}
+        </Button>
+      </form>
     </div>
   );
 }

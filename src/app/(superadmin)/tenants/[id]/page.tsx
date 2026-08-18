@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/page-header";
 import { CreateUserForm, type CreateUserLabels } from "./CreateUserForm";
 import { CreateSubscriptionForm, RecordPaymentForm } from "./SubscriptionForms";
-import { impersonateAction } from "./actions";
+import { impersonateAction, setTenantUserPasswordAction } from "./actions";
 
 // Defense in depth (§3.3): the (superadmin) layout already redirects a
 // non-superadmin, but a layout is not an authorization boundary — this page
@@ -96,14 +96,36 @@ export default async function TenantDetailPage({
         <p className="mb-3 max-w-2xl text-sm text-muted-foreground">{tu("intro")}</p>
         <ul className="mb-6 flex flex-col gap-2">
           {users.map((user) => (
-            <li key={user.id} className="flex items-center gap-3 text-sm">
+            <li key={user.id} className="flex flex-wrap items-center gap-3 text-sm">
               <span>
                 {user.name} ({user.email}) — {user.role}
+                {user.banned && (
+                  <span className="ml-2 text-muted-foreground">({tu("inactive")})</span>
+                )}
               </span>
               <form action={impersonateAction}>
                 <input type="hidden" name="userId" value={user.id} />
                 <Button type="submit" size="sm" variant="outline">
                   {t("impersonate")}
+                </Button>
+              </form>
+              {/* Last resort for a user locked out of their own mailbox —
+                  their sessions are dropped with the change, so whoever was
+                  logged in as them stops being so. */}
+              <form action={setTenantUserPasswordAction} className="flex items-center gap-2">
+                <input type="hidden" name="tenantId" value={tenant.id} />
+                <input type="hidden" name="userId" value={user.id} />
+                <input
+                  type="password"
+                  name="password"
+                  minLength={8}
+                  required
+                  placeholder={tu("newPassword")}
+                  className="rounded-md border px-2 py-1 text-sm"
+                  aria-label={tu("newPassword")}
+                />
+                <Button type="submit" size="sm" variant="outline">
+                  {tu("setPassword")}
                 </Button>
               </form>
             </li>

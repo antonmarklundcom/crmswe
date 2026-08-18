@@ -29,6 +29,19 @@ vi.mock("@/lib/auth/server", () => ({
   },
 }));
 
+// getTenantContext re-reads the acting user on every request so a
+// deactivated session dies immediately (§13 H4). Only that lookup is
+// stubbed; the rest of the module is the real thing.
+vi.mock("./users", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("./users")>()),
+  getActiveTenantUser: async (userId: string, tenantId: string) => ({
+    id: userId,
+    tenantId,
+    role,
+    banned: false,
+  }),
+}));
+
 vi.mock("./tenants", () => ({
   getTenant: async (id: string) => ({ id, name: "Tenant", slug: "tenant", status: "active" }),
 }));

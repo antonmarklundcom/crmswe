@@ -54,6 +54,10 @@
         "body": "El acceso a esta cuenta está bloqueado. Contactá al administrador para regularizar el pago.",
         "backToLogin": "Volver a iniciar sesión"
       }
+    },
+    "impersonation": {
+      "banner": "Estás viendo la cuenta como otro usuario.",
+      "exit": "Volver a la consola"
     }
   },
   "app": {
@@ -321,7 +325,15 @@
         "emailTaken": "Ese correo ya tiene una cuenta.",
         "readOnly": "Tu suscripción venció: la cuenta está en modo solo lectura.",
         "unknown": "No se pudo generar la invitación. Intentá de nuevo."
-      }
+      },
+      "stateColumn": "Estado",
+      "actionsColumn": "Acciones",
+      "stateActive": "Activo",
+      "stateInactive": "Inactivo",
+      "deactivate": "Desactivar",
+      "reactivate": "Reactivar",
+      "sendReset": "Enviar restablecimiento",
+      "resetSent": "Le mandamos un correo para que elija una contraseña nueva."
     },
     "settings": {
       "title": "Configuración",
@@ -901,7 +913,8 @@
       "tenants": "Empresas",
       "plans": "Planes",
       "whatsappHealth": "WhatsApp",
-      "superadmin": "Superadministrador"
+      "superadmin": "Superadministrador",
+      "audit": "Auditoría"
     },
     "tenantUsers": {
       "title": "Usuarios de la empresa",
@@ -922,7 +935,10 @@
         "invalid": "Revisá los datos: la contraseña necesita al menos 8 caracteres.",
         "emailTaken": "Ese correo ya tiene una cuenta.",
         "unknown": "No se pudo crear el usuario. Intentá de nuevo."
-      }
+      },
+      "inactive": "inactivo",
+      "newPassword": "Contraseña nueva",
+      "setPassword": "Definir contraseña"
     },
     "tenants": {
       "title": "Empresas",
@@ -1448,5 +1464,16 @@
     "loading": {
       "label": "Cargando contenido"
     }
+  },
+  "audit": {
+    "title": "Auditoría",
+    "intro": "Quién hizo qué y cuándo. Las acciones hechas mientras se ve la cuenta como otro usuario muestran también al superadministrador real.",
+    "when": "Fecha",
+    "action": "Acción",
+    "entity": "Objeto",
+    "actor": "Usuario",
+    "tenant": "Empresa",
+    "via": "(vía {user})",
+    "empty": "Todavía no hay actividad registrada."
   }
 }

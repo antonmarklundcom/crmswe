@@ -1,7 +1,7 @@
-import { and, eq } from "drizzle-orm";
+import { and, count, eq, ne } from "drizzle-orm";
 import { hashPassword } from "better-auth/crypto";
 import { db } from "@/db/client";
-import { accounts, users } from "@/db/schema";
+import { accounts, sessions, users } from "@/db/schema";
 import { newId } from "@/lib/ids";
 import type { TenantContext } from "./context";
 import { tenantDb } from "./db";
@@ -133,4 +133,110 @@ export function listTenantUsers(ctx: TenantContext) {
  */
 export async function listUsersForTenant(tenantId: string) {
   return db.select().from(users).where(eq(users.tenantId, tenantId));
+}
+
+
+// --- User lifecycle (PLAN.md §13 H4) ------------------------------------
+//
+// The `banned` columns have existed since the Better Auth schema landed and
+// were referenced nowhere: there was no way to take a leaving salesperson's
+// access away short of deleting the row (which would orphan their deals) or
+// changing their password. Deactivation is that missing door, and it has to
+// close *now*, not at session expiry — hence the session sweep below.
+
+export class UserLifecycleError extends Error {
+  constructor(readonly code: "notFound" | "self" | "lastAdmin") {
+    super(code);
+  }
+}
+
+/** The user row behind a session, or null if it can no longer act: deleted,
+ * moved to another tenant, or deactivated. getTenantContext calls this on
+ * every request, which is what makes a ban take effect immediately. */
+export async function getActiveTenantUser(userId: string, tenantId: string) {
+  const [row] = await db
+    .select()
+    .from(users)
+    .where(and(eq(users.id, userId), eq(users.tenantId, tenantId)));
+
+  if (!row || row.banned) return null;
+  return row;
+}
+
+/** Drops every session row for a user — the ban is worthless if the cookie
+ * they already hold keeps working until it expires. */
+export async function revokeUserSessions(userId: string): Promise<void> {
+  await db.delete(sessions).where(eq(sessions.userId, userId));
+}
+
+async function requireSameTenantUser(ctx: TenantContext, userId: string) {
+  const [row] = await db
+    .select()
+    .from(users)
+    .where(and(eq(users.id, userId), eq(users.tenantId, ctx.tenantId)));
+
+  if (!row) throw new UserLifecycleError("notFound");
+  if (row.id === ctx.userId) throw new UserLifecycleError("self");
+  return row;
+}
+
+/** Deactivates or reactivates a member of the caller's own tenant. */
+export async function setTenantUserBanned(
+  ctx: TenantContext,
+  userId: string,
+  banned: boolean,
+  reason?: string,
+) {
+  const target = await requireSameTenantUser(ctx, userId);
+
+  // An admin deactivating the last other admin is fine; deactivating
+  // *themselves* is what the self guard above already refuses.
+  await db
+    .update(users)
+    .set({
+      banned,
+      banReason: banned ? (reason?.slice(0, 500) ?? null) : null,
+      banExpires: null,
+    })
+    .where(eq(users.id, userId));
+
+  if (banned) await revokeUserSessions(userId);
+
+  return target;
+}
+
+export async function countTenantAdmins(tenantId: string, excludingUserId?: string) {
+  const [row] = await db
+    .select({ value: count() })
+    .from(users)
+    .where(
+      and(
+        eq(users.tenantId, tenantId),
+        eq(users.role, "admin"),
+        eq(users.banned, false),
+        excludingUserId ? ne(users.id, excludingUserId) : undefined,
+      ),
+    );
+  return row?.value ?? 0;
+}
+
+/**
+ * Promotes or demotes a member of the caller's own tenant. Refuses to leave
+ * the tenant with no active admin — that state can only be repaired by a
+ * superadmin, so it must not be reachable by a single click.
+ */
+export async function setTenantUserRole(
+  ctx: TenantContext,
+  userId: string,
+  role: "admin" | "agent",
+) {
+  const target = await requireSameTenantUser(ctx, userId);
+
+  if (target.role === "admin" && role === "agent") {
+    const remaining = await countTenantAdmins(ctx.tenantId, userId);
+    if (remaining === 0) throw new UserLifecycleError("lastAdmin");
+  }
+
+  await db.update(users).set({ role }).where(eq(users.id, userId));
+  return target;
 }

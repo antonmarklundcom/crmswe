@@ -39,3 +39,13 @@ export async function listAuditLogForTenant(tenantId: string, limit = 50) {
     .orderBy(desc(auditLog.createdAt))
     .limit(limit);
 }
+
+/**
+ * Platform-wide audit feed for the superadmin console (PLAN.md §13 H4). The
+ * tenant-scoped reader above is what a tenant admin sees; this one exists
+ * precisely to look across tenants, so it takes no tenant id — its only
+ * caller is behind requireSuperadminContext().
+ */
+export async function listAuditLog(limit = 100) {
+  return db.select().from(auditLog).orderBy(desc(auditLog.createdAt)).limit(limit);
+}

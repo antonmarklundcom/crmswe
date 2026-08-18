@@ -1,12 +1,17 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
+import { requireSuperadminContext } from "@/modules/tenancy/context";
 import { listTenants } from "@/modules/tenancy/tenants";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/page-header";
 import { suspendTenantAction, activateTenantAction } from "./actions";
 import { CreateTenantForm } from "./CreateTenantForm";
 
+// Defense in depth (§3.3): the (superadmin) layout already redirects a
+// non-superadmin, but a layout is not an authorization boundary — this page
+// re-checks for itself, the same as whatsapp-health.
 export default async function TenantsPage() {
+  await requireSuperadminContext();
   const t = await getTranslations("superadmin.tenants");
   const tenants = await listTenants();
 

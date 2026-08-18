@@ -266,6 +266,7 @@
     },
     "forms": {
       "title": "Formularios",
+      "adminOnly": "Solo los administradores pueden ver esta página",
       "intro": "Formularios alojados acá, para sitios que no tienen backend propio. Cada envío crea o actualiza el contacto y puede abrir un negocio en la etapa que elijas.",
       "empty": "Todavía no hay formularios",
       "emptyTitle": "Todavía no hay formularios",
@@ -806,6 +807,7 @@
     },
     "automations": {
       "title": "Automatizaciones",
+      "adminOnly": "Solo los administradores pueden ver esta página",
       "intro": "Cada flujo empieza con un disparador y sigue una secuencia de condiciones, esperas y acciones. Publicá el flujo para activarlo.",
       "empty": "Todavía no hay flujos",
       "emptyTitle": "Todavía no hay flujos",

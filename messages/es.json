@@ -16,7 +16,8 @@
       "password": "Contraseña",
       "submit": "Entrar",
       "error": "Correo o contraseña incorrectos",
-      "forgotPassword": "¿Olvidaste tu contraseña?"
+      "forgotPassword": "¿Olvidaste tu contraseña?",
+      "rateLimited": "Demasiados intentos. Esperá unos minutos y probá de nuevo."
     },
     "acceptInvite": {
       "title": "Aceptar invitación",
@@ -996,7 +997,13 @@
       "failedWebhooks": "Webhooks fallidos",
       "noFailures": "Sin fallos recientes",
       "deadJobs": "Trabajos agotados",
-      "noDeadJobs": "Sin trabajos agotados"
+      "noDeadJobs": "Sin trabajos agotados",
+      "queueDead": "Trabajos agotados (toda la cola)",
+      "noQueueDead": "Sin trabajos agotados",
+      "queueStuck": "Trabajos trabados",
+      "queueStuckIntro": "Siguen en ejecución mucho después de lo esperado: casi siempre un proceso que murió a mitad de camino.",
+      "noQueueStuck": "Sin trabajos trabados",
+      "retryJob": "Reintentar"
     }
   },
   "marketing": {

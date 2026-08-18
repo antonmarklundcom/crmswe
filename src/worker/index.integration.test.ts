@@ -11,12 +11,15 @@ describe.skipIf(!hasDb)("worker (MySQL integration)", () => {
   let jobs: (typeof import("@/db/schema"))["jobs"];
   let tick: (typeof import("./index"))["tick"];
   let newId: (typeof import("@/lib/ids"))["newId"];
+  let setErrorSink: (typeof import("@/lib/observability"))["setErrorSink"];
+  let resetErrorSink: (typeof import("@/lib/observability"))["resetErrorSink"];
 
   beforeAll(async () => {
     ({ db } = await import("@/db/client"));
     ({ jobs } = await import("@/db/schema"));
     ({ tick } = await import("./index"));
     ({ newId } = await import("@/lib/ids"));
+    ({ setErrorSink, resetErrorSink } = await import("@/lib/observability"));
     await import("./handlers");
 
     // tick() claims the oldest *due* job in the table, not "the job this
@@ -79,6 +82,33 @@ describe.skipIf(!hasDb)("worker (MySQL integration)", () => {
     [row] = await db.select().from(jobs).where(eq(jobs.id, id));
     expect(row.status).toBe("dead");
     expect(row.attempts).toBe(2);
+  });
+
+  // PLAN.md §13 H3 exit criterion: a forced worker error has to be visible
+  // somewhere other than the row's last_error. The sink stands in for Sentry
+  // so CI asserts on it without a DSN or a network call.
+  it("reports a failing job through the error sink", async () => {
+    const reported: Array<{ tags?: Record<string, string | undefined> }> = [];
+    setErrorSink((_error, context) => reported.push(context));
+
+    const id = newId();
+    await db.insert(jobs).values({
+      id,
+      type: "queue.test",
+      payload: { failUntilAttempt: 999 },
+      runAt: new Date(),
+      maxAttempts: 1,
+    });
+
+    await tick("test-worker");
+    resetErrorSink();
+
+    expect(reported).toHaveLength(1);
+    expect(reported[0].tags).toMatchObject({
+      area: "worker",
+      jobType: "queue.test",
+      outcome: "dead",
+    });
   });
 
   it("dead-letters jobs with no registered handler", async () => {

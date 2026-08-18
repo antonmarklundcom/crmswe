@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { checkDatabaseConnection } from "@/db/health";
 import { env } from "@/lib/config/env";
+import { isValidCronSecret } from "@/lib/config/cron-secret";
 
 // Deploy diagnostic (docs/DEPLOY.md §8). In production Next.js returns an
 // empty HTTP 500 for any unhandled error, so a bad DATABASE_URL looks
@@ -12,8 +13,7 @@ import { env } from "@/lib/config/env";
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
-  const provided = request.headers.get("x-cron-secret");
-  if (provided !== env.CRON_SECRET) {
+  if (!isValidCronSecret(request.headers.get("x-cron-secret"))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

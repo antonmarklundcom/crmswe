@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { env } from "@/lib/config/env";
+import { isValidCronSecret } from "@/lib/config/cron-secret";
 import { listSubscriptionsCrossingExpiryWarning } from "@/modules/tenancy/subscriptions";
 import { getTenant } from "@/modules/tenancy/tenants";
 import { listUsersForTenant } from "@/modules/tenancy/users";
@@ -13,8 +13,7 @@ import { subscriptionExpiryWarningEmail } from "@/lib/email/templates";
 // route means it can be pinged on its own daily schedule independent of
 // whatever cadence the job-queue fallback uses.
 export async function GET(request: Request) {
-  const provided = request.headers.get("x-cron-secret");
-  if (provided !== env.CRON_SECRET) {
+  if (!isValidCronSecret(request.headers.get("x-cron-secret"))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

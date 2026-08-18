@@ -10,7 +10,7 @@ import { processJob } from "./process-job";
 import "./handlers";
 import "@/modules/whatsapp/jobs";
 import "@/modules/automations/jobs";
-import { ensureWebhookPruningScheduled } from "./maintenance";
+import { ensureMaintenanceScheduled } from "./maintenance";
 
 const TICK_MS = 2000;
 
@@ -30,10 +30,11 @@ export function startWorker(): () => void {
   const workerId = `${process.pid}-${randomUUID()}`;
   let stopped = false;
 
-  // Seeds the recurring webhook_events pruning chain if it isn't already
-  // running (PLAN.md §10 1H #3) — idempotent, safe on every worker start.
-  void ensureWebhookPruningScheduled().catch((err) => {
-    console.error("[worker] failed to schedule webhook pruning", err);
+  // Seeds the recurring maintenance chains (webhook_events pruning, PLAN.md
+  // §10 1H #3; stuck-job reaping, §13 H3) if they aren't already running —
+  // idempotent, safe on every worker start.
+  void ensureMaintenanceScheduled().catch((err) => {
+    console.error("[worker] failed to schedule maintenance", err);
   });
 
   const loop = async () => {

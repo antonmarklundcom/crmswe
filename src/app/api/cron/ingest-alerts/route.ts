@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { env } from "@/lib/config/env";
+import { isValidCronSecret } from "@/lib/config/cron-secret";
 import { getTenant } from "@/modules/tenancy/tenants";
 import { listUsersForTenant } from "@/modules/tenancy/users";
 import { sendEmail } from "@/lib/email";
@@ -17,8 +18,7 @@ import {
 // been broken since Tuesday", and a broken client form is not fixed by
 // hearing about it four times an hour.
 export async function GET(request: Request) {
-  const provided = request.headers.get("x-cron-secret");
-  if (provided !== env.CRON_SECRET) {
+  if (!isValidCronSecret(request.headers.get("x-cron-secret"))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

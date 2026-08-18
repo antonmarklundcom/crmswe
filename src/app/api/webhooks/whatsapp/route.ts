@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { env } from "@/lib/config/env";
+import { reportError } from "@/lib/observability";
 import { enqueue } from "@/lib/queue";
 import { verifySignature, persistRawEvent } from "@/modules/whatsapp/webhook";
 
@@ -40,8 +41,21 @@ export async function POST(request: Request) {
   }
 
   const phoneNumberId = extractPhoneNumberId(payload);
-  const eventId = await persistRawEvent(payload, phoneNumberId);
-  await enqueue("whatsapp.process_event", { eventId });
+
+  // Persisting or enqueueing can only fail on infrastructure (MySQL down,
+  // disk full). Meta retries a non-200, which is what we want here — but
+  // until now the failure was invisible, so a paused subscription was the
+  // first symptom.
+  try {
+    const eventId = await persistRawEvent(payload, phoneNumberId);
+    await enqueue("whatsapp.process_event", { eventId });
+  } catch (err) {
+    reportError(err, {
+      tags: { area: "webhook", provider: "whatsapp" },
+      extra: { phoneNumberId },
+    });
+    return new NextResponse("Error", { status: 500 });
+  }
 
   return new NextResponse("OK", { status: 200 });
 }

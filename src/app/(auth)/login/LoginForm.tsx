@@ -34,7 +34,10 @@ export function LoginForm() {
     setPending(false);
 
     if (signInError) {
-      setError(t("error"));
+      // 429 is the login limiter (lib/auth/login-rate-limit), not a wrong
+      // password — saying "wrong credentials" there sends the user in
+      // circles trying variations that can't be accepted yet.
+      setError(signInError.status === 429 ? t("rateLimited") : t("error"));
       return;
     }
 

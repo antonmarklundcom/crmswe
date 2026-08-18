@@ -109,9 +109,9 @@ export default async function ContactoPage({
 
       <TrustRibbon
         items={[
-          t("ribbon.established"),
-          t("ribbon.region"),
-          t("ribbon.diagnostic"),
+          t("ribbon.monthly"),
+          t("ribbon.measured"),
+          t("ribbon.ownData"),
           ...(contact.ruc ? [t("ribbon.ruc", { ruc: contact.ruc })] : []),
         ]}
       />

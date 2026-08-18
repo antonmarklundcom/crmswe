@@ -1012,9 +1012,10 @@
       "waPrefill": "Hola, vengo de clientes.com.py y quiero agendar un diagnóstico."
     },
     "ribbon": {
-      "established": "Trabajamos con empresas ya establecidas",
+      "monthly": "Mes a mes, sin permanencia obligatoria",
+      "measured": "Todo medido: sabés qué costó cada consulta",
+      "ownData": "La base de contactos es tuya",
       "region": "Asunción y Gran Asunción",
-      "diagnostic": "Primera conversación sin costo",
       "ruc": "RUC {ruc}"
     },
     "home": {
@@ -1048,6 +1049,38 @@
           "Vendedores que arrancan cada mes desde cero, sin saber a quién retomar",
           "Meses buenos y meses malos sin una explicación clara de por qué"
         ]
+      },
+      "services": {
+        "eyebrow": "Servicios",
+        "title": "Qué hacemos",
+        "lead": "Todo apunta a lo mismo: que entren consultas y que puedas atenderlas. Elegimos los canales en el diagnóstico, no antes.",
+        "items": [
+          {
+            "name": "Google Ads",
+            "body": "Aparecé justo cuando alguien busca lo que vendés. Búsqueda, Performance Max y remarketing."
+          },
+          {
+            "name": "Meta Ads",
+            "body": "Campañas en Facebook e Instagram apuntadas a quien compra, no a quien mira. Creativos, segmentación y optimización semanal."
+          },
+          {
+            "name": "SEO",
+            "body": "Posicionamiento local y nacional para que te encuentren sin pagar por cada clic."
+          },
+          {
+            "name": "Sitios web",
+            "body": "Páginas rápidas, pensadas para móvil y para convertir en WhatsApp. No folletos digitales."
+          },
+          {
+            "name": "Redes sociales y contenido",
+            "body": "Presencia que sostiene la venta: contenido con intención y un calendario que se cumple, no publicar por publicar."
+          },
+          {
+            "name": "Automatización con IA",
+            "body": "Respuesta inmediata a cada consulta y seguimiento automático por WhatsApp, para que nada dependa de quién tenga tiempo esa tarde."
+          }
+        ],
+        "fineprint": "La inversión publicitaria la pagás vos, directo a Google o a Meta. Nunca pasa por nosotros y siempre ves en qué se gastó."
       },
       "method": {
         "eyebrow": "El método",
@@ -1320,12 +1353,20 @@
         "title": "Antes de escribirnos",
         "items": [
           {
-            "q": "¿La primera conversación tiene costo?",
-            "a": "No. Es una conversación de diagnóstico de 30 minutos, sin costo y sin compromiso."
+            "q": "¿Cuánto tengo que invertir en publicidad?",
+            "a": "Depende del rubro y de la zona. En la primera conversación te damos un rango realista para tu caso, antes de que gastes un guaraní. Y si creemos que todavía no te conviene invertir, te lo decimos ahí."
           },
           {
-            "q": "¿Con qué tamaño de empresa trabajan?",
-            "a": "Con empresas que ya venden, tienen equipo propio y quieren ordenar la captación. No trabajamos con proyectos en etapa de validación."
+            "q": "¿Me atan a un contrato largo?",
+            "a": "No. Trabajamos mes a mes. Si el trabajo no rinde, te vas sin penalidad."
+          },
+          {
+            "q": "¿Los contactos son míos?",
+            "a": "Sí. Entran a tu propia cuenta, con tus datos. Si dejamos de trabajar juntos, la base queda con vos."
+          },
+          {
+            "q": "¿La primera conversación tiene costo?",
+            "a": "No. Es una conversación de diagnóstico de 30 minutos, sin costo y sin compromiso."
           },
           {
             "q": "¿Trabajan fuera de Asunción?",

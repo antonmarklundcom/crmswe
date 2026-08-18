@@ -773,6 +773,11 @@ as manual services or routed through existing external tools, probably not built
 this repo. **No Phase 1/2 architecture anticipates this**; nothing blocks it either
 (tenancy, auth, and the module pattern are reusable if any of it lands here).
 
+**Exception now specced:** the apex-domain marketing site for clientes.com.py IS
+built in this repo (it already serves the apex via the host check in
+`src/app/page.tsx`). Full plan, locked decisions, and build sequence:
+[`docs/MARKETING_SITE_PLAN.md`](docs/MARKETING_SITE_PLAN.md).
+
 ---
 
 ## 10. Phase 1 build sequence

@@ -5,6 +5,7 @@ import { getUserById } from "@/modules/tenancy/users";
 import { getTenant } from "@/modules/tenancy/tenants";
 import { AppNav, type NavGroup } from "@/components/app-nav";
 import { UserMenu } from "@/components/user-menu";
+import { Toaster } from "@/components/ui/sonner";
 
 // Tenant suspension/expiry enforcement (PLAN.md §10 1B: "grace → read-only
 // banner → locked"). Runs server-side, in the Node.js runtime, so it can
@@ -125,6 +126,7 @@ export default async function AppLayout({
         />
         <div className="min-w-0 flex-1 p-6">{children}</div>
       </div>
+      <Toaster />
     </div>
   );
 }

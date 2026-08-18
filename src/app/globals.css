@@ -81,3 +81,690 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* ============================================================================
+ * clientes.com.py — marketing site
+ * ----------------------------------------------------------------------------
+ * Everything below is scoped under `.mk` and prefixed `mk-`. It defines its
+ * own tokens rather than reusing the shadcn ones above, because the two
+ * surfaces are different products: the CRM is a neutral greyscale tool, the
+ * marketing site is a brand. Nothing here changes a single app style — the
+ * app never renders inside `.mk`.
+ *
+ * Design system: web-design-system skill, EDITORIAL track (flat + hairlines,
+ * light-dominant, generous air) — the fit for consultants and B2B services.
+ *
+ * Palette, derived (never copied) and measured:
+ *   accent  #0F6B85  HSL hue 193.2°  — 5.49:1 on base, 6.07:1 white-on-accent
+ *   ink     #0C1A20  HSL hue 198°    — 16.04:1 on base
+ *   base    #F1F4F5  desaturated near-neighbour of the accent
+ *   muted body text (ink at 70%) 6.30:1, meta text (ink at 62%) 4.80:1
+ * The portfolio palette registry the skill wants checked does not exist in
+ * this environment, so the ">=40° from every other accent" rule could not be
+ * verified against the other domains — see docs/MARKETING_DESIGN.md.
+ * ========================================================================== */
+
+.mk {
+  /* ---- track ---- */
+  --mk-font-display: var(--font-newsreader), Georgia, serif;
+  --mk-font-text: var(--font-geist-sans), system-ui, sans-serif;
+  --mk-base: #f1f4f5;
+  --mk-ink: #0c1a20;
+  --mk-accent: #0f6b85;
+  --mk-accent-deep: #0a5266;
+  /* Same hue (193°), lightened for dark fields. Still one accent colour: the
+     base accent is only 2.92:1 on ink, which fails even the 3:1 large-text
+     floor, while this tint is 7.41:1. */
+  --mk-accent-on-ink: #4fb4d0;
+  --mk-surface: #ffffff;
+
+  /* ---- derived ink. 55% would fail 4.5:1 on this base, so the muted floor
+     is 62% and there is no lighter step to reach for by accident. ---- */
+  --mk-ink-70: color-mix(in srgb, var(--mk-ink) 70%, transparent);
+  --mk-ink-62: color-mix(in srgb, var(--mk-ink) 62%, transparent);
+  --mk-hairline: color-mix(in srgb, var(--mk-ink) 10%, transparent);
+  --mk-hairline-strong: color-mix(in srgb, var(--mk-ink) 18%, transparent);
+  --mk-on-ink-70: color-mix(in srgb, var(--mk-base) 75%, transparent);
+
+  /* ---- type scale, ratio 1.30, base 17px ---- */
+  --mk-t--1: 0.812rem;
+  --mk-t-0: 1.0625rem;
+  --mk-t-1: 1.383rem;
+  --mk-t-2: 1.797rem;
+  --mk-t-3: 2.336rem;
+  --mk-t-4: 3.037rem;
+  --mk-t-5: 3.948rem;
+  --mk-t-6: 5.133rem;
+  --mk-measure: 65ch;
+
+  /* ---- spacing, 4px base ---- */
+  --mk-s-1: 0.25rem;
+  --mk-s-2: 0.5rem;
+  --mk-s-3: 0.75rem;
+  --mk-s-4: 1rem;
+  --mk-s-6: 1.5rem;
+  --mk-s-8: 2rem;
+  --mk-s-12: 3rem;
+  --mk-s-16: 4rem;
+  --mk-s-24: 6rem;
+  --mk-s-32: 8rem;
+
+  /* ---- exactly three radii, assigned by element class ---- */
+  --mk-r-sm: 6px;
+  --mk-r-md: 14px;
+  --mk-r-lg: 28px;
+
+  /* ---- shadows: always two layers ---- */
+  --mk-shadow-1: 0 1px 2px rgb(0 0 0 / 0.04), 0 4px 12px rgb(0 0 0 / 0.06);
+  --mk-shadow-2: 0 2px 4px rgb(0 0 0 / 0.06), 0 16px 40px rgb(0 0 0 / 0.1);
+
+  /* ---- motion ---- */
+  --mk-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --mk-ease-io: cubic-bezier(0.4, 0, 0.2, 1);
+  --mk-dur-fast: 180ms;
+  --mk-dur: 280ms;
+
+  --mk-container: 1200px;
+  --mk-gutter: clamp(1rem, 5vw, 3rem);
+
+  background: var(--mk-base);
+  color: var(--mk-ink);
+  font-family: var(--mk-font-text);
+  font-size: var(--mk-t-0);
+  line-height: 1.65;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* ---- grain: applied to every dark section ---- */
+.mk-grain::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.055;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ---- primitives ---- */
+.mk h1,
+.mk h2,
+.mk h3 {
+  font-family: var(--mk-font-display);
+  font-weight: 450;
+  letter-spacing: -0.03em;
+  line-height: 1.02;
+  margin: 0 0 var(--mk-s-6);
+  text-wrap: balance;
+}
+.mk h1 {
+  font-size: clamp(var(--mk-t-4), 6vw, var(--mk-t-6));
+}
+.mk h2 {
+  font-size: clamp(var(--mk-t-3), 4.5vw, var(--mk-t-5));
+}
+.mk h3 {
+  font-size: var(--mk-t-2);
+  line-height: 1.15;
+  margin-bottom: var(--mk-s-3);
+}
+.mk p {
+  max-width: var(--mk-measure);
+  color: var(--mk-ink-70);
+  margin: 0 0 var(--mk-s-4);
+}
+.mk a {
+  color: inherit;
+}
+
+.mk-eyebrow {
+  font-size: var(--mk-t--1);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--mk-accent);
+  font-weight: 500;
+  margin: 0 0 var(--mk-s-4);
+  display: block;
+}
+/* Dark fields swap to the light tint of the same accent — see the token. */
+.mk-section--ink .mk-eyebrow,
+.mk-card--ink .mk-eyebrow,
+.mk-ribbon .mk-eyebrow,
+.mk-footer .mk-eyebrow,
+.mk-footer .mk-wordmark span {
+  color: var(--mk-accent-on-ink);
+}
+.mk-section--ink .mk-step__n {
+  color: var(--mk-accent-on-ink);
+}
+.mk-section--ink .mk-list li::before,
+.mk-card--ink .mk-list li::before {
+  background: var(--mk-accent-on-ink);
+}
+
+.mk-statement {
+  font-family: var(--mk-font-display);
+  font-size: clamp(var(--mk-t-5), 9vw, var(--mk-t-6));
+  line-height: 0.95;
+  letter-spacing: -0.04em;
+  font-weight: 450;
+  margin: 0 0 var(--mk-s-6);
+  text-wrap: balance;
+}
+.mk-lead {
+  font-size: var(--mk-t-1);
+  line-height: 1.5;
+  color: var(--mk-ink-70);
+}
+.mk-meta {
+  font-size: var(--mk-t--1);
+  color: var(--mk-ink-62);
+}
+
+.mk-wrap {
+  max-width: var(--mk-container);
+  margin-inline: auto;
+  padding-inline: var(--mk-gutter);
+  width: 100%;
+}
+.mk-section {
+  padding-block: clamp(var(--mk-s-16), 9vw, var(--mk-s-32));
+  position: relative;
+}
+.mk-section--tight {
+  padding-block: clamp(var(--mk-s-12), 6vw, var(--mk-s-16));
+}
+.mk-section--ink {
+  background: var(--mk-ink);
+  color: var(--mk-base);
+}
+.mk-section--ink h1,
+.mk-section--ink h2,
+.mk-section--ink h3 {
+  color: var(--mk-base);
+}
+.mk-section--ink p {
+  color: var(--mk-on-ink-70);
+}
+.mk-section--surface {
+  background: var(--mk-surface);
+}
+
+/* ---- P1 asymmetric split. Never 6/6 — equal halves read as a template. ---- */
+.mk-split {
+  display: grid;
+  gap: var(--mk-s-12);
+  align-items: center;
+}
+@media (min-width: 1024px) {
+  .mk-split {
+    grid-template-columns: 7fr 5fr;
+  }
+  .mk-split--mirror {
+    grid-template-columns: 5fr 7fr;
+  }
+}
+
+/* ---- P2 offset stack. Padding rather than margin: this class is applied to
+   .mk-wrap, which is width:100%, and a left margin on it overflows the
+   viewport instead of indenting the block. ---- */
+@media (min-width: 1024px) {
+  .mk-offset {
+    padding-left: calc(var(--mk-gutter) + clamp(0px, 8vw, 160px));
+  }
+}
+
+/* ---- P3 staggered-weight grid: one card spans two columns ---- */
+.mk-grid {
+  display: grid;
+  gap: var(--mk-s-6);
+  grid-template-columns: 1fr;
+}
+@media (min-width: 640px) {
+  .mk-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (min-width: 1024px) {
+  .mk-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .mk-grid > .mk-span-2 {
+    grid-column: span 2;
+  }
+}
+
+/* ---- P4 editorial two-column ---- */
+.mk-editorial {
+  display: grid;
+  gap: var(--mk-s-8);
+}
+@media (min-width: 1024px) {
+  .mk-editorial {
+    grid-template-columns: 4fr 1fr 7fr;
+  }
+  .mk-editorial > :nth-child(2) {
+    grid-column: 3;
+  }
+}
+
+/* ---- P5 numbered process rail ---- */
+.mk-rail {
+  display: grid;
+  gap: var(--mk-s-8);
+  counter-reset: mk-step;
+}
+@media (min-width: 1024px) {
+  .mk-rail {
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--mk-s-6);
+  }
+}
+.mk-step {
+  position: relative;
+  padding-top: var(--mk-s-8);
+  border-top: 1px solid var(--mk-hairline);
+}
+.mk-step__n {
+  position: absolute;
+  top: var(--mk-s-4);
+  right: 0;
+  font-family: var(--mk-font-display);
+  font-size: var(--mk-t-5);
+  line-height: 1;
+  color: var(--mk-accent);
+  opacity: 0.2;
+  pointer-events: none;
+}
+.mk-section--ink .mk-step {
+  border-top-color: color-mix(in srgb, var(--mk-base) 18%, transparent);
+}
+
+/* ---- P7 sticky-side scroll ---- */
+.mk-sticky-side {
+  display: grid;
+  gap: var(--mk-s-12);
+}
+@media (min-width: 1024px) {
+  .mk-sticky-side {
+    grid-template-columns: 5fr 7fr;
+  }
+  .mk-sticky-side > :first-child {
+    position: sticky;
+    top: 12vh;
+    align-self: start;
+  }
+}
+
+/* ---- P8 full-bleed ribbon ---- */
+.mk-ribbon {
+  background: var(--mk-ink);
+  color: var(--mk-base);
+  position: relative;
+  overflow: hidden;
+}
+.mk-ribbon__inner {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--mk-s-3) var(--mk-s-8);
+  padding-block: var(--mk-s-6);
+  font-size: var(--mk-t--1);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--mk-on-ink-70);
+}
+
+/* ---- the page's one intentional overlap: a raised panel crossing into the
+   dark band below it. No image slot needed, which matters while the imagery
+   step is still pending. ---- */
+.mk-overlap {
+  position: relative;
+  z-index: 1;
+  margin-bottom: calc(var(--mk-s-16) * -1);
+  top: var(--mk-s-8);
+}
+
+/* Panel headings sit inside a card, so they are a step down from the section
+   heading they live under — `.mk h2` would otherwise win on specificity and
+   render them at display size. */
+.mk-panel-title {
+  font-size: var(--mk-t-1);
+  line-height: 1.25;
+  font-weight: 500;
+  margin-bottom: var(--mk-s-4);
+}
+
+/* ---- card variants: >=3 per page, none more than 4 times ---- */
+.mk-card {
+  padding: var(--mk-s-8);
+  border-radius: var(--mk-r-md);
+}
+.mk-card--bare {
+  padding-inline: 0;
+}
+.mk-card--hair {
+  border: 1px solid var(--mk-hairline);
+}
+.mk-card--raised {
+  background: var(--mk-surface);
+  box-shadow: var(--mk-shadow-1);
+  border-radius: var(--mk-r-lg);
+}
+.mk-card--ink {
+  background: var(--mk-ink);
+  color: var(--mk-base);
+  position: relative;
+  overflow: hidden;
+}
+.mk-card--ink h3 {
+  color: var(--mk-base);
+}
+.mk-card--ink p {
+  color: var(--mk-on-ink-70);
+}
+.mk-card--accent {
+  background: var(--mk-surface);
+  border: 1px solid var(--mk-hairline);
+  border-top: 3px solid var(--mk-accent);
+}
+
+/* ---- buttons ---- */
+.mk-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--mk-s-2);
+  min-height: 48px;
+  padding: 0 var(--mk-s-6);
+  border-radius: var(--mk-r-sm);
+  font-weight: 500;
+  font-size: var(--mk-t-0);
+  text-decoration: none;
+  border: 0;
+  cursor: pointer;
+  transition:
+    transform var(--mk-dur-fast) var(--mk-ease-io),
+    box-shadow var(--mk-dur-fast) var(--mk-ease-io);
+}
+.mk-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--mk-shadow-2);
+}
+.mk-btn--primary {
+  background: var(--mk-accent);
+  color: #fff;
+}
+.mk-btn--ghost {
+  background: transparent;
+  color: inherit;
+  border: 1px solid var(--mk-hairline-strong);
+}
+/* On an ink field the base accent is only 2.92:1 against the background, so
+   the button edge itself would fall under the 3:1 non-text floor. The light
+   tint carries ink-coloured text at 7.41:1 instead. */
+.mk-section--ink .mk-btn--primary {
+  background: var(--mk-accent-on-ink);
+  color: var(--mk-ink);
+}
+.mk-section--ink .mk-btn--ghost {
+  border-color: color-mix(in srgb, var(--mk-base) 30%, transparent);
+}
+/* WhatsApp green lives ONLY inside the glyph — never as a fill. */
+.mk-btn--wa {
+  background: var(--mk-ink);
+  color: var(--mk-base);
+}
+.mk-btn--wa svg {
+  fill: #25d366;
+}
+.mk-cta-pair {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--mk-s-3);
+  margin-top: var(--mk-s-8);
+}
+
+/* ---- header / footer ---- */
+.mk-header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: color-mix(in srgb, var(--mk-base) 88%, transparent);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid transparent;
+  transition: border-color var(--mk-dur) var(--mk-ease-io);
+}
+.mk-header.is-stuck {
+  border-bottom-color: var(--mk-hairline);
+}
+.mk-header__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--mk-s-6);
+  min-height: 72px;
+}
+.mk-nav {
+  display: none;
+  gap: var(--mk-s-6);
+  font-size: var(--mk-t-0);
+}
+@media (min-width: 768px) {
+  .mk-nav {
+    display: flex;
+  }
+}
+.mk-nav a {
+  text-decoration: none;
+  color: var(--mk-ink-70);
+  transition: color var(--mk-dur-fast) var(--mk-ease-io);
+}
+.mk-nav a:hover {
+  color: var(--mk-ink);
+}
+.mk-wordmark {
+  font-family: var(--mk-font-display);
+  font-size: var(--mk-t-1);
+  letter-spacing: -0.02em;
+  text-decoration: none;
+}
+.mk-wordmark span {
+  color: var(--mk-accent);
+}
+/* Quiet ghost text link, never a CTA button (locked decision). */
+.mk-login {
+  font-size: var(--mk-t--1);
+  color: var(--mk-ink-62);
+  text-decoration: none;
+}
+.mk-login:hover {
+  color: var(--mk-ink);
+  text-decoration: underline;
+}
+.mk-footer {
+  background: var(--mk-ink);
+  color: var(--mk-on-ink-70);
+  position: relative;
+  overflow: hidden;
+  margin-top: auto;
+  padding-block: var(--mk-s-16) var(--mk-s-8);
+  font-size: var(--mk-t--1);
+}
+.mk-footer a {
+  color: var(--mk-on-ink-70);
+  text-decoration: none;
+}
+.mk-footer a:hover {
+  color: var(--mk-base);
+  text-decoration: underline;
+}
+.mk-footer__grid {
+  display: grid;
+  gap: var(--mk-s-8);
+  grid-template-columns: 1fr;
+}
+@media (min-width: 768px) {
+  .mk-footer__grid {
+    grid-template-columns: 2fr 1fr 1fr;
+  }
+}
+.mk-footer__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--mk-s-2);
+}
+.mk-footer__bottom {
+  margin-top: var(--mk-s-12);
+  padding-top: var(--mk-s-6);
+  border-top: 1px solid color-mix(in srgb, var(--mk-base) 15%, transparent);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--mk-s-4);
+  justify-content: space-between;
+}
+
+/* ---- lists ---- */
+.mk-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--mk-s-4);
+  max-width: var(--mk-measure);
+}
+.mk-list li {
+  padding-left: var(--mk-s-6);
+  position: relative;
+  color: var(--mk-ink-70);
+}
+.mk-list li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.7em;
+  width: 10px;
+  height: 1px;
+  background: var(--mk-accent);
+}
+.mk-section--ink .mk-list li {
+  color: var(--mk-on-ink-70);
+}
+
+/* ---- FAQ ---- */
+.mk-faq {
+  display: grid;
+  gap: var(--mk-s-2);
+}
+.mk-faq details {
+  border-bottom: 1px solid var(--mk-hairline);
+  padding-block: var(--mk-s-4);
+}
+.mk-faq summary {
+  cursor: pointer;
+  font-weight: 500;
+  list-style: none;
+  display: flex;
+  justify-content: space-between;
+  gap: var(--mk-s-4);
+}
+.mk-faq summary::-webkit-details-marker {
+  display: none;
+}
+.mk-faq summary::after {
+  content: "+";
+  color: var(--mk-accent);
+  font-size: var(--mk-t-1);
+  line-height: 1;
+}
+.mk-faq details[open] summary::after {
+  content: "\2013";
+}
+.mk-faq p {
+  margin-top: var(--mk-s-3);
+  margin-bottom: 0;
+}
+
+/* ---- form ---- */
+.mk-field {
+  display: grid;
+  gap: var(--mk-s-2);
+  margin-bottom: var(--mk-s-4);
+}
+.mk-field label {
+  font-size: var(--mk-t--1);
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+.mk-field input,
+.mk-field select,
+.mk-field textarea {
+  font: inherit;
+  color: var(--mk-ink);
+  background: var(--mk-surface);
+  border: 1px solid var(--mk-hairline-strong);
+  border-radius: var(--mk-r-sm);
+  padding: var(--mk-s-3) var(--mk-s-4);
+  min-height: 48px;
+  width: 100%;
+  transition: border-color var(--mk-dur-fast) var(--mk-ease-io);
+}
+.mk-field textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+.mk-field input:focus-visible,
+.mk-field select:focus-visible,
+.mk-field textarea:focus-visible {
+  outline: 2px solid var(--mk-accent);
+  outline-offset: 1px;
+  border-color: var(--mk-accent);
+}
+.mk-honeypot {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+.mk-notice {
+  border-radius: var(--mk-r-md);
+  padding: var(--mk-s-6);
+  margin-bottom: var(--mk-s-6);
+  border: 1px solid var(--mk-hairline);
+  background: var(--mk-surface);
+  border-left: 3px solid var(--mk-accent);
+}
+.mk-notice p:last-child {
+  margin-bottom: 0;
+}
+
+.mk :focus-visible {
+  outline: 2px solid var(--mk-accent);
+  outline-offset: 2px;
+}
+.mk-skip {
+  position: absolute;
+  left: -9999px;
+}
+.mk-skip:focus {
+  left: var(--mk-s-4);
+  top: var(--mk-s-4);
+  z-index: 50;
+  background: var(--mk-surface);
+  padding: var(--mk-s-3) var(--mk-s-4);
+  border-radius: var(--mk-r-sm);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mk *,
+  .mk *::before,
+  .mk *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

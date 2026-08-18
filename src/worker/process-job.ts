@@ -3,6 +3,7 @@ import type { MySql2Database } from "drizzle-orm/mysql2";
 import { jobs } from "@/db/schema";
 import * as schema from "@/db/schema";
 import { nextRunAt } from "@/lib/queue/backoff";
+import { reportError } from "@/lib/observability";
 import { getHandler } from "./handlers";
 import type { Job } from "./claim";
 
@@ -14,6 +15,13 @@ export async function processJob(
   const attempts = job.attempts + 1;
 
   if (!handler) {
+    // A job type nobody registered is a deploy/wiring bug, not a transient
+    // failure: it dies on the first attempt and is worth an alert.
+    reportError(new Error(`No handler registered for job type "${job.type}"`), {
+      tags: { area: "worker", jobType: job.type, outcome: "dead" },
+      extra: { jobId: job.id, tenantId: job.tenantId },
+    });
+
     await db
       .update(jobs)
       .set({
@@ -35,6 +43,15 @@ export async function processJob(
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     const dead = attempts >= job.maxAttempts;
+
+    reportError(err, {
+      tags: {
+        area: "worker",
+        jobType: job.type,
+        outcome: dead ? "dead" : "retry",
+      },
+      extra: { jobId: job.id, tenantId: job.tenantId, attempts, maxAttempts: job.maxAttempts },
+    });
 
     await db
       .update(jobs)

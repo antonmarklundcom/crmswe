@@ -1,6 +1,8 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
+import * as Sentry from "@sentry/nextjs";
 import { useTranslations } from "next-intl";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -10,16 +12,24 @@ import { cn } from "@/lib/utils";
 // shared rather than pasted four times.
 export function ErrorState({
   namespace,
+  error,
   digest,
   reset,
   backHref,
 }: {
   namespace: string;
+  /** The boundary's error, reported once per mount (PLAN.md §13 H3 #1). */
+  error?: unknown;
   digest?: string;
   reset: () => void;
   backHref?: string;
 }) {
   const t = useTranslations(namespace);
+
+  useEffect(() => {
+    if (error === undefined) return;
+    Sentry.captureException(error, { tags: { area: namespace } });
+  }, [error, namespace]);
   return (
     <main className="flex flex-1 flex-col items-center justify-center gap-4 p-6 text-center">
       <h1 className="text-xl font-semibold">{t("title")}</h1>

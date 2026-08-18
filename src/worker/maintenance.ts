@@ -1,7 +1,9 @@
-import { and, eq, lt } from "drizzle-orm";
+import { and, eq, inArray, lt, sql } from "drizzle-orm";
 import { db } from "@/db/client";
 import { jobs, webhookEvents } from "@/db/schema";
 import { enqueue } from "@/lib/queue";
+import { STUCK_AFTER_MS } from "@/lib/queue/ops";
+import { reportError } from "@/lib/observability";
 import { registerHandler } from "./handlers";
 
 // Recurring maintenance jobs (PLAN.md §10 1H #3). Same self-rescheduling
@@ -41,19 +43,93 @@ export async function pruneWebhookEvents(): Promise<number> {
  * spawns a second parallel chain.
  */
 export async function ensureWebhookPruningScheduled(): Promise<void> {
+  await ensureChainScheduled(PRUNE_JOB_TYPE);
+}
+
+/** Seeds every recurring maintenance chain — called once from worker startup. */
+export async function ensureMaintenanceScheduled(): Promise<void> {
+  await ensureWebhookPruningScheduled();
+  await ensureChainScheduled(REAP_JOB_TYPE);
+}
+
+async function ensureChainScheduled(type: string): Promise<void> {
   const [existing] = await db
     .select({ id: jobs.id })
     .from(jobs)
-    .where(and(eq(jobs.type, PRUNE_JOB_TYPE), eq(jobs.status, "pending")))
+    .where(and(eq(jobs.type, type), inArray(jobs.status, ["pending", "running"])))
     .limit(1);
   if (existing) return;
 
-  const [running] = await db
-    .select({ id: jobs.id })
-    .from(jobs)
-    .where(and(eq(jobs.type, PRUNE_JOB_TYPE), eq(jobs.status, "running")))
-    .limit(1);
-  if (running) return;
+  await enqueue(type, {});
+}
 
-  await enqueue(PRUNE_JOB_TYPE, {});
+// --- Stuck-job reaper (PLAN.md §13 H3 #2) -------------------------------
+//
+// claim.ts flips a job to `running` and never looks at it again. If the
+// process dies mid-run — a deploy, an OOM kill, Hostinger recycling the app
+// — the row stays `running` forever and nothing retries it: the send is
+// simply lost, silently. The reaper is the only thing that can notice,
+// because only the row's age can distinguish "still working" from "the
+// worker that held this is gone".
+
+export const REAP_JOB_TYPE = "maintenance.reap_stuck_jobs";
+const REAP_INTERVAL_MS = 5 * 60 * 1000;
+
+// Shared with the superadmin console so "stuck" means one thing in both
+// places: well above any real handler's runtime (the WhatsApp send/AI calls
+// are seconds), so a live job is never reaped out from under itself.
+export { STUCK_AFTER_MS };
+
+registerHandler(REAP_JOB_TYPE, async () => {
+  await reapStuckJobs();
+  await enqueue(REAP_JOB_TYPE, {}, { runAt: new Date(Date.now() + REAP_INTERVAL_MS) });
+});
+
+/**
+ * Returns `running` jobs whose lock has gone stale to `pending` so the next
+ * tick picks them up, counting the dead run as an attempt. A job that has
+ * exhausted its attempts this way goes to `dead` instead of looping
+ * forever — same terminal state processJob uses.
+ */
+export async function reapStuckJobs(now: Date = new Date()): Promise<number> {
+  const cutoff = new Date(now.getTime() - STUCK_AFTER_MS);
+
+  const stuck = await db
+    .select({
+      id: jobs.id,
+      type: jobs.type,
+      tenantId: jobs.tenantId,
+      attempts: jobs.attempts,
+      maxAttempts: jobs.maxAttempts,
+      lockedBy: jobs.lockedBy,
+      lockedAt: jobs.lockedAt,
+    })
+    .from(jobs)
+    .where(and(eq(jobs.status, "running"), lt(jobs.lockedAt, cutoff)))
+    .limit(200);
+
+  for (const job of stuck) {
+    const attempts = job.attempts + 1;
+    const dead = attempts >= job.maxAttempts;
+
+    await db
+      .update(jobs)
+      .set({
+        status: dead ? "dead" : "pending",
+        attempts,
+        runAt: now,
+        lockedAt: null,
+        lockedBy: null,
+        lastError: `Reaped: still running since ${job.lockedAt?.toISOString() ?? "?"} (worker ${job.lockedBy ?? "?"})`,
+        updatedAt: sql`CURRENT_TIMESTAMP`,
+      })
+      .where(and(eq(jobs.id, job.id), eq(jobs.status, "running")));
+
+    reportError(new Error(`Reaped stuck job ${job.type}`), {
+      tags: { area: "worker", jobType: job.type, outcome: dead ? "dead" : "requeued" },
+      extra: { jobId: job.id, tenantId: job.tenantId, attempts, lockedBy: job.lockedBy },
+    });
+  }
+
+  return stuck.length;
 }

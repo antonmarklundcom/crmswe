@@ -5,15 +5,20 @@ import {
   listFailedWebhookEvents,
   listDeadWhatsappJobs,
 } from "@/modules/whatsapp/health";
+import { listDeadJobs, listStuckJobs, type OpsJob } from "@/lib/queue/ops";
+import { Button } from "@/components/ui/button";
+import { retryJobAction } from "./actions";
 
 export default async function WhatsappHealthPage() {
   const ctx = await requireSuperadminContext();
   const t = await getTranslations("superadmin.whatsappHealth");
 
-  const [accounts, failedEvents, deadJobs] = await Promise.all([
+  const [accounts, failedEvents, deadJobs, queueDead, queueStuck] = await Promise.all([
     listAccountHealth(ctx),
     listFailedWebhookEvents(ctx),
     listDeadWhatsappJobs(ctx),
+    listDeadJobs(),
+    listStuckJobs(),
   ]);
 
   return (
@@ -85,6 +90,63 @@ export default async function WhatsappHealthPage() {
           {deadJobs.length === 0 && <li className="text-muted-foreground">{t("noDeadJobs")}</li>}
         </ul>
       </section>
+
+      {/* Platform-wide queue, not just WhatsApp: a job that dies or hangs is
+          work the tenant asked for and never got, and until now nothing in
+          the product showed it (PLAN.md §13 H3 #3). */}
+      <section>
+        <h2 className="mb-4 text-lg font-semibold">{t("queueDead")}</h2>
+        <JobList jobs={queueDead} empty={t("noQueueDead")} retryLabel={t("retryJob")} />
+      </section>
+
+      <section>
+        <h2 className="mb-1 text-lg font-semibold">{t("queueStuck")}</h2>
+        <p className="mb-4 text-sm text-muted-foreground">{t("queueStuckIntro")}</p>
+        <JobList jobs={queueStuck} empty={t("noQueueStuck")} retryLabel={t("retryJob")} />
+      </section>
     </div>
+  );
+}
+
+function JobList({
+  jobs,
+  empty,
+  retryLabel,
+}: {
+  jobs: OpsJob[];
+  empty: string;
+  retryLabel: string;
+}) {
+  if (jobs.length === 0) return <p className="text-sm text-muted-foreground">{empty}</p>;
+
+  return (
+    <ul className="flex flex-col gap-2 text-sm">
+      {jobs.map((job) => (
+        <li
+          key={job.id}
+          className="flex flex-wrap items-start justify-between gap-3 rounded-md border px-3 py-2"
+        >
+          <div className="min-w-0">
+            <p className="font-medium">
+              {job.type}{" "}
+              <span className="text-muted-foreground">
+                ({job.attempts}/{job.maxAttempts})
+              </span>
+            </p>
+            <p className="break-words text-muted-foreground">{job.lastError ?? "—"}</p>
+            <p className="text-xs text-muted-foreground">
+              {(job.lockedAt ?? job.runAt).toLocaleString("es-PY")}
+              {job.tenantId ? ` · ${job.tenantId}` : ""}
+            </p>
+          </div>
+          <form action={retryJobAction}>
+            <input type="hidden" name="jobId" value={job.id} />
+            <Button type="submit" size="sm" variant="outline">
+              {retryLabel}
+            </Button>
+          </form>
+        </li>
+      ))}
+    </ul>
   );
 }

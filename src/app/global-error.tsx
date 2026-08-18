@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect } from "react";
+import * as Sentry from "@sentry/nextjs";
 import { NextIntlClientProvider, useTranslations } from "next-intl";
 import messages from "../../messages/es.json";
 
@@ -15,6 +17,10 @@ export default function GlobalError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  useEffect(() => {
+    Sentry.captureException(error, { tags: { area: "global" } });
+  }, [error]);
+
   return (
     <html lang="es" className="h-full antialiased">
       <body className="min-h-full">

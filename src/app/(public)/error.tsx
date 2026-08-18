@@ -12,6 +12,7 @@ export default function GroupError({
   return (
     <ErrorState
       namespace="errors.public"
+      error={error}
       digest={error.digest}
       reset={reset}
     />

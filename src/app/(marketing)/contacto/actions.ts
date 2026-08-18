@@ -2,6 +2,8 @@
 
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { z } from "zod";
+import { checkRateLimit } from "@/lib/rate-limit";
 import { SITE_URL } from "@/lib/site-config";
 import { idempotencyKey, readAttribution, sendLead } from "@/lib/vendercrm-lead";
 
@@ -12,6 +14,25 @@ import { idempotencyKey, readAttribution, sendLead } from "@/lib/vendercrm-lead"
  * or still loading — which is most of the first seconds of an ad click on a
  * Paraguayan mobile connection.
  */
+// Same shape as every other action in the app: the payload is parsed, not
+// trusted (PLAN.md §3.3). Oversized fields are cut rather than rejected —
+// this is a public form and a long "mensaje" is a real visitor, not an
+// attack — but the phone, the one field the CRM keys on, must be present.
+const contactSchema = z.object({
+  telefono: z.string().trim().min(6).max(40),
+  nombre: z.string().trim().max(200).optional(),
+  empresa: z.string().trim().max(200).optional(),
+  email: z.string().trim().max(320).optional(),
+  rubro: z.string().trim().max(200).optional(),
+  mensaje: z.string().trim().max(4000).optional(),
+});
+
+// Public and unauthenticated, so it gets the same treatment as the lead
+// ingest endpoint (PLAN.md §13 H3 #4): a fixed per-IP window, ahead of any
+// work — including the outbound call to the CRM.
+const SUBMIT_LIMIT = 5;
+const SUBMIT_WINDOW_MS = 10 * 60 * 1000;
+
 export async function submitContactAction(formData: FormData) {
   // Honeypot: accept silently and post nothing. A bot that fills every field
   // must not be able to tell it was rejected.
@@ -19,19 +40,40 @@ export async function submitContactAction(formData: FormData) {
     redirect("/contacto?enviado=1");
   }
 
-  const phone = String(formData.get("telefono") ?? "").trim();
-  if (phone.length < 6) {
+  const requestHeaders = await headers();
+  const ip =
+    requestHeaders.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    requestHeaders.get("x-real-ip")?.trim() ||
+    "unknown";
+
+  if (checkRateLimit(`marketing:contacto:${ip}`, SUBMIT_LIMIT, SUBMIT_WINDOW_MS).limited) {
+    // Same answer as the honeypot: a flood gets a thank-you page and no
+    // lead, rather than a signal about what tripped.
+    redirect("/contacto?enviado=1");
+  }
+
+  const parsed = contactSchema.safeParse({
+    telefono: formData.get("telefono") ?? "",
+    nombre: formData.get("nombre") ?? undefined,
+    empresa: formData.get("empresa") ?? undefined,
+    email: formData.get("email") ?? undefined,
+    rubro: formData.get("rubro") ?? undefined,
+    mensaje: formData.get("mensaje") ?? undefined,
+  });
+
+  if (!parsed.success) {
     redirect("/contacto?error=telefono");
   }
 
-  const name = String(formData.get("nombre") ?? "").trim();
-  const company = String(formData.get("empresa") ?? "").trim();
-  const email = String(formData.get("email") ?? "").trim();
-  const sector = String(formData.get("rubro") ?? "").trim();
-  const message = String(formData.get("mensaje") ?? "").trim();
+  const phone = parsed.data.telefono;
+  const name = parsed.data.nombre ?? "";
+  const company = parsed.data.empresa ?? "";
+  const email = parsed.data.email ?? "";
+  const sector = parsed.data.rubro ?? "";
+  const message = parsed.data.mensaje ?? "";
 
   const attribution = readAttribution((await cookies()).get("vc_attr")?.value);
-  const referer = (await headers()).get("referer") ?? undefined;
+  const referer = requestHeaders.get("referer") ?? undefined;
 
   // Never send pipeline, stage, owner or tag: routing lives on the site record
   // in the CRM so it can be changed without a deploy.

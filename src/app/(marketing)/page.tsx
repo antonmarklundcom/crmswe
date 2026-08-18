@@ -6,6 +6,7 @@ import { auth } from "@/lib/auth/server";
 import { Hero } from "@/components/marketing/hero";
 import { TrustRibbon } from "@/components/marketing/trust-ribbon";
 import { ProblemSection } from "@/components/marketing/problem-section";
+import { ServicesSection, type ServiceItem } from "@/components/marketing/services-section";
 import { MethodRail, type MethodStep } from "@/components/marketing/method-steps";
 import { VerticalCards, type VerticalItem } from "@/components/marketing/vertical-cards";
 import { Statement } from "@/components/marketing/statement";
@@ -54,8 +55,8 @@ export default async function Home() {
 
   // Section → pattern map (web-design-system step 2), no two consecutive
   // sections sharing a pattern:
-  //   hero P1 · ribbon P8 · problem P4 · method P5 · verticals P3
-  //   statement P9 · closing overlap + ink band
+  //   hero P1 · ribbon P8 · problem P4 · services hairline rail
+  //   method P5 · verticals P3 · statement P9 · closing overlap + ink band
   return (
     <>
       <Hero
@@ -72,9 +73,9 @@ export default async function Home() {
 
       <TrustRibbon
         items={[
-          t("ribbon.established"),
-          t("ribbon.region"),
-          t("ribbon.diagnostic"),
+          t("ribbon.monthly"),
+          t("ribbon.measured"),
+          t("ribbon.ownData"),
           // Only once the owner has supplied it (site-config TODO).
           ...(contact.ruc ? [t("ribbon.ruc", { ruc: contact.ruc })] : []),
         ]}
@@ -87,6 +88,14 @@ export default async function Home() {
         bodyTwo={t("home.problem.bodyTwo")}
         symptomsTitle={t("home.problem.symptomsTitle")}
         symptoms={t.raw("home.problem.symptoms") as string[]}
+      />
+
+      <ServicesSection
+        eyebrow={t("home.services.eyebrow")}
+        title={t("home.services.title")}
+        lead={t("home.services.lead")}
+        items={t.raw("home.services.items") as ServiceItem[]}
+        fineprint={t("home.services.fineprint")}
       />
 
       <MethodRail

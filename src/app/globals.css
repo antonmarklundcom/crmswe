@@ -397,6 +397,45 @@
   }
 }
 
+/* ---- Service rail: large names on hairline rows, two columns on desktop.
+   Deliberately not the card grid the verticals use — the two sit close
+   together on the homepage and would read as one repeated block. ---- */
+.mk-services {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0;
+  margin-top: var(--mk-s-12);
+  border-top: 1px solid var(--mk-hairline);
+}
+@media (min-width: 900px) {
+  .mk-services {
+    grid-template-columns: 1fr 1fr;
+    column-gap: var(--mk-s-16);
+  }
+}
+.mk-service {
+  padding-block: var(--mk-s-6);
+  border-bottom: 1px solid var(--mk-hairline);
+}
+.mk-service h3 {
+  font-size: var(--mk-t-2);
+  margin-bottom: var(--mk-s-2);
+}
+.mk-service p {
+  margin-bottom: 0;
+  font-size: var(--mk-t-0);
+}
+.mk-fineprint {
+  margin-top: var(--mk-s-12);
+  padding: var(--mk-s-6);
+  border-left: 3px solid var(--mk-accent);
+  background: var(--mk-surface);
+  border-radius: 0 var(--mk-r-md) var(--mk-r-md) 0;
+}
+.mk-fineprint p {
+  margin-bottom: 0;
+}
+
 /* ---- P8 full-bleed ribbon ---- */
 .mk-ribbon {
   background: var(--mk-ink);

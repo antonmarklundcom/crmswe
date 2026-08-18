@@ -262,7 +262,8 @@
         "stageRequired": "Elegí en qué etapa arranca el negocio.",
         "valueInvalid": "El valor va en guaraníes enteros, sin decimales ni signos.",
         "unknown": "No se pudo crear el negocio. Intentá de nuevo."
-      }
+      },
+      "moveFailed": "No pudimos mover la oportunidad. Se restauró su etapa anterior."
     },
     "forms": {
       "title": "Formularios",
@@ -459,7 +460,8 @@
         "aiConversationDisabled": "No se pudo enviar: la IA está desactivada en esta conversación.",
         "aiOptedOut": "No se pudo enviar: este contacto pidió no recibir más mensajes.",
         "aiSendFailed": "No se pudo enviar el borrador. Intentá de nuevo."
-      }
+      },
+      "actionFailed": "No pudimos completar la acción. Probá de nuevo."
     },
     "sites": {
       "title": "Sitios",
@@ -1384,6 +1386,60 @@
       "loginNote": "¿Sos cliente?",
       "rights": "Todos los derechos reservados.",
       "madeIn": "Hecho en Paraguay"
+    }
+  },
+  "errors": {
+    "global": {
+      "title": "Algo salió mal",
+      "body": "La aplicación no pudo cargarse. Probá de nuevo en unos segundos.",
+      "retry": "Reintentar"
+    },
+    "app": {
+      "title": "No pudimos mostrar esta página",
+      "body": "Ocurrió un error al cargar tus datos. Podés reintentar o volver al panel.",
+      "retry": "Reintentar",
+      "back": "Ir al panel"
+    },
+    "superadmin": {
+      "title": "No pudimos mostrar esta página",
+      "body": "Ocurrió un error en la consola de administración.",
+      "retry": "Reintentar",
+      "back": "Ir a tenants"
+    },
+    "public": {
+      "title": "No pudimos mostrar este documento",
+      "body": "El enlace puede haber expirado o el documento ya no está disponible.",
+      "retry": "Reintentar"
+    },
+    "marketing": {
+      "title": "Algo salió mal",
+      "body": "No pudimos cargar esta sección del sitio.",
+      "retry": "Reintentar",
+      "back": "Ir al inicio"
+    },
+    "notFound": {
+      "app": {
+        "title": "No encontramos esta página",
+        "body": "El enlace puede estar mal escrito o el registro fue eliminado.",
+        "back": "Ir al panel"
+      },
+      "superadmin": {
+        "title": "No encontramos esta página",
+        "body": "El enlace puede estar mal escrito o el registro fue eliminado.",
+        "back": "Ir a tenants"
+      },
+      "public": {
+        "title": "Enlace no válido",
+        "body": "Este enlace no existe o ya expiró. Pedile uno nuevo a quien te lo envió."
+      },
+      "marketing": {
+        "title": "Página no encontrada",
+        "body": "La página que buscás no existe.",
+        "back": "Ir al inicio"
+      }
+    },
+    "loading": {
+      "label": "Cargando contenido"
     }
   }
 }

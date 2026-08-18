@@ -7,6 +7,8 @@ import {
   useDroppable,
   type DragEndEvent,
 } from "@dnd-kit/core";
+import { useTranslations } from "next-intl";
+import { toast } from "sonner";
 import { moveDealAction } from "./actions";
 
 type Stage = { id: string; name: string; color: string | null };
@@ -28,6 +30,7 @@ export function PipelineBoard({ stages, deals }: { stages: Stage[]; deals: Deal[
     groupByStage(stages, deals),
   );
   const [, startTransition] = useTransition();
+  const t = useTranslations("app.pipeline");
 
   function handleDragEnd(event: DragEndEvent) {
     const dealId = String(event.active.id);
@@ -43,6 +46,7 @@ export function PipelineBoard({ stages, deals }: { stages: Stage[]; deals: Deal[
     if (!deal) return;
 
     const toPosition = columns[toStageId].length;
+    const previous = columns;
 
     setColumns((prev) => ({
       ...prev,
@@ -50,8 +54,16 @@ export function PipelineBoard({ stages, deals }: { stages: Stage[]; deals: Deal[
       [toStageId]: [...prev[toStageId], { ...deal, stageId: toStageId }],
     }));
 
-    startTransition(() => {
-      moveDealAction({ dealId, toStageId, toPosition });
+    // The optimistic move above is a lie until the server confirms it. A
+    // rejected move used to leave the card sitting in the new column with
+    // nothing persisted; now the board snaps back and says so.
+    startTransition(async () => {
+      try {
+        await moveDealAction({ dealId, toStageId, toPosition });
+      } catch {
+        setColumns(previous);
+        toast.error(t("moveFailed"));
+      }
     });
   }
 

@@ -3,6 +3,7 @@
 import { useActionState, useEffect, useRef, useTransition } from "react";
 import useSWR, { type KeyedMutator } from "swr";
 import { useTranslations } from "next-intl";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useEchoGeneration } from "@/lib/use-echo-generation";
 import {
@@ -117,9 +118,16 @@ export function ConversationView({
     if (templateState !== sendTemplateInitialState) void mutate();
   }, [templateState, mutate]);
 
+  // Toggling AI and discarding a draft have no form state to render a
+  // refusal into, so a throw here used to leave the button looking like it
+  // had worked. The toast is the only place these can report.
   function runAction(run: () => Promise<void>) {
     startTransition(async () => {
-      await run();
+      try {
+        await run();
+      } catch {
+        toast.error(t("actionFailed"));
+      }
       await mutate();
     });
   }

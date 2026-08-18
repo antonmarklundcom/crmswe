@@ -1542,3 +1542,191 @@ is planned, not discovered:
    per-site optional — this is now purely "open the account and paste the two keys".)*
 9. **Email**: is any current GHL email flow load-bearing for the Paraguay sites? If yes,
    §11's email gap needs scheduling; if it's WhatsApp-only follow-up, it doesn't.
+
+---
+
+## 13. Hardening & improvement batches (Fable review, 2026-08-18)
+
+> **Authored by Fable 5** after a full-repo review (tech/build, roles/permissions,
+> features/UX/i18n). This section is the source of truth for the post-Phase-1
+> hardening pass. Each batch below is **one PR on its own branch off `main`**.
+> Batches inside a wave are file-disjoint and safe to run in parallel windows;
+> **do not start a wave until the previous wave's PRs are merged.** Build models:
+> follow the existing conventions (§2.2 layout, `tenantDb`, zod in actions,
+> next-intl for all strings, tests beside the module). No batch may reopen a §1.2
+> locked decision. Flag genuine gaps for Fable review; don't improvise architecture.
+
+### 13.0 Model tiering for this pass
+
+- **Fable 5**: authored this section; review gate after H1 (authorization) and
+  before/after H9 (extraction). No build batch requires Fable.
+- **Opus 5**: H1, H3, H9 — authorization correctness, worker/ops reliability,
+  and the pre-SIFEN document-layer extraction.
+- **Sonnet 5**: H2, H4, H5, H6, H7, H8 — UI, CRUD, i18n sweep, mobile pass.
+
+### Wave 1 — security & reliability (parallel: H1, H2, H3)
+
+**H1 — Authorization hardening (Opus 5).** Review found server actions that any
+`agent` can call although §3.2 reserves them for `admin`:
+- `src/app/(app)/automations/actions.ts` — create/saveDraft/publish/setStatus/cancelRun
+- `src/app/(app)/forms/actions.ts` — createForm, updateFormTurnstile
+- `src/app/(app)/pipeline/actions.ts` — createPipeline (pipeline *config* only;
+  moving/assigning deals stays agent-accessible)
+- `src/app/(app)/products/actions.ts` — createProduct, toggleProduct
+- `src/app/(app)/documents/actions.ts` — **voidDocument, deletePayment** (worst:
+  destructive, no audit). issueDocument/recordPayment stay agent-accessible
+  (agents sell); void/delete become admin-only **and write `auditLog` rows**.
+Switch each to `requireTenantAdmin()`; hide the corresponding nav/pages/buttons
+for agents (automations, forms already nav-hidden? verify against
+`src/app/(app)/layout.tsx`); add `requireSuperadminContext()` in-page to
+`(superadmin)/{tenants,tenants/[id],plans}/page.tsx` (defense-in-depth,
+matching `whatsapp-health`). **Exit criteria:** a new
+`src/modules/tenancy/authorization.test.ts` asserting every admin-only action
+rejects an `agent` — one test per action listed above — plus existing suites green.
+
+**H2 — Error UX safety net (Sonnet 5).** Zero `error.tsx`/`not-found.tsx`/
+`loading.tsx` exist; unhandled throws show Next's blank 500 (the failure mode
+DEPLOY.md §8 exists to debug). Add: root `global-error.tsx`; per-group
+`error.tsx` + `not-found.tsx` for `(app)`, `(superadmin)`, `(public)`,
+`(marketing)`; `loading.tsx` skeletons for the heavy lists (contacts, inbox,
+pipeline, quotes, documents, dashboard). Add a toast system (sonner), mounted
+in `(app)` layout, and wire the two known silent failures: failed drag in
+`PipelineBoard.tsx` and failed send in `inbox/[id]/ConversationView.tsx`.
+All strings through next-intl. **Exit criteria:** throwing inside a tenant page
+renders the branded error boundary, not the digest page.
+
+**H3 — Ops hardening (Opus 5).**
+1. **Sentry is configured but `captureException` is never called.** Report from:
+   worker `processJob` catch (with job type/id tags), dead-job transitions,
+   webhook processing failures, and the `error.tsx` boundaries from H2 (client
+   config already exists).
+2. **Job reaper:** a job whose process dies mid-run stays `running` forever
+   (`claim.ts` never re-sees it). Add a reaper in `src/worker/maintenance.ts`:
+   `running` + `lockedAt` older than N minutes → back to `pending` (attempt
+   counted), with a test.
+3. **Dead-job visibility:** superadmin page (or section on `whatsapp-health`)
+   listing `dead`/stuck jobs with a retry action.
+4. **Login rate limiting:** apply `src/lib/rate-limit` to better-auth
+   sign-in/forgot-password paths (per-IP + per-email fixed window). Add rate
+   limit + zod to `(marketing)/contacto/actions.ts`.
+5. **Constant-time cron secret:** replace `!==` with `timingSafeEqual` in the
+   three `api/cron/*` routes + `health/db` via one shared helper.
+**Exit criteria:** reaper test green; forced worker error visible in Sentry
+(or logged via a driver stub in CI); repeated bad logins get 429.
+
+### Wave 2 — lifecycle, language, data-in (parallel: H4, H5, H6)
+
+**H4 — User lifecycle & superadmin QoL (Sonnet 5).**
+- Deactivate/reactivate users (use better-auth `banned` columns, already in
+  schema, referenced nowhere). Banned users: session rejected in
+  `getTenantContext`, revoke sessions on ban.
+- Role change admin↔agent from `/users` (admin-only; cannot demote yourself if
+  last admin).
+- Admin-triggered password reset (send reset email) + superadmin "set password"
+  for stuck users (wire existing `setUserPassword`).
+- **Impersonation exit:** `stopImpersonation()` has zero callers. Persistent
+  banner in `(app)` layout when `impersonatorUserId` is set, with "volver a la
+  consola"; login redirect for superadmins → `/tenants` instead of `/`.
+- Audit log: write rows on ban/role-change/reset; **viewer pages** (superadmin:
+  cross-tenant; tenant settings: own tenant) — `listAuditLogForTenant` exists
+  unused.
+**Exit criteria:** banned agent's live session is dead on next request (test);
+impersonation round-trips console → tenant → console in the UI.
+
+**H5 — Multi-language (Sonnet 5).** §1.2 stays: `es` is default and reference
+locale. Add `en` and `sv` as **user-level preference** (no `[locale]` URL
+segment — locale is a `users` column, default from tenant locale):
+1. `src/i18n/request.ts`: resolve locale from session user (cookie fallback
+   pre-login); `<html lang>` follows it.
+2. Language switcher: settings page + login/user-menu.
+3. `messages/en.json`, `messages/sv.json` — full translations of the 995 keys;
+   extend `messages.test.ts` to diff key sets across locales (missing key =
+   test failure).
+4. **Hardcoded-Spanish sweep** (review located these): public pages
+   `q/[token]`, `d/[token]`, `f/.../page.tsx`; PDFs `quotes/pdf.tsx`,
+   `documents/pdf.tsx`; `lib/email/templates.ts`; thrown user-facing errors in
+   quotes/documents `delivery.ts`, `forms/submissions.ts`, `sites/settings.ts`,
+   `auth/invitations.ts`, `automations/flows.ts`, `ai/reply.ts`. Customer-facing
+   artifacts (public pages, PDFs, emails) follow the **tenant** locale, not the
+   viewer's.
+5. Replace hardcoded `es-PY` `Intl.*` formatters with a locale-aware helper
+   (keep `America/Asuncion`/currency from tenant settings).
+**Exit criteria:** switcher persists per user; key-parity test green; no
+literal Spanish strings left in the swept files.
+
+**H6 — Data-in & follow-through (Sonnet 5).**
+- **CSV import** for contacts (`/contacts` → import): upload, header mapping UI,
+  phone normalization via `lib/phone`, dedupe by phone (update-vs-skip choice),
+  per-row error report, tag-on-import. This is the GHL migration path (§1.1) —
+  ask for a real GHL export shape if available (§12 Q7).
+- **Task reminders:** daily job (queue + Resend) emailing each user their due/
+  overdue tasks (`listOpenTasksDueBy` exists unused); per-user opt-out in
+  settings.
+- **Plan limit enforcement:** `plans.limits` JSON is written but never read.
+  Define shape `{ maxUsers, maxContacts, maxSitesConnected }` (null = unlimited);
+  enforce at invite, contact create/import, site create; friendly limit-reached
+  UI. `plans.features` gating stays deferred until a real differentiated plan
+  exists — don't build speculative flags.
+**Exit criteria:** 1k-row CSV imports with mixed dupes/errors and a correct
+report; seat limit blocks the N+1th invite (test).
+
+### Wave 3 — daily-driver UX (parallel: H7, H8)
+
+**H7 — Mobile & PWA pass (Sonnet 5).** The nav is responsive; the 46 pages
+under it mostly aren't (only dashboard + layout have breakpoint classes).
+- Wrap every `<table>` in an `overflow-x-auto` container (quotes, quotes/[id],
+  products, documents ×2, automations/[id], the three superadmin pages, both
+  public share pages — contacts already does it).
+- Responsive pass on forms/detail pages (stack on small screens; no fixed
+  `max-w-sm` columns that clip).
+- `PipelineBoard.tsx`: add @dnd-kit `TouchSensor` with sensible activation
+  constraints; verify drag on a 390px viewport.
+- Flow editor on mobile: read-only notice + list view is acceptable Phase 1
+  (do not attempt touch canvas editing).
+- **PWA:** `manifest.ts`, icons, `apple-touch-icon`, `theme-color` — installable
+  home-screen app for the CRM host. No service worker/offline in this batch.
+  Also add `sitemap.ts`/`robots.ts` for the marketing host.
+**Exit criteria:** Playwright (or manual per SMOKE_TEST.md) pass at 390px:
+login → contacts → contact detail → pipeline drag → inbox reply, no horizontal
+body scroll anywhere.
+
+**H8 — Product depth (Sonnet 5).**
+- **Global search (Ctrl/⌘K):** command palette searching contacts (name/phone/
+  email), deals, quotes, documents, conversations; server endpoint with
+  per-tenant scoping via `tenantDb`; rate-limited; keyboard navigation.
+- **Deal detail page** `pipeline/[dealId]` (or drawer): value, stage history,
+  assigned rep, linked contact/quotes/tasks, **won/lost buttons** with reason;
+  won/lost excluded from board columns by default.
+- **Pipeline config UI** (admin-only — respects H1): rename/reorder/recolor/
+  delete-if-empty stages, mark won/lost stages.
+- Wire `leads/stats.ts` (exists, unused) into a simple dashboard source/UTM
+  report table.
+**Exit criteria:** ⌘K reaches any contact in ≤3 keystrokes + Enter; a deal can
+be won/lost from its detail view and disappears from active columns.
+
+### Wave 4 — solo (H9, after all above merged)
+
+**H9 — Extraction & unification (Opus 5, Fable review gate before merge).**
+1. **Shared document layer:** `quotes/*` and `documents/*` are near-clones
+   (numbering, pdf, delivery, public pages — ~300 duplicated lines). Extract
+   `src/modules/renderable-document/` (or shared helpers) for: per-tenant
+   numbering, react-pdf shell (header/branding/items/totals), delivery
+   (render → store → WhatsApp), public token page + pdf route plumbing. Quotes
+   and documents become thin configs over it. **This is the SIFEN (§9)
+   pre-work — a third copy is forbidden.** Behavior must be pixel-stable:
+   snapshot-compare a rendered quote + document PDF before/after.
+2. **Shared API route guard:** one helper module providing the cron-secret,
+   session, api-key and token guards with uniform JSON error bodies; migrate
+   the 11 routes; delete the 5 divergent inline patterns.
+3. **UI primitives:** add shadcn `input`, `label`, `select`, `table`, `dialog`
+   to `src/components/ui/`; migrate the ~100 inline-class form fields
+   (mechanical, biggest diff — which is why this batch runs alone).
+**Exit criteria:** PDFs byte-comparable or visually identical; all route tests
+green; zero remaining inline `rounded-md border px-3 py-2` input literals.
+
+### 13.1 Explicitly NOT in this pass (deferred, unchanged from §11)
+
+Owner-scoped "agent sees only own deals" visibility mode (would reopen §1.2's
+shared-pipeline decision — needs an owner call first), custom fields, duplicate
+merge UI, email-as-channel, calendar/booking, native mobile app (H7's PWA is
+the Phase-1 answer), payment gateway, websockets/SSE for the inbox.

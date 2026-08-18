@@ -100,6 +100,7 @@ export const APP_PATH_PREFIXES = [
   "/tenants",
   "/plans",
   "/whatsapp-health",
+  "/audit",
   "/login",
   "/accept-invite",
   "/forgot-password",

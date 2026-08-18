@@ -9,9 +9,9 @@ import { Button } from "@/components/ui/button";
 
 // Client component: hits /api/auth/sign-in/email directly, no server action
 // (the module rule §2.2 applies to business logic, not to a thin wrapper
-// around Better Auth's own client). On success, redirect handles routing
-// tenant users vs. superadmins to the right area (both land on "/", which
-// the (app)/(superadmin) layouts route from based on the session).
+// around Better Auth's own client). On success a tenant user lands on the
+// dashboard and a superadmin on the console — "/" is the marketing home and
+// was never a useful destination for either (PLAN.md §13 H4).
 export function LoginForm() {
   const t = useTranslations("auth.login");
   const router = useRouter();
@@ -41,7 +41,14 @@ export function LoginForm() {
       return;
     }
 
-    router.push(searchParams.get("next") ?? "/");
+    const next = searchParams.get("next");
+    if (next) {
+      router.push(next);
+    } else {
+      const { data: session } = await authClient.getSession();
+      const isSuperadmin = (session?.user as { isSuperadmin?: boolean } | undefined)?.isSuperadmin;
+      router.push(isSuperadmin ? "/tenants" : "/dashboard");
+    }
     router.refresh();
   }
 

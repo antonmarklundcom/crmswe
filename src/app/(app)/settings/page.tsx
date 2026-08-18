@@ -3,6 +3,8 @@ import { requireTenantContext } from "@/modules/tenancy/context";
 import { getTenant } from "@/modules/tenancy/tenants";
 import type { BusinessHours, TenantSettings } from "@/modules/tenancy/settings";
 import { PageHeader } from "@/components/page-header";
+import { AuditTable } from "@/components/audit-table";
+import { listAuditLogForTenant } from "@/modules/tenancy/audit";
 import { contactsFeedUrl } from "@/modules/crm/feed-url";
 import { isAiConfigured } from "@/lib/ai";
 import { resolveAiConfig } from "@/modules/ai/config";
@@ -21,6 +23,7 @@ import {
 export default async function SettingsPage() {
   const ctx = await requireTenantContext();
   const t = await getTranslations("app.settings");
+  const ta = await getTranslations("audit");
 
   if (ctx.role !== "admin") {
     return <p className="text-muted-foreground">{t("adminOnly")}</p>;
@@ -38,6 +41,8 @@ export default async function SettingsPage() {
       sat: null,
       sun: null,
     };
+
+  const auditEntries = await listAuditLogForTenant(ctx.tenantId);
 
   const ai = resolveAiConfig(tenant?.name ?? "", settings.ai);
   const aiUsage = await monthlyTokenUsage(ctx);
@@ -146,6 +151,14 @@ export default async function SettingsPage() {
           }
           labels={sheetsLabels}
         />
+      </section>
+
+      {/* Own tenant only — the cross-tenant feed lives in the superadmin
+          console. This is where an admin answers "who deactivated her?". */}
+      <section>
+        <h2 className="mb-2 text-lg font-semibold">{ta("title")}</h2>
+        <p className="mb-4 max-w-2xl text-sm text-muted-foreground">{ta("intro")}</p>
+        <AuditTable entries={auditEntries} />
       </section>
     </div>
   );

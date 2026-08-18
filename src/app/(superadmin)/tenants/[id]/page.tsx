@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
+import { requireSuperadminContext } from "@/modules/tenancy/context";
 import { getTenant } from "@/modules/tenancy/tenants";
 import { getLatestSubscriptionForTenant } from "@/modules/tenancy/subscriptions";
 import { listPlans, getPlan } from "@/modules/tenancy/plans";
@@ -10,11 +11,15 @@ import { CreateUserForm, type CreateUserLabels } from "./CreateUserForm";
 import { CreateSubscriptionForm, RecordPaymentForm } from "./SubscriptionForms";
 import { impersonateAction } from "./actions";
 
+// Defense in depth (§3.3): the (superadmin) layout already redirects a
+// non-superadmin, but a layout is not an authorization boundary — this page
+// re-checks for itself, the same as whatsapp-health.
 export default async function TenantDetailPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
+  await requireSuperadminContext();
   const { id } = await params;
   const tenant = await getTenant(id);
   if (!tenant) notFound();

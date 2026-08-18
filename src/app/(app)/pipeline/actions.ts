@@ -3,7 +3,7 @@
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { requireTenantContext } from "@/modules/tenancy/context";
+import { requireTenantContext, requireTenantAdmin } from "@/modules/tenancy/context";
 import { moveDeal, createDeal } from "@/modules/crm/deals";
 import { createPipelineWithDefaultStages } from "@/modules/crm/pipelines";
 
@@ -102,8 +102,11 @@ const createPipelineSchema = z.object({
   name: z.string().min(1).max(100),
 });
 
+// Pipeline *config* is admin-only (§3.2) — adding a pipeline reshapes how the
+// whole tenant sells. Working the board is not: moveDealAction and
+// createDealAction above stay agent-accessible, which is the daily job.
 export async function createPipelineAction(formData: FormData) {
-  const ctx = await requireTenantContext();
+  const ctx = await requireTenantAdmin();
   const input = createPipelineSchema.parse({ name: formData.get("name") });
   const pipeline = await createPipelineWithDefaultStages(ctx, input.name);
   revalidatePath("/pipeline");

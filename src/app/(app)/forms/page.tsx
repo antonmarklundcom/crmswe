@@ -19,6 +19,13 @@ export default async function FormsPage({
 }) {
   const ctx = await requireTenantContext();
   const t = await getTranslations("app.forms");
+
+  // A form defines a public endpoint on the tenant's slug, so it is admin
+  // configuration (§3.2) — matching the guard on this page's actions.
+  if (ctx.role !== "admin") {
+    return <p className="text-muted-foreground">{t("adminOnly")}</p>;
+  }
+
   const { pipeline: pipelineParam } = await searchParams;
 
   const [tenant, forms, pipelines, sites] = await Promise.all([

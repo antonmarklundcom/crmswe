@@ -13,6 +13,10 @@ export default async function FlowPage({ params }: { params: Promise<{ id: strin
   const ctx = await requireTenantContext();
   const t = await getTranslations("app.automations");
 
+  if (ctx.role !== "admin") {
+    return <p className="text-muted-foreground">{t("adminOnly")}</p>;
+  }
+
   const flow = await getFlow(ctx, id);
   if (!flow) notFound();
 

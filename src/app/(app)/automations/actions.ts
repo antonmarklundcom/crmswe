@@ -3,10 +3,16 @@
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { requireTenantContext } from "@/modules/tenancy/context";
+import { requireTenantAdmin } from "@/modules/tenancy/context";
 import { createFlow, saveDraft, publishFlow, setFlowStatus } from "@/modules/automations/flows";
 import { cancelRun } from "@/modules/automations/engine";
 import { flowGraphSchema, TRIGGER_TYPES } from "@/modules/automations/graph";
+
+// Automations are tenant *configuration*, reserved for `admin` by §3.2 — an
+// agent works contacts/deals/inbox/quotes but does not author the flows that
+// send on the tenant's WhatsApp number. Every action here therefore goes
+// through requireTenantAdmin(); /automations is nav-hidden and page-guarded
+// for agents on top of that, but this is the check that actually holds.
 
 const createFlowSchema = z.object({
   name: z.string().min(1).max(200),
@@ -29,7 +35,7 @@ export async function createFlowAction(
   _prevState: FlowFormState,
   formData: FormData,
 ): Promise<FlowFormState> {
-  const ctx = await requireTenantContext();
+  const ctx = await requireTenantAdmin();
   const values = Object.fromEntries(
     [...formData.entries()].filter(
       (entry): entry is [string, string] => typeof entry[1] === "string",
@@ -62,14 +68,14 @@ export async function createFlowAction(
 
 /** Called from the editor with the canvas graph as JSON. */
 export async function saveDraftAction(flowId: string, graphJson: string) {
-  const ctx = await requireTenantContext();
+  const ctx = await requireTenantAdmin();
   const graph = flowGraphSchema.parse(JSON.parse(graphJson));
   await saveDraft(ctx, flowId, graph);
   revalidatePath(`/automations/${flowId}`);
 }
 
 export async function publishFlowAction(flowId: string) {
-  const ctx = await requireTenantContext();
+  const ctx = await requireTenantAdmin();
   const result = await publishFlow(ctx, flowId);
   revalidatePath(`/automations/${flowId}`);
   // Validation errors are shown in the editor, so they're returned rather
@@ -78,7 +84,7 @@ export async function publishFlowAction(flowId: string) {
 }
 
 export async function setFlowStatusAction(formData: FormData) {
-  const ctx = await requireTenantContext();
+  const ctx = await requireTenantAdmin();
   const parsed = z
     .object({ flowId: z.string().min(1), status: z.enum(["draft", "active", "paused"]) })
     .safeParse({ flowId: formData.get("flowId"), status: formData.get("status") });
@@ -88,7 +94,7 @@ export async function setFlowStatusAction(formData: FormData) {
 }
 
 export async function cancelRunAction(formData: FormData) {
-  const ctx = await requireTenantContext();
+  const ctx = await requireTenantAdmin();
   const parsed = z
     .object({ runId: z.string().min(1), flowId: z.string().min(1) })
     .safeParse({ runId: formData.get("runId"), flowId: formData.get("flowId") });

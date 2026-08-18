@@ -2,9 +2,14 @@
 
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
-import { requireTenantContext } from "@/modules/tenancy/context";
+import { requireTenantAdmin } from "@/modules/tenancy/context";
 import { createForm, getForm, updateForm } from "@/modules/forms/forms";
 import type { FormField, FormSettings } from "@/modules/forms/forms";
+
+// Lead-capture forms are tenant configuration (§3.2 reserves it for `admin`):
+// a form defines a public endpoint on the tenant's slug and decides which
+// pipeline strangers' submissions land in. Both actions require admin; the
+// page and nav entry are hidden for agents as defense in depth.
 
 // Standard field set (PLAN.md §4 "forms" allows text/phone/email/select/
 // textarea; the tenant-side field-order/type editor is left for a later
@@ -50,7 +55,7 @@ export async function createFormAction(
   _prevState: FormFormState,
   formData: FormData,
 ): Promise<FormFormState> {
-  const ctx = await requireTenantContext();
+  const ctx = await requireTenantAdmin();
   const values = Object.fromEntries(
     [...formData.entries()].filter(
       (entry): entry is [string, string] => typeof entry[1] === "string",
@@ -105,7 +110,7 @@ const formTurnstileSchema = z.object({
 });
 
 export async function updateFormTurnstileAction(formData: FormData) {
-  const ctx = await requireTenantContext();
+  const ctx = await requireTenantAdmin();
   const parsed = formTurnstileSchema.safeParse({
     formId: formData.get("formId"),
     turnstileSiteId: formData.get("turnstileSiteId") || undefined,

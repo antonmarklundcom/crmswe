@@ -2,8 +2,12 @@
 
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
-import { requireTenantContext } from "@/modules/tenancy/context";
+import { requireTenantAdmin } from "@/modules/tenancy/context";
 import { createProduct, updateProduct } from "@/modules/quotes/products";
+
+// The catalog is tenant configuration (§3.2): agents sell from it — and so
+// still read it on /products, /quotes and /documents — but only an admin
+// adds a product or takes one out of circulation.
 
 // useActionState-shaped (PLAN.md §10 1R #6): a bad price or a missing name
 // comes back as state rendered next to the input, not Next's error page.
@@ -31,7 +35,7 @@ export async function createProductAction(
   _prevState: ProductFormState,
   formData: FormData,
 ): Promise<ProductFormState> {
-  const ctx = await requireTenantContext();
+  const ctx = await requireTenantAdmin();
   const values = Object.fromEntries(
     [...formData.entries()].filter(
       (entry): entry is [string, string] => typeof entry[1] === "string",
@@ -68,7 +72,7 @@ export async function createProductAction(
 }
 
 export async function toggleProductAction(formData: FormData) {
-  const ctx = await requireTenantContext();
+  const ctx = await requireTenantAdmin();
   const parsed = z.string().min(1).safeParse(formData.get("productId"));
   if (!parsed.success) return;
   const isActive = formData.get("isActive") === "true";

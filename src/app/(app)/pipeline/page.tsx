@@ -21,6 +21,9 @@ export default async function PipelinePage({
   const t = await getTranslations("app.pipeline");
   const { pipeline: pipelineParam } = await searchParams;
 
+  // Working the board is the agent's job; adding a pipeline is tenant config
+  // and admin-only (§3.2), so the create form is admin-only too.
+  const isAdmin = ctx.role === "admin";
   const pipelines = await listPipelines(ctx);
   const pipeline =
     pipelines.find((p) => p.id === pipelineParam) ?? pipelines[0];
@@ -33,7 +36,7 @@ export default async function PipelinePage({
           title={t("noPipeline")}
           description={t("noPipelineBody")}
         />
-        <NewPipelineForm t={t} />
+        {isAdmin && <NewPipelineForm t={t} />}
       </div>
     );
   }
@@ -106,7 +109,7 @@ export default async function PipelinePage({
         )}
       </section>
 
-      <NewPipelineForm t={t} />
+      {isAdmin && <NewPipelineForm t={t} />}
     </div>
   );
 }

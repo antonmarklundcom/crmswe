@@ -6,6 +6,7 @@ import { newId } from "@/lib/ids";
 import { computeLineTotals, type LineInput } from "@/lib/money";
 import { buildSystemTenantContext, type TenantContext } from "@/modules/tenancy/context";
 import { tenantDb } from "@/modules/tenancy/db";
+import { writeAuditLog } from "@/modules/tenancy/audit";
 import { createActivity } from "@/modules/crm/activities";
 import { getQuote, listQuoteItems } from "@/modules/quotes/quotes";
 import { nextDocumentNumber } from "./numbering";
@@ -264,6 +265,19 @@ export async function voidDocument(ctx: TenantContext, id: string, reason: strin
     .set({ status: "void", voidedAt: new Date(), voidReason: reason.slice(0, 500) })
     .where(eq(documents.id, id));
 
+  // Voiding cancels a sale the customer already holds a link to and cannot be
+  // undone, so it leaves a trail (§3.2): who did it, under whose session if
+  // impersonated, and against which document number.
+  await writeAuditLog({
+    tenantId: ctx.tenantId,
+    actorUserId: ctx.userId,
+    impersonatorUserId: ctx.impersonatorUserId,
+    action: "document.void",
+    entity: "document",
+    entityId: id,
+    payload: { number: document.number, total: document.total, reason: reason.slice(0, 500) },
+  });
+
   return getDocument(ctx, id);
 }
 
@@ -371,10 +385,34 @@ export async function listPayments(ctx: TenantContext, documentId: string) {
 }
 
 export async function deletePayment(ctx: TenantContext, documentId: string, paymentId: string) {
+  // Read before deleting: the amount is the only thing worth auditing here,
+  // and once the row is gone there is nothing left to record. A paymentId
+  // that doesn't belong to this document (or this tenant) simply isn't found
+  // and nothing is logged — the delete below is a no-op in that case too.
+  const [payment] = await tenantDb(ctx).select(
+    documentPayments,
+    and(eq(documentPayments.id, paymentId), eq(documentPayments.documentId, documentId)),
+  );
+
   await tenantDb(ctx).delete(
     documentPayments,
     and(eq(documentPayments.id, paymentId), eq(documentPayments.documentId, documentId)),
   );
+
+  if (payment) {
+    // Deleting a payment rewrites the ledger a document's balance is computed
+    // from — destructive and admin-only, so it is audited like a void (§3.2).
+    await writeAuditLog({
+      tenantId: ctx.tenantId,
+      actorUserId: ctx.userId,
+      impersonatorUserId: ctx.impersonatorUserId,
+      action: "document.payment_deleted",
+      entity: "document",
+      entityId: documentId,
+      payload: { paymentId, amount: payment.amount, method: payment.method },
+    });
+  }
+
   return getDocumentTotals(ctx, documentId);
 }
 

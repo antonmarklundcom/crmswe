@@ -25,6 +25,10 @@ export default async function DocumentDetailPage({
   const ctx = await requireTenantContext();
   const t = await getTranslations("app.documents");
 
+  // Agents sell — issue documents, record payments — but the two destructive,
+  // ledger-rewriting controls (void, delete payment) are admin-only (§3.2).
+  const isAdmin = ctx.role === "admin";
+
   const document = await getDocument(ctx, id);
   if (!document) notFound();
 
@@ -221,7 +225,7 @@ export default async function DocumentDetailPage({
                     <td className="py-2">{payment.reference}</td>
                     <td className="py-2 text-right">{fmt(payment.amount)}</td>
                     <td className="py-2 text-right">
-                      {document.status === "issued" && (
+                      {document.status === "issued" && isAdmin && (
                         <form action={deletePaymentAction}>
                           <input type="hidden" name="documentId" value={document.id} />
                           <input type="hidden" name="paymentId" value={payment.id} />
@@ -241,7 +245,7 @@ export default async function DocumentDetailPage({
         </section>
       )}
 
-      {document.status === "issued" && (
+      {document.status === "issued" && isAdmin && (
         <section className="flex flex-col gap-2">
           <h2 className="text-lg font-semibold">{t("voidTitle")}</h2>
           {payments.length > 0 ? (

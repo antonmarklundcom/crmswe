@@ -12,6 +12,10 @@ export default async function ProductsPage() {
   const ctx = await requireTenantContext();
   const t = await getTranslations("app.products");
   const tc = await getTranslations("common");
+  // Agents sell from the catalog, so they still read all of it — but creating
+  // a product and taking one out of circulation are admin-only (§3.2), so
+  // those controls are not rendered for them.
+  const isAdmin = ctx.role === "admin";
   const products = await listProducts(ctx, true);
 
   return (
@@ -24,8 +28,8 @@ export default async function ProductsPage() {
             icon={Package}
             title={t("emptyTitle")}
             description={t("emptyBody")}
-            actionLabel={tc("create")}
-            actionHref="#nuevo-producto"
+            actionLabel={isAdmin ? tc("create") : undefined}
+            actionHref={isAdmin ? "#nuevo-producto" : undefined}
           />
         ) : (
           <table className="w-full text-left text-sm">
@@ -49,17 +53,19 @@ export default async function ProductsPage() {
                     {new Intl.NumberFormat("es-PY").format(product.unitPrice)} {product.currency}
                   </td>
                   <td className="py-2 text-right">
-                    <form action={toggleProductAction}>
-                      <input type="hidden" name="productId" value={product.id} />
-                      <input
-                        type="hidden"
-                        name="isActive"
-                        value={product.isActive ? "false" : "true"}
-                      />
-                      <Button type="submit" size="sm" variant="outline">
-                        {product.isActive ? t("deactivate") : t("activate")}
-                      </Button>
-                    </form>
+                    {isAdmin && (
+                      <form action={toggleProductAction}>
+                        <input type="hidden" name="productId" value={product.id} />
+                        <input
+                          type="hidden"
+                          name="isActive"
+                          value={product.isActive ? "false" : "true"}
+                        />
+                        <Button type="submit" size="sm" variant="outline">
+                          {product.isActive ? t("deactivate") : t("activate")}
+                        </Button>
+                      </form>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -68,10 +74,12 @@ export default async function ProductsPage() {
         )}
       </section>
 
-      <section id="nuevo-producto" className="scroll-mt-6">
-        <h2 className="mb-4 text-lg font-semibold">{t("createTitle")}</h2>
-        <ProductCreateForm />
-      </section>
+      {isAdmin && (
+        <section id="nuevo-producto" className="scroll-mt-6">
+          <h2 className="mb-4 text-lg font-semibold">{t("createTitle")}</h2>
+          <ProductCreateForm />
+        </section>
+      )}
     </div>
   );
 }

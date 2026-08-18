@@ -10,6 +10,13 @@ import { FlowCreateForm } from "./FlowCreateForm";
 export default async function AutomationsPage() {
   const ctx = await requireTenantContext();
   const t = await getTranslations("app.automations");
+
+  // Same guard the actions enforce (§3.2) — rendered here so an agent who
+  // knows the URL gets a sentence instead of a page of buttons that throw.
+  if (ctx.role !== "admin") {
+    return <p className="text-muted-foreground">{t("adminOnly")}</p>;
+  }
+
   const flows = await listFlows(ctx);
 
   return (

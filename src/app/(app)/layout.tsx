@@ -67,14 +67,19 @@ export default async function AppLayout({
       ],
     },
     {
+      // Everything under "capture" is tenant configuration reserved for
+      // `admin` (§3.2) — the actions behind these pages now require it, and
+      // hiding the nav entries keeps an agent from walking into a page whose
+      // every button throws. The whole group disappears for an agent, so it
+      // is dropped below rather than rendered as a bare heading.
       label: t("groups.capture"),
-      items: [
-        { href: "/automations", label: t("automations"), icon: "automations" },
-        { href: "/forms", label: t("forms"), icon: "forms" },
-        ...(isAdmin
-          ? [{ href: "/sites", label: t("sites"), icon: "sites" as const }]
-          : []),
-      ],
+      items: isAdmin
+        ? [
+            { href: "/automations", label: t("automations"), icon: "automations" as const },
+            { href: "/forms", label: t("forms"), icon: "forms" as const },
+            { href: "/sites", label: t("sites"), icon: "sites" as const },
+          ]
+        : [],
     },
     {
       label: t("groups.settings"),
@@ -99,6 +104,8 @@ export default async function AppLayout({
     },
   ];
 
+  const visibleGroups = groups.filter((group) => group.items.length > 0);
+
   const identity = {
     name: user?.name ?? "",
     email: user?.email ?? "",
@@ -111,7 +118,7 @@ export default async function AppLayout({
       {graceBanner}
       <div className="flex flex-1 flex-col md:flex-row">
         <AppNav
-          groups={groups}
+          groups={visibleGroups}
           appName={tc("appName")}
           footer={<UserMenu {...identity} />}
           mobileHeader={<UserMenu {...identity} variant="bar" />}

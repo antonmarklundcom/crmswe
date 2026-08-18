@@ -3,7 +3,7 @@
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { requireTenantContext } from "@/modules/tenancy/context";
+import { requireTenantContext, requireTenantAdmin } from "@/modules/tenancy/context";
 import {
   createDocument,
   updateDraftDocument,
@@ -178,11 +178,15 @@ export type VoidDocumentFormState = {
   values: { reason: string };
 };
 
+// Admin-only, unlike issue/record-payment above: voiding cancels a sale that
+// the customer already holds a link to, and it is not undoable. Agents sell
+// (§3.2), admins reverse. The void itself writes an auditLog row from the
+// documents module, so who cancelled what — and why — survives the action.
 export async function voidDocumentAction(
   _prevState: VoidDocumentFormState,
   formData: FormData,
 ): Promise<VoidDocumentFormState> {
-  const ctx = await requireTenantContext();
+  const ctx = await requireTenantAdmin();
   const documentId = String(formData.get("documentId") ?? "");
   const reason = String(formData.get("reason") ?? "");
 
@@ -275,8 +279,10 @@ const deletePaymentSchema = z.object({
   paymentId: z.string().min(1),
 });
 
+// Admin-only for the same reason as voiding: deleting a payment rewrites the
+// ledger a document's balance is computed from. Audited in the module.
 export async function deletePaymentAction(formData: FormData) {
-  const ctx = await requireTenantContext();
+  const ctx = await requireTenantAdmin();
   const parsed = deletePaymentSchema.safeParse({
     documentId: formData.get("documentId"),
     paymentId: formData.get("paymentId"),

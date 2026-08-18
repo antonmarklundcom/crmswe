@@ -994,5 +994,353 @@
       "deadJobs": "Trabajos agotados",
       "noDeadJobs": "Sin trabajos agotados"
     }
+  },
+  "marketing": {
+    "nav": {
+      "home": "Inicio",
+      "metodo": "Método",
+      "nosotros": "Nosotros",
+      "contacto": "Contacto",
+      "login": "Ingresar",
+      "skipToContent": "Ir al contenido",
+      "menu": "Menú"
+    },
+    "cta": {
+      "primary": "Agendá tu diagnóstico",
+      "whatsapp": "Escribinos por WhatsApp",
+      "secondary": "Ver cómo trabajamos",
+      "waPrefill": "Hola, vengo de clientes.com.py y quiero agendar un diagnóstico."
+    },
+    "ribbon": {
+      "established": "Trabajamos con empresas ya establecidas",
+      "region": "Asunción y Gran Asunción",
+      "diagnostic": "Primera conversación sin costo",
+      "ruc": "RUC {ruc}"
+    },
+    "home": {
+      "meta": {
+        "title": "Más clientes para tu empresa | clientes.com.py",
+        "description": "Ayudamos a empresas paraguayas establecidas a conseguir más clientes con un proceso de ventas ordenado: captación, seguimiento y medición."
+      },
+      "hero": {
+        "eyebrow": "Crecimiento comercial en Paraguay",
+        "title": "Más clientes. Un proceso de ventas ordenado.",
+        "lead": "Ayudamos a empresas paraguayas ya establecidas a conseguir más clientes — con un sistema, no con suerte.",
+        "body": "Si ya tenés un producto que funciona y clientes que vuelven, el techo casi nunca es la demanda. Es que la captación depende de quién tenga tiempo esa semana.",
+        "points": [
+          "Un canal de consultas que no se apaga cuando el equipo está ocupado",
+          "Seguimiento que ocurre igual, esté quien esté de turno",
+          "Números claros: cuántas consultas entraron y cuántas se cerraron"
+        ],
+        "asideTitle": "Cómo empieza",
+        "asideBody": "Una conversación de diagnóstico de 30 minutos. Revisamos de dónde vienen hoy tus clientes, qué se pierde en el camino y qué se puede ordenar primero.",
+        "asideNote": "Sin costo y sin compromiso. Si no vemos con qué ayudarte, te lo decimos en la misma llamada."
+      },
+      "problem": {
+        "eyebrow": "El punto de partida",
+        "title": "No te faltan clientes. Te falta un proceso.",
+        "body": "La mayoría de las empresas con las que trabajamos no tienen un problema de producto ni de mercado. Tienen consultas que llegan por cinco lugares distintos, presupuestos que quedan sin respuesta y ninguna forma de saber qué funcionó el mes pasado.",
+        "bodyTwo": "Eso no se arregla con más publicidad. Se arregla ordenando lo que ya entra y agregando captación encima de una base que aguanta.",
+        "symptomsTitle": "Se nota en cosas concretas",
+        "symptoms": [
+          "Consultas que llegan por WhatsApp, teléfono, Instagram y el formulario, sin una sola lista",
+          "Presupuestos enviados que nadie vuelve a tocar",
+          "Vendedores que arrancan cada mes desde cero, sin saber a quién retomar",
+          "Meses buenos y meses malos sin una explicación clara de por qué"
+        ]
+      },
+      "method": {
+        "eyebrow": "El método",
+        "title": "Cuatro etapas, en este orden",
+        "lead": "No empezamos por la publicidad. Empezamos por entender de dónde vienen tus clientes hoy y qué se está perdiendo.",
+        "linkLabel": "Ver el método completo",
+        "steps": [
+          {
+            "title": "Diagnóstico",
+            "body": "Miramos tus canales actuales, tu ciclo de venta y qué pasa con una consulta desde que entra hasta que se cierra."
+          },
+          {
+            "title": "Captación",
+            "body": "Ordenamos la presencia y los puntos de entrada para que una persona interesada pueda contactarte sin fricción."
+          },
+          {
+            "title": "Seguimiento",
+            "body": "Cada consulta queda registrada y asignada, con recordatorios propios. Nada depende de la memoria de alguien."
+          },
+          {
+            "title": "Medición",
+            "body": "Cuántas consultas entraron, de dónde, cuántas se cerraron. Con eso se decide qué repetir el mes siguiente."
+          }
+        ]
+      },
+      "verticals": {
+        "eyebrow": "Con quiénes trabajamos",
+        "title": "Rubros donde el método ya está probado",
+        "lead": "Empresas con oferta validada y equipo propio, donde el crecimiento se traba en la captación y el seguimiento, no en el producto.",
+        "items": [
+          {
+            "name": "Clínicas y consultorios",
+            "body": "Pacientes que consultan por WhatsApp fuera de horario y turnos que se pierden por no responder a tiempo."
+          },
+          {
+            "name": "Constructoras",
+            "body": "Obras y presupuestos con ciclos largos, donde el seguimiento define quién termina firmando."
+          },
+          {
+            "name": "Inmobiliarias",
+            "body": "Consultas y visitas que llegan por varios portales y terminan sin dueño ni registro."
+          },
+          {
+            "name": "Servicios profesionales",
+            "body": "Estudios y consultoras que crecen por referencia y quieren un segundo canal que no dependa de eso."
+          },
+          {
+            "name": "Empresas B2B",
+            "body": "Ventas con varias personas decidiendo, donde perder el hilo cuesta meses."
+          }
+        ]
+      },
+      "statement": {
+        "text": "Un sistema que no depende de quién esté de turno.",
+        "sub": "Eso es lo que separa un buen mes de un buen año."
+      },
+      "closing": {
+        "eyebrow": "El siguiente paso",
+        "title": "Empecemos por el diagnóstico",
+        "body": "Media hora, sin costo. Salís con un panorama claro de dónde se está perdiendo trabajo, trabajes con nosotros o no.",
+        "panelTitle": "Qué necesitamos de vos",
+        "panelItems": [
+          "De dónde vienen hoy tus clientes",
+          "Cuántas personas venden en tu equipo",
+          "Qué pasa con una consulta desde que entra"
+        ]
+      }
+    },
+    "metodo": {
+      "meta": {
+        "title": "Nuestro método para conseguir más clientes | clientes.com.py",
+        "description": "Diagnóstico, captación, seguimiento y medición: las cuatro etapas con las que ordenamos la captación de clientes en empresas paraguayas."
+      },
+      "header": {
+        "eyebrow": "El método",
+        "title": "Cómo trabajamos",
+        "lead": "Un orden fijo, cuatro etapas, y una regla: no agregamos captación encima de un proceso que todavía pierde consultas.",
+        "body": "Lo que sigue es literalmente lo que hacemos, en el orden en que lo hacemos. No hay una etapa opcional: cada una existe porque la siguiente no funciona sin ella."
+      },
+      "steps": {
+        "eyebrow": "Las cuatro etapas",
+        "title": "Diagnóstico, captación, seguimiento, medición",
+        "items": [
+          {
+            "title": "Diagnóstico",
+            "lead": "Entender antes de tocar nada.",
+            "body": "Revisamos de dónde vienen tus clientes hoy, cuánto tarda tu ciclo de venta y qué pasa con una consulta desde que entra hasta que se cierra o se pierde. Casi siempre aparece una fuga que nadie estaba mirando.",
+            "points": [
+              "Mapa de canales actuales y volumen real de consultas",
+              "Recorrido completo de una consulta, punto por punto",
+              "Dónde se pierde trabajo hoy, con ejemplos concretos"
+            ]
+          },
+          {
+            "title": "Captación",
+            "lead": "Que quien te quiere contactar, pueda.",
+            "body": "Ordenamos la presencia y los puntos de entrada: la página, el formulario, el número de WhatsApp, la ficha de Google. El objetivo no es más tráfico, es que el interesado que ya existe no se caiga en el camino.",
+            "points": [
+              "Puntos de contacto claros y una sola forma de entrar",
+              "Formularios que llegan a una lista, no a un correo suelto",
+              "WhatsApp como canal de entrada, con registro de lo que llega"
+            ]
+          },
+          {
+            "title": "Seguimiento",
+            "lead": "Nada depende de la memoria de alguien.",
+            "body": "Cada consulta queda registrada, con un responsable y una próxima acción. Los presupuestos enviados vuelven a aparecer solos cuando toca retomarlos. Acá es donde se recupera la mayor parte del trabajo que hoy se pierde.",
+            "points": [
+              "Una lista única de consultas, con responsable asignado",
+              "Recordatorios de seguimiento que aparecen sin que nadie los cargue",
+              "Historial de cada conversación, disponible para todo el equipo"
+            ]
+          },
+          {
+            "title": "Medición",
+            "lead": "Decidir con números, no con impresiones.",
+            "body": "Cuántas consultas entraron, por qué canal, cuántas se convirtieron y cuánto tardaron. Con eso se decide qué se repite el mes siguiente y qué se corta.",
+            "points": [
+              "Consultas por canal y por mes",
+              "Tasa de cierre y tiempo promedio de ciclo",
+              "Una revisión periódica con decisiones, no solo reportes"
+            ]
+          }
+        ]
+      },
+      "included": {
+        "eyebrow": "Qué incluye",
+        "title": "Lo que queda funcionando",
+        "lead": "El trabajo termina cuando tu equipo puede sostenerlo sin nosotros encima.",
+        "items": [
+          {
+            "title": "La plataforma",
+            "body": "Incluye la plataforma donde tu equipo ve cada consulta y cada seguimiento. Es nuestra, se llama VenderCRM, y no es un software que tenés que ir a comprar aparte."
+          },
+          {
+            "title": "El proceso escrito",
+            "body": "Quién atiende qué, en cuánto tiempo se responde y cuándo se retoma un presupuesto. Corto y usable, no un manual que nadie abre."
+          },
+          {
+            "title": "El equipo entrenado",
+            "body": "Acompañamos a las personas que venden hasta que el proceso corre solo. Una herramienta que nadie usa no cambió nada."
+          }
+        ]
+      },
+      "statement": {
+        "text": "El método es el producto.",
+        "sub": "Las herramientas vienen después, y son las que hagan falta."
+      },
+      "faq": {
+        "eyebrow": "Preguntas frecuentes",
+        "title": "Lo que suelen preguntarnos",
+        "items": [
+          {
+            "q": "¿En cuánto tiempo se ven resultados?",
+            "a": "El seguimiento ordenado suele mostrar algo en las primeras semanas, porque recupera consultas que ya tenías. La captación nueva tarda más y depende del ciclo de venta de tu rubro."
+          },
+          {
+            "q": "¿Trabajan con empresas que recién arrancan?",
+            "a": "No. Trabajamos con empresas que ya tienen clientes, equipo y una oferta que funciona. Si todavía estás validando qué vender, no somos el socio indicado y te lo vamos a decir."
+          },
+          {
+            "q": "¿Tenemos que cambiar las herramientas que ya usamos?",
+            "a": "Solo lo que haga falta. Si ya tenés algo que funciona, se queda. Lo que no puede quedarse es una consulta sin registrar."
+          },
+          {
+            "q": "¿Cuánto cuesta?",
+            "a": "Depende del alcance, y sale del diagnóstico. Preferimos decirte un número que podamos sostener antes que una lista de precios que no se parece a tu caso."
+          }
+        ]
+      }
+    },
+    "nosotros": {
+      "meta": {
+        "title": "Quiénes somos | clientes.com.py",
+        "description": "Un equipo enfocado en el crecimiento comercial de empresas paraguayas establecidas: por qué Paraguay, por qué estos rubros y cómo trabajamos."
+      },
+      "header": {
+        "eyebrow": "Nosotros",
+        "title": "Quiénes estamos detrás",
+        "lead": "Somos un equipo chico que trabaja con empresas paraguayas establecidas, en el punto donde el crecimiento deja de ser cuestión de esfuerzo y pasa a ser cuestión de proceso."
+      },
+      "story": {
+        "eyebrow": "Por qué esto",
+        "title": "Por qué Paraguay y por qué estos rubros",
+        "body": "En Paraguay hay muchísimas empresas sólidas — clínicas con años de trayectoria, constructoras con obra constante, estudios con cartera propia — que crecieron por referencia y buen trabajo. Ese crecimiento funciona hasta que deja de escalar.",
+        "bodyTwo": "El salto siguiente casi nunca es una campaña. Es dejar de perder consultas y poder repetir lo que ya funciona. Eso es exactamente lo que hacemos, y es la razón por la que trabajamos con empresas que ya tienen algo, no con proyectos que están arrancando.",
+        "bodyThree": "Somos primeros en construir lo que usamos: la plataforma con la que tu equipo sigue cada consulta la desarrollamos nosotros. Cuando algo no funciona, no hay a quién derivarte."
+      },
+      "principles": {
+        "eyebrow": "Cómo trabajamos",
+        "title": "Tres cosas que no negociamos",
+        "lead": "No es una lista de valores para la pared. Son las tres reglas que más veces nos costaron plata sostener.",
+        "items": [
+          {
+            "title": "Decimos que no",
+            "body": "Si en el diagnóstico vemos que no podemos mover la aguja, te lo decimos ahí. Un cliente mal tomado cuesta más de lo que deja."
+          },
+          {
+            "title": "Números antes que opiniones",
+            "body": "Todo lo que proponemos tiene que poder medirse. Si no se puede medir, es una idea, no una recomendación."
+          },
+          {
+            "title": "Que quede funcionando sin nosotros",
+            "body": "El objetivo es que tu equipo sostenga el proceso solo. Una dependencia permanente sería cómoda para nosotros y mala para vos."
+          }
+        ]
+      },
+      "statement": {
+        "text": "Trabajamos con pocas empresas a la vez.",
+        "sub": "Es la única forma de meternos de verdad en el negocio de cada una."
+      }
+    },
+    "contacto": {
+      "meta": {
+        "title": "Agendá tu diagnóstico | clientes.com.py",
+        "description": "Contanos de tu empresa y coordinamos una conversación de diagnóstico de 30 minutos, sin costo, para ver dónde se está perdiendo trabajo."
+      },
+      "header": {
+        "eyebrow": "Contacto",
+        "title": "Agendemos el diagnóstico",
+        "lead": "Contanos brevemente de tu empresa y coordinamos una conversación de 30 minutos. Sin costo y sin compromiso."
+      },
+      "form": {
+        "name": "Nombre y apellido",
+        "company": "Empresa",
+        "phone": "Teléfono o WhatsApp",
+        "phonePlaceholder": "0981 123 456",
+        "phoneHint": "Es la forma más rápida de coordinar. Te escribimos antes de llamarte.",
+        "email": "Correo electrónico",
+        "emailOptional": "Correo electrónico (opcional)",
+        "sector": "Rubro",
+        "sectorPlaceholder": "Elegí una opción",
+        "sectorOptions": [
+          "Clínica o consultorio",
+          "Constructora",
+          "Inmobiliaria",
+          "Servicios profesionales",
+          "Empresa B2B",
+          "Otro"
+        ],
+        "message": "Contanos brevemente qué querés resolver",
+        "messageOptional": "Contanos brevemente qué querés resolver (opcional)",
+        "submit": "Enviar y coordinar",
+        "submitting": "Enviando…",
+        "privacy": "Usamos tus datos únicamente para contactarte por esta consulta.",
+        "honeypotLabel": "Dejá este campo vacío"
+      },
+      "success": {
+        "title": "Recibimos tu consulta",
+        "body": "Te vamos a escribir dentro de las próximas horas hábiles para coordinar el horario. Si preferís adelantarlo, escribinos directamente por WhatsApp.",
+        "backLabel": "Volver al inicio"
+      },
+      "errors": {
+        "phone": "Necesitamos un teléfono para poder coordinar. Revisá el número e intentá de nuevo.",
+        "generic": "No pudimos enviar tu consulta. Probá de nuevo o escribinos por WhatsApp."
+      },
+      "aside": {
+        "title": "Qué pasa después",
+        "steps": [
+          "Te escribimos para coordinar día y horario",
+          "Conversamos 30 minutos sobre tu situación actual",
+          "Te dejamos un panorama claro, trabajemos juntos o no"
+        ],
+        "pricingTitle": "Sobre los precios",
+        "pricingBody": "A medida, según diagnóstico. Preferimos decirte un número que podamos sostener antes que una lista que no se parece a tu caso.",
+        "whatsappTitle": "Prefiero escribir ahora",
+        "whatsappBody": "Si querés adelantar la conversación, escribinos y te respondemos en horario laboral."
+      },
+      "faq": {
+        "title": "Antes de escribirnos",
+        "items": [
+          {
+            "q": "¿La primera conversación tiene costo?",
+            "a": "No. Es una conversación de diagnóstico de 30 minutos, sin costo y sin compromiso."
+          },
+          {
+            "q": "¿Con qué tamaño de empresa trabajan?",
+            "a": "Con empresas que ya venden, tienen equipo propio y quieren ordenar la captación. No trabajamos con proyectos en etapa de validación."
+          },
+          {
+            "q": "¿Trabajan fuera de Asunción?",
+            "a": "Sí. La mayor parte del trabajo es remoto, así que la ubicación no es un impedimento."
+          }
+        ]
+      }
+    },
+    "footer": {
+      "tagline": "Ayudamos a empresas paraguayas establecidas a conseguir más clientes, con un proceso de ventas ordenado.",
+      "siteTitle": "El sitio",
+      "contactTitle": "Contacto",
+      "loginNote": "¿Sos cliente?",
+      "rights": "Todos los derechos reservados.",
+      "madeIn": "Hecho en Paraguay"
+    }
   }
 }

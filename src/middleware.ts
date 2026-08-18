@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getSessionCookie } from "better-auth/cookies";
+import { APEX_HOST, APP_HOST } from "@/lib/site-config";
 
 // Fast, edge-safe gate: presence of a session cookie only (no DB call, no
 // tenant context — mysql2 isn't edge-runtime safe). Real tenant-context
@@ -32,14 +33,42 @@ export const PUBLIC_PREFIXES = [
 // have no session here — without this it would be redirected to /login.
 export const PUBLIC_EXACT = ["/vc-attribution.js"];
 
+// One Node app answers both the apex marketing domain and the crm.* app
+// subdomain (parked domain, shared document root — see hPanel Domains).
+// The host, not the path, decides which product the visitor is looking at.
+const APP_HOST_PREFIX = "crm.";
+
+/**
+ * True for the CRM subdomain, false for the apex marketing domain, `www.`,
+ * Hostinger's preview hostname and localhost. Host headers carry a port in
+ * development, which is why this is a prefix test and not an equality one.
+ */
+export function isAppHost(host: string | null): boolean {
+  return (host ?? "").startsWith(APP_HOST_PREFIX);
+}
+
 /**
  * Extracted and exported so the allowlist is unit-testable without booting
  * Next. Every public surface that an *external* system fetches (Meta pulling
  * a PDF, a site visitor loading a form) fails closed if it's missing from
  * the lists above, and fails in a way that looks like a different bug —
  * so it gets a test rather than trust.
+ *
+ * `host` makes this host-aware (MARKETING_SITE_PLAN.md §4): the marketing
+ * site is a public brochure, so on any non-`crm.*` host everything is public
+ * and there is no allowlist to forget an entry from. `/api` is the one
+ * exception — the API is the same API on every host, so it keeps falling
+ * through to the allowlist below rather than being blanket-opened by the
+ * host. On `crm.*` the strict allowlist is unchanged.
+ *
+ * Called with no host (as the existing tests do) it behaves exactly as it
+ * always did: the strict allowlist.
  */
-export function isPublicPath(pathname: string): boolean {
+export function isPublicPath(pathname: string, host?: string | null): boolean {
+  if (host !== undefined && !isAppHost(host) && !pathname.startsWith("/api")) {
+    return true;
+  }
+
   return (
     pathname === "/" ||
     PUBLIC_EXACT.includes(pathname) ||
@@ -47,10 +76,88 @@ export function isPublicPath(pathname: string): boolean {
   );
 }
 
-export function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
+// Paths that only ever mean something inside the CRM. Reached on the apex
+// domain they're a stale bookmark or a mistyped host, not a marketing URL —
+// so they redirect to the same path on crm.* rather than 404ing into the
+// marketing site. Kept as prefixes so /contacts/abc and /quotes/1/pdf travel
+// with their parents. Deliberately excludes /api (same API on every host)
+// and /f/, /q/, /d/ (customer-facing links that must resolve wherever they
+// were shared from).
+export const APP_PATH_PREFIXES = [
+  "/dashboard",
+  "/pipeline",
+  "/contacts",
+  "/inbox",
+  "/quotes",
+  "/documents",
+  "/products",
+  "/forms",
+  "/sites",
+  "/users",
+  "/whatsapp",
+  "/automations",
+  "/settings",
+  "/tenants",
+  "/plans",
+  "/whatsapp-health",
+  "/login",
+  "/accept-invite",
+  "/forgot-password",
+  "/reset-password",
+];
 
-  if (isPublicPath(pathname)) {
+function isAppPath(pathname: string): boolean {
+  return APP_PATH_PREFIXES.some(
+    (p) => pathname === p || pathname.startsWith(`${p}/`),
+  );
+}
+
+export type HostRedirect = { url: string; status: 301 | 307 };
+
+/**
+ * Canonical-host and wrong-host handling (MARKETING_SITE_PLAN.md §4),
+ * resolved from the request host alone so it's unit-testable.
+ *
+ * Only the two real public hostnames are rewritten. localhost, Hostinger's
+ * preview hostname and any future staging host fall through untouched —
+ * otherwise `localhost:3000/dashboard` would bounce a developer to
+ * production.
+ */
+export function resolveHostRedirect(
+  host: string | null,
+  pathname: string,
+  search = "",
+): HostRedirect | null {
+  if (!host) return null;
+
+  // 301 www → apex. Permanent: the canonical host is a locked decision, and
+  // link equity should consolidate on the apex.
+  if (host === `www.${APEX_HOST}`) {
+    return { url: `https://${APEX_HOST}${pathname}${search}`, status: 301 };
+  }
+
+  // Apex → crm.* for app-only paths. 307 rather than 308: browsers cache
+  // permanent redirects aggressively, and which paths belong to the app is
+  // the kind of list that changes.
+  if (host === APEX_HOST && isAppPath(pathname)) {
+    return { url: `https://${APP_HOST}${pathname}${search}`, status: 307 };
+  }
+
+  return null;
+}
+
+export function middleware(request: NextRequest) {
+  const { pathname, search } = request.nextUrl;
+  const host = request.headers.get("host");
+
+  // Before the auth gate: a wrong-host request should land on the right host
+  // rather than be redirected to a login page on the wrong one.
+  const hostRedirect = resolveHostRedirect(host, pathname, search);
+  if (hostRedirect) {
+    return NextResponse.redirect(hostRedirect.url, hostRedirect.status);
+  }
+
+  if (isPublicPath(pathname, host)) {
     return NextResponse.next();
   }
 

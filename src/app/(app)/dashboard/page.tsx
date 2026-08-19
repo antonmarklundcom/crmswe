@@ -24,6 +24,8 @@ import {
   deleteTaskAction,
   reopenTaskAction,
 } from "../contacts/tasks-actions";
+import { getLeadStats } from "@/modules/leads/stats";
+import { listSites } from "@/modules/sites/sites";
 
 // Tenant home. Two jobs: tell someone who already works here what needs
 // attention today (the counters), and tell someone who just got their login
@@ -103,13 +105,20 @@ export default async function DashboardPage() {
   const formatNumberL = (value: number) => formatNumber(value, locale);
   const tActivity = await getTranslations("app.contacts.activityTypes");
 
-  const [tenant, summary] = await Promise.all([
+  const [tenant, summary, leadStats, sites] = await Promise.all([
     getTenant(ctx.tenantId),
     getDashboardSummary(ctx),
+    getLeadStats(ctx),
+    listSites(ctx),
   ]);
+
+  // Sites are shown by name; the stats module groups by id because that is
+  // what the submission row carries.
+  const siteNames = new Map(sites.map((site) => [site.id, site.name]));
 
   const { stats, checklist, recentActivity, dueTasks, onboardingPending } = summary;
   const tTasks = await getTranslations("app.contacts.tasks");
+  const tLeads = await getTranslations("app.dashboard.leads");
   const taskLabels: TaskListLabels = {
     complete: tTasks("complete"),
     reopen: tTasks("reopen"),
@@ -268,6 +277,72 @@ export default async function DashboardPage() {
           </Card>
         )}
       </section>
+
+      {/* Where the leads came from (PLAN.md §13 H8). modules/leads/stats.ts
+          has produced these counts since the ingest work landed and nothing
+          rendered them — the tenant could see that a lead arrived, but not
+          which campaign paid for it. */}
+      {leadStats.total > 0 && (
+        <section className="flex flex-col gap-3">
+          <h2 className="text-lg font-semibold">{tLeads("title")}</h2>
+          <p className="text-sm text-muted-foreground">
+            {tLeads("intro", { total: leadStats.total, withDeal: leadStats.withDeal })}
+          </p>
+
+          <div className="grid gap-4 md:grid-cols-3">
+            <LeadBreakdown
+              title={tLeads("bySite")}
+              empty={tLeads("empty")}
+              rows={leadStats.bySite.map((row) => ({
+                ...row,
+                key: siteNames.get(row.key) ?? row.key,
+              }))}
+            />
+            <LeadBreakdown
+              title={tLeads("bySource")}
+              empty={tLeads("empty")}
+              rows={leadStats.bySource}
+            />
+            <LeadBreakdown
+              title={tLeads("byCampaign")}
+              empty={tLeads("empty")}
+              rows={leadStats.byCampaign}
+            />
+          </div>
+        </section>
+      )}
+    </div>
+  );
+}
+
+function LeadBreakdown({
+  title,
+  rows,
+  empty,
+}: {
+  title: string;
+  rows: Array<{ key: string; count: number }>;
+  empty: string;
+}) {
+  return (
+    <div className="flex flex-col gap-2 rounded-md border p-3">
+      <h3 className="text-sm font-medium">{title}</h3>
+      {rows.length === 0 ? (
+        <p className="text-sm text-muted-foreground">{empty}</p>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm">
+            <tbody>
+              {rows.slice(0, 8).map((row) => (
+                <tr key={row.key} className="border-b last:border-b-0">
+                  <td className="py-1 pr-3">{row.key}</td>
+                  <td className="py-1 text-right tabular-nums">{row.count}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }

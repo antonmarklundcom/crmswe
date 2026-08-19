@@ -1,5 +1,5 @@
 import { eq } from "drizzle-orm";
-import { pipelines, stages } from "@/db/schema";
+import { deals, pipelines, stages } from "@/db/schema";
 import { newId } from "@/lib/ids";
 import type { TenantContext } from "@/modules/tenancy/context";
 import { tenantDb } from "@/modules/tenancy/db";
@@ -103,4 +103,71 @@ export async function listStagesForPipeline(ctx: TenantContext, pipelineId: stri
 export async function getStage(ctx: TenantContext, id: string) {
   const [row] = await tenantDb(ctx).select(stages, eq(stages.id, id));
   return row ?? null;
+}
+
+
+// --- Stage configuration (PLAN.md §13 H8) -------------------------------
+//
+// Renaming, reordering, recolouring and marking won/lost. Deleting is
+// allowed only for an empty stage: a stage with deals in it can't be removed
+// without silently moving or destroying them, and neither is a decision this
+// UI should make on the tenant's behalf.
+
+export class StageConfigError extends Error {
+  constructor(readonly code: "notEmpty" | "notFound" | "lastStage") {
+    super(code);
+  }
+}
+
+export type UpdateStageInput = {
+  name?: string;
+  color?: string | null;
+  isWon?: boolean;
+  isLost?: boolean;
+};
+
+export async function updateStage(ctx: TenantContext, id: string, input: UpdateStageInput) {
+  const stage = await getStage(ctx, id);
+  if (!stage) throw new StageConfigError("notFound");
+
+  // Won and lost are mutually exclusive: a stage that claims both would make
+  // "closed how?" unanswerable everywhere downstream.
+  const values: UpdateStageInput = { ...input };
+  if (input.isWon) values.isLost = false;
+  if (input.isLost) values.isWon = false;
+
+  await tenantDb(ctx).update(stages).set(values).where(eq(stages.id, id));
+  return getStage(ctx, id);
+}
+
+/** Moves a stage one position left or right, swapping with its neighbour. */
+export async function moveStage(ctx: TenantContext, id: string, direction: "left" | "right") {
+  const stage = await getStage(ctx, id);
+  if (!stage) throw new StageConfigError("notFound");
+
+  const siblings = await listStagesForPipeline(ctx, stage.pipelineId);
+  const index = siblings.findIndex((row) => row.id === id);
+  const swapWith = direction === "left" ? siblings[index - 1] : siblings[index + 1];
+  if (!swapWith) return stage;
+
+  await tenantDb(ctx).update(stages).set({ position: swapWith.position }).where(eq(stages.id, id));
+  await tenantDb(ctx)
+    .update(stages)
+    .set({ position: stage.position })
+    .where(eq(stages.id, swapWith.id));
+
+  return getStage(ctx, id);
+}
+
+export async function deleteStageIfEmpty(ctx: TenantContext, id: string) {
+  const stage = await getStage(ctx, id);
+  if (!stage) throw new StageConfigError("notFound");
+
+  const siblings = await listStagesForPipeline(ctx, stage.pipelineId);
+  if (siblings.length <= 1) throw new StageConfigError("lastStage");
+
+  const held = await tenantDb(ctx).select(deals, eq(deals.stageId, id));
+  if (held.length > 0) throw new StageConfigError("notEmpty");
+
+  await tenantDb(ctx).delete(stages, eq(stages.id, id));
 }

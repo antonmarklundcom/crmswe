@@ -127,6 +127,13 @@
       "when": 1787117603056,
       "tag": "0017_add_task_reminders",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "5",
+      "when": 1787120965160,
+      "tag": "0018_add_deal_close_reason",
+      "breakpoints": true
     }
   ]
 }

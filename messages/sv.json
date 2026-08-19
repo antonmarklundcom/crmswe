@@ -139,6 +139,14 @@
       },
       "dueTasks": {
         "title": "Uppgifter att göra"
+      },
+      "leads": {
+        "title": "Var dina leads kommer ifrån",
+        "intro": "{total} leads mottagna via API eller formulär · {withDeal} med öppen affär.",
+        "bySite": "Per webbplats",
+        "bySource": "Per källa (utm_source)",
+        "byCampaign": "Per kampanj (utm_campaign)",
+        "empty": "Ingen data ännu"
       }
     },
     "pipeline": {
@@ -168,7 +176,10 @@
         "valueInvalid": "Värdet anges i hela guaraní, utan decimaler eller tecken.",
         "unknown": "Vi kunde inte skapa affären. Försök igen."
       },
-      "moveFailed": "Vi kunde inte flytta affären. Den återgick till föregående steg."
+      "moveFailed": "Vi kunde inte flytta affären. Den återgick till föregående steg.",
+      "showClosed": "Visa {count} stängda",
+      "hideClosed": "Dölj stängda",
+      "editStages": "Redigera steg"
     },
     "forms": {
       "title": "Formulär",
@@ -974,6 +985,72 @@
             ]
           }
         ]
+      }
+    },
+    "search": {
+      "placeholder": "Sök kontakter, affärer, offerter…",
+      "empty": "Inga träffar",
+      "searching": "Söker…",
+      "hint": "↑↓ för att flytta · Enter för att öppna · Esc för att stänga",
+      "kinds": {
+        "contact": "Kontakt",
+        "deal": "Affär",
+        "quote": "Offert",
+        "document": "Försäljningsnota",
+        "conversation": "Konversation"
+      }
+    },
+    "deal": {
+      "value": "Värde",
+      "stage": "Steg",
+      "contact": "Kontakt",
+      "stageSince": "I det här steget sedan",
+      "backToBoard": "Tillbaka till tavlan",
+      "closeTitle": "Stäng affären",
+      "markWon": "Markera vunnen",
+      "markLost": "Markera förlorad",
+      "reason": "Orsak (frivilligt)",
+      "reasonPlaceholder": "T.ex. pris, tidplan, valde en annan leverantör",
+      "closedWon": "Vunnen",
+      "closedLost": "Förlorad",
+      "reopen": "Öppna igen",
+      "assignedTitle": "Ansvarig",
+      "assign": "Tilldela",
+      "historyTitle": "Steghistorik",
+      "historyEmpty": "Den har inte bytt steg ännu.",
+      "quotesTitle": "Offerter",
+      "quotesEmpty": "Inga offerter för den här kontakten.",
+      "tasksTitle": "Uppgifter",
+      "tasksEmpty": "Inga uppgifter för den här affären.",
+      "errors": {
+        "noStage": "Den här pipelinen saknar steg för vunnen/förlorad. Ställ in det i stegredigeraren.",
+        "notFound": "Vi hittade inte affären.",
+        "invalid": "Kontrollera uppgifterna och försök igen.",
+        "unknown": "Vi kunde inte stänga affären. Försök igen."
+      }
+    },
+    "stages": {
+      "title": "Steg",
+      "intro": "Byt namn, ordna om och färgsätt pipelinens steg, och markera vilka som betyder vunnen eller förlorad.",
+      "adminOnly": "Bara administratörer kan se den här sidan",
+      "backToBoard": "Tillbaka till tavlan",
+      "name": "Namn",
+      "color": "Färg",
+      "outcome": "Utfall",
+      "outcomeNone": "Pågående",
+      "outcomeWon": "Vunnen",
+      "outcomeLost": "Förlorad",
+      "save": "Spara",
+      "moveLeft": "← Flytta",
+      "moveRight": "Flytta →",
+      "delete": "Ta bort",
+      "dealCount": "{count, plural, =0 {inga affärer} one {# affär} other {# affärer}}",
+      "createTitle": "Nytt steg",
+      "create": "Lägg till steg",
+      "errors": {
+        "notEmpty": "Går inte att ta bort: steget innehåller fortfarande affärer. Flytta dem först.",
+        "lastStage": "Går inte att ta bort pipelinens enda steg.",
+        "notFound": "Vi hittade inte steget."
       }
     }
   },

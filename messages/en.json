@@ -139,6 +139,14 @@
       },
       "dueTasks": {
         "title": "Tasks due"
+      },
+      "leads": {
+        "title": "Where your leads come from",
+        "intro": "{total} leads received via API or form · {withDeal} with an open deal.",
+        "bySite": "By site",
+        "bySource": "By source (utm_source)",
+        "byCampaign": "By campaign (utm_campaign)",
+        "empty": "No data yet"
       }
     },
     "pipeline": {
@@ -168,7 +176,10 @@
         "valueInvalid": "The value is in whole guaraníes, no decimals or signs.",
         "unknown": "We couldn't create the deal. Try again."
       },
-      "moveFailed": "We couldn't move the deal. Its previous stage was restored."
+      "moveFailed": "We couldn't move the deal. Its previous stage was restored.",
+      "showClosed": "Show {count} closed",
+      "hideClosed": "Hide closed",
+      "editStages": "Edit stages"
     },
     "forms": {
       "title": "Forms",
@@ -974,6 +985,72 @@
             ]
           }
         ]
+      }
+    },
+    "search": {
+      "placeholder": "Search contacts, deals, quotes…",
+      "empty": "No results",
+      "searching": "Searching…",
+      "hint": "↑↓ to move · Enter to open · Esc to close",
+      "kinds": {
+        "contact": "Contact",
+        "deal": "Deal",
+        "quote": "Quote",
+        "document": "Sales note",
+        "conversation": "Conversation"
+      }
+    },
+    "deal": {
+      "value": "Value",
+      "stage": "Stage",
+      "contact": "Contact",
+      "stageSince": "In this stage since",
+      "backToBoard": "Back to the board",
+      "closeTitle": "Close the deal",
+      "markWon": "Mark won",
+      "markLost": "Mark lost",
+      "reason": "Reason (optional)",
+      "reasonPlaceholder": "e.g. price, timing, went with another supplier",
+      "closedWon": "Won",
+      "closedLost": "Lost",
+      "reopen": "Reopen",
+      "assignedTitle": "Owner",
+      "assign": "Assign",
+      "historyTitle": "Stage history",
+      "historyEmpty": "It has not changed stage yet.",
+      "quotesTitle": "Quotes",
+      "quotesEmpty": "No quotes for this contact.",
+      "tasksTitle": "Tasks",
+      "tasksEmpty": "No tasks for this deal.",
+      "errors": {
+        "noStage": "This pipeline has no won/lost stage. Set one up in the stage editor.",
+        "notFound": "We couldn't find the deal.",
+        "invalid": "Check the details and try again.",
+        "unknown": "We couldn't close the deal. Try again."
+      }
+    },
+    "stages": {
+      "title": "Stages",
+      "intro": "Rename, reorder and colour this pipeline's stages, and mark which ones mean won or lost.",
+      "adminOnly": "Only admins can see this page",
+      "backToBoard": "Back to the board",
+      "name": "Name",
+      "color": "Colour",
+      "outcome": "Outcome",
+      "outcomeNone": "In progress",
+      "outcomeWon": "Won",
+      "outcomeLost": "Lost",
+      "save": "Save",
+      "moveLeft": "← Move",
+      "moveRight": "Move →",
+      "delete": "Delete",
+      "dealCount": "{count, plural, =0 {no deals} one {# deal} other {# deals}}",
+      "createTitle": "New stage",
+      "create": "Add stage",
+      "errors": {
+        "notEmpty": "Can't delete: the stage still holds deals. Move them first.",
+        "lastStage": "Can't delete a pipeline's only stage.",
+        "notFound": "We couldn't find the stage."
       }
     }
   },

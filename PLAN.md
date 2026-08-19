@@ -766,6 +766,65 @@ commitments made **now** so Phase 1 doesn't paint us in:
   no runtime dependency on any of them.
 - **Owner**: Opus 4.8 builds, Fable specs and reviews.
 
+#### S1 — SIFEN foundation *(Opus 5)* — ✅ done
+
+The first Phase 2 code. Deliberately scoped to the layer that is **verifiable
+without the Manual Técnico**, so that no fiscal field is guessed:
+
+- `modules/sifen/dv.ts` — módulo 11 check digit, shared by the RUC and the CDC.
+  Pinned in tests by the SET reference implementation's own published vector
+  (`3535123` → `3`), because the algorithm has several plausible-looking
+  variants (left-to-right weighting, remainder 1 → 10, an unbounded weight
+  cycle) that each produce digits SIFEN rejects.
+- `modules/sifen/cdc.ts` — the 44-digit CDC: compose, parse, verify. The
+  11-field layout is stated once in `CDC_FIELDS`, and both compose and parse
+  derive their widths and offsets from it, so the two can't drift. Overflow is
+  an error rather than a truncation (a truncated establecimiento files a
+  document against the wrong shop), the RUC check digit is verified before a
+  CDC is built around it, and the security code comes from a CSPRNG.
+- `modules/sifen/codes.ts` — only the three code tables the CDC itself needs
+  (`iTiDE`, `iTipCont`, `iTipEmi`). The rest of SIFEN's tables are **not**
+  guessed here; they go in with the DE generator.
+- `modules/sifen/index.ts` — the §9 facade. `generateDE`, `signDE`, `submit`,
+  `queryStatus`, `generateKuDE` and `submitEvent` are declared with their real
+  signatures and throw `SifenNotImplementedError` naming what they're blocked
+  on. Declared rather than omitted so the seam's shape is fixed now, while
+  moving it is cheap.
+- `modules/sifen/boundary.test.ts` — §9's "imports nothing from other modules"
+  rule, **enforced rather than documented**, and extended to `@/db`, `@/lib`,
+  `@/components`: anything that wouldn't survive extraction behind an HTTP API
+  arrives as a function argument instead. Verified by temporarily introducing
+  a violation and confirming the test fails.
+
+No tables, no migration, no CRM wiring — `modules/invoicing/` does not exist
+yet, and nothing in the app calls this module.
+
+**🔍 Blocked on Fable: `PLAN-SIFEN.md` does not exist.** §9 says Fable authors
+it "when Phase 2 starts" — Phase 2 has now started. Everything past this
+foundation needs it first, and two questions in particular are architecture
+rather than fiscal detail, so they belong to Fable and not to a build model:
+
+1. **How does the engine reach its own tables without importing `tenancy`?**
+   §9 says `sifen/` owns `sifen_*` tables *and* imports nothing from other
+   modules, but `tenantDb` (§3.3) lives in `modules/tenancy` and raw `db` is
+   lint-banned outside it. S1 sidestepped this by staying pure. The likely
+   answer is an injected persistence port owned by `modules/invoicing/` — which
+   is also exactly where the future HTTP boundary falls — but that is a seam
+   decision, not an implementation detail.
+2. **Timbrado & numbering ranges.** Per-tenant allocation of
+   establecimiento/punto/número has the same transactional shape as
+   `quote_sequences`, but different rules: a range expires, can be exhausted,
+   and a burned number must be reported as *inutilizado* rather than silently
+   skipped. The state machine wants specifying before it's built.
+
+Two further notes for whoever writes it: the DE field spec could not be read
+from here — `sifende.com.py` and the SET/DNIT manual mirrors are blocked by
+this environment's egress proxy, so PLAN-SIFEN.md should either quote the
+Manual Técnico directly or be authored where it can be fetched. And the
+existing `documents` tables carry a boundary comment forbidding fiscal fields
+on them (`schema/documents.ts`); Phase 2 must honor it — a factura is a new
+table, never a status on a nota de venta.
+
 ## Phase 3 — marketing features (placeholder only)
 
 Website builder, Google Business Profile, social automation, ad tools — likely sold

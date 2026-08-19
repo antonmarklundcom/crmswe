@@ -6,19 +6,13 @@ import { getTenant } from "@/modules/tenancy/tenants";
 import type { TenantSettings } from "@/modules/tenancy/settings";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { getTranslator } from "@/lib/i18n/translator";
-import { formatDate, formatNumber } from "@/lib/i18n/format";
+import { formatDate } from "@/lib/i18n/format";
+import { money } from "@/modules/renderable-document/format";
 
 // Public read-only quote view (PLAN.md §8) — the token is the secret, and
 // there is deliberately no accept/reject button in Phase 1: the rep sets
 // those by hand in the CRM.
 
-function money(amount: number, currency: string, locale: string): string {
-  const formatted = formatNumber(amount, locale, {
-    minimumFractionDigits: currency === "PYG" ? 0 : 2,
-    maximumFractionDigits: currency === "PYG" ? 0 : 2,
-  });
-  return `${currency} ${formatted}`;
-}
 
 export default async function PublicQuotePage({
   params,

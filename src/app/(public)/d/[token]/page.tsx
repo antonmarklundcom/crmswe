@@ -6,7 +6,7 @@ import { getTenant } from "@/modules/tenancy/tenants";
 import type { TenantSettings } from "@/modules/tenancy/settings";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { getTranslator } from "@/lib/i18n/translator";
-import { formatDate, formatNumber } from "@/lib/i18n/format";
+import { documentDate as date, money } from "@/modules/renderable-document/format";
 import type { PaymentState } from "@/modules/documents/types";
 
 // Public read-only nota de venta view (PLAN.md §10 1Q) — the token is the
@@ -14,17 +14,7 @@ import type { PaymentState } from "@/modules/documents/types";
 // resolving upstream, so this page never shows a cancelled sale as if it
 // still stood.
 
-function money(amount: number, currency: string, locale: string): string {
-  const formatted = formatNumber(amount, locale, {
-    minimumFractionDigits: currency === "PYG" ? 0 : 2,
-    maximumFractionDigits: currency === "PYG" ? 0 : 2,
-  });
-  return `${currency} ${formatted}`;
-}
 
-function date(value: Date, locale: string): string {
-  return formatDate(value, locale, { dateStyle: "medium" });
-}
 
 const STATE_CLASS: Record<PaymentState, string> = {
   unpaid: "bg-amber-100 text-amber-900",

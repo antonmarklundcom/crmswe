@@ -86,6 +86,31 @@ Meta connection.
 - [ ] `.env` / hPanel env vars have no leftover placeholder values
       (`change-me`, empty secrets, etc.)
 
+## 7. Mobile & PWA (§13 H7)
+
+Run this at a 390px-wide viewport — a real phone, or a desktop browser's
+device toolbar set to iPhone-class width. The one rule the whole pass is
+about: **no page may scroll the body sideways.** A table or the pipeline
+board scrolling inside its own container is correct; the page itself
+moving is not.
+
+- [ ] Log in, then walk `/dashboard`, `/contacts`, a contact detail,
+      `/contacts/import`, `/pipeline`, `/inbox`, `/quotes`, `/documents`,
+      `/products`, `/users`, `/settings`, `/sites`, `/automations` — none
+      of them scrolls the page sideways
+- [ ] On `/pipeline`, press and hold a deal card for about half a second,
+      then drag it to another column: the card moves and the column counts
+      change. A short tap-and-flick should scroll the board instead — that
+      is the TouchSensor's activation delay doing its job
+- [ ] Open an automation on the phone: it shows the read-only step list and
+      a line saying to edit it on a computer, not the canvas
+- [ ] Reply to a conversation in `/inbox` — the composer stays visible with
+      the keyboard open
+- [ ] "Add to home screen" installs the app: it opens standalone (no
+      browser chrome), with the VenderCRM icon and the dark theme colour
+- [ ] On the marketing host: `/robots.txt` lists the sitemap and disallows
+      `/api/`, `/q/`, `/d/`, `/f/`; `/sitemap.xml` lists the four pages
+
 ## If anything fails
 
 Don't leave a failing smoke test unresolved before calling a deploy done —

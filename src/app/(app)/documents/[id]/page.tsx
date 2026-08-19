@@ -125,26 +125,28 @@ export default async function DocumentDetailPage({
         </>
       ) : (
         <>
-          <table className="w-full text-left text-sm">
-            <thead>
-              <tr className="border-b">
-                <th className="py-2">{t("description")}</th>
-                <th className="py-2 text-right">{t("qty")}</th>
-                <th className="py-2 text-right">{t("unitPrice")}</th>
-                <th className="py-2 text-right">{t("lineTotal")}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {items.map((item) => (
-                <tr key={item.id} className="border-b">
-                  <td className="py-2">{item.description}</td>
-                  <td className="py-2 text-right">{item.qty}</td>
-                  <td className="py-2 text-right">{fmt(item.unitPrice)}</td>
-                  <td className="py-2 text-right">{fmt(item.lineTotal)}</td>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead>
+                <tr className="border-b">
+                  <th className="py-2">{t("description")}</th>
+                  <th className="py-2 text-right">{t("qty")}</th>
+                  <th className="py-2 text-right">{t("unitPrice")}</th>
+                  <th className="py-2 text-right">{t("lineTotal")}</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {items.map((item) => (
+                  <tr key={item.id} className="border-b">
+                    <td className="py-2">{item.description}</td>
+                    <td className="py-2 text-right">{item.qty}</td>
+                    <td className="py-2 text-right">{fmt(item.unitPrice)}</td>
+                    <td className="py-2 text-right">{fmt(item.lineTotal)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
 
           <div className="flex flex-col items-end gap-1 text-sm">
             <div className="flex w-56 justify-between">
@@ -208,40 +210,42 @@ export default async function DocumentDetailPage({
           {payments.length === 0 ? (
             <p className="text-sm text-muted-foreground">{t("noPayments")}</p>
           ) : (
-            <table className="w-full text-left text-sm">
-              <thead>
-                <tr className="border-b">
-                  <th className="py-2">{t("paidAt")}</th>
-                  <th className="py-2">{t("method")}</th>
-                  <th className="py-2">{t("reference")}</th>
-                  <th className="py-2 text-right">{t("amount")}</th>
-                  <th className="py-2"></th>
-                </tr>
-              </thead>
-              <tbody>
-                {payments.map((payment) => (
-                  <tr key={payment.id} className="border-b">
-                    <td className="py-2">{payment.paidAt.toISOString().slice(0, 10)}</td>
-                    <td className="py-2">
-                      {t(`methodValues.${payment.method}` as "methodValues.cash")}
-                    </td>
-                    <td className="py-2">{payment.reference}</td>
-                    <td className="py-2 text-right">{fmt(payment.amount)}</td>
-                    <td className="py-2 text-right">
-                      {document.status === "issued" && isAdmin && (
-                        <form action={deletePaymentAction}>
-                          <input type="hidden" name="documentId" value={document.id} />
-                          <input type="hidden" name="paymentId" value={payment.id} />
-                          <button type="submit" className="text-xs underline">
-                            {t("deletePayment")}
-                          </button>
-                        </form>
-                      )}
-                    </td>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm">
+                <thead>
+                  <tr className="border-b">
+                    <th className="py-2">{t("paidAt")}</th>
+                    <th className="py-2">{t("method")}</th>
+                    <th className="py-2">{t("reference")}</th>
+                    <th className="py-2 text-right">{t("amount")}</th>
+                    <th className="py-2"></th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {payments.map((payment) => (
+                    <tr key={payment.id} className="border-b">
+                      <td className="py-2">{payment.paidAt.toISOString().slice(0, 10)}</td>
+                      <td className="py-2">
+                        {t(`methodValues.${payment.method}` as "methodValues.cash")}
+                      </td>
+                      <td className="py-2">{payment.reference}</td>
+                      <td className="py-2 text-right">{fmt(payment.amount)}</td>
+                      <td className="py-2 text-right">
+                        {document.status === "issued" && isAdmin && (
+                          <form action={deletePaymentAction}>
+                            <input type="hidden" name="documentId" value={document.id} />
+                            <input type="hidden" name="paymentId" value={payment.id} />
+                            <button type="submit" className="text-xs underline">
+                              {t("deletePayment")}
+                            </button>
+                          </form>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
 
           {document.status === "issued" && <RecordPaymentForm documentId={document.id} />}

@@ -54,32 +54,34 @@ export default async function QuotesPage() {
             actionHref={contacts.length > 0 ? "#nuevo-presupuesto" : undefined}
           />
         ) : (
-          <table className="w-full text-left text-sm">
-            <thead>
-              <tr className="border-b">
-                <th className="py-2">{t("number")}</th>
-                <th className="py-2">{t("status")}</th>
-                <th className="py-2 text-right">{t("total")}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {quotes.map((quote) => (
-                <tr key={quote.id} className="border-b">
-                  <td className="py-2">
-                    <Link href={`/quotes/${quote.id}`} className="underline">
-                      {quote.number}
-                    </Link>
-                  </td>
-                  <td className="py-2">
-                    {t(`statusValues.${quote.status}` as "statusValues.draft")}
-                  </td>
-                  <td className="py-2 text-right">
-                    {formatMoney(quote.total, quote.currency, locale)}
-                  </td>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead>
+                <tr className="border-b">
+                  <th className="py-2">{t("number")}</th>
+                  <th className="py-2">{t("status")}</th>
+                  <th className="py-2 text-right">{t("total")}</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {quotes.map((quote) => (
+                  <tr key={quote.id} className="border-b">
+                    <td className="py-2">
+                      <Link href={`/quotes/${quote.id}`} className="underline">
+                        {quote.number}
+                      </Link>
+                    </td>
+                    <td className="py-2">
+                      {t(`statusValues.${quote.status}` as "statusValues.draft")}
+                    </td>
+                    <td className="py-2 text-right">
+                      {formatMoney(quote.total, quote.currency, locale)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </section>
 

@@ -35,45 +35,47 @@ export default async function ProductsPage() {
             actionHref={isAdmin ? "#nuevo-producto" : undefined}
           />
         ) : (
-          <table className="w-full text-left text-sm">
-            <thead>
-              <tr className="border-b">
-                <th className="py-2">{t("name")}</th>
-                <th className="py-2 text-right">{t("unitPrice")}</th>
-                <th className="py-2" />
-              </tr>
-            </thead>
-            <tbody>
-              {products.map((product) => (
-                <tr key={product.id} className="border-b">
-                  <td className="py-2">
-                    {product.name}
-                    {!product.isActive && (
-                      <span className="ml-2 text-xs text-muted-foreground">({t("inactive")})</span>
-                    )}
-                  </td>
-                  <td className="py-2 text-right">
-                    {formatMoney(product.unitPrice, product.currency, locale)}
-                  </td>
-                  <td className="py-2 text-right">
-                    {isAdmin && (
-                      <form action={toggleProductAction}>
-                        <input type="hidden" name="productId" value={product.id} />
-                        <input
-                          type="hidden"
-                          name="isActive"
-                          value={product.isActive ? "false" : "true"}
-                        />
-                        <Button type="submit" size="sm" variant="outline">
-                          {product.isActive ? t("deactivate") : t("activate")}
-                        </Button>
-                      </form>
-                    )}
-                  </td>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead>
+                <tr className="border-b">
+                  <th className="py-2">{t("name")}</th>
+                  <th className="py-2 text-right">{t("unitPrice")}</th>
+                  <th className="py-2" />
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {products.map((product) => (
+                  <tr key={product.id} className="border-b">
+                    <td className="py-2">
+                      {product.name}
+                      {!product.isActive && (
+                        <span className="ml-2 text-xs text-muted-foreground">({t("inactive")})</span>
+                      )}
+                    </td>
+                    <td className="py-2 text-right">
+                      {formatMoney(product.unitPrice, product.currency, locale)}
+                    </td>
+                    <td className="py-2 text-right">
+                      {isAdmin && (
+                        <form action={toggleProductAction}>
+                          <input type="hidden" name="productId" value={product.id} />
+                          <input
+                            type="hidden"
+                            name="isActive"
+                            value={product.isActive ? "false" : "true"}
+                          />
+                          <Button type="submit" size="sm" variant="outline">
+                            {product.isActive ? t("deactivate") : t("activate")}
+                          </Button>
+                        </form>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </section>
 

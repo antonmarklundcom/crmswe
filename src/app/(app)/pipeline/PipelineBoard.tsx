@@ -3,8 +3,12 @@
 import { useState, useTransition } from "react";
 import {
   DndContext,
+  MouseSensor,
+  TouchSensor,
   useDraggable,
   useDroppable,
+  useSensor,
+  useSensors,
   type DragEndEvent,
 } from "@dnd-kit/core";
 import { useTranslations } from "next-intl";
@@ -31,6 +35,15 @@ export function PipelineBoard({ stages, deals }: { stages: Stage[]; deals: Deal[
   );
   const [, startTransition] = useTransition();
   const t = useTranslations("app.pipeline");
+
+  // Without a TouchSensor the board is mouse-only, and the board is the
+  // screen a rep works from a phone (PLAN.md §13 H7). The 250ms/8px
+  // press-and-hold is what separates "drag a card" from "scroll the
+  // column" on a touch screen — a shorter delay makes the list unscrollable.
+  const sensors = useSensors(
+    useSensor(MouseSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 8 } }),
+  );
 
   function handleDragEnd(event: DragEndEvent) {
     const dealId = String(event.active.id);
@@ -68,7 +81,7 @@ export function PipelineBoard({ stages, deals }: { stages: Stage[]; deals: Deal[
   }
 
   return (
-    <DndContext onDragEnd={handleDragEnd}>
+    <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
       <div className="flex gap-4 overflow-x-auto">
         {stages.map((stage) => (
           <StageColumn key={stage.id} stage={stage} deals={columns[stage.id] ?? []} />
@@ -84,7 +97,7 @@ function StageColumn({ stage, deals }: { stage: Stage; deals: Deal[] }) {
   return (
     <div
       ref={setNodeRef}
-      className={`flex w-64 shrink-0 flex-col gap-2 rounded-md border p-2 ${
+      className={`flex w-[85vw] max-w-xs shrink-0 flex-col gap-2 rounded-md border p-2 sm:w-64 ${
         isOver ? "bg-accent" : ""
       }`}
     >
@@ -113,7 +126,9 @@ function DealCard({ deal }: { deal: Deal }) {
           ? { transform: `translate(${transform.x}px, ${transform.y}px)` }
           : undefined
       }
-      className={`cursor-grab rounded-md border bg-background p-2 text-sm shadow-sm ${
+      // touch-none keeps the browser from claiming the gesture as a scroll
+      // once the press-and-hold has started the drag.
+      className={`touch-none cursor-grab rounded-md border bg-background p-2 text-sm shadow-sm ${
         isDragging ? "opacity-50" : ""
       }`}
     >

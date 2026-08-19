@@ -20,48 +20,50 @@ export default async function TenantsPage() {
       <PageHeader title={t("title")} description={t("intro")} />
 
       <section>
-        <table className="w-full text-left text-sm">
-          <thead>
-            <tr className="border-b">
-              <th className="py-2">{t("name")}</th>
-              <th className="py-2">{t("slug")}</th>
-              <th className="py-2">{t("status")}</th>
-              <th className="py-2" />
-            </tr>
-          </thead>
-          <tbody>
-            {tenants.map((tenant) => (
-              <tr key={tenant.id} className="border-b">
-                <td className="py-2">
-                  <Link href={`/tenants/${tenant.id}`} className="underline">
-                    {tenant.name}
-                  </Link>
-                </td>
-                <td className="py-2">{tenant.slug}</td>
-                <td className="py-2">
-                  {t(`statusValues.${tenant.status}` as "statusValues.active")}
-                </td>
-                <td className="py-2">
-                  {tenant.status === "suspended" ? (
-                    <form action={activateTenantAction}>
-                      <input type="hidden" name="tenantId" value={tenant.id} />
-                      <Button type="submit" size="sm" variant="outline">
-                        {t("activate")}
-                      </Button>
-                    </form>
-                  ) : (
-                    <form action={suspendTenantAction}>
-                      <input type="hidden" name="tenantId" value={tenant.id} />
-                      <Button type="submit" size="sm" variant="outline">
-                        {t("suspend")}
-                      </Button>
-                    </form>
-                  )}
-                </td>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm">
+            <thead>
+              <tr className="border-b">
+                <th className="py-2">{t("name")}</th>
+                <th className="py-2">{t("slug")}</th>
+                <th className="py-2">{t("status")}</th>
+                <th className="py-2" />
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {tenants.map((tenant) => (
+                <tr key={tenant.id} className="border-b">
+                  <td className="py-2">
+                    <Link href={`/tenants/${tenant.id}`} className="underline">
+                      {tenant.name}
+                    </Link>
+                  </td>
+                  <td className="py-2">{tenant.slug}</td>
+                  <td className="py-2">
+                    {t(`statusValues.${tenant.status}` as "statusValues.active")}
+                  </td>
+                  <td className="py-2">
+                    {tenant.status === "suspended" ? (
+                      <form action={activateTenantAction}>
+                        <input type="hidden" name="tenantId" value={tenant.id} />
+                        <Button type="submit" size="sm" variant="outline">
+                          {t("activate")}
+                        </Button>
+                      </form>
+                    ) : (
+                      <form action={suspendTenantAction}>
+                        <input type="hidden" name="tenantId" value={tenant.id} />
+                        <Button type="submit" size="sm" variant="outline">
+                          {t("suspend")}
+                        </Button>
+                      </form>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </section>
 
       <section>

@@ -139,6 +139,14 @@
       },
       "dueTasks": {
         "title": "Tareas pendientes"
+      },
+      "leads": {
+        "title": "De dónde vienen tus leads",
+        "intro": "{total} leads recibidos por API o formulario · {withDeal} con negocio abierto.",
+        "bySite": "Por sitio",
+        "bySource": "Por origen (utm_source)",
+        "byCampaign": "Por campaña (utm_campaign)",
+        "empty": "Sin datos todavía"
       }
     },
     "contacts": {
@@ -319,7 +327,10 @@
         "valueInvalid": "El valor va en guaraníes enteros, sin decimales ni signos.",
         "unknown": "No se pudo crear el negocio. Intentá de nuevo."
       },
-      "moveFailed": "No pudimos mover la oportunidad. Se restauró su etapa anterior."
+      "moveFailed": "No pudimos mover la oportunidad. Se restauró su etapa anterior.",
+      "showClosed": "Ver {count} cerrados",
+      "hideClosed": "Ocultar cerrados",
+      "editStages": "Editar etapas"
     },
     "forms": {
       "title": "Formularios",
@@ -974,6 +985,72 @@
         },
         "mobileReadOnly": "El editor visual necesita una pantalla más grande. Desde el teléfono podés ver el flujo; para editarlo, abrilo en una computadora.",
         "mobileEmpty": "Este flujo todavía no tiene pasos."
+      }
+    },
+    "search": {
+      "placeholder": "Buscar contactos, negocios, presupuestos…",
+      "empty": "Sin resultados",
+      "searching": "Buscando…",
+      "hint": "↑↓ para moverte · Enter para abrir · Esc para cerrar",
+      "kinds": {
+        "contact": "Contacto",
+        "deal": "Negocio",
+        "quote": "Presupuesto",
+        "document": "Nota de venta",
+        "conversation": "Conversación"
+      }
+    },
+    "deal": {
+      "value": "Valor",
+      "stage": "Etapa",
+      "contact": "Contacto",
+      "stageSince": "En esta etapa desde",
+      "backToBoard": "Volver al tablero",
+      "closeTitle": "Cerrar el negocio",
+      "markWon": "Marcar ganado",
+      "markLost": "Marcar perdido",
+      "reason": "Motivo (opcional)",
+      "reasonPlaceholder": "Ej: precio, plazo, eligió a otro proveedor",
+      "closedWon": "Ganado",
+      "closedLost": "Perdido",
+      "reopen": "Reabrir",
+      "assignedTitle": "Responsable",
+      "assign": "Asignar",
+      "historyTitle": "Historial de etapas",
+      "historyEmpty": "Todavía no cambió de etapa.",
+      "quotesTitle": "Presupuestos",
+      "quotesEmpty": "Sin presupuestos para este contacto.",
+      "tasksTitle": "Tareas",
+      "tasksEmpty": "Sin tareas para este negocio.",
+      "errors": {
+        "noStage": "Esta pipeline no tiene una etapa de ganado/perdido. Configurala en el editor de etapas.",
+        "notFound": "No encontramos el negocio.",
+        "invalid": "Revisá los datos e intentá de nuevo.",
+        "unknown": "No se pudo cerrar el negocio. Intentá de nuevo."
+      }
+    },
+    "stages": {
+      "title": "Etapas",
+      "intro": "Renombrá, reordená y pintá las etapas de esta pipeline, y marcá cuáles significan ganado o perdido.",
+      "adminOnly": "Solo los administradores pueden ver esta página",
+      "backToBoard": "Volver al tablero",
+      "name": "Nombre",
+      "color": "Color",
+      "outcome": "Resultado",
+      "outcomeNone": "En curso",
+      "outcomeWon": "Ganado",
+      "outcomeLost": "Perdido",
+      "save": "Guardar",
+      "moveLeft": "← Mover",
+      "moveRight": "Mover →",
+      "delete": "Eliminar",
+      "dealCount": "{count, plural, =0 {sin negocios} one {# negocio} other {# negocios}}",
+      "createTitle": "Nueva etapa",
+      "create": "Agregar etapa",
+      "errors": {
+        "notEmpty": "No se puede eliminar: la etapa todavía tiene negocios. Movelos primero.",
+        "lastStage": "No se puede eliminar la única etapa de la pipeline.",
+        "notFound": "No encontramos la etapa."
       }
     }
   },

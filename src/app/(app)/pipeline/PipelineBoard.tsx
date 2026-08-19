@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Link from "next/link";
 import {
   DndContext,
   MouseSensor,
@@ -132,7 +133,11 @@ function DealCard({ deal }: { deal: Deal }) {
         isDragging ? "opacity-50" : ""
       }`}
     >
-      <p className="font-medium">{deal.title}</p>
+      {/* The card is draggable, so the title is the link — a whole-card
+          link would swallow the drag gesture. */}
+      <Link href={`/pipeline/${deal.id}`} className="font-medium underline-offset-4 hover:underline">
+        {deal.title}
+      </Link>
       <p className="text-muted-foreground">{deal.contactName}</p>
       <p className="text-muted-foreground">
         {deal.value} {deal.currency}

@@ -15,11 +15,11 @@ import { PageHeader } from "@/components/page-header";
 export default async function PipelinePage({
   searchParams,
 }: {
-  searchParams: Promise<{ pipeline?: string }>;
+  searchParams: Promise<{ pipeline?: string; cerrados?: string }>;
 }) {
   const ctx = await requireTenantContext();
   const t = await getTranslations("app.pipeline");
-  const { pipeline: pipelineParam } = await searchParams;
+  const { pipeline: pipelineParam, cerrados: closedParam } = await searchParams;
 
   // Working the board is the agent's job; adding a pipeline is tenant config
   // and admin-only (§3.2), so the create form is admin-only too.
@@ -49,9 +49,32 @@ export default async function PipelinePage({
 
   const contactsById = new Map(contacts.map((c) => [c.id, c]));
 
+  // Won and lost deals leave the board by default (PLAN.md §13 H8): the
+  // board is what is still being worked, and a year of closed deals piling
+  // up in two columns is what makes reps stop closing them properly.
+  // `?cerrados=1` brings them back for the rep who wants to look.
+  const showClosed = closedParam === "1";
+  const boardStages = showClosed ? stages : stages.filter((s) => !s.isWon && !s.isLost);
+  const boardStageIds = new Set(boardStages.map((stage) => stage.id));
+  const boardDeals = deals.filter((deal) => boardStageIds.has(deal.stageId));
+  const closedCount = deals.length - boardDeals.length;
+
   return (
     <div className="flex flex-col gap-8">
-      <PageHeader title={pipeline.name} description={t("intro")} />
+      <PageHeader
+        title={pipeline.name}
+        description={t("intro")}
+        action={
+          isAdmin ? (
+            <Link
+              href={`/pipeline/etapas?pipeline=${pipeline.id}`}
+              className="text-sm underline underline-offset-4"
+            >
+              {t("editStages")}
+            </Link>
+          ) : undefined
+        }
+      />
 
       {pipelines.length > 1 && (
         <nav className="flex flex-wrap gap-2" aria-label={t("switcherLabel")}>
@@ -71,7 +94,18 @@ export default async function PipelinePage({
         </nav>
       )}
 
-      {deals.length === 0 ? (
+      {(closedCount > 0 || showClosed) && (
+        <p className="text-sm text-muted-foreground">
+          <Link
+            href={`/pipeline?pipeline=${pipeline.id}${showClosed ? "" : "&cerrados=1"}`}
+            className="underline underline-offset-4"
+          >
+            {showClosed ? t("hideClosed") : t("showClosed", { count: closedCount })}
+          </Link>
+        </p>
+      )}
+
+      {boardDeals.length === 0 ? (
         <EmptyState
           icon={SquareKanban}
           title={t("emptyTitle")}
@@ -81,8 +115,8 @@ export default async function PipelinePage({
         />
       ) : (
         <PipelineBoard
-          stages={stages}
-          deals={deals.map((deal) => ({
+          stages={boardStages}
+          deals={boardDeals.map((deal) => ({
             ...deal,
             contactName: contactsById.get(deal.contactId)?.name ?? deal.contactId,
           }))}

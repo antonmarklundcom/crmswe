@@ -5,7 +5,15 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireTenantContext, requireTenantAdmin } from "@/modules/tenancy/context";
 import { moveDeal, createDeal } from "@/modules/crm/deals";
-import { createPipelineWithDefaultStages } from "@/modules/crm/pipelines";
+import {
+  StageConfigError,
+  createPipelineWithDefaultStages,
+  createStage,
+  deleteStageIfEmpty,
+  listStagesForPipeline,
+  moveStage,
+  updateStage,
+} from "@/modules/crm/pipelines";
 
 const moveDealSchema = z.object({
   dealId: z.string().min(1),
@@ -111,4 +119,92 @@ export async function createPipelineAction(formData: FormData) {
   const pipeline = await createPipelineWithDefaultStages(ctx, input.name);
   revalidatePath("/pipeline");
   if (pipeline) redirect(`/pipeline?pipeline=${pipeline.id}`);
+}
+
+
+// --- Stage configuration (PLAN.md §13 H8) -------------------------------
+//
+// Admin-only, per §3.2 and H1: renaming or deleting a stage is tenant
+// configuration, not deal work. Every one of these is a hidden-id button in
+// a rendered row, so a refusal has nowhere to render — the guards below
+// return silently and the page re-renders with the unchanged state, except
+// for delete, which reports why it refused.
+
+const stageIdSchema = z.object({ stageId: z.string().min(1).max(26) });
+
+export async function updateStageAction(formData: FormData) {
+  const ctx = await requireTenantAdmin();
+  const parsed = z
+    .object({
+      stageId: z.string().min(1).max(26),
+      name: z.string().trim().min(1).max(200),
+      color: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional().or(z.literal("")),
+      outcome: z.enum(["none", "won", "lost"]),
+    })
+    .safeParse({
+      stageId: formData.get("stageId"),
+      name: formData.get("name"),
+      color: formData.get("color") || undefined,
+      outcome: formData.get("outcome") ?? "none",
+    });
+  if (!parsed.success) return;
+
+  await updateStage(ctx, parsed.data.stageId, {
+    name: parsed.data.name,
+    color: parsed.data.color || null,
+    isWon: parsed.data.outcome === "won",
+    isLost: parsed.data.outcome === "lost",
+  });
+
+  revalidatePath("/pipeline");
+}
+
+export async function moveStageAction(formData: FormData) {
+  const ctx = await requireTenantAdmin();
+  const parsed = z
+    .object({ stageId: z.string().min(1).max(26), direction: z.enum(["left", "right"]) })
+    .safeParse({ stageId: formData.get("stageId"), direction: formData.get("direction") });
+  if (!parsed.success) return;
+
+  await moveStage(ctx, parsed.data.stageId, parsed.data.direction);
+  revalidatePath("/pipeline");
+}
+
+export async function deleteStageAction(formData: FormData) {
+  const ctx = await requireTenantAdmin();
+  const parsed = stageIdSchema.safeParse({ stageId: formData.get("stageId") });
+  if (!parsed.success) return;
+
+  try {
+    await deleteStageIfEmpty(ctx, parsed.data.stageId);
+  } catch (err) {
+    if (err instanceof StageConfigError) {
+      // "It still holds deals" is the answer the admin needs, and it is not
+      // secret — it comes back in the URL so the page can say it.
+      redirect(`/pipeline/etapas?error=${err.code}`);
+    }
+    throw err;
+  }
+
+  redirect("/pipeline/etapas");
+}
+
+export async function createStageAction(formData: FormData) {
+  const ctx = await requireTenantAdmin();
+  const parsed = z
+    .object({
+      pipelineId: z.string().min(1).max(26),
+      name: z.string().trim().min(1).max(200),
+    })
+    .safeParse({ pipelineId: formData.get("pipelineId"), name: formData.get("name") });
+  if (!parsed.success) return;
+
+  const existing = await listStagesForPipeline(ctx, parsed.data.pipelineId);
+  await createStage(ctx, {
+    pipelineId: parsed.data.pipelineId,
+    name: parsed.data.name,
+    position: existing.length,
+  });
+
+  revalidatePath("/pipeline");
 }

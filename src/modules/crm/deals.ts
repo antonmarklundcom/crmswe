@@ -3,7 +3,7 @@ import { deals } from "@/db/schema";
 import { newId } from "@/lib/ids";
 import type { TenantContext } from "@/modules/tenancy/context";
 import { tenantDb } from "@/modules/tenancy/db";
-import { getStage } from "./pipelines";
+import { getStage, listStagesForPipeline } from "./pipelines";
 import { createActivity } from "./activities";
 import { crmEvents } from "./events";
 
@@ -123,4 +123,62 @@ export async function moveDeal(
 
 export async function deleteDeal(ctx: TenantContext, id: string) {
   await tenantDb(ctx).delete(deals, eq(deals.id, id));
+}
+
+
+// --- Closing a deal (PLAN.md §13 H8) -----------------------------------
+//
+// Won and lost are stages, not a separate status column (the `is_won` /
+// `is_lost` flags have been on `stages` since §4). Closing is therefore the
+// same move the board already does, with a reason attached — which keeps one
+// code path, one activity row, and one `deal.stage_changed` event for the
+// automations that listen for it.
+
+export class DealCloseError extends Error {
+  constructor(readonly code: "noStage" | "notFound") {
+    super(code);
+  }
+}
+
+/** The stage this pipeline uses for won (or lost) deals, if it has one. */
+export async function findOutcomeStage(
+  ctx: TenantContext,
+  pipelineId: string,
+  outcome: "won" | "lost",
+) {
+  const all = await listStagesForPipeline(ctx, pipelineId);
+  return all.find((stage) => (outcome === "won" ? stage.isWon : stage.isLost)) ?? null;
+}
+
+export async function closeDeal(
+  ctx: TenantContext,
+  dealId: string,
+  outcome: "won" | "lost",
+  reason?: string,
+) {
+  const deal = await getDeal(ctx, dealId);
+  if (!deal) throw new DealCloseError("notFound");
+
+  const stage = await findOutcomeStage(ctx, deal.pipelineId, outcome);
+  // A pipeline with no won/lost stage can't close a deal, and inventing one
+  // silently would be worse than saying so: the config UI is where that gets
+  // fixed.
+  if (!stage) throw new DealCloseError("noStage");
+
+  const siblings = await tenantDb(ctx).select(deals, eq(deals.stageId, stage.id));
+  await moveDeal(ctx, dealId, { toStageId: stage.id, toPosition: siblings.length });
+  await tenantDb(ctx)
+    .update(deals)
+    .set({ closeReason: reason?.slice(0, 500) ?? null })
+    .where(eq(deals.id, dealId));
+
+  return getDeal(ctx, dealId);
+}
+
+/** Puts a closed deal back on the board, in the stage the caller names. */
+export async function reopenDeal(ctx: TenantContext, dealId: string, toStageId: string) {
+  const siblings = await tenantDb(ctx).select(deals, eq(deals.stageId, toStageId));
+  await moveDeal(ctx, dealId, { toStageId, toPosition: siblings.length });
+  await tenantDb(ctx).update(deals).set({ closeReason: null }).where(eq(deals.id, dealId));
+  return getDeal(ctx, dealId);
 }

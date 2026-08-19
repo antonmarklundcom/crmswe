@@ -6,6 +6,7 @@ import { getTenant } from "@/modules/tenancy/tenants";
 import { AppNav, type NavGroup } from "@/components/app-nav";
 import { UserMenu } from "@/components/user-menu";
 import { Toaster } from "@/components/ui/sonner";
+import { CommandPalette } from "@/components/command-palette";
 import { Button } from "@/components/ui/button";
 import { stopImpersonationAction } from "./actions";
 
@@ -45,6 +46,7 @@ export default async function AppLayout({
 
   const t = await getTranslations("app.nav");
   const tc = await getTranslations("common");
+  const tSearch = await getTranslations("app.search");
   const tRoles = await getTranslations("app.users.roles");
   const isAdmin = ctx.role === "admin";
 
@@ -131,6 +133,21 @@ export default async function AppLayout({
         />
         <div className="min-w-0 flex-1 p-6">{children}</div>
       </div>
+      {/* ⌘K from anywhere in the app (PLAN.md §13 H8). */}
+      <CommandPalette
+        labels={{
+          placeholder: tSearch("placeholder"),
+          empty: tSearch("empty"),
+          hint: tSearch("hint"),
+          kinds: {
+            contact: tSearch("kinds.contact"),
+            deal: tSearch("kinds.deal"),
+            quote: tSearch("kinds.quote"),
+            document: tSearch("kinds.document"),
+            conversation: tSearch("kinds.conversation"),
+          },
+        }}
+      />
       <Toaster />
     </div>
   );

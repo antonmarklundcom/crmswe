@@ -150,6 +150,10 @@ export const deals = mysqlTable(
       .notNull()
       .default(sql`CURRENT_TIMESTAMP`),
     closedAt: datetime("closed_at"),
+    // Why the deal closed, in the rep's own words (PLAN.md §13 H8). Kept on
+    // the deal rather than only in the activity trail so the board and any
+    // later reporting can read it without walking the timeline.
+    closeReason: varchar("close_reason", { length: 500 }),
     createdAt: datetime("created_at")
       .notNull()
       .default(sql`CURRENT_TIMESTAMP`),

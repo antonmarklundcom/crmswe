@@ -89,3 +89,48 @@ describe("locale key parity", () => {
     });
   }
 });
+
+// Shape guard for the webhook connection guide (PLAN.md §5.2.5). /sites reads
+// `hookGuide.platforms` whole with t.raw() and hands it straight to the client
+// component, so this array is a contract, not just copy: an entry missing an
+// id, a label or a non-empty steps list renders a broken tab, and ids that
+// drift between locales change which platform a visitor sees.
+type Platform = { id: string; label: string; steps: string[] };
+
+function platformsOf(tree: MessageNode): Platform[] {
+  const guide = (tree as { app: { sites: { hookGuide: { platforms: unknown } } } }).app.sites
+    .hookGuide.platforms;
+  expect(Array.isArray(guide)).toBe(true);
+  return guide as Platform[];
+}
+
+describe("hookGuide.platforms", () => {
+  const reference = platformsOf(messages as MessageNode);
+
+  it("ships at least one platform", () => {
+    expect(reference.length).toBeGreaterThan(0);
+  });
+
+  for (const [locale, tree] of Object.entries({ es: messages as MessageNode, ...LOCALES })) {
+    const platforms = platformsOf(tree);
+
+    it(`${locale} gives every platform an id, a label and steps`, () => {
+      expect(
+        platforms.filter(
+          (platform) =>
+            typeof platform?.id !== "string" ||
+            typeof platform?.label !== "string" ||
+            !Array.isArray(platform?.steps) ||
+            platform.steps.length === 0 ||
+            platform.steps.some((step) => typeof step !== "string"),
+        ),
+      ).toEqual([]);
+    });
+
+    it(`${locale} lists the same platform ids, in the same order`, () => {
+      expect(platforms.map((platform) => platform.id)).toEqual(
+        reference.map((platform) => platform.id),
+      );
+    });
+  }
+});

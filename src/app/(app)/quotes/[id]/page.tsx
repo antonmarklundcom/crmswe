@@ -52,26 +52,28 @@ export default async function QuoteDetailPage({
         </form>
       </header>
 
-      <table className="w-full text-left text-sm">
-        <thead>
-          <tr className="border-b">
-            <th className="py-2">{t("description")}</th>
-            <th className="py-2 text-right">{t("qty")}</th>
-            <th className="py-2 text-right">{t("unitPrice")}</th>
-            <th className="py-2 text-right">{t("lineTotal")}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {items.map((item) => (
-            <tr key={item.id} className="border-b">
-              <td className="py-2">{item.description}</td>
-              <td className="py-2 text-right">{item.qty}</td>
-              <td className="py-2 text-right">{fmt(item.unitPrice)}</td>
-              <td className="py-2 text-right">{fmt(item.lineTotal)}</td>
+      <div className="overflow-x-auto">
+        <table className="w-full text-left text-sm">
+          <thead>
+            <tr className="border-b">
+              <th className="py-2">{t("description")}</th>
+              <th className="py-2 text-right">{t("qty")}</th>
+              <th className="py-2 text-right">{t("unitPrice")}</th>
+              <th className="py-2 text-right">{t("lineTotal")}</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {items.map((item) => (
+              <tr key={item.id} className="border-b">
+                <td className="py-2">{item.description}</td>
+                <td className="py-2 text-right">{item.qty}</td>
+                <td className="py-2 text-right">{fmt(item.unitPrice)}</td>
+                <td className="py-2 text-right">{fmt(item.lineTotal)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
 
       <div className="flex flex-col items-end gap-1 text-sm">
         <div className="flex w-56 justify-between">

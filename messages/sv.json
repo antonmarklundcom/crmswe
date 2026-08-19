@@ -774,7 +774,9 @@
           "aiModeHint": "Automatisk sändning måste också vara påslagen för hela kontot under Inställningar. Så länge kontot står i utkastläge skapar den här noden utkast.",
           "reviewTextPlaceholder": "Tack för ditt köp! Lämna gärna en recension: {tag}",
           "reviewTextHint": "Lämnar du fältet tomt skickas ett standardmeddelande med länken. Ange recensionslänken under Inställningar."
-        }
+        },
+        "mobileReadOnly": "Den visuella redigeraren behöver en större skärm. På mobilen kan du läsa flödet; för att redigera det, öppna det på en dator.",
+        "mobileEmpty": "Flödet har inga steg ännu."
       }
     },
     "sites": {

@@ -64,47 +64,49 @@ export default async function DocumentsPage() {
             actionHref={contacts.length > 0 ? "#nueva-nota" : undefined}
           />
         ) : (
-          <table className="w-full text-left text-sm">
-            <thead>
-              <tr className="border-b">
-                <th className="py-2">{t("number")}</th>
-                <th className="py-2">{t("contact")}</th>
-                <th className="py-2">{t("status")}</th>
-                <th className="py-2">{t("paymentState")}</th>
-                <th className="py-2 text-right">{t("total")}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map(({ document, paid }) => {
-                const state = paymentStateOf(
-                  document.status as DocumentStatus,
-                  document.total,
-                  paid,
-                );
-                return (
-                  <tr key={document.id} className="border-b">
-                    <td className="py-2">
-                      <Link href={`/documents/${document.id}`} className="underline">
-                        {document.number}
-                      </Link>
-                    </td>
-                    <td className="py-2">
-                      {contactsById.get(document.contactId)?.name ?? document.contactId}
-                    </td>
-                    <td className="py-2">
-                      {t(`statusValues.${document.status}` as "statusValues.draft")}
-                    </td>
-                    <td className="py-2">
-                      {t(`paymentStateValues.${state}` as "paymentStateValues.unpaid")}
-                    </td>
-                    <td className="py-2 text-right">
-                      {formatMoney(document.total, document.currency, locale)}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead>
+                <tr className="border-b">
+                  <th className="py-2">{t("number")}</th>
+                  <th className="py-2">{t("contact")}</th>
+                  <th className="py-2">{t("status")}</th>
+                  <th className="py-2">{t("paymentState")}</th>
+                  <th className="py-2 text-right">{t("total")}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map(({ document, paid }) => {
+                  const state = paymentStateOf(
+                    document.status as DocumentStatus,
+                    document.total,
+                    paid,
+                  );
+                  return (
+                    <tr key={document.id} className="border-b">
+                      <td className="py-2">
+                        <Link href={`/documents/${document.id}`} className="underline">
+                          {document.number}
+                        </Link>
+                      </td>
+                      <td className="py-2">
+                        {contactsById.get(document.contactId)?.name ?? document.contactId}
+                      </td>
+                      <td className="py-2">
+                        {t(`statusValues.${document.status}` as "statusValues.draft")}
+                      </td>
+                      <td className="py-2">
+                        {t(`paymentStateValues.${state}` as "paymentStateValues.unpaid")}
+                      </td>
+                      <td className="py-2 text-right">
+                        {formatMoney(document.total, document.currency, locale)}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         )}
       </section>
 

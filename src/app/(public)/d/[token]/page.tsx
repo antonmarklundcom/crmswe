@@ -109,30 +109,32 @@ export default async function PublicDocumentPage({
       </section>
 
       <section>
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b text-left">
-              <th className="py-2">{t("description")}</th>
-              <th className="py-2 text-right">{t("qty")}</th>
-              <th className="py-2 text-right">{t("price")}</th>
-              <th className="py-2 text-right">{t("total")}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {items.map((item) => (
-              <tr key={item.id} className="border-b">
-                <td className="py-2">{item.description}</td>
-                <td className="py-2 text-right">{item.qty}</td>
-                <td className="py-2 text-right">
-                  {money(item.unitPrice, document.currency, locale)}
-                </td>
-                <td className="py-2 text-right">
-                  {money(item.lineTotal, document.currency, locale)}
-                </td>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b text-left">
+                <th className="py-2">{t("description")}</th>
+                <th className="py-2 text-right">{t("qty")}</th>
+                <th className="py-2 text-right">{t("price")}</th>
+                <th className="py-2 text-right">{t("total")}</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {items.map((item) => (
+                <tr key={item.id} className="border-b">
+                  <td className="py-2">{item.description}</td>
+                  <td className="py-2 text-right">{item.qty}</td>
+                  <td className="py-2 text-right">
+                    {money(item.unitPrice, document.currency, locale)}
+                  </td>
+                  <td className="py-2 text-right">
+                    {money(item.lineTotal, document.currency, locale)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </section>
 
       <section className="ml-auto w-full max-w-xs text-sm">

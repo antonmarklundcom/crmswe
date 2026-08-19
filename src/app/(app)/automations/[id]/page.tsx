@@ -6,6 +6,7 @@ import { listRunsForFlow } from "@/modules/automations/engine";
 import { flowGraphSchema, type FlowGraph, type TriggerType } from "@/modules/automations/graph";
 import { Button } from "@/components/ui/button";
 import { FlowEditor } from "./FlowEditor";
+import { FlowNodeList } from "./FlowNodeList";
 import { setFlowStatusAction, cancelRunAction } from "../actions";
 import { formatDateTime } from "@/lib/i18n/format";
 import { getLocale } from "next-intl/server";
@@ -53,56 +54,64 @@ export default async function FlowPage({ params }: { params: Promise<{ id: strin
         </form>
       </header>
 
-      <FlowEditor
-        flowId={flow.id}
-        triggerType={flow.triggerType as TriggerType}
-        initialGraph={graph}
-      />
+      {/* The canvas needs a pointer and room; a phone gets the read-only
+          list instead (PLAN.md §13 H7). */}
+      <FlowNodeList graph={graph} triggerType={flow.triggerType as TriggerType} />
+
+      <div className="hidden md:block">
+        <FlowEditor
+          flowId={flow.id}
+          triggerType={flow.triggerType as TriggerType}
+          initialGraph={graph}
+        />
+      </div>
 
       <section>
         <h2 className="mb-3 text-lg font-semibold">{t("runsTitle")}</h2>
-        <table className="w-full text-left text-sm">
-          <thead>
-            <tr className="border-b">
-              <th className="py-2">{t("runStatus")}</th>
-              <th className="py-2">{t("currentNode")}</th>
-              <th className="py-2">{t("startedAt")}</th>
-              <th className="py-2" />
-            </tr>
-          </thead>
-          <tbody>
-            {runs.map((run) => (
-              <tr key={run.id} className="border-b">
-                <td className="py-2">
-                  {t(`runStatusValues.${run.status}` as "runStatusValues.running")}
-                  {run.lastError && (
-                    <span className="ml-2 text-xs text-red-600">{run.lastError}</span>
-                  )}
-                </td>
-                <td className="py-2">{run.currentNodeId ?? "—"}</td>
-                <td className="py-2">{formatDateTime(run.createdAt, locale)}</td>
-                <td className="py-2 text-right">
-                  {(run.status === "running" || run.status === "waiting") && (
-                    <form action={cancelRunAction}>
-                      <input type="hidden" name="runId" value={run.id} />
-                      <input type="hidden" name="flowId" value={flow.id} />
-                      <Button type="submit" size="sm" variant="outline">
-                        {t("cancelRun")}
-                      </Button>
-                    </form>
-                  )}
-                </td>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm">
+            <thead>
+              <tr className="border-b">
+                <th className="py-2">{t("runStatus")}</th>
+                <th className="py-2">{t("currentNode")}</th>
+                <th className="py-2">{t("startedAt")}</th>
+                <th className="py-2" />
               </tr>
-            ))}
-            {runs.length === 0 && (
-              <tr>
-                <td colSpan={4} className="py-4 text-center text-muted-foreground">
-                  {t("noRuns")}
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {runs.map((run) => (
+                <tr key={run.id} className="border-b">
+                  <td className="py-2">
+                    {t(`runStatusValues.${run.status}` as "runStatusValues.running")}
+                    {run.lastError && (
+                      <span className="ml-2 text-xs text-red-600">{run.lastError}</span>
+                    )}
+                  </td>
+                  <td className="py-2">{run.currentNodeId ?? "—"}</td>
+                  <td className="py-2">{formatDateTime(run.createdAt, locale)}</td>
+                  <td className="py-2 text-right">
+                    {(run.status === "running" || run.status === "waiting") && (
+                      <form action={cancelRunAction}>
+                        <input type="hidden" name="runId" value={run.id} />
+                        <input type="hidden" name="flowId" value={flow.id} />
+                        <Button type="submit" size="sm" variant="outline">
+                          {t("cancelRun")}
+                        </Button>
+                      </form>
+                    )}
+                  </td>
+                </tr>
+              ))}
+              {runs.length === 0 && (
+                <tr>
+                  <td colSpan={4} className="py-4 text-center text-muted-foreground">
+                    {t("noRuns")}
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </section>
     </div>
   );

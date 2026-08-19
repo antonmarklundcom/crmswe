@@ -971,7 +971,9 @@
           "aiModeHint": "El envío automático también requiere activarlo para toda la cuenta en Configuración. Mientras la cuenta esté en borrador, este nodo genera borradores.",
           "reviewTextPlaceholder": "¡Gracias por tu compra! Dejanos una reseña: {tag}",
           "reviewTextHint": "Si lo dejás vacío, se envía un mensaje predeterminado con el enlace. Configurá el enlace de reseña en Configuración."
-        }
+        },
+        "mobileReadOnly": "El editor visual necesita una pantalla más grande. Desde el teléfono podés ver el flujo; para editarlo, abrilo en una computadora.",
+        "mobileEmpty": "Este flujo todavía no tiene pasos."
       }
     }
   },

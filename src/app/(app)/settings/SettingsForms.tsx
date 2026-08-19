@@ -181,8 +181,11 @@ export function BusinessHoursForm({ businessHours }: { businessHours: BusinessHo
   return (
     <form action={formAction} className="flex max-w-md flex-col gap-3">
       {DAYS.map((day) => (
-        <div key={day} className="flex items-center gap-3 text-sm">
-          <label className="flex w-32 items-center gap-2">
+        // Wraps instead of clipping on a phone: the day label plus two time
+        // inputs is wider than 390px, and a time input can't be shrunk
+        // usefully (PLAN.md §13 H7).
+        <div key={day} className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
+          <label className="flex w-32 shrink-0 items-center gap-2">
             <input
               type="checkbox"
               name={`${day}_enabled`}
@@ -198,14 +201,14 @@ export function BusinessHoursForm({ businessHours }: { businessHours: BusinessHo
             type="time"
             name={`${day}_start`}
             defaultValue={state.values[`${day}_start`] ?? businessHours[day]?.start ?? "08:00"}
-            className="rounded-md border px-2 py-1"
+            className="min-w-0 rounded-md border px-2 py-1"
           />
           <span>—</span>
           <input
             type="time"
             name={`${day}_end`}
             defaultValue={state.values[`${day}_end`] ?? businessHours[day]?.end ?? "18:00"}
-            className="rounded-md border px-2 py-1"
+            className="min-w-0 rounded-md border px-2 py-1"
           />
         </div>
       ))}

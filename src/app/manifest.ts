@@ -1,0 +1,25 @@
+import type { MetadataRoute } from "next";
+
+// Installable home-screen app for the CRM (PLAN.md §13 H7). No service
+// worker and no offline mode in this pass — this is the "add to home screen"
+// half only, which is what makes the difference between a bookmark and
+// something a rep opens like an app.
+export default function manifest(): MetadataRoute.Manifest {
+  return {
+    name: "VenderCRM",
+    short_name: "VenderCRM",
+    description: "CRM de ventas con automatización por WhatsApp",
+    start_url: "/dashboard",
+    scope: "/",
+    display: "standalone",
+    orientation: "portrait",
+    background_color: "#ffffff",
+    theme_color: "#18181b",
+    icons: [
+      { src: "/icon.svg", sizes: "any", type: "image/svg+xml", purpose: "any" },
+      { src: "/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
+      { src: "/icon-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
+      { src: "/icon-maskable-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
+    ],
+  };
+}

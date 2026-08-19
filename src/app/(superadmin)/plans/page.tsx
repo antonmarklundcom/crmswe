@@ -20,26 +20,28 @@ export default async function PlansPage() {
       <PageHeader title={t("title")} description={t("intro")} />
 
       <section>
-        <table className="w-full text-left text-sm">
-          <thead>
-            <tr className="border-b">
-              <th className="py-2">{t("name")}</th>
-              <th className="py-2">{t("durationMonths")}</th>
-              <th className="py-2">{t("price")}</th>
-              <th className="py-2">{t("active")}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {plans.map((plan) => (
-              <tr key={plan.id} className="border-b">
-                <td className="py-2">{plan.name}</td>
-                <td className="py-2">{plan.durationMonths}</td>
-                <td className="py-2">{formatNumber(plan.price, locale)}</td>
-                <td className="py-2">{plan.isActive ? "✓" : "—"}</td>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm">
+            <thead>
+              <tr className="border-b">
+                <th className="py-2">{t("name")}</th>
+                <th className="py-2">{t("durationMonths")}</th>
+                <th className="py-2">{t("price")}</th>
+                <th className="py-2">{t("active")}</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {plans.map((plan) => (
+                <tr key={plan.id} className="border-b">
+                  <td className="py-2">{plan.name}</td>
+                  <td className="py-2">{plan.durationMonths}</td>
+                  <td className="py-2">{formatNumber(plan.price, locale)}</td>
+                  <td className="py-2">{plan.isActive ? "✓" : "—"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </section>
 
       <section>

@@ -774,7 +774,9 @@
           "aiModeHint": "Automatic sending also has to be enabled for the whole account in Settings. While the account is in draft mode, this node produces drafts.",
           "reviewTextPlaceholder": "Thanks for your purchase! Leave us a review: {tag}",
           "reviewTextHint": "Leave it empty and a default message with the link is sent. Set the review link in Settings."
-        }
+        },
+        "mobileReadOnly": "The visual editor needs a bigger screen. On a phone you can read the flow; to edit it, open it on a computer.",
+        "mobileEmpty": "This flow has no steps yet."
       }
     },
     "sites": {

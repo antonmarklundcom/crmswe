@@ -88,26 +88,28 @@ export default async function PublicQuotePage({
         <p>{contact?.phone}</p>
       </section>
 
-      <table className="w-full text-left text-sm">
-        <thead>
-          <tr className="border-b">
-            <th className="py-2">{t("description")}</th>
-            <th className="py-2 text-right">{t("qty")}</th>
-            <th className="py-2 text-right">{t("price")}</th>
-            <th className="py-2 text-right">{t("total")}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {items.map((item) => (
-            <tr key={item.id} className="border-b">
-              <td className="py-2">{item.description}</td>
-              <td className="py-2 text-right">{item.qty}</td>
-              <td className="py-2 text-right">{money(item.unitPrice, quote.currency, locale)}</td>
-              <td className="py-2 text-right">{money(item.lineTotal, quote.currency, locale)}</td>
+      <div className="overflow-x-auto">
+        <table className="w-full text-left text-sm">
+          <thead>
+            <tr className="border-b">
+              <th className="py-2">{t("description")}</th>
+              <th className="py-2 text-right">{t("qty")}</th>
+              <th className="py-2 text-right">{t("price")}</th>
+              <th className="py-2 text-right">{t("total")}</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {items.map((item) => (
+              <tr key={item.id} className="border-b">
+                <td className="py-2">{item.description}</td>
+                <td className="py-2 text-right">{item.qty}</td>
+                <td className="py-2 text-right">{money(item.unitPrice, quote.currency, locale)}</td>
+                <td className="py-2 text-right">{money(item.lineTotal, quote.currency, locale)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
 
       <div className="flex flex-col items-end gap-1 text-sm">
         <div className="flex w-56 justify-between">

@@ -28,37 +28,39 @@ export default async function WhatsappHealthPage() {
     <div className="flex flex-col gap-8">
       <section>
         <h1 className="mb-4 text-xl font-semibold">{t("title")}</h1>
-        <table className="w-full text-left text-sm">
-          <thead>
-            <tr className="border-b">
-              <th className="py-2">{t("tenant")}</th>
-              <th className="py-2">{t("number")}</th>
-              <th className="py-2">{t("status")}</th>
-              <th className="py-2">{t("quality")}</th>
-              <th className="py-2">{t("connectedVia")}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {accounts.map((account) => (
-              <tr key={account.id} className="border-b">
-                <td className="py-2">{account.tenantName}</td>
-                <td className="py-2">{account.displayNumber || account.phoneNumberId}</td>
-                <td className={`py-2 ${account.status === "error" ? "text-red-600" : ""}`}>
-                  {account.status}
-                </td>
-                <td className="py-2">{account.qualityRating ?? "—"}</td>
-                <td className="py-2">{account.connectedVia}</td>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm">
+            <thead>
+              <tr className="border-b">
+                <th className="py-2">{t("tenant")}</th>
+                <th className="py-2">{t("number")}</th>
+                <th className="py-2">{t("status")}</th>
+                <th className="py-2">{t("quality")}</th>
+                <th className="py-2">{t("connectedVia")}</th>
               </tr>
-            ))}
-            {accounts.length === 0 && (
-              <tr>
-                <td colSpan={5} className="py-4 text-center text-muted-foreground">
-                  {t("noAccounts")}
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {accounts.map((account) => (
+                <tr key={account.id} className="border-b">
+                  <td className="py-2">{account.tenantName}</td>
+                  <td className="py-2">{account.displayNumber || account.phoneNumberId}</td>
+                  <td className={`py-2 ${account.status === "error" ? "text-red-600" : ""}`}>
+                    {account.status}
+                  </td>
+                  <td className="py-2">{account.qualityRating ?? "—"}</td>
+                  <td className="py-2">{account.connectedVia}</td>
+                </tr>
+              ))}
+              {accounts.length === 0 && (
+                <tr>
+                  <td colSpan={5} className="py-4 text-center text-muted-foreground">
+                    {t("noAccounts")}
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </section>
 
       <section>

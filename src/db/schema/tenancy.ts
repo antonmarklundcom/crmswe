@@ -71,6 +71,10 @@ export const users = mysqlTable(
     // — `es` stays the reference locale (§1.2), this is a preference on top
     // of it, not a second product.
     locale: varchar("locale", { length: 10 }),
+    // Daily "your tasks are due" email (PLAN.md §13 H6). Opt-out, not
+    // opt-in: a reminder nobody switched on is a reminder nobody gets, and
+    // the whole point is that follow-up happens without being remembered.
+    taskReminders: boolean("task_reminders").notNull().default(true),
     createdAt: datetime("created_at")
       .notNull()
       .default(sql`CURRENT_TIMESTAMP`),

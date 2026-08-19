@@ -238,8 +238,59 @@
         "phoneTaken": "Ya tenés un contacto con ese teléfono.",
         "emailInvalid": "Ese correo no parece válido. Revisalo o dejalo vacío.",
         "notesTooLong": "Las notas son demasiado largas.",
-        "unknown": "No se pudo guardar el contacto. Intentá de nuevo."
-      }
+        "unknown": "No se pudo guardar el contacto. Intentá de nuevo.",
+        "planLimit": "Llegaste al límite de contactos de tu plan. Escribinos para ampliarlo."
+      },
+      "import": {
+        "title": "Importar contactos",
+        "intro": "Subí un CSV exportado de tu CRM actual o de una planilla. Elegís qué columna es cuál, y te devolvemos un reporte fila por fila.",
+        "file": "Archivo CSV",
+        "paste": "O pegá el contenido",
+        "pastePlaceholder": "nombre,telefono,correo",
+        "continue": "Continuar",
+        "mapTitle": "Qué columna es cuál",
+        "mapIntro": "Encontramos {count} fila(s). El teléfono y el nombre son obligatorios; el resto es opcional.",
+        "ignoreColumn": "— ignorar —",
+        "fields": {
+          "name": "Nombre",
+          "phone": "Teléfono",
+          "email": "Correo",
+          "notes": "Notas",
+          "source": "Origen"
+        },
+        "optionsTitle": "Opciones",
+        "onDuplicate": "Si ya existe",
+        "onDuplicateUpdate": "Actualizar el contacto",
+        "onDuplicateSkip": "Saltear la fila",
+        "tagOnImport": "Etiquetar",
+        "noTag": "Sin etiqueta",
+        "previewTitle": "Primeras filas",
+        "import": "Importar",
+        "importing": "Importando {count} filas…",
+        "reportTitle": "Resultado de la importación",
+        "reportSummary": "{total} filas: {created} creadas, {updated} actualizadas, {skipped} salteadas, {errors} con error.",
+        "limitReached": "El archivo no entra en tu plan: el límite es {limit} contactos y ya tenés {current}. Escribinos para ampliarlo.",
+        "errorRow": "Fila",
+        "errorReason": "Motivo",
+        "errorsTruncated": "Y {count} error(es) más.",
+        "backToContacts": "Volver a contactos",
+        "errorReasons": {
+          "phoneMissing": "Sin teléfono",
+          "phoneInvalid": "Teléfono inválido",
+          "nameMissing": "Sin nombre",
+          "duplicateInFile": "Repetida en el archivo",
+          "failed": "No se pudo guardar"
+        },
+        "errors": {
+          "empty": "El archivo está vacío o no pudimos leerlo.",
+          "tooLarge": "El archivo es demasiado grande: el máximo son 5 MB.",
+          "tooManyRows": "Son demasiadas filas: el máximo son 5000 por importación.",
+          "phoneUnmapped": "Elegí qué columna tiene el teléfono.",
+          "nameUnmapped": "Elegí qué columna tiene el nombre.",
+          "invalid": "Revisá los datos e intentá de nuevo."
+        }
+      },
+      "importAction": "Importar CSV"
     },
     "pipeline": {
       "title": "Pipeline",
@@ -324,7 +375,8 @@
         "invalid": "Revisá el correo y el rol.",
         "emailTaken": "Ese correo ya tiene una cuenta.",
         "readOnly": "Tu suscripción venció: la cuenta está en modo solo lectura.",
-        "unknown": "No se pudo generar la invitación. Intentá de nuevo."
+        "unknown": "No se pudo generar la invitación. Intentá de nuevo.",
+        "planLimit": "Llegaste al límite de usuarios de tu plan. Desactivá a alguien o escribinos para ampliarlo."
       },
       "stateColumn": "Estado",
       "actionsColumn": "Acciones",
@@ -413,6 +465,14 @@
         "intro": "Elegí el idioma de la interfaz. Es tuyo: no cambia lo que ven tus compañeros ni lo que reciben tus clientes.",
         "label": "Idioma",
         "save": "Guardar"
+      },
+      "taskReminders": {
+        "title": "Recordatorios de tareas",
+        "intro": "Un correo por día con tus tareas vencidas y las que vencen hoy. Solo llega si tenés alguna.",
+        "on": "Activados",
+        "off": "Desactivados",
+        "enable": "Activar",
+        "disable": "Desactivar"
       }
     },
     "whatsapp": {
@@ -512,7 +572,8 @@
         "nameRequired": "Poné un nombre para el sitio.",
         "slugInvalid": "El slug va en minúsculas, sin espacios ni acentos (ej: dentista-asuncion).",
         "slugTaken": "Ya tenés un sitio con ese slug.",
-        "unknown": "No se pudo crear el sitio. Intentá de nuevo."
+        "unknown": "No se pudo crear el sitio. Intentá de nuevo.",
+        "planLimit": "Llegaste al límite de sitios de tu plan. Escribinos para ampliarlo."
       },
       "howToTitle": "Cómo conectar un sitio",
       "howToIntro": "Desde el backend del sitio (nunca desde el navegador — así la clave no queda expuesta):",
@@ -1522,6 +1583,13 @@
         "phone-missing": "llegó sin teléfono, o cambió el nombre del campo en el formulario",
         "unknown": "error desconocido"
       }
+    },
+    "taskReminders": {
+      "subject": "Tenés {count} tarea(s) para hoy",
+      "title": "Hola {name}",
+      "body": "Tenés {count} tarea(s) pendientes, {overdue} de ellas vencidas.",
+      "overdue": "vencida",
+      "cta": "Abrir el CRM"
     }
   },
   "pdf": {

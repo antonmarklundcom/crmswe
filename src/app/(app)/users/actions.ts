@@ -17,6 +17,7 @@ import { getTenant } from "@/modules/tenancy/tenants";
 import { env } from "@/lib/config/env";
 import { sendEmail } from "@/lib/email";
 import { invitationEmail } from "@/lib/email/templates";
+import { checkPlanLimit } from "@/modules/tenancy/limits";
 
 // Tenant team management (PLAN.md §10 1I #2). Route handlers/server actions
 // validate and delegate — the invitation itself is created by the tenancy
@@ -55,6 +56,14 @@ export async function inviteUserAction(
   const existing = await getUserByEmail(parsed.data.email);
   if (existing) {
     return { error: "emailTaken", inviteUrl: null };
+  }
+
+  // Seat ceiling from the plan (PLAN.md §13 H6). Counted against active
+  // users: a deactivated colleague doesn't hold a seat, which is what makes
+  // deactivation (§13 H4) the way to free one up.
+  const seats = await checkPlanLimit(ctx.tenantId, "maxUsers");
+  if (!seats.allowed) {
+    return { error: "planLimit", inviteUrl: null };
   }
 
   try {

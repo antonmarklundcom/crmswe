@@ -5,6 +5,8 @@ import type { BusinessHours, TenantSettings } from "@/modules/tenancy/settings";
 import { PageHeader } from "@/components/page-header";
 import { AuditTable } from "@/components/audit-table";
 import { LanguageSwitcher } from "@/components/language-switcher";
+import { getUserById } from "@/modules/tenancy/users";
+import { TaskReminderToggle } from "./TaskReminderToggle";
 import { listAuditLogForTenant } from "@/modules/tenancy/audit";
 import { contactsFeedUrl } from "@/modules/crm/feed-url";
 import { isAiConfigured } from "@/lib/ai";
@@ -52,7 +54,10 @@ export default async function SettingsPage() {
       sun: null,
     };
 
-  const auditEntries = await listAuditLogForTenant(ctx.tenantId);
+  const [auditEntries, currentUser] = await Promise.all([
+    listAuditLogForTenant(ctx.tenantId),
+    getUserById(ctx.userId),
+  ]);
 
   const ai = resolveAiConfig(tenant?.name ?? "", settings.ai);
   const aiUsage = await monthlyTokenUsage(ctx);
@@ -160,6 +165,22 @@ export default async function SettingsPage() {
               : null
           }
           labels={sheetsLabels}
+        />
+      </section>
+
+      <section>
+        <h2 className="mb-2 text-lg font-semibold">{t("taskReminders.title")}</h2>
+        <p className="mb-4 max-w-2xl text-sm text-muted-foreground">
+          {t("taskReminders.intro")}
+        </p>
+        <TaskReminderToggle
+          enabled={currentUser?.taskReminders ?? true}
+          labels={{
+            on: t("taskReminders.on"),
+            off: t("taskReminders.off"),
+            enable: t("taskReminders.enable"),
+            disable: t("taskReminders.disable"),
+          }}
         />
       </section>
 

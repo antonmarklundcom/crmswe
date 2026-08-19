@@ -16,6 +16,7 @@ import {
 } from "@/modules/crm/contacts";
 import { createActivity } from "@/modules/crm/activities";
 import { sendText, sendTemplate } from "@/modules/whatsapp/send";
+import { checkPlanLimit } from "@/modules/tenancy/limits";
 
 // The contact forms are useActionState-shaped (PLAN.md §10 1R #6): a
 // validation failure comes back as state the form renders next to the field
@@ -96,6 +97,14 @@ export async function createContactAction(
   const existing = await getContactByPhone(ctx, parsed.data.phone, country);
   if (existing) {
     return { error: "phoneTaken", field: "phone", saved: false, values: submitted(formData) };
+  }
+
+  // The plan's contact ceiling, if it has one (PLAN.md §13 H6). Checked
+  // before the insert so the tenant is told why rather than hitting a
+  // half-created state.
+  const limit = await checkPlanLimit(ctx.tenantId, "maxContacts");
+  if (!limit.allowed) {
+    return { error: "planLimit", field: null, saved: false, values: submitted(formData) };
   }
 
   try {

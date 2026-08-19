@@ -246,3 +246,8 @@ export async function setTenantUserRole(
 export async function setUserLocale(userId: string, locale: string): Promise<void> {
   await db.update(users).set({ locale }).where(eq(users.id, userId));
 }
+
+/** Per-user daily task reminder opt-out (PLAN.md §13 H6). */
+export async function setUserTaskReminders(userId: string, enabled: boolean): Promise<void> {
+  await db.update(users).set({ taskReminders: enabled }).where(eq(users.id, userId));
+}

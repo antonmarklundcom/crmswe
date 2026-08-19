@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowDown, ArrowUp, Download, Users } from "lucide-react";
+import { ArrowDown, ArrowUp, Download, Upload, Users } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { requireTenantContext } from "@/modules/tenancy/context";
 import { listTags } from "@/modules/crm/contacts";
@@ -113,15 +113,26 @@ export default async function ContactsPage({
           title={t("title")}
           description={t("intro")}
           action={
-            page.total > 0 ? (
-              <a
-                href={exportHref}
+            <div className="flex flex-wrap gap-2">
+              {/* Import is offered even on an empty list — a brand-new
+                  tenant migrating off GoHighLevel starts here (§13 H6). */}
+              <Link
+                href="/contacts/import"
                 className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
               >
-                <Download className="size-4" aria-hidden="true" />
-                {t("exportCsv")}
-              </a>
-            ) : undefined
+                <Upload className="size-4" aria-hidden="true" />
+                {t("importAction")}
+              </Link>
+              {page.total > 0 && (
+                <a
+                  href={exportHref}
+                  className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
+                >
+                  <Download className="size-4" aria-hidden="true" />
+                  {t("exportCsv")}
+                </a>
+              )}
+            </div>
           }
         />
 

@@ -4,13 +4,26 @@ import { useActionState } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
-import { IMPORTABLE_FIELDS } from "@/modules/crm/import";
+import { IMPORTABLE_FIELDS } from "@/modules/crm/import-fields";
 import {
-  emptyImport,
-  emptyPreview,
   previewImportAction,
   runImportAction,
+  type ImportState,
+  type PreviewState,
 } from "./actions";
+
+// Declared here, not in actions.ts: a "use server" module may only export
+// async functions.
+const emptyPreview: PreviewState = {
+  error: null,
+  csv: null,
+  headers: [],
+  rowCount: 0,
+  sample: [],
+  mapping: {},
+};
+
+const emptyImport: ImportState = { error: null, report: null };
 
 // One page, two steps: upload, then map. The mapping step re-posts the CSV
 // text it was handed, so a reload or a back button costs the user a file

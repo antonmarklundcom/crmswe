@@ -2,6 +2,7 @@ import { z } from "zod";
 import { DEFAULT_COUNTRY, normalizePhone, type CountryCode } from "@/lib/phone";
 import type { TenantContext } from "@/modules/tenancy/context";
 import { checkPlanLimit } from "@/modules/tenancy/limits";
+import { IMPORTABLE_FIELDS, type ImportableField, type ImportMapping } from "./import-fields";
 import {
   addTagToContact,
   createContact,
@@ -15,11 +16,11 @@ import {
 // fields with commas and newlines in them, a UTF-8 BOM from Excel, and CRLF
 // line endings. That is the whole of RFC 4180, and it is 60 lines.
 
-export const IMPORTABLE_FIELDS = ["name", "phone", "email", "notes", "source"] as const;
-export type ImportableField = (typeof IMPORTABLE_FIELDS)[number];
-
-/** Column header → contact field. A header mapped to nothing is ignored. */
-export type ImportMapping = Partial<Record<ImportableField, string>>;
+export {
+  IMPORTABLE_FIELDS,
+  type ImportableField,
+  type ImportMapping,
+} from "./import-fields";
 
 export type ParsedCsv = {
   headers: string[];

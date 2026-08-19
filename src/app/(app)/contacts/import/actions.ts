@@ -20,6 +20,18 @@ import {
 // import that fails halfway leaves nothing behind to clean up, and nothing
 // of the tenant's data sits anywhere outside the request.
 
+// A "use server" module may only export async functions, so the initial
+// states live in the client component; this local copy is what the action
+// spreads its refusals over.
+const EMPTY_PREVIEW = {
+  error: null,
+  csv: null,
+  headers: [] as string[],
+  rowCount: 0,
+  sample: [] as Record<string, string>[],
+  mapping: {} as ImportMapping,
+};
+
 const MAX_CSV_BYTES = 5 * 1024 * 1024;
 const MAX_ROWS = 5000;
 
@@ -30,15 +42,6 @@ export type PreviewState = {
   rowCount: number;
   sample: Record<string, string>[];
   mapping: ImportMapping;
-};
-
-export const emptyPreview: PreviewState = {
-  error: null,
-  csv: null,
-  headers: [],
-  rowCount: 0,
-  sample: [],
-  mapping: {},
 };
 
 export async function previewImportAction(
@@ -52,15 +55,15 @@ export async function previewImportAction(
 
   let text = pasted;
   if (file instanceof File && file.size > 0) {
-    if (file.size > MAX_CSV_BYTES) return { ...emptyPreview, error: "tooLarge" };
+    if (file.size > MAX_CSV_BYTES) return { ...EMPTY_PREVIEW, error: "tooLarge" };
     text = await file.text();
   }
 
-  if (!text) return { ...emptyPreview, error: "empty" };
+  if (!text) return { ...EMPTY_PREVIEW, error: "empty" };
 
   const { headers, rows } = parseCsv(text);
-  if (headers.length === 0 || rows.length === 0) return { ...emptyPreview, error: "empty" };
-  if (rows.length > MAX_ROWS) return { ...emptyPreview, error: "tooManyRows" };
+  if (headers.length === 0 || rows.length === 0) return { ...EMPTY_PREVIEW, error: "empty" };
+  if (rows.length > MAX_ROWS) return { ...EMPTY_PREVIEW, error: "tooManyRows" };
 
   return {
     error: null,
@@ -76,8 +79,6 @@ export type ImportState = {
   error: string | null;
   report: ImportReport | null;
 };
-
-export const emptyImport: ImportState = { error: null, report: null };
 
 const runSchema = z.object({
   csv: z.string().min(1),

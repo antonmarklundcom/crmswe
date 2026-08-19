@@ -13,6 +13,7 @@ import {
   clearHookCaptures,
 } from "@/modules/sites/hooks";
 import { getStage } from "@/modules/crm/pipelines";
+import { checkPlanLimit } from "@/modules/tenancy/limits";
 
 // A stage already belongs to exactly one pipeline, so the UI only ever asks
 // for the stage and the pipeline is derived here. Sending both from the
@@ -91,6 +92,12 @@ export async function createSiteAction(
   const existing = await getSiteBySlug(ctx, parsed.data.slug);
   if (existing) {
     return { error: "slugTaken", field: "slug", values, apiKey: null };
+  }
+
+  // Connected-site ceiling from the plan (PLAN.md §13 H6).
+  const limit = await checkPlanLimit(ctx.tenantId, "maxSitesConnected");
+  if (!limit.allowed) {
+    return { error: "planLimit", field: null, values, apiKey: null };
   }
 
   let created;

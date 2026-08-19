@@ -2,7 +2,7 @@
 
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
-import { requireTenantAdmin } from "@/modules/tenancy/context";
+import { requireTenantAdmin, requireTenantContext } from "@/modules/tenancy/context";
 import {
   updateTenantBranding,
   updateTenantBusinessHours,
@@ -18,6 +18,7 @@ import {
   MAX_PER_TENANT_PER_DAY_LIMIT,
 } from "@/modules/ai/config";
 import { COUNTRY_CODES } from "@/lib/phone";
+import { setUserTaskReminders } from "@/modules/tenancy/users";
 
 const DAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"] as const;
 
@@ -238,5 +239,20 @@ export async function updateAiSettingsAction(
 export async function regenerateFeedTokenAction() {
   const ctx = await requireTenantAdmin();
   await regenerateContactsFeedToken(ctx);
+  revalidatePath("/settings");
+}
+
+
+/** Per-user opt-out for the daily task reminder email (PLAN.md §13 H6).
+ * Not admin-gated: it's the acting user's own preference, the same shape as
+ * the language switcher. */
+export async function setTaskRemindersAction(formData: FormData) {
+  const ctx = await requireTenantContext();
+  const parsed = z
+    .object({ enabled: z.enum(["true", "false"]) })
+    .safeParse({ enabled: formData.get("enabled") });
+  if (!parsed.success) return;
+
+  await setUserTaskReminders(ctx.userId, parsed.data.enabled === "true");
   revalidatePath("/settings");
 }

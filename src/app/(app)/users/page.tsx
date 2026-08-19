@@ -57,6 +57,7 @@ export default async function UsersPage({
       invalid: t("errors.invalid"),
       emailTaken: t("errors.emailTaken"),
       readOnly: t("errors.readOnly"),
+      planLimit: t("errors.planLimit"),
       unknown: t("errors.unknown"),
     },
   };

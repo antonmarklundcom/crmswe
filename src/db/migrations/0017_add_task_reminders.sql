@@ -1,0 +1,1 @@
+ALTER TABLE `users` ADD `task_reminders` boolean DEFAULT true NOT NULL;

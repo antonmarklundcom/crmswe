@@ -162,3 +162,54 @@ export async function siteIngestAlertEmail(input: {
     ),
   };
 }
+
+
+/**
+ * Daily "what's due" digest (PLAN.md §13 H6). Deliberately a list of the
+ * recipient's own tasks with a link each, and nothing else: the email is a
+ * nudge back into the CRM, not a place to work from.
+ */
+export async function taskRemindersEmail(input: {
+  userName: string;
+  items: Array<{
+    title: string;
+    dueAt: Date;
+    overdue: boolean;
+    contactName: string | null;
+    url: string;
+  }>;
+  tasksUrl: string;
+  locale?: string | null;
+}): Promise<Email> {
+  const locale = input.locale ?? "es";
+  const t = await getTranslator(locale, "email.taskReminders");
+
+  const overdueCount = input.items.filter((item) => item.overdue).length;
+
+  const rows = input.items
+    .map((item) => {
+      const when = formatDate(item.dueAt, locale, {
+        day: "2-digit",
+        month: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+      const who = item.contactName ? ` · ${item.contactName}` : "";
+      const flag = item.overdue ? ` · <strong>${t("overdue")}</strong>` : "";
+      return `<li style="margin-bottom:8px;"><a href="${item.url}">${item.title}</a><br /><span style="color:#71717a;">${when}${who}${flag}</span></li>`;
+    })
+    .join("");
+
+  return {
+    subject: t("subject", { count: input.items.length }),
+    html: layout(
+      `
+      ${heading(t("title", { name: input.userName }))}
+      ${paragraph(t("body", { count: input.items.length, overdue: overdueCount }))}
+      <ul style="font-size:14px;line-height:1.5;color:#3f3f46;padding-left:18px;">${rows}</ul>
+      ${button(input.tasksUrl, t("cta"))}
+    `,
+      locale,
+    ),
+  };
+}

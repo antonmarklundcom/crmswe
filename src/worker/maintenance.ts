@@ -50,6 +50,7 @@ export async function ensureWebhookPruningScheduled(): Promise<void> {
 export async function ensureMaintenanceScheduled(): Promise<void> {
   await ensureWebhookPruningScheduled();
   await ensureChainScheduled(REAP_JOB_TYPE);
+  await ensureChainScheduled(TASK_REMINDER_JOB_TYPE);
 }
 
 async function ensureChainScheduled(type: string): Promise<void> {
@@ -133,3 +134,21 @@ export async function reapStuckJobs(now: Date = new Date()): Promise<number> {
 
   return stuck.length;
 }
+
+
+// --- Daily task reminders (PLAN.md §13 H6) ------------------------------
+//
+// Same self-rescheduling chain as the pruning job. Runs on the platform's
+// clock rather than per-tenant local time: the reminder is a nudge, and one
+// mail a day at a fixed hour is easier to reason about than 24 wake-ups.
+
+export const TASK_REMINDER_JOB_TYPE = "maintenance.task_reminders";
+const TASK_REMINDER_INTERVAL_MS = 24 * 60 * 60 * 1000;
+
+registerHandler(TASK_REMINDER_JOB_TYPE, async () => {
+  const { sendTaskReminders } = await import("@/modules/crm/task-reminders");
+  await sendTaskReminders();
+  await enqueue(TASK_REMINDER_JOB_TYPE, {}, {
+    runAt: new Date(Date.now() + TASK_REMINDER_INTERVAL_MS),
+  });
+});

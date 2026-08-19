@@ -224,7 +224,8 @@
         "invalid": "Kontrollera e-postadressen och rollen.",
         "emailTaken": "Den e-postadressen har redan ett konto.",
         "readOnly": "Din prenumeration har gått ut: kontot är i läsläge.",
-        "unknown": "Vi kunde inte skapa inbjudan. Försök igen."
+        "unknown": "Vi kunde inte skapa inbjudan. Försök igen.",
+        "planLimit": "Du har nått planens gräns för användare. Avaktivera någon, eller hör av dig så höjer vi den."
       },
       "stateColumn": "Status",
       "actionsColumn": "Åtgärder",
@@ -351,8 +352,59 @@
         "phoneTaken": "Du har redan en kontakt med det telefonnumret.",
         "emailInvalid": "E-postadressen ser inte giltig ut. Rätta den eller lämna den tom.",
         "notesTooLong": "Anteckningarna är för långa.",
-        "unknown": "Vi kunde inte spara kontakten. Försök igen."
-      }
+        "unknown": "Vi kunde inte spara kontakten. Försök igen.",
+        "planLimit": "Du har nått planens gräns för kontakter. Hör av dig så höjer vi den."
+      },
+      "import": {
+        "title": "Importera kontakter",
+        "intro": "Ladda upp en CSV som exporterats från ditt nuvarande CRM eller ett kalkylark. Du väljer vilken kolumn som är vad, och vi lämnar tillbaka en rapport rad för rad.",
+        "file": "CSV-fil",
+        "paste": "Eller klistra in innehållet",
+        "pastePlaceholder": "namn,telefon,epost",
+        "continue": "Fortsätt",
+        "mapTitle": "Vilken kolumn är vad",
+        "mapIntro": "Vi hittade {count} rad(er). Telefon och namn är obligatoriska; resten är frivilligt.",
+        "ignoreColumn": "— hoppa över —",
+        "fields": {
+          "name": "Namn",
+          "phone": "Telefon",
+          "email": "E-post",
+          "notes": "Anteckningar",
+          "source": "Källa"
+        },
+        "optionsTitle": "Alternativ",
+        "onDuplicate": "Om den redan finns",
+        "onDuplicateUpdate": "Uppdatera kontakten",
+        "onDuplicateSkip": "Hoppa över raden",
+        "tagOnImport": "Tagga med",
+        "noTag": "Ingen tagg",
+        "previewTitle": "Första raderna",
+        "import": "Importera",
+        "importing": "Importerar {count} rader…",
+        "reportTitle": "Importresultat",
+        "reportSummary": "{total} rader: {created} skapade, {updated} uppdaterade, {skipped} överhoppade, {errors} med fel.",
+        "limitReached": "Filen ryms inte i din plan: gränsen är {limit} kontakter och du har redan {current}. Hör av dig så höjer vi den.",
+        "errorRow": "Rad",
+        "errorReason": "Orsak",
+        "errorsTruncated": "Och {count} fel till.",
+        "backToContacts": "Tillbaka till kontakter",
+        "errorReasons": {
+          "phoneMissing": "Saknar telefon",
+          "phoneInvalid": "Ogiltigt telefonnummer",
+          "nameMissing": "Saknar namn",
+          "duplicateInFile": "Upprepad i filen",
+          "failed": "Kunde inte sparas"
+        },
+        "errors": {
+          "empty": "Filen är tom, eller så kunde vi inte läsa den.",
+          "tooLarge": "Filen är för stor: max är 5 MB.",
+          "tooManyRows": "För många rader: max är 5000 per import.",
+          "phoneUnmapped": "Välj vilken kolumn som innehåller telefonnumret.",
+          "nameUnmapped": "Välj vilken kolumn som innehåller namnet.",
+          "invalid": "Kontrollera uppgifterna och försök igen."
+        }
+      },
+      "importAction": "Importera CSV"
     },
     "inbox": {
       "title": "Inkorg",
@@ -628,6 +680,14 @@
         "intro": "Välj språk för gränssnittet. Det är ditt eget: det ändrar varken vad dina kollegor ser eller vad dina kunder får.",
         "label": "Språk",
         "save": "Spara"
+      },
+      "taskReminders": {
+        "title": "Uppgiftspåminnelser",
+        "intro": "Ett mejl om dagen med dina försenade uppgifter och de som förfaller i dag. Det kommer bara om du har några.",
+        "on": "På",
+        "off": "Av",
+        "enable": "Slå på",
+        "disable": "Stäng av"
       }
     },
     "automations": {
@@ -747,7 +807,8 @@
         "nameRequired": "Ge webbplatsen ett namn.",
         "slugInvalid": "Sluggen skrivs med små bokstäver, utan mellanslag eller accenter (t.ex. tandlakare-asuncion).",
         "slugTaken": "Du har redan en webbplats med den sluggen.",
-        "unknown": "Vi kunde inte skapa webbplatsen. Försök igen."
+        "unknown": "Vi kunde inte skapa webbplatsen. Försök igen.",
+        "planLimit": "Du har nått planens gräns för webbplatser. Hör av dig så höjer vi den."
       },
       "howToTitle": "Så ansluter du en webbplats",
       "howToIntro": "Från webbplatsens backend (aldrig från webbläsaren — det är så nyckeln hålls dold):",
@@ -1522,6 +1583,13 @@
         "phone-missing": "det kom in utan telefonnummer, eller så har fältnamnet ändrats i formuläret",
         "unknown": "okänt fel"
       }
+    },
+    "taskReminders": {
+      "subject": "Du har {count} uppgift(er) att göra i dag",
+      "title": "Hej {name}",
+      "body": "Du har {count} öppna uppgifter, varav {overdue} är försenade.",
+      "overdue": "försenad",
+      "cta": "Öppna CRM:et"
     }
   },
   "pdf": {

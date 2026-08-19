@@ -2,7 +2,7 @@
 
 import { useActionState, useEffect, useRef, useTransition } from "react";
 import useSWR, { type KeyedMutator } from "swr";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useEchoGeneration } from "@/lib/use-echo-generation";
@@ -16,6 +16,7 @@ import {
   type SendTemplateState,
   type SendTextState,
 } from "../actions";
+import { formatDateTime } from "@/lib/i18n/format";
 
 export type ConversationData = {
   contact: { name: string; phone: string } | null;
@@ -76,6 +77,7 @@ export function ConversationView({
   initial: ConversationData;
 }) {
   const t = useTranslations("app.inbox");
+  const locale = useLocale();
 
   const { data, mutate } = useSWR<ConversationData>(
     `/api/inbox/${conversationId}`,
@@ -190,7 +192,7 @@ export function ConversationView({
           >
             <p>{message.body}</p>
             <p className="text-xs text-muted-foreground">
-              {new Date(message.createdAt).toLocaleString("es-PY")} · {message.status}
+              {formatDateTime(message.createdAt, locale)} · {message.status}
             </p>
           </li>
         ))}

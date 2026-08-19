@@ -29,10 +29,11 @@ export async function GET(request: Request) {
     const users = await listUsersForTenant(subscription.tenantId);
     const admins = users.filter((user) => user.role === "admin" && user.email);
 
-    const { subject, html } = subscriptionExpiryWarningEmail({
+    const { subject, html } = await subscriptionExpiryWarningEmail({
       tenantName: tenant.name,
       expiresAt: subscription.expiresAt,
       daysRemaining: subscription.daysRemaining,
+      locale: tenant.locale,
     });
 
     for (const admin of admins) {

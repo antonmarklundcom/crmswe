@@ -7,10 +7,13 @@ import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
 import { toggleProductAction } from "./actions";
 import { ProductCreateForm } from "./ProductCreateForm";
+import { formatMoney } from "@/lib/i18n/format";
+import { getLocale } from "next-intl/server";
 
 export default async function ProductsPage() {
   const ctx = await requireTenantContext();
   const t = await getTranslations("app.products");
+  const locale = await getLocale();
   const tc = await getTranslations("common");
   // Agents sell from the catalog, so they still read all of it — but creating
   // a product and taking one out of circulation are admin-only (§3.2), so
@@ -50,7 +53,7 @@ export default async function ProductsPage() {
                     )}
                   </td>
                   <td className="py-2 text-right">
-                    {new Intl.NumberFormat("es-PY").format(product.unitPrice)} {product.currency}
+                    {formatMoney(product.unitPrice, product.currency, locale)}
                   </td>
                   <td className="py-2 text-right">
                     {isAdmin && (

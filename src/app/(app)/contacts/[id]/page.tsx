@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
+import { formatDateTime, formatMoney } from "@/lib/i18n/format";
 import { requireTenantContext } from "@/modules/tenancy/context";
 import { getContact, listTags, listTagsForContact } from "@/modules/crm/contacts";
 import { getContactTimeline, type TimelineEntry } from "@/modules/crm/timeline";
@@ -42,14 +43,7 @@ import {
 const TABS = ["conversacion", "tareas", "actividad", "datos"] as const;
 type Tab = (typeof TABS)[number];
 
-const dateTime = new Intl.DateTimeFormat("es-PY", {
-  day: "2-digit",
-  month: "2-digit",
-  hour: "2-digit",
-  minute: "2-digit",
-});
 
-const number = new Intl.NumberFormat("es-PY");
 
 /** Same countdown the inbox shows — accurate as of page load (§6.5). */
 function formatRemaining(lastInboundAt: Date | null): string {
@@ -72,6 +66,7 @@ export default async function ContactDetailPage({
   const { tab: rawTab } = await searchParams;
   const ctx = await requireTenantContext();
   const t = await getTranslations("app.contacts");
+  const locale = await getLocale();
   const tq = await getTranslations("app.quotes");
   const ti = await getTranslations("app.inbox");
 
@@ -149,7 +144,7 @@ export default async function ContactDetailPage({
       case "quote":
         return {
           title: t("timelineQuote", { number: entry.number }),
-          detail: `${tq(`statusValues.${entry.status}` as "statusValues.draft")} · ${number.format(entry.total)} ${entry.currency}`,
+          detail: `${tq(`statusValues.${entry.status}` as "statusValues.draft")} · ${formatMoney(entry.total, entry.currency, locale)}`,
         };
       case "lead":
         return {
@@ -333,7 +328,7 @@ export default async function ContactDetailPage({
                   <div className="flex flex-wrap items-baseline justify-between gap-2">
                     <span className="font-medium">{title}</span>
                     <span className="text-xs text-muted-foreground tabular-nums">
-                      {dateTime.format(entry.at)}
+                      {formatDateTime(entry.at, locale)}
                     </span>
                   </div>
                   {detail && <p className="text-muted-foreground">{detail}</p>}
@@ -355,7 +350,7 @@ export default async function ContactDetailPage({
               <ul className="flex flex-col gap-2 text-sm">
                 {deals.map((deal) => (
                   <li key={deal.id} className="rounded-md border px-3 py-2">
-                    {deal.title} — {number.format(deal.value)} {deal.currency}
+                    {deal.title} — {formatMoney(deal.value, deal.currency, locale)}
                   </li>
                 ))}
               </ul>

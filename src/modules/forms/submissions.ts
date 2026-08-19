@@ -13,6 +13,12 @@ import { DEFAULT_COUNTRY } from "@/lib/phone";
 import type { TenantSettings } from "@/modules/tenancy/settings";
 import type { FormSettings } from "./forms";
 
+// Thrown messages are stable codes, not copy (PLAN.md §13 H5 #4): a
+// literal Spanish sentence here is a string the user might see in an
+// unknown language, and one nothing can translate. The UI turns these into
+// the reader's own language — an action's form state where there is a form,
+// the route group's error boundary where there isn't.
+
 // Public form submission (PLAN.md §5). Unauthenticated by nature — the
 // tenant is resolved from the URL slug, not from user input, then a system
 // TenantContext is built from that resolved id (never a client-supplied
@@ -67,16 +73,16 @@ export async function submitForm(
   input: SubmitFormInput,
 ) {
   const resolved = await getPublicForm(tenantSlug, formSlug);
-  if (!resolved) throw new Error("Formulario no encontrado");
+  if (!resolved) throw new Error("form_not_found");
   const { tenant, form } = resolved;
 
   const rateKey = `form:${form.id}:${input.ipAddress ?? "unknown"}`;
   if (checkRateLimit(rateKey, RATE_LIMIT, RATE_WINDOW_MS).limited) {
-    throw new Error("Demasiados envíos. Probá de nuevo en un momento.");
+    throw new Error("form_rate_limited");
   }
 
   const ctx = await buildSystemTenantContext(tenant.id);
-  if (!ctx) throw new Error("Formulario no encontrado");
+  if (!ctx) throw new Error("form_not_found");
 
   // Turnstile (§5.2) sits next to the honeypot: a form whose linked site has
   // no secret configured is unchanged, and one that does must pass before
@@ -92,7 +98,7 @@ export async function submitForm(
       remoteIp: input.ipAddress,
     });
     if (!verdict.ok) {
-      throw new Error("No pudimos verificar que no seas un robot. Probá de nuevo.");
+      throw new Error("turnstile_failed");
     }
   }
 
@@ -103,7 +109,7 @@ export async function submitForm(
   };
 
   const phone = valueOfType("phone");
-  if (!phone) throw new Error("El teléfono es obligatorio");
+  if (!phone) throw new Error("phone_required");
 
   const nameField = fields.find((f) => f.key === "name" || f.key === "nombre");
   const name = nameField ? input.data[nameField.key] : undefined;

@@ -1,0 +1,1607 @@
+{
+  "common": {
+    "appName": "VenderCRM",
+    "loading": "Loading…",
+    "save": "Save",
+    "saved": "Changes saved",
+    "cancel": "Cancel",
+    "create": "Create",
+    "back": "Back",
+    "signOut": "Sign out"
+  },
+  "auth": {
+    "login": {
+      "title": "Sign in",
+      "email": "Email",
+      "password": "Password",
+      "submit": "Sign in",
+      "error": "Wrong email or password",
+      "forgotPassword": "Forgot your password?",
+      "rateLimited": "Too many attempts. Wait a few minutes and try again."
+    },
+    "acceptInvite": {
+      "title": "Accept invitation",
+      "name": "Full name",
+      "password": "Choose a password",
+      "submit": "Create account",
+      "invalid": "This invitation is not valid or has expired",
+      "success": "Account created. You can sign in now."
+    },
+    "forgotPassword": {
+      "title": "Reset password",
+      "intro": "Enter your email and we'll send you a link to choose a new password.",
+      "email": "Email",
+      "submit": "Send link",
+      "sent": "If that email has an account, a password reset link is on its way. Check your inbox.",
+      "backToLogin": "Back to sign in"
+    },
+    "resetPassword": {
+      "title": "Choose a new password",
+      "newPassword": "New password",
+      "submit": "Save password",
+      "error": "We couldn't reset the password. The link may have expired.",
+      "invalidToken": "This link is not valid or has expired.",
+      "requestNew": "Request a new link"
+    }
+  },
+  "tenancy": {
+    "status": {
+      "grace": {
+        "banner": "Your subscription has expired. You have read-only access until the payment is recorded."
+      },
+      "locked": {
+        "title": "Account suspended",
+        "body": "Access to this account is blocked. Contact your administrator to settle the payment.",
+        "backToLogin": "Back to sign in"
+      }
+    },
+    "impersonation": {
+      "banner": "You are viewing this account as another user.",
+      "exit": "Back to the console"
+    }
+  },
+  "app": {
+    "nav": {
+      "dashboard": "Home",
+      "contacts": "Contacts",
+      "pipeline": "Pipeline",
+      "inbox": "Inbox",
+      "forms": "Forms",
+      "whatsapp": "WhatsApp",
+      "settings": "Settings",
+      "sites": "Sites",
+      "quotes": "Quotes",
+      "documents": "Sales notes",
+      "products": "Products",
+      "facturaElectronica": "Electronic invoicing",
+      "soon": "Coming soon",
+      "automations": "Automations",
+      "users": "Team",
+      "groups": {
+        "crm": "CRM",
+        "capture": "Lead capture",
+        "settings": "Settings"
+      }
+    },
+    "dashboard": {
+      "title": "{tenant} dashboard",
+      "subtitle": "Your day at a glance: open deals, unanswered messages and quotes in flight.",
+      "stats": {
+        "openDeals": "Open deals",
+        "openDealsHint": "{value} PYG at stake",
+        "unread": "Unread messages",
+        "unreadHint": "{count, plural, =0 {No conversations waiting} one {in # conversation} other {in # conversations}}",
+        "pendingQuotes": "Pending quotes",
+        "pendingQuotesHint": "Drafts and sent quotes with no reply",
+        "contacts": "Contacts",
+        "contactsHint": "People in your database"
+      },
+      "checklist": {
+        "title": "First steps",
+        "intro": "Work through these to get the CRM running end to end. Each one ticks itself off as you do it.",
+        "progress": "{done} of {total} done",
+        "steps": {
+          "whatsapp": {
+            "title": "Connect your WhatsApp number",
+            "description": "It's the main channel: your customers' messages land in the inbox and you reply from here.",
+            "action": "Connect"
+          },
+          "contact": {
+            "title": "Add your first contact",
+            "description": "The phone number identifies the customer. Everything else — deals, messages, quotes — hangs off the contact.",
+            "action": "Add contact"
+          },
+          "deal": {
+            "title": "Open your first deal in the pipeline",
+            "description": "The board shows what stage each opportunity is in, and you drag it along until you win it.",
+            "action": "Create deal"
+          },
+          "quote": {
+            "title": "Send your first quote",
+            "description": "Build the quote, generate the PDF and send it over WhatsApp without leaving the system.",
+            "action": "Create quote"
+          },
+          "capture": {
+            "title": "Connect a lead source",
+            "description": "Add a site that posts its leads over the API, or publish a form: contacts enter the pipeline on their own.",
+            "action": "Set up"
+          },
+          "automation": {
+            "title": "Turn on your first automation",
+            "description": "Auto-replies and follow-ups: for instance, if nobody answers within two days, a reminder goes out.",
+            "action": "Create flow"
+          }
+        }
+      },
+      "activity": {
+        "title": "Recent activity",
+        "empty": "No activity yet. As soon as you add a contact or receive a message, it shows up here."
+      },
+      "dueTasks": {
+        "title": "Tasks due"
+      }
+    },
+    "pipeline": {
+      "title": "Pipeline",
+      "intro": "Each deal moves stage by dragging it across the board. The stage change is recorded on the contact's history and can trigger automations.",
+      "noPipeline": "No pipeline configured yet",
+      "noPipelineBody": "The pipeline is created together with your company. If you don't see one, write to us and we'll set it up.",
+      "emptyTitle": "The board is empty",
+      "emptyBody": "Open your first deal and drag it between stages as the sale moves along.",
+      "needContact": "You need at least one contact before you can open a deal.",
+      "goToContacts": "Go to contacts",
+      "createDealTitle": "New deal",
+      "dealTitle": "Title",
+      "contact": "Contact",
+      "stage": "Stage",
+      "value": "Value (PYG)",
+      "createDeal": "Create deal",
+      "switcherLabel": "Choose pipeline",
+      "newPipelineTitle": "New pipeline",
+      "newPipelineName": "Name",
+      "newPipelineNamePlaceholder": "e.g. Valuations",
+      "newPipelineCreate": "Create pipeline",
+      "errors": {
+        "titleRequired": "Give the deal a title.",
+        "contactRequired": "Choose which contact the deal belongs to.",
+        "stageRequired": "Choose the stage the deal starts in.",
+        "valueInvalid": "The value is in whole guaraníes, no decimals or signs.",
+        "unknown": "We couldn't create the deal. Try again."
+      },
+      "moveFailed": "We couldn't move the deal. Its previous stage was restored."
+    },
+    "forms": {
+      "title": "Forms",
+      "adminOnly": "Only admins can see this page",
+      "intro": "Forms hosted here, for sites with no backend of their own. Every submission creates or updates the contact and can open a deal in the stage you choose.",
+      "empty": "No forms yet",
+      "emptyTitle": "No forms yet",
+      "emptyBody": "Create a form and paste its link on your site or in your profile: the data goes straight into the CRM, no spreadsheets in between.",
+      "publicUrl": "Public link",
+      "createTitle": "New form",
+      "name": "Name",
+      "slug": "Slug",
+      "targetPipeline": "Target pipeline",
+      "targetPipelineApply": "Update",
+      "targetStage": "Target stage",
+      "noStage": "None",
+      "createForm": "Create form",
+      "errors": {
+        "nameRequired": "Give the form a name.",
+        "slugInvalid": "The slug is lowercase, with no spaces or accents (e.g. general-contact).",
+        "unknown": "We couldn't create the form. Try again."
+      },
+      "turnstileSite": "Anti-bot protection using this site's keys",
+      "turnstileNone": "No extra protection",
+      "turnstileSave": "Save"
+    },
+    "users": {
+      "title": "Team",
+      "intro": "The people at your company who use the CRM. Admins configure WhatsApp, sites and automations; agents work contacts, deals, the inbox and quotes.",
+      "adminOnly": "Only admins can see this page",
+      "membersTitle": "Members",
+      "name": "Name",
+      "email": "Email",
+      "role": "Role",
+      "you": "you",
+      "roles": {
+        "admin": "Admin",
+        "agent": "Agent"
+      },
+      "inviteTitle": "Invite someone",
+      "inviteHelp": "This generates an invitation link valid for 7 days. Copy the link and send it over WhatsApp or wherever suits you.",
+      "invite": "Generate invitation",
+      "linkTitle": "Invitation link",
+      "linkHelp": "Send it to the person. Opening it lets them choose a password and sign in with the role you assigned.",
+      "copy": "Copy",
+      "copied": "Copied",
+      "pendingTitle": "Pending invitations",
+      "pendingEmptyTitle": "No pending invitations",
+      "pendingEmptyBody": "When you generate an invitation it shows up here until the person accepts it or it expires.",
+      "expiresAt": "expires on {date}",
+      "revoke": "Revoke",
+      "errors": {
+        "invalid": "Check the email and the role.",
+        "emailTaken": "That email already has an account.",
+        "readOnly": "Your subscription expired: the account is in read-only mode.",
+        "unknown": "We couldn't generate the invitation. Try again."
+      },
+      "stateColumn": "State",
+      "actionsColumn": "Actions",
+      "stateActive": "Active",
+      "stateInactive": "Inactive",
+      "deactivate": "Deactivate",
+      "reactivate": "Reactivate",
+      "sendReset": "Send password reset",
+      "resetSent": "We emailed them a link to choose a new password."
+    },
+    "products": {
+      "title": "Products",
+      "intro": "Your catalogue, so quotes go faster. It's optional: you can also type items by hand on a quote.",
+      "empty": "No products yet",
+      "emptyTitle": "No products yet",
+      "emptyBody": "Add the products or services you sell often with their price, and they'll be ready to pick when building a quote.",
+      "createTitle": "New product",
+      "name": "Name",
+      "description": "Description",
+      "unitPrice": "Unit price (PYG)",
+      "inactive": "inactive",
+      "activate": "Activate",
+      "deactivate": "Deactivate",
+      "errors": {
+        "nameRequired": "Give the product a name.",
+        "unitPriceInvalid": "The price is in whole guaraníes, no decimals or signs.",
+        "unknown": "We couldn't save the product. Try again."
+      }
+    },
+    "contacts": {
+      "title": "Contacts",
+      "intro": "Your customers and prospects. The phone number is each contact's identity: WhatsApp messages, deals and quotes attach themselves to it.",
+      "searchPlaceholder": "Search by name, phone or email",
+      "allTags": "All tags",
+      "filter": "Filter",
+      "name": "Name",
+      "phone": "Phone",
+      "email": "Email",
+      "source": "Source",
+      "notes": "Notes",
+      "empty": "No contacts yet",
+      "emptyTitle": "No contacts yet",
+      "emptyBody": "Add your first contact with a name and phone number, or let them arrive on their own from a form or from WhatsApp.",
+      "emptyAction": "Add contact",
+      "noResults": "No contact matches this search",
+      "noResultsBody": "Try another name, phone number or tag.",
+      "clearFilters": "Clear filters",
+      "exportCsv": "Export CSV",
+      "createTitle": "New contact",
+      "createTagTitle": "New tag",
+      "addTag": "Add tag",
+      "dealsTitle": "Deals",
+      "timelineTitle": "History",
+      "timelineEmpty": "No activity yet",
+      "notePlaceholder": "Write a note…",
+      "addNote": "Add note",
+      "activityTypes": {
+        "note": "Note",
+        "call": "Call",
+        "stage_change": "Stage change",
+        "form_submission": "Form received",
+        "quote_sent": "Quote sent",
+        "system": "System"
+      },
+      "editTitle": "Contact details",
+      "conversationEmpty": "No conversation yet",
+      "conversationEmptyBody": "When this person writes to you on WhatsApp — or when you write first with a template — the chat appears here, without leaving the contact.",
+      "timelineMessageIn": "Message received",
+      "timelineMessageOut": "Message sent",
+      "timelineMedia": "Attachment",
+      "timelineQuote": "Quote {number}",
+      "timelineLead": "Lead received",
+      "tabs": {
+        "conversacion": "Conversation",
+        "actividad": "Activity",
+        "datos": "Details",
+        "tareas": "Tasks"
+      },
+      "searchLabel": "Search",
+      "tag": "Tag",
+      "allSources": "All sources",
+      "owner": "Owner",
+      "allOwners": "All owners",
+      "createdFrom": "From",
+      "createdTo": "To",
+      "onlyOpenDeal": "Only with an open deal",
+      "openDealBadge": "open deal",
+      "created": "Created",
+      "resultCount": "{count, plural, one {# contact} other {# contacts}}",
+      "pageOf": "Page {page} of {pages}",
+      "previous": "Previous",
+      "next": "Next",
+      "tasks": {
+        "title": "Title",
+        "titlePlaceholder": "Call to confirm the visit",
+        "dueAt": "Due",
+        "noDeal": "No linked deal",
+        "create": "Create task",
+        "complete": "Mark done",
+        "reopen": "Reopen",
+        "delete": "Delete",
+        "overdue": "overdue",
+        "emptyTitle": "No tasks yet",
+        "emptyBody": "Create a dated reminder — call, confirm, follow up — and it shows up here and on your dashboard until you mark it done.",
+        "showCompleted": "Show {count} completed"
+      },
+      "bulk": {
+        "selectedCount": "{count} selected",
+        "addTag": "Add tag",
+        "chooseTag": "Choose tag",
+        "assignOwner": "Assign owner",
+        "chooseOwner": "Choose owner",
+        "noOwner": "No owner",
+        "addToPipeline": "Add to pipeline",
+        "chooseStage": "Choose stage",
+        "apply": "Apply",
+        "exportSelection": "Export selection",
+        "clearSelection": "Clear selection"
+      },
+      "saved": "Changes saved",
+      "errors": {
+        "nameRequired": "Give the contact a name.",
+        "phoneRequired": "The phone number is required: it's the contact's identity.",
+        "phoneTaken": "You already have a contact with that phone number.",
+        "emailInvalid": "That email doesn't look valid. Fix it or leave it empty.",
+        "notesTooLong": "The notes are too long.",
+        "unknown": "We couldn't save the contact. Try again."
+      }
+    },
+    "inbox": {
+      "title": "Inbox",
+      "intro": "All of your team's WhatsApp conversations in one place, with each customer's full history.",
+      "empty": "No conversations yet",
+      "emptyTitle": "No conversations yet",
+      "emptyBody": "Conversations show up here as soon as a customer writes to your connected number, or when you write first with a template.",
+      "emptyNoAccountTitle": "Connect a number to get started",
+      "emptyNoAccountBody": "The inbox fills up with messages from your WhatsApp Business number. None is connected yet.",
+      "emptyAction": "Connect WhatsApp",
+      "noMessages": "No messages yet",
+      "messagePlaceholder": "Write a message…",
+      "send": "Send",
+      "windowClosed": "The 24-hour window is closed. Only approved templates can be sent.",
+      "windowOpen": "24-hour window open — closes in {remaining}",
+      "sendTemplate": "Send template",
+      "noTemplates": "No approved templates yet. Sync them from the WhatsApp page.",
+      "windowOpenShort": "24-hour window open — closes in",
+      "aiOn": "AI replies are on for this conversation",
+      "aiOff": "AI replies are off for this conversation",
+      "aiEnable": "Turn AI back on",
+      "aiDisable": "Turn AI off",
+      "aiDraftsTitle": "AI drafts — review before sending",
+      "aiApprove": "Approve and send",
+      "aiDiscard": "Discard",
+      "aiTokens": "{tokens} tokens",
+      "aiDraftWindowClosed": "Can't send: the 24-hour window is closed.",
+      "errors": {
+        "bodyRequired": "Write a message before sending.",
+        "bodyTooLong": "The message is too long: the maximum is 4096 characters.",
+        "windowClosed": "The 24-hour window closed. Only approved templates can be sent.",
+        "templateRequired": "Choose a template from the list.",
+        "sendFailed": "The message couldn't be sent. Try again.",
+        "aiWindowClosed": "Couldn't send: the 24-hour window closed while the draft was waiting.",
+        "aiConversationDisabled": "Couldn't send: AI is off for this conversation.",
+        "aiOptedOut": "Couldn't send: this contact asked not to receive more messages.",
+        "aiSendFailed": "The draft couldn't be sent. Try again."
+      },
+      "actionFailed": "We couldn't complete the action. Try again."
+    },
+    "whatsapp": {
+      "title": "WhatsApp",
+      "intro": "Connect your company's numbers. Incoming messages land in the inbox, and approved templates let you write even after 24 hours have passed.",
+      "adminOnly": "Only admins can see this page",
+      "empty": "No numbers connected yet",
+      "emptyTitle": "No numbers connected yet",
+      "emptyBody": "Without a connected number no messages come in or go out. Generate the details in Meta Business Manager and enter them in the form below.",
+      "status": {
+        "connected": "Connected",
+        "disconnected": "Disconnected",
+        "error": "Error"
+      },
+      "connectTitle": "Connect number",
+      "connectHelp": "Enter the details generated in Meta Business Manager.",
+      "wabaId": "WABA ID",
+      "phoneNumberId": "Phone Number ID",
+      "displayNumber": "Number (for display)",
+      "accessToken": "Access token",
+      "connect": "Connect",
+      "syncTemplates": "Sync templates",
+      "templateCount": "{approved} of {total} templates approved",
+      "errors": {
+        "wabaIdRequired": "Enter the WABA ID.",
+        "phoneNumberIdRequired": "Enter the Phone Number ID.",
+        "accessTokenRequired": "Enter the access token.",
+        "unknown": "We couldn't connect the number. Try again."
+      }
+    },
+    "quotes": {
+      "title": "Quotes",
+      "intro": "Build the quote, generate a branded PDF and send it over WhatsApp or as a public link. Electronic invoicing comes in a later phase.",
+      "empty": "No quotes yet",
+      "emptyTitle": "No quotes yet",
+      "emptyBody": "Pick a contact, add the items and generate the PDF. You can send it over WhatsApp without leaving the system.",
+      "createTitle": "New quote",
+      "needContact": "You need at least one contact first.",
+      "goToContacts": "Go to contacts",
+      "number": "Number",
+      "status": "Status",
+      "contact": "Contact",
+      "description": "Description",
+      "qty": "Qty",
+      "unitPrice": "Price",
+      "lineTotal": "Total",
+      "addLine": "Add item",
+      "removeLine": "Remove",
+      "fromCatalog": "From catalogue",
+      "freeText": "Free text",
+      "discount": "Discount",
+      "validUntil": "Valid until",
+      "notes": "Notes",
+      "subtotal": "Subtotal",
+      "total": "Total",
+      "createQuote": "Create quote",
+      "sendWhatsapp": "Send over WhatsApp",
+      "publicLink": "Public link",
+      "downloadPdf": "Download PDF",
+      "statusValues": {
+        "draft": "Draft",
+        "sent": "Sent",
+        "accepted": "Accepted",
+        "rejected": "Rejected",
+        "expired": "Expired"
+      },
+      "markAs": {
+        "accepted": "Mark accepted",
+        "rejected": "Mark rejected"
+      },
+      "errors": {
+        "contactRequired": "Choose which contact the quote belongs to.",
+        "itemsRequired": "Add at least one item with a description.",
+        "itemInvalid": "Check the items: quantity starts at 1 and the price is in whole guaraníes, no decimals or signs.",
+        "discountInvalid": "The discount is in whole guaraníes, no decimals or signs.",
+        "unknown": "We couldn't create the quote. Try again."
+      }
+    },
+    "documents": {
+      "title": "Sales notes",
+      "intro": "Record a closed sale and the money coming in against it. This is not an electronic invoice: it's a non-fiscal commercial receipt.",
+      "nonFiscalNotice": "Non-fiscal document — it has no tax validity.",
+      "emptyTitle": "No sales notes yet",
+      "emptyBody": "Create a sales note from scratch, or convert an accepted quote from the quote's own page.",
+      "createTitle": "New sales note",
+      "needContact": "You need at least one contact first.",
+      "goToContacts": "Go to contacts",
+      "number": "Number",
+      "status": "Status",
+      "paymentState": "Payment",
+      "contact": "Contact",
+      "description": "Description",
+      "qty": "Qty",
+      "unitPrice": "Price",
+      "lineTotal": "Total",
+      "addLine": "Add item",
+      "removeLine": "Remove",
+      "fromCatalog": "From catalogue",
+      "freeText": "Free text",
+      "discount": "Discount",
+      "dueAt": "Due",
+      "notes": "Notes",
+      "subtotal": "Subtotal",
+      "total": "Total",
+      "create": "Create sales note",
+      "save": "Save changes",
+      "issue": "Issue",
+      "issueWarning": "Once issued, the number, items and totals are fixed and can no longer be edited.",
+      "issuedNotice": "Issued — items and totals can no longer be changed.",
+      "sendWhatsapp": "Send over WhatsApp",
+      "publicLink": "Public link",
+      "downloadPdf": "Download PDF",
+      "statusValues": {
+        "draft": "Draft",
+        "issued": "Issued",
+        "void": "Void"
+      },
+      "paymentStateValues": {
+        "unpaid": "Unpaid",
+        "partial": "Partially paid",
+        "paid": "Paid",
+        "void": "Void"
+      },
+      "amountPaid": "Paid",
+      "balance": "Balance",
+      "paymentsTitle": "Payments",
+      "noPayments": "No payments recorded yet.",
+      "amount": "Amount",
+      "method": "Method",
+      "methodValues": {
+        "transfer": "Bank transfer",
+        "cash": "Cash",
+        "card": "Card",
+        "check": "Cheque",
+        "other": "Other"
+      },
+      "reference": "Reference",
+      "paidAt": "Date",
+      "recordPayment": "Record payment",
+      "deletePayment": "Delete",
+      "voidTitle": "Void",
+      "voidReason": "Reason",
+      "voidWarning": "Voiding a sales note is permanent.",
+      "voidBlockedByPayments": "Can't void: it has payments recorded. Delete the payments first.",
+      "voidAction": "Void sales note",
+      "voidedNotice": "Voided: {reason}",
+      "editTitle": "Edit draft",
+      "convertFromQuote": "Convert to sales note",
+      "viewDocument": "View sales note",
+      "errors": {
+        "contactRequired": "Choose which contact the sales note belongs to.",
+        "itemsRequired": "Add at least one item with a description.",
+        "itemInvalid": "Check the items: quantity starts at 1 and the price is in whole guaraníes, no decimals or signs.",
+        "discountInvalid": "The discount is in whole guaraníes, no decimals or signs.",
+        "voidReasonRequired": "Give the reason for voiding it.",
+        "amountInvalid": "The amount is in whole guaraníes, greater than zero.",
+        "unknown": "We couldn't save it. Try again."
+      }
+    },
+    "settings": {
+      "title": "Settings",
+      "intro": "Your company details that the rest of the system uses: the branding that appears on quote PDFs, and the business hours automations respect.",
+      "adminOnly": "Only admins can see this page",
+      "brandingTitle": "Branding",
+      "logoUrl": "Logo URL",
+      "primaryColor": "Primary colour",
+      "timezoneTitle": "Time zone",
+      "defaultCountryTitle": "Default country",
+      "defaultCountryIntro": "Used to fill in the country code when you enter a phone number without a +, for example a Paraguayan 0981… or a Swedish 070….",
+      "countryNames": {
+        "PY": "Paraguay",
+        "AR": "Argentina",
+        "BR": "Brazil",
+        "SE": "Sweden",
+        "US": "United States"
+      },
+      "reviewLinkTitle": "Google review link",
+      "reviewLinkIntro": "The link from your Google Business profile for asking for reviews ('Get more reviews' in Google Business Profile). It's used by the 'Ask for a Google review' automation node.",
+      "businessHoursTitle": "Business hours",
+      "sheetsTitle": "Google Sheets",
+      "sheetsIntro": "Your contacts in a spreadsheet that updates itself, with no Google account to connect and no cost. The spreadsheet reads a private link belonging to your company; nobody else is given access.",
+      "sheetsSteps": {
+        "generate": "Generate the link below. It's private: anyone holding it can read your contacts, so treat it like a password.",
+        "paste": "Open a new spreadsheet in Google Sheets, click cell A1 and paste the formula.",
+        "refresh": "Google refreshes the sheet on its own, roughly every hour. To force it, delete the formula and paste it again."
+      },
+      "sheetsFormula": "Paste this into cell A1",
+      "sheetsCopy": "Copy",
+      "sheetsCopied": "Copied",
+      "sheetsGenerate": "Generate link",
+      "sheetsRegenerate": "Generate a new link",
+      "sheetsRegenerateWarning": "Generating a new one stops the old link instantly, and any spreadsheet using it stops updating.",
+      "days": {
+        "mon": "Monday",
+        "tue": "Tuesday",
+        "wed": "Wednesday",
+        "thu": "Thursday",
+        "fri": "Friday",
+        "sat": "Saturday",
+        "sun": "Sunday"
+      },
+      "aiTitle": "AI replies",
+      "aiIntro": "The AI drafts WhatsApp replies using your business context. Start in draft mode: a rep reviews every message before it goes out. Nothing is ever sent outside the 24-hour window.",
+      "aiNotConfigured": "No AI provider is configured on the server yet. You can save the settings, but no replies will be generated until the operator enables it.",
+      "aiEnabled": "Turn on AI replies",
+      "aiMode": "Reply mode",
+      "aiModeDraft": "Draft — a rep approves every message",
+      "aiModeSend": "Send automatically",
+      "aiModeHelp": "In draft mode the AI leaves the message in the conversation and a rep decides. We recommend using draft mode for at least a week before switching to automatic sending.",
+      "aiBusinessName": "Business name",
+      "aiAbout": "What the business sells",
+      "aiAboutPlaceholder": "Air-conditioning installation and maintenance in Asunción and the surrounding area.",
+      "aiTone": "Tone",
+      "aiTonePlaceholder": "Friendly, informal, no jargon",
+      "aiHours": "Hours it may mention",
+      "aiNeverPromise": "What it must never promise",
+      "aiNeverPromisePlaceholder": "Prices, delivery times, discounts, stock availability",
+      "aiMaxPerConversation": "Max replies per conversation per day",
+      "aiMaxPerTenant": "Max replies per day (whole account)",
+      "aiHandoffKeyword": "Word that hands over to a human",
+      "aiUsageTitle": "This month's usage",
+      "aiUsageBody": "{replies} replies · {prompt} input tokens · {completion} output tokens · {total} in total.",
+      "errors": {
+        "logoUrlInvalid": "That logo URL doesn't look valid.",
+        "primaryColorInvalid": "The colour goes in #RRGGBB format.",
+        "timezoneRequired": "Enter a valid time zone.",
+        "defaultCountryInvalid": "Choose a valid country.",
+        "reviewLinkInvalid": "That link doesn't look valid.",
+        "aiLimitInvalid": "That limit isn't a valid number.",
+        "aiHandoffKeywordRequired": "Enter a word that hands over to a human.",
+        "unknown": "We couldn't save it. Try again."
+      },
+      "language": {
+        "title": "Language",
+        "intro": "Choose the language of the interface. It's yours: it doesn't change what your colleagues see or what your customers receive.",
+        "label": "Language",
+        "save": "Save"
+      }
+    },
+    "automations": {
+      "title": "Automations",
+      "adminOnly": "Only admins can see this page",
+      "intro": "Every flow starts with a trigger and follows a sequence of conditions, waits and actions. Publish the flow to turn it on.",
+      "empty": "No flows yet",
+      "emptyTitle": "No flows yet",
+      "emptyBody": "A typical flow: a lead comes in from the site, a WhatsApp template goes out, it waits two days for a reply and, if none comes, sends a reminder.",
+      "createTitle": "New flow",
+      "createFlow": "Create flow",
+      "name": "Name",
+      "trigger": "Trigger",
+      "pause": "Pause",
+      "activate": "Activate",
+      "runsTitle": "Runs",
+      "runStatus": "Status",
+      "currentNode": "Current node",
+      "startedAt": "Started",
+      "cancelRun": "Cancel",
+      "noRuns": "No runs yet",
+      "triggers": {
+        "wa_message_received": "WhatsApp message received",
+        "form_submitted": "Form submitted",
+        "lead_received": "Lead received (site or form)",
+        "deal_stage_changed": "Deal changed stage",
+        "contact_created": "Contact created",
+        "tag_added": "Tag added"
+      },
+      "statusValues": {
+        "draft": "Draft",
+        "active": "Active",
+        "paused": "Paused"
+      },
+      "runStatusValues": {
+        "running": "Running",
+        "waiting": "Waiting",
+        "completed": "Completed",
+        "failed": "Failed",
+        "cancelled": "Cancelled"
+      },
+      "errors": {
+        "nameRequired": "Give the automation a name.",
+        "unknown": "We couldn't create the automation. Try again."
+      },
+      "editor": {
+        "triggerNode": "Trigger",
+        "saveDraft": "Save draft",
+        "publish": "Publish",
+        "draftSaved": "Draft saved",
+        "published": "Flow published and active",
+        "deleteNode": "Delete node",
+        "palette": {
+          "send_whatsapp": "Send WhatsApp",
+          "send_template": "Send template",
+          "add_tag": "Add tag",
+          "remove_tag": "Remove tag",
+          "move_deal_stage": "Move stage",
+          "assign_user": "Assign user",
+          "create_note": "Create note",
+          "has_tag": "Has tag?",
+          "deal_in_stage": "In stage?",
+          "business_hours": "Business hours?",
+          "has_replied_since": "Has replied?",
+          "wait_duration": "Wait",
+          "wait_for_reply": "Wait for reply",
+          "ai_reply": "Reply with AI",
+          "send_review_request": "Ask for a Google review"
+        },
+        "fields": {
+          "text": "Text",
+          "textPlaceholder": "Hi {tag}…",
+          "template": "Template",
+          "language": "Language",
+          "tagId": "Tag ID",
+          "stageId": "Stage ID",
+          "userId": "User ID",
+          "minutes": "Minutes",
+          "instructions": "Instructions for the AI",
+          "instructionsPlaceholder": "Answer the question and offer to book a visit.",
+          "aiMode": "Mode",
+          "aiModeDraft": "Draft (a rep approves)",
+          "aiModeSend": "Send automatically",
+          "aiModeHint": "Automatic sending also has to be enabled for the whole account in Settings. While the account is in draft mode, this node produces drafts.",
+          "reviewTextPlaceholder": "Thanks for your purchase! Leave us a review: {tag}",
+          "reviewTextHint": "Leave it empty and a default message with the link is sent. Set the review link in Settings."
+        }
+      }
+    },
+    "sites": {
+      "title": "Sites",
+      "intro": "Every site in your network sends its leads here with its own key. A site's leads land in the stage you choose, so dentistry and building materials never get mixed up.",
+      "adminOnly": "Only admins can see this page",
+      "empty": "No sites connected yet",
+      "emptyTitle": "No sites connected yet",
+      "emptyBody": "Connect the first site in your network so its leads enter the pipeline automatically, with their campaign and source. The code that goes in the site's backend is below.",
+      "createTitle": "Connect a new site",
+      "createSite": "Create site",
+      "name": "Name",
+      "slug": "Slug",
+      "domain": "Domain",
+      "pipeline": "Pipeline",
+      "stage": "Target stage",
+      "waAccount": "WhatsApp number",
+      "none": "None",
+      "active": "Active",
+      "inactive": "Inactive",
+      "activate": "Activate",
+      "deactivate": "Deactivate",
+      "saveRouting": "Save",
+      "copyNow": "Copy this key now — it is never shown again.",
+      "leads": "leads",
+      "totalLeads": "leads in total",
+      "leadsWithDeal": "with an open deal",
+      "byCampaign": "Leads by campaign",
+      "errors": {
+        "nameRequired": "Give the site a name.",
+        "slugInvalid": "The slug is lowercase, with no spaces or accents (e.g. dentist-asuncion).",
+        "slugTaken": "You already have a site with that slug.",
+        "unknown": "We couldn't create the site. Try again."
+      },
+      "howToTitle": "How to connect a site",
+      "howToIntro": "From the site's backend (never from the browser — that's what keeps the key out of sight):",
+      "guide": {
+        "title": "How to connect a site",
+        "intro": "Four steps. Your site's form posts to your own server, and your server forwards it here with the site's key.",
+        "steps": {
+          "create": {
+            "title": "Create the site here and copy the key",
+            "body": "Use the form above. The key is shown once: save it the moment you see it. If you lose it, issue another key and revoke the old one once the site is sending with the new one."
+          },
+          "env": {
+            "title": "Store the key in the site's environment",
+            "body": "As VENDERCRM_API_KEY in the .env file or in the hosting environment variables. Never in the HTML, in browser JavaScript, or in the repository."
+          },
+          "handler": {
+            "title": "Paste the handler on your server",
+            "body": "Pick your stack below and copy the code. The form points at your own endpoint, and that endpoint is what calls VenderCRM."
+          },
+          "verify": {
+            "title": "Test it with a real submission",
+            "body": "Fill in the form with your own number. Within seconds the contact appears and, if you set a target stage, so does the deal in the pipeline. If it doesn't, check your server log: the response says why."
+          }
+        },
+        "snippetTitle": "Code for your site",
+        "copy": "Copy",
+        "copied": "Copied",
+        "securityTitle": "Five things worth not skipping",
+        "security": {
+          "serverSide": "The key lives on the site's server. Put it in the browser and anyone can read it and write into your pipeline.",
+          "idempotency": "Always send idempotency_key. With the same key, a retry or a double click doesn't create a duplicate contact.",
+          "phone": "The phone number is required and is the contact's identity. We accept the Paraguayan local format (0981 123 456) and normalise it to +595.",
+          "spam": "Add the honeypot and, if you can, Cloudflare Turnstile. Spam is stopped at your site, not inside the CRM.",
+          "nonBlocking": "If VenderCRM doesn't answer, still show the visitor the thank-you page and record the error in your log. Never lose a lead to a timeout."
+        }
+      },
+      "turnstile": {
+        "title": "Anti-bot protection (Cloudflare Turnstile)",
+        "intro": "Optional. If your site shows the Turnstile widget, paste the two keys Cloudflare gives you here. Without this the site keeps working exactly as it does today.",
+        "statusOn": "— configured",
+        "statusOff": "— not configured",
+        "siteKey": "Site key",
+        "secret": "Secret key",
+        "secretStored": "Already saved — paste it again to change it",
+        "requireOnIngest": "Also require the token on submissions from the site's server",
+        "save": "Save Turnstile",
+        "saved": "Done, Turnstile is saved.",
+        "remove": "Remove Turnstile",
+        "errors": {
+          "turnstileIncomplete": "Enter both keys: the site key and the secret."
+        }
+      },
+      "keys": {
+        "issue": "Issue another key",
+        "revoke": "Revoke",
+        "label": "Note",
+        "labelPlaceholder": "e.g. new hosting",
+        "lastUsed": "last used {when}",
+        "neverUsed": "not used yet",
+        "maxReached": "You already have two active keys. Revoke one to issue another.",
+        "errors": {
+          "tooManyKeys": "You already have two active keys on this site.",
+          "unknown": "We couldn't issue the key. Try again."
+        }
+      },
+      "hook": {
+        "title": "Webhook for customer sites (Elementor, Wix, Zapier)",
+        "intro": "For sites that can't keep a key on their server. You issue a URL, paste it into the customer's form, send a test submission and then choose which field is which. The URL is secret: anyone holding it can push leads into this site.",
+        "statusOff": "— not enabled",
+        "statusCapturing": "— waiting for a test submission",
+        "statusMapped": "— active",
+        "copyNow": "Copy this URL now — it is never shown in full again.",
+        "issue": "Issue webhook URL",
+        "reissue": "Issue a new URL",
+        "revoke": "Revoke webhook",
+        "lastUsed": "last submission {when}",
+        "neverUsed": "hasn't received anything yet",
+        "mappingTitle": "Which field is which",
+        "noCaptures": "Send a test submission from the customer's form. We store whatever arrives, and here you'll be able to pick each field from the list.",
+        "captureHelp": "We have {count} stored test submission(s). Pick from the list which field matches each piece of data.",
+        "manualPath": "Or type the path",
+        "saveMapping": "Save fields",
+        "saved": "Done, you can now receive leads through the webhook.",
+        "clearCaptures": "Delete stored test submissions",
+        "fields": {
+          "phone": "Phone (required)",
+          "name": "Name",
+          "email": "Email",
+          "message": "Message"
+        },
+        "errors": {
+          "phoneRequired": "Choose which field is the phone number: without it we can't create the contact.",
+          "unknown": "We couldn't save it. Try again."
+        }
+      },
+      "health": {
+        "idle": "Hasn't received any leads yet",
+        "ok": "Working — last lead {when}",
+        "failing": "Having trouble — error {status} ({reason}) on {when}",
+        "errorCount": "{count} error(s) in total",
+        "reasons": {
+          "invalid-key": "invalid key",
+          "site-inactive": "site deactivated",
+          "tenant-unavailable": "account unavailable",
+          "tenant-read-only": "account read-only",
+          "rate-limited": "too many submissions",
+          "turnstile-failed": "didn't pass the anti-bot check",
+          "invalid-body": "invalid data",
+          "phone-missing": "arrived without a phone number, or the field changed",
+          "unknown": "unknown error"
+        }
+      },
+      "hookGuide": {
+        "title": "Connect a customer's site (without touching their server)",
+        "intro": "For Elementor, Wix, Webflow, Zapier or Make. The customer doesn't have to install anything or give you access to their hosting: you issue the webhook URL on the site above, they paste it into their form, and that's it.",
+        "captureTitle": "A test submission first",
+        "captureBody": "As soon as the URL is in place, ask for a test submission from the customer's form. We store that submission exactly as it arrived, and then you pick from a list which field is the phone number, which is the name and which is the message. Until you do, submissions are stored as tests and don't enter the pipeline.",
+        "urlNote": "The webhook URL is secret: anyone holding it can push leads into that site. Send it over a private channel, and revoke it from here if it leaks.",
+        "platforms": [
+          {
+            "id": "elementor",
+            "label": "Elementor",
+            "steps": [
+              "Open the page with the form and start editing it in Elementor.",
+              "Select the form widget and go to «Actions After Submit».",
+              "Add the «Webhook» action.",
+              "Paste the webhook URL into the «Webhook URL» field and save the page.",
+              "Send a test submission from the published page, not from the editor."
+            ]
+          },
+          {
+            "id": "wix",
+            "label": "Wix",
+            "steps": [
+              "In the Wix dashboard go to «Automations» and create a new automation.",
+              "Choose «Form is submitted» as the trigger and select the site's form.",
+              "Choose «Send an HTTP request» (or «Webhook») as the action.",
+              "Method POST, paste the webhook URL and leave the body with the form's data.",
+              "Turn the automation on and send a test submission from the published site."
+            ]
+          },
+          {
+            "id": "zapier",
+            "label": "Zapier / Make",
+            "steps": [
+              "Create a Zap (or a Make scenario) with the customer's form as the trigger.",
+              "Add the «Webhooks by Zapier» → «POST» step (in Make: HTTP module → «Make a request»).",
+              "Paste the webhook URL and choose JSON as the body format.",
+              "Map the form fields into the body as they come; no renaming needed, you pick which is which here afterwards.",
+              "Turn the Zap on and run a test."
+            ]
+          },
+          {
+            "id": "otro",
+            "label": "Other / manual",
+            "steps": [
+              "Any tool that can send a POST will do: Webflow Logic, Formidable, Contact Form 7 with a webhook plugin, or the site's own backend.",
+              "POST to the webhook URL with the form contents as JSON (we also accept form-data submissions).",
+              "No special header or separate key is needed: the URL is the credential.",
+              "Send a test submission and come back here to pick the fields."
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "superadmin": {
+    "nav": {
+      "tenants": "Companies",
+      "plans": "Plans",
+      "whatsappHealth": "WhatsApp",
+      "superadmin": "Superadmin",
+      "audit": "Audit log"
+    },
+    "tenantUsers": {
+      "title": "Company users",
+      "intro": "Create the company's first admin here. That person can then invite the rest of their team from their own account.",
+      "noUsers": "This company has no users yet: create the admin below.",
+      "createTitle": "Create user",
+      "name": "Name",
+      "email": "Email",
+      "password": "Initial password",
+      "role": "Role",
+      "roles": {
+        "admin": "Admin",
+        "agent": "Agent"
+      },
+      "submit": "Create user",
+      "created": "User created. Pass on the email and password:",
+      "errors": {
+        "invalid": "Check the details: the password needs at least 8 characters.",
+        "emailTaken": "That email already has an account.",
+        "unknown": "We couldn't create the user. Try again."
+      },
+      "inactive": "inactive",
+      "newPassword": "New password",
+      "setPassword": "Set password"
+    },
+    "tenants": {
+      "title": "Companies",
+      "intro": "Every company using VenderCRM: create a new one, suspend access, or sign in as them to give support.",
+      "createTitle": "New company",
+      "name": "Name",
+      "slug": "Slug",
+      "status": "Status",
+      "statusValues": {
+        "active": "Active",
+        "suspended": "Suspended",
+        "trial": "Trial"
+      },
+      "suspend": "Suspend",
+      "activate": "Activate",
+      "impersonate": "View as",
+      "errors": {
+        "nameRequired": "Give the company a name.",
+        "slugInvalid": "The slug is lowercase, with no spaces or accents (e.g. my-company).",
+        "slugTaken": "A company with that slug already exists.",
+        "unknown": "We couldn't create the company. Try again."
+      }
+    },
+    "subscriptions": {
+      "title": "Subscription",
+      "none": "No active subscription",
+      "plan": "Plan",
+      "expiresAt": "Expires",
+      "accessStatus": "Access",
+      "createTitle": "New subscription",
+      "recordPaymentTitle": "Record payment",
+      "amount": "Amount (PYG)",
+      "method": "Method",
+      "methodValues": {
+        "transfer": "Bank transfer",
+        "cash": "Cash",
+        "other": "Other"
+      },
+      "reference": "Reference",
+      "notes": "Notes",
+      "submit": "Record payment",
+      "planPlaceholder": "Choose a plan",
+      "createSubmit": "Create subscription",
+      "errors": {
+        "planRequired": "Choose a plan from the list.",
+        "amountInvalid": "The amount is in whole guaraníes, no decimals or dots (e.g. 250000).",
+        "unknown": "We couldn't record it. Try again."
+      }
+    },
+    "plans": {
+      "title": "Plans",
+      "intro": "The plans companies can subscribe to, with their duration and price.",
+      "createTitle": "New plan",
+      "name": "Name",
+      "durationMonths": "Duration (months)",
+      "price": "Price (PYG)",
+      "active": "Active",
+      "errors": {
+        "nameRequired": "Give the plan a name.",
+        "priceInvalid": "The price is in whole guaraníes, greater than zero.",
+        "unknown": "We couldn't create the plan. Try again."
+      }
+    },
+    "whatsappHealth": {
+      "title": "WhatsApp health",
+      "tenant": "Company",
+      "number": "Number",
+      "status": "Status",
+      "quality": "Quality",
+      "connectedVia": "Connection",
+      "noAccounts": "No numbers connected yet",
+      "failedWebhooks": "Failed webhooks",
+      "noFailures": "No recent failures",
+      "deadJobs": "Exhausted jobs",
+      "noDeadJobs": "No exhausted jobs",
+      "queueDead": "Exhausted jobs (whole queue)",
+      "noQueueDead": "No exhausted jobs",
+      "queueStuck": "Stuck jobs",
+      "queueStuckIntro": "Still running long after they should have finished: almost always a process that died halfway through.",
+      "noQueueStuck": "No stuck jobs",
+      "retryJob": "Retry"
+    }
+  },
+  "marketing": {
+    "nav": {
+      "home": "Home",
+      "metodo": "Method",
+      "nosotros": "About",
+      "contacto": "Contact",
+      "login": "Sign in",
+      "skipToContent": "Skip to content",
+      "menu": "Menu"
+    },
+    "cta": {
+      "primary": "Book your diagnostic",
+      "whatsapp": "Message us on WhatsApp",
+      "secondary": "See how we work",
+      "waPrefill": "Hi, I came from clientes.com.py and I'd like to book a diagnostic."
+    },
+    "ribbon": {
+      "monthly": "Month to month, no lock-in",
+      "measured": "Everything measured: you know what each enquiry cost",
+      "ownData": "The contact database is yours",
+      "region": "Asunción and Greater Asunción",
+      "ruc": "Tax ID {ruc}"
+    },
+    "home": {
+      "meta": {
+        "title": "More customers for your company | clientes.com.py",
+        "description": "We help established Paraguayan companies win more customers with an orderly sales process: lead capture, follow-up and measurement."
+      },
+      "hero": {
+        "eyebrow": "Commercial growth in Paraguay",
+        "title": "More customers. An orderly sales process.",
+        "lead": "We help established Paraguayan companies win more customers — with a system, not with luck.",
+        "body": "If you already have a product that works and customers who come back, the ceiling is almost never demand. It's that lead capture depends on whoever has time that week.",
+        "points": [
+          "An enquiry channel that doesn't shut down when the team is busy",
+          "Follow-up that happens either way, whoever is on shift",
+          "Clear numbers: how many enquiries came in and how many closed"
+        ],
+        "asideTitle": "How it starts",
+        "asideBody": "A 30-minute diagnostic conversation. We look at where your customers come from today, what gets lost along the way, and what can be put in order first.",
+        "asideNote": "Free and with no commitment. If we can't see how to help you, we'll say so on the same call."
+      },
+      "problem": {
+        "eyebrow": "The starting point",
+        "title": "You're not short of customers. You're short of a process.",
+        "body": "Most of the companies we work with have no product or market problem. They have enquiries arriving through five different places, quotes that never get an answer, and no way to know what worked last month.",
+        "bodyTwo": "That isn't fixed with more advertising. It's fixed by putting what already comes in in order, and adding lead capture on top of a base that holds.",
+        "symptomsTitle": "You can see it in concrete things",
+        "symptoms": [
+          "Enquiries arriving on WhatsApp, by phone, on Instagram and through the form, with no single list",
+          "Quotes that were sent and never touched again",
+          "Salespeople starting each month from zero, not knowing who to pick back up",
+          "Good months and bad months with no clear explanation why"
+        ]
+      },
+      "services": {
+        "eyebrow": "Services",
+        "title": "What we do",
+        "lead": "It all points at the same thing: enquiries come in, and you can handle them. We choose the channels during the diagnostic, not before.",
+        "items": [
+          {
+            "name": "Google Ads",
+            "body": "Show up exactly when someone searches for what you sell. Search, Performance Max and remarketing."
+          },
+          {
+            "name": "Meta Ads",
+            "body": "Facebook and Instagram campaigns aimed at people who buy, not people who scroll. Creative, targeting and weekly optimisation."
+          },
+          {
+            "name": "SEO",
+            "body": "Local and national rankings, so people find you without paying for every click."
+          },
+          {
+            "name": "Websites",
+            "body": "Fast pages, built for mobile and for converting into WhatsApp. Not digital brochures."
+          },
+          {
+            "name": "Social media and content",
+            "body": "A presence that supports the sale: content with intent and a calendar that is actually kept, not posting for the sake of it."
+          },
+          {
+            "name": "AI automation",
+            "body": "An immediate answer to every enquiry and automatic WhatsApp follow-up, so nothing depends on who has time that afternoon."
+          }
+        ],
+        "fineprint": "You pay the ad spend yourself, directly to Google or Meta. It never goes through us, and you always see what it was spent on."
+      },
+      "method": {
+        "eyebrow": "The method",
+        "title": "Four stages, in this order",
+        "lead": "We don't start with advertising. We start by understanding where your customers come from today and what is being lost.",
+        "linkLabel": "See the full method",
+        "steps": [
+          {
+            "title": "Diagnostic",
+            "body": "We look at your current channels, your sales cycle, and what happens to an enquiry from the moment it arrives until it closes."
+          },
+          {
+            "title": "Lead capture",
+            "body": "We put the presence and the entry points in order so an interested person can contact you without friction."
+          },
+          {
+            "title": "Follow-up",
+            "body": "Every enquiry is recorded and assigned, with reminders of its own. Nothing depends on anyone's memory."
+          },
+          {
+            "title": "Measurement",
+            "body": "How many enquiries came in, from where, how many closed. That's what decides what to repeat next month."
+          }
+        ]
+      },
+      "verticals": {
+        "eyebrow": "Who we work with",
+        "title": "Sectors where the method is already proven",
+        "lead": "Companies with a validated offer and their own team, where growth gets stuck in capture and follow-up, not in the product.",
+        "items": [
+          {
+            "name": "Clinics and practices",
+            "body": "Patients who ask on WhatsApp after hours, and appointments lost because nobody answered in time."
+          },
+          {
+            "name": "Construction companies",
+            "body": "Projects and quotes with long cycles, where follow-up decides who ends up signing."
+          },
+          {
+            "name": "Real estate agencies",
+            "body": "Enquiries and viewings arriving from several portals and ending up with no owner and no record."
+          },
+          {
+            "name": "Professional services",
+            "body": "Firms and consultancies that grow by referral and want a second channel that doesn't depend on it."
+          },
+          {
+            "name": "B2B companies",
+            "body": "Sales with several people deciding, where losing the thread costs months."
+          }
+        ]
+      },
+      "statement": {
+        "text": "A system that doesn't depend on who's on shift.",
+        "sub": "That's what separates a good month from a good year."
+      },
+      "closing": {
+        "eyebrow": "The next step",
+        "title": "Let's start with the diagnostic",
+        "body": "Half an hour, free. You leave with a clear picture of where work is being lost, whether you work with us or not.",
+        "panelTitle": "What we need from you",
+        "panelItems": [
+          "Where your customers come from today",
+          "How many people sell on your team",
+          "What happens to an enquiry once it arrives"
+        ]
+      }
+    },
+    "metodo": {
+      "meta": {
+        "title": "Our method for winning more customers | clientes.com.py",
+        "description": "Diagnostic, lead capture, follow-up and measurement: the four stages we use to put customer acquisition in order at Paraguayan companies."
+      },
+      "header": {
+        "eyebrow": "The method",
+        "title": "How we work",
+        "lead": "A fixed order, four stages, and one rule: we don't add lead capture on top of a process that is still losing enquiries.",
+        "body": "What follows is literally what we do, in the order we do it. No stage is optional: each one exists because the next doesn't work without it."
+      },
+      "steps": {
+        "eyebrow": "The four stages",
+        "title": "Diagnostic, capture, follow-up, measurement",
+        "items": [
+          {
+            "title": "Diagnostic",
+            "lead": "Understand before touching anything.",
+            "body": "We look at where your customers come from today, how long your sales cycle takes, and what happens to an enquiry from arrival to close or loss. There is almost always a leak nobody was watching.",
+            "points": [
+              "A map of current channels and the real volume of enquiries",
+              "The full journey of an enquiry, point by point",
+              "Where work is being lost today, with concrete examples"
+            ]
+          },
+          {
+            "title": "Lead capture",
+            "lead": "Whoever wants to contact you, can.",
+            "body": "We put the presence and entry points in order: the page, the form, the WhatsApp number, the Google listing. The goal isn't more traffic, it's that the interested person who already exists doesn't fall through.",
+            "points": [
+              "Clear points of contact and one way in",
+              "Forms that land in a list, not in a stray inbox",
+              "WhatsApp as an entry channel, with a record of what comes in"
+            ]
+          },
+          {
+            "title": "Follow-up",
+            "lead": "Nothing depends on anyone's memory.",
+            "body": "Every enquiry is recorded, with an owner and a next action. Quotes that were sent come back up on their own when it's time. This is where most of the work being lost today is recovered.",
+            "points": [
+              "One single list of enquiries, each with an owner",
+              "Follow-up reminders that appear without anyone entering them",
+              "A history of every conversation, available to the whole team"
+            ]
+          },
+          {
+            "title": "Measurement",
+            "lead": "Decide with numbers, not impressions.",
+            "body": "How many enquiries came in, through which channel, how many converted and how long they took. That's what decides what gets repeated next month and what gets cut.",
+            "points": [
+              "Enquiries by channel and by month",
+              "Close rate and average cycle time",
+              "A regular review with decisions, not just reports"
+            ]
+          }
+        ]
+      },
+      "included": {
+        "eyebrow": "What's included",
+        "title": "What's left running",
+        "lead": "The work ends when your team can keep it going without us standing over them.",
+        "items": [
+          {
+            "title": "The platform",
+            "body": "It includes the platform where your team sees every enquiry and every follow-up. It's ours, it's called VenderCRM, and it isn't software you have to go and buy separately."
+          },
+          {
+            "title": "The written process",
+            "body": "Who handles what, how fast an answer goes out, and when a quote gets picked back up. Short and usable, not a manual nobody opens."
+          },
+          {
+            "title": "The trained team",
+            "body": "We stay with the people who sell until the process runs by itself. A tool nobody uses has changed nothing."
+          }
+        ]
+      },
+      "statement": {
+        "text": "The method is the product.",
+        "sub": "The tools come afterwards, and they're whichever ones are needed."
+      },
+      "faq": {
+        "eyebrow": "Frequently asked",
+        "title": "What people usually ask us",
+        "items": [
+          {
+            "q": "How long until results show?",
+            "a": "Orderly follow-up usually shows something within the first few weeks, because it recovers enquiries you already had. New lead capture takes longer and depends on your sector's sales cycle."
+          },
+          {
+            "q": "Do you work with companies that are just starting?",
+            "a": "No. We work with companies that already have customers, a team and an offer that works. If you're still validating what to sell, we're not the right partner and we'll tell you so."
+          },
+          {
+            "q": "Do we have to change the tools we already use?",
+            "a": "Only what needs changing. If something already works, it stays. What can't stay is an enquiry going unrecorded."
+          },
+          {
+            "q": "How much does it cost?",
+            "a": "It depends on the scope, and it comes out of the diagnostic. We'd rather give you a number we can stand behind than a price list that looks nothing like your case."
+          }
+        ]
+      }
+    },
+    "nosotros": {
+      "meta": {
+        "title": "Who we are | clientes.com.py",
+        "description": "A team focused on the commercial growth of established Paraguayan companies: why Paraguay, why these sectors, and how we work."
+      },
+      "header": {
+        "eyebrow": "About",
+        "title": "Who's behind this",
+        "lead": "We're a small team working with established Paraguayan companies, at the point where growth stops being a matter of effort and becomes a matter of process."
+      },
+      "story": {
+        "eyebrow": "Why this",
+        "title": "Why Paraguay and why these sectors",
+        "body": "Paraguay has a great many solid companies — clinics with years behind them, construction firms with steady work, practices with their own client base — that grew through referrals and good work. That growth works until it stops scaling.",
+        "bodyTwo": "The next jump is almost never a campaign. It's stopping the loss of enquiries and being able to repeat what already works. That is exactly what we do, and it's why we work with companies that already have something, not with projects that are just starting.",
+        "bodyThree": "We build what we use, first: the platform your team follows each enquiry in is developed by us. When something doesn't work, there's nobody to pass you on to."
+      },
+      "principles": {
+        "eyebrow": "How we work",
+        "title": "Three things we don't negotiate",
+        "lead": "This isn't a list of values for the wall. They're the three rules that have cost us money to hold to most often.",
+        "items": [
+          {
+            "title": "We say no",
+            "body": "If the diagnostic shows we can't move the needle, we tell you right there. A badly taken client costs more than it brings in."
+          },
+          {
+            "title": "Numbers before opinions",
+            "body": "Everything we propose has to be measurable. If it can't be measured, it's an idea, not a recommendation."
+          },
+          {
+            "title": "It has to keep working without us",
+            "body": "The goal is for your team to keep the process going on its own. A permanent dependency would be comfortable for us and bad for you."
+          }
+        ]
+      },
+      "statement": {
+        "text": "We work with few companies at a time.",
+        "sub": "It's the only way to get properly inside each one's business."
+      }
+    },
+    "contacto": {
+      "meta": {
+        "title": "Book your diagnostic | clientes.com.py",
+        "description": "Tell us about your company and we'll arrange a free 30-minute diagnostic conversation to see where work is being lost."
+      },
+      "header": {
+        "eyebrow": "Contact",
+        "title": "Let's book the diagnostic",
+        "lead": "Tell us briefly about your company and we'll arrange a 30-minute conversation. Free and with no commitment."
+      },
+      "form": {
+        "name": "Full name",
+        "company": "Company",
+        "phone": "Phone or WhatsApp",
+        "phonePlaceholder": "0981 123 456",
+        "phoneHint": "It's the fastest way to arrange things. We message before we call.",
+        "email": "Email",
+        "emailOptional": "Email (optional)",
+        "sector": "Sector",
+        "sectorPlaceholder": "Choose an option",
+        "sectorOptions": [
+          "Clinic or practice",
+          "Construction company",
+          "Real estate agency",
+          "Professional services",
+          "B2B company",
+          "Other"
+        ],
+        "message": "Tell us briefly what you want to solve",
+        "messageOptional": "Tell us briefly what you want to solve (optional)",
+        "submit": "Send and arrange",
+        "submitting": "Sending…",
+        "privacy": "We use your details only to contact you about this enquiry.",
+        "honeypotLabel": "Leave this field empty"
+      },
+      "success": {
+        "title": "We received your enquiry",
+        "body": "We'll write to you within the next working hours to arrange a time. If you'd rather move faster, message us directly on WhatsApp.",
+        "backLabel": "Back to the home page"
+      },
+      "errors": {
+        "phone": "We need a phone number to arrange things. Check the number and try again.",
+        "generic": "We couldn't send your enquiry. Try again or message us on WhatsApp."
+      },
+      "aside": {
+        "title": "What happens next",
+        "steps": [
+          "We write to arrange a day and time",
+          "We talk for 30 minutes about your current situation",
+          "You leave with a clear picture, whether we work together or not"
+        ],
+        "pricingTitle": "About pricing",
+        "pricingBody": "Tailored, based on the diagnostic. We'd rather give you a number we can stand behind than a list that looks nothing like your case.",
+        "whatsappTitle": "I'd rather write now",
+        "whatsappBody": "If you want to get the conversation going, message us and we'll reply during working hours."
+      },
+      "faq": {
+        "title": "Before you write",
+        "items": [
+          {
+            "q": "How much do I have to invest in advertising?",
+            "a": "It depends on the sector and the area. In the first conversation we give you a realistic range for your case, before you spend a single guaraní. And if we think investing isn't right for you yet, we'll say so there."
+          },
+          {
+            "q": "Do you tie me into a long contract?",
+            "a": "No. We work month to month. If the work doesn't pay off, you leave with no penalty."
+          },
+          {
+            "q": "Are the contacts mine?",
+            "a": "Yes. They go into your own account, with your data. If we stop working together, the database stays with you."
+          },
+          {
+            "q": "Does the first conversation cost anything?",
+            "a": "No. It's a 30-minute diagnostic conversation, free and with no commitment."
+          },
+          {
+            "q": "Do you work outside Asunción?",
+            "a": "Yes. Most of the work is remote, so location isn't an obstacle."
+          }
+        ]
+      }
+    },
+    "footer": {
+      "tagline": "We help established Paraguayan companies win more customers, with an orderly sales process.",
+      "siteTitle": "The site",
+      "contactTitle": "Contact",
+      "loginNote": "Already a client?",
+      "rights": "All rights reserved.",
+      "madeIn": "Made in Paraguay"
+    }
+  },
+  "errors": {
+    "global": {
+      "title": "Something went wrong",
+      "body": "The app couldn't load. Try again in a few seconds.",
+      "retry": "Try again"
+    },
+    "app": {
+      "title": "We couldn't show this page",
+      "body": "Something went wrong loading your data. You can retry or go back to the dashboard.",
+      "retry": "Try again",
+      "back": "Go to dashboard"
+    },
+    "superadmin": {
+      "title": "We couldn't show this page",
+      "body": "Something went wrong in the admin console.",
+      "retry": "Try again",
+      "back": "Go to tenants"
+    },
+    "public": {
+      "title": "We couldn't show this document",
+      "body": "The link may have expired, or the document is no longer available.",
+      "retry": "Try again"
+    },
+    "marketing": {
+      "title": "Something went wrong",
+      "body": "We couldn't load this part of the site.",
+      "retry": "Try again",
+      "back": "Go to the home page"
+    },
+    "notFound": {
+      "app": {
+        "title": "We couldn't find this page",
+        "body": "The link may be mistyped, or the record was deleted.",
+        "back": "Go to dashboard"
+      },
+      "superadmin": {
+        "title": "We couldn't find this page",
+        "body": "The link may be mistyped, or the record was deleted.",
+        "back": "Go to tenants"
+      },
+      "public": {
+        "title": "Invalid link",
+        "body": "This link doesn't exist or has expired. Ask whoever sent it for a new one."
+      },
+      "marketing": {
+        "title": "Page not found",
+        "body": "The page you're looking for doesn't exist.",
+        "back": "Go to the home page"
+      }
+    },
+    "loading": {
+      "label": "Loading content"
+    }
+  },
+  "audit": {
+    "title": "Audit log",
+    "intro": "Who did what, and when. Actions taken while viewing the account as another user also show the real superadmin.",
+    "when": "Date",
+    "action": "Action",
+    "entity": "Object",
+    "actor": "User",
+    "tenant": "Company",
+    "via": "(via {user})",
+    "empty": "No activity recorded yet."
+  },
+  "email": {
+    "invitation": {
+      "subject": "{inviter} invited you to {tenant} on VenderCRM",
+      "title": "You've been invited to {tenant}",
+      "body": "{inviter} invited you to join the team on VenderCRM. The link expires in 7 days.",
+      "cta": "Accept invitation"
+    },
+    "passwordReset": {
+      "subject": "Reset your password — VenderCRM",
+      "title": "Reset your password",
+      "body": "You asked to reset your password. If it wasn't you, ignore this email — the link expires in an hour.",
+      "cta": "Choose a new password"
+    },
+    "subscriptionExpiry": {
+      "subject": "Your VenderCRM subscription expires in {days} days",
+      "title": "Your subscription expires soon",
+      "body": "The subscription for <strong>{tenant}</strong> expires on <strong>{date}</strong>. After that date you have {grace} days of read-only access before the account is suspended. Contact your provider to renew and avoid interruptions."
+    },
+    "siteIngestAlert": {
+      "lastLead": "The last lead came in on <strong>{date}</strong>.",
+      "noLeadYet": "We haven't received any leads from this site yet.",
+      "staleSubject": "{site}: no leads for {days} days",
+      "staleTitle": "{site} has gone quiet",
+      "staleBody": "No lead has come in from this site for <strong>{days} days</strong>, and they used to. {lastLead} It may just be a slow stretch, or the site's form may have broken without warning. Worth sending a test submission.",
+      "staleLink": "See the status of your sites",
+      "failingSubject": "{site}: leads aren't coming through",
+      "failingTitle": "{site} can't submit leads",
+      "failingBody": "The last attempt failed (error {status}): {reason}. While this lasts, submissions from that form never reach the pipeline.",
+      "failingLink": "Check the site",
+      "reasons": {
+        "invalid-key": "the key the site is using is not valid",
+        "site-inactive": "the site is deactivated",
+        "tenant-unavailable": "the account is unavailable",
+        "tenant-read-only": "the account is in read-only mode",
+        "rate-limited": "too many submissions arrived in a row",
+        "turnstile-failed": "it didn't pass the anti-bot check",
+        "invalid-body": "the data arrived incomplete or badly formatted",
+        "phone-missing": "it arrived without a phone number, or the field name changed in the form",
+        "unknown": "unknown error"
+      }
+    }
+  },
+  "pdf": {
+    "quote": {
+      "title": "QUOTE",
+      "client": "Customer",
+      "description": "Description",
+      "qty": "Qty",
+      "price": "Price",
+      "total": "Total",
+      "subtotal": "Subtotal",
+      "discount": "Discount",
+      "validUntil": "Valid until:",
+      "footer": "Non-fiscal document · Electronic invoicing coming soon"
+    },
+    "notaVenta": {
+      "title": "SALES NOTE",
+      "client": "Customer",
+      "dueAt": "Due:",
+      "description": "Description",
+      "qty": "Qty",
+      "price": "Price",
+      "total": "Total",
+      "subtotal": "Subtotal",
+      "discount": "Discount",
+      "paid": "Paid",
+      "balance": "Balance",
+      "notes": "Notes",
+      "disclaimer": "Non-fiscal document. This receipt is not an invoice and has no tax validity.",
+      "state": {
+        "unpaid": "UNPAID",
+        "partial": "PARTIALLY PAID",
+        "paid": "PAID",
+        "void": "VOID"
+      }
+    }
+  },
+  "public": {
+    "shared": {
+      "rateLimited": "Too many requests. Try again in a moment."
+    },
+    "quote": {
+      "title": "QUOTE",
+      "client": "Customer",
+      "description": "Description",
+      "qty": "Qty",
+      "price": "Price",
+      "total": "Total",
+      "subtotal": "Subtotal",
+      "discount": "Discount",
+      "validUntil": "Valid until:",
+      "downloadPdf": "Download PDF",
+      "footer": "Non-fiscal document · Electronic invoicing coming soon"
+    },
+    "document": {
+      "title": "Sales note",
+      "client": "Customer",
+      "dueAt": "Due:",
+      "description": "Description",
+      "qty": "Qty",
+      "price": "Price",
+      "total": "Total",
+      "subtotal": "Subtotal",
+      "discount": "Discount",
+      "paid": "Paid",
+      "balance": "Balance",
+      "notes": "Notes",
+      "downloadPdf": "Download PDF",
+      "disclaimer": "Non-fiscal document. This receipt is not an invoice and has no tax validity.",
+      "state": {
+        "unpaid": "Unpaid",
+        "partial": "Partially paid",
+        "paid": "Paid",
+        "void": "Void"
+      }
+    },
+    "form": {
+      "submit": "Send",
+      "thanksTitle": "Thank you!",
+      "thanksBody": "We received your information. We'll be in touch soon."
+    }
+  }
+}

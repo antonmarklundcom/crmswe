@@ -5,6 +5,8 @@ import { getContact } from "@/modules/crm/contacts";
 import { getTenant } from "@/modules/tenancy/tenants";
 import type { TenantSettings } from "@/modules/tenancy/settings";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { getTranslator } from "@/lib/i18n/translator";
+import { formatDate, formatNumber } from "@/lib/i18n/format";
 import type { PaymentState } from "@/modules/documents/types";
 
 // Public read-only nota de venta view (PLAN.md §10 1Q) — the token is the
@@ -12,24 +14,17 @@ import type { PaymentState } from "@/modules/documents/types";
 // resolving upstream, so this page never shows a cancelled sale as if it
 // still stood.
 
-function money(amount: number, currency: string): string {
-  const formatted = new Intl.NumberFormat("es-PY", {
+function money(amount: number, currency: string, locale: string): string {
+  const formatted = formatNumber(amount, locale, {
     minimumFractionDigits: currency === "PYG" ? 0 : 2,
     maximumFractionDigits: currency === "PYG" ? 0 : 2,
-  }).format(amount);
+  });
   return `${currency} ${formatted}`;
 }
 
-function date(value: Date): string {
-  return new Intl.DateTimeFormat("es-PY", { dateStyle: "medium" }).format(value);
+function date(value: Date, locale: string): string {
+  return formatDate(value, locale, { dateStyle: "medium" });
 }
-
-const STATE_LABEL: Record<PaymentState, string> = {
-  unpaid: "Pendiente de pago",
-  partial: "Pago parcial",
-  paid: "Pagado",
-  void: "Anulado",
-};
 
 const STATE_CLASS: Record<PaymentState, string> = {
   unpaid: "bg-amber-100 text-amber-900",
@@ -49,9 +44,11 @@ export default async function PublicDocumentPage({
   // brute-force defense, it's to keep the page from being hammered.
   const ip = (await headers()).get("x-forwarded-for") ?? "unknown";
   if (checkRateLimit(`document-view:${ip}`, 60, 60_000).limited) {
+    // No tenant resolved yet, so the reference locale is all there is.
+    const tLimit = await getTranslator(null, "public.shared");
     return (
       <main className="mx-auto max-w-2xl p-6 text-sm text-muted-foreground">
-        Demasiadas solicitudes. Probá de nuevo en un momento.
+        {tLimit("rateLimited")}
       </main>
     );
   }
@@ -66,6 +63,10 @@ export default async function PublicDocumentPage({
   ]);
   const branding = ((tenant?.settings ?? {}) as TenantSettings).branding ?? {};
   const accent = branding.primaryColor || undefined;
+
+  // Tenant locale: this page is read by their customer (PLAN.md §13 H5 #4).
+  const locale = tenant?.locale ?? "es";
+  const t = await getTranslator(locale, "public.document");
 
   return (
     <main className="mx-auto flex max-w-2xl flex-col gap-6 p-6">
@@ -82,26 +83,28 @@ export default async function PublicDocumentPage({
         </div>
         <div className="text-right">
           <p className="text-xl font-semibold" style={{ color: accent }}>
-            Nota de venta
+            {t("title")}
           </p>
           <p className="text-sm text-muted-foreground">{document.number}</p>
           <p className="text-sm text-muted-foreground">
-            {date(document.issuedAt ?? document.createdAt)}
+            {date(document.issuedAt ?? document.createdAt, locale)}
           </p>
           <span
             className={`mt-2 inline-block rounded-full px-3 py-1 text-xs font-medium ${STATE_CLASS[state]}`}
           >
-            {STATE_LABEL[state]}
+            {t(`state.${state}`)}
           </span>
         </div>
       </header>
 
       <section className="text-sm">
-        <p className="text-muted-foreground">Cliente</p>
+        <p className="text-muted-foreground">{t("client")}</p>
         <p>{contact?.name}</p>
         <p className="text-muted-foreground">{contact?.phone}</p>
         {document.dueAt && (
-          <p className="mt-2">Vencimiento: {date(document.dueAt)}</p>
+          <p className="mt-2">
+            {t("dueAt")} {date(document.dueAt, locale)}
+          </p>
         )}
       </section>
 
@@ -109,10 +112,10 @@ export default async function PublicDocumentPage({
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b text-left">
-              <th className="py-2">Descripción</th>
-              <th className="py-2 text-right">Cant.</th>
-              <th className="py-2 text-right">Precio</th>
-              <th className="py-2 text-right">Total</th>
+              <th className="py-2">{t("description")}</th>
+              <th className="py-2 text-right">{t("qty")}</th>
+              <th className="py-2 text-right">{t("price")}</th>
+              <th className="py-2 text-right">{t("total")}</th>
             </tr>
           </thead>
           <tbody>
@@ -121,10 +124,10 @@ export default async function PublicDocumentPage({
                 <td className="py-2">{item.description}</td>
                 <td className="py-2 text-right">{item.qty}</td>
                 <td className="py-2 text-right">
-                  {money(item.unitPrice, document.currency)}
+                  {money(item.unitPrice, document.currency, locale)}
                 </td>
                 <td className="py-2 text-right">
-                  {money(item.lineTotal, document.currency)}
+                  {money(item.lineTotal, document.currency, locale)}
                 </td>
               </tr>
             ))}
@@ -134,34 +137,34 @@ export default async function PublicDocumentPage({
 
       <section className="ml-auto w-full max-w-xs text-sm">
         <div className="flex justify-between py-1">
-          <span>Subtotal</span>
-          <span>{money(document.subtotal, document.currency)}</span>
+          <span>{t("subtotal")}</span>
+          <span>{money(document.subtotal, document.currency, locale)}</span>
         </div>
         {document.discount > 0 && (
           <div className="flex justify-between py-1">
-            <span>Descuento</span>
-            <span>-{money(document.discount, document.currency)}</span>
+            <span>{t("discount")}</span>
+            <span>-{money(document.discount, document.currency, locale)}</span>
           </div>
         )}
         <div className="flex justify-between border-t py-1 font-semibold">
-          <span>Total</span>
-          <span style={{ color: accent }}>{money(document.total, document.currency)}</span>
+          <span>{t("total")}</span>
+          <span style={{ color: accent }}>{money(document.total, document.currency, locale)}</span>
         </div>
         {amountPaid > 0 && (
           <div className="flex justify-between py-1">
-            <span>Pagado</span>
-            <span>-{money(amountPaid, document.currency)}</span>
+            <span>{t("paid")}</span>
+            <span>-{money(amountPaid, document.currency, locale)}</span>
           </div>
         )}
         <div className="flex justify-between border-t py-2 font-semibold">
-          <span>Saldo</span>
-          <span>{money(balance, document.currency)}</span>
+          <span>{t("balance")}</span>
+          <span>{money(balance, document.currency, locale)}</span>
         </div>
       </section>
 
       {document.notes && (
         <section className="text-sm">
-          <p className="text-muted-foreground">Notas</p>
+          <p className="text-muted-foreground">{t("notes")}</p>
           <p className="whitespace-pre-wrap">{document.notes}</p>
         </section>
       )}
@@ -170,14 +173,13 @@ export default async function PublicDocumentPage({
         href={`/d/${token}/pdf`}
         className="w-fit rounded-md border px-4 py-2 text-sm hover:bg-accent"
       >
-        Descargar PDF
+        {t("downloadPdf")}
       </a>
 
       {/* Shown on the page as well as the PDF: whoever receives this link
           must be able to tell it is not a factura without opening the file. */}
       <p className="rounded-md border bg-muted p-3 text-xs text-muted-foreground">
-        Documento no fiscal. Este comprobante no es una factura y no tiene validez
-        tributaria.
+        {t("disclaimer")}
       </p>
     </main>
   );

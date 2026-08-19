@@ -240,3 +240,9 @@ export async function setTenantUserRole(
   await db.update(users).set({ role }).where(eq(users.id, userId));
   return target;
 }
+
+/** Per-user UI language (PLAN.md §13 H5). Not tenant-scoped on purpose: a
+ * user may only ever change their own, and the action passes ctx.userId. */
+export async function setUserLocale(userId: string, locale: string): Promise<void> {
+  await db.update(users).set({ locale }).where(eq(users.id, userId));
+}

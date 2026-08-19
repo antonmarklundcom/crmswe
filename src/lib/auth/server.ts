@@ -48,7 +48,10 @@ export const auth = betterAuth({
     // timing-safe) response the route always gives regardless of whether
     // the address exists.
     sendResetPassword: async ({ user, url }) => {
-      const { subject, html } = passwordResetEmail({ resetUrl: url });
+      // The recipient's own language when they have chosen one — this mail
+      // is the one moment they cannot reach the switcher (§13 H5 #4).
+      const locale = (user as { locale?: string | null }).locale ?? null;
+      const { subject, html } = await passwordResetEmail({ resetUrl: url, locale });
       await sendEmail({ to: user.email, subject, html });
     },
   },

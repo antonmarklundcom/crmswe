@@ -8,10 +8,13 @@ import { listContacts } from "@/modules/crm/contacts";
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
 import { QuoteBuilder, type BuilderLabels } from "./QuoteBuilder";
+import { formatMoney } from "@/lib/i18n/format";
+import { getLocale } from "next-intl/server";
 
 export default async function QuotesPage() {
   const ctx = await requireTenantContext();
   const t = await getTranslations("app.quotes");
+  const locale = await getLocale();
 
   const [quotes, contacts, products] = await Promise.all([
     listQuotes(ctx),
@@ -71,7 +74,7 @@ export default async function QuotesPage() {
                     {t(`statusValues.${quote.status}` as "statusValues.draft")}
                   </td>
                   <td className="py-2 text-right">
-                    {new Intl.NumberFormat("es-PY").format(quote.total)} {quote.currency}
+                    {formatMoney(quote.total, quote.currency, locale)}
                   </td>
                 </tr>
               ))}

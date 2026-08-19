@@ -3,6 +3,8 @@ import { MessagesSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/empty-state";
 import { cn } from "@/lib/utils";
+import { useLocale } from "next-intl";
+import { formatDateTime } from "@/lib/i18n/format";
 
 // The WhatsApp thread rendered inside the contact record. Same 24h-window
 // rules the inbox enforces (§6.5): inside the window, free-form text; once it
@@ -31,13 +33,6 @@ export type ThreadLabels = {
   media: string;
 };
 
-const time = new Intl.DateTimeFormat("es-PY", {
-  day: "2-digit",
-  month: "2-digit",
-  hour: "2-digit",
-  minute: "2-digit",
-});
-
 export function ConversationThread({
   conversationId,
   messages,
@@ -57,6 +52,9 @@ export function ConversationThread({
   sendMessage: (formData: FormData) => Promise<void>;
   sendTemplate: (formData: FormData) => Promise<void>;
 }) {
+  // Before the early return: hooks are not conditional.
+  const locale = useLocale();
+
   if (!conversationId) {
     return (
       <EmptyState
@@ -93,7 +91,7 @@ export function ConversationThread({
                   : "text-muted-foreground",
               )}
             >
-              {time.format(message.at)}
+              {formatDateTime(message.at, locale)}
               {message.direction === "out" && message.status ? ` · ${message.status}` : ""}
             </span>
           </li>

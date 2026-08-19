@@ -1,5 +1,6 @@
 import { Globe } from "lucide-react";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
+import { formatDateTime } from "@/lib/i18n/format";
 import { requireTenantContext } from "@/modules/tenancy/context";
 import { getTenant } from "@/modules/tenancy/tenants";
 import { listSites } from "@/modules/sites/sites";
@@ -29,8 +30,8 @@ async function SiteHealthBadge({
   health: import("@/modules/sites/health").SiteHealthRow | null;
 }) {
   const t = await getTranslations("app.sites.health");
+  const locale = await getLocale();
   const status = siteHealthStatus(health);
-  const format = new Intl.DateTimeFormat("es-PY", { dateStyle: "short", timeStyle: "short" });
 
   if (status === "idle") {
     return <p className="text-sm text-muted-foreground">● {t("idle")}</p>;
@@ -43,7 +44,7 @@ async function SiteHealthBadge({
         {t("failing", {
           status: health.lastErrorStatus ?? 0,
           reason: t(`reasons.${health.lastErrorReason ?? "unknown"}` as "reasons.unknown"),
-          when: format.format(health.lastErrorAt),
+          when: formatDateTime(health.lastErrorAt, locale),
         })}
       </p>
     );
@@ -51,7 +52,7 @@ async function SiteHealthBadge({
 
   return (
     <p className="text-sm text-emerald-700">
-      ● {t("ok", { when: health?.lastSuccessAt ? format.format(health.lastSuccessAt) : "" })}
+      ● {t("ok", { when: health?.lastSuccessAt ? formatDateTime(health.lastSuccessAt, locale) : "" })}
       {health?.errorCount ? ` · ${t("errorCount", { count: health.errorCount })}` : ""}
     </p>
   );
@@ -60,6 +61,7 @@ async function SiteHealthBadge({
 export default async function SitesPage() {
   const ctx = await requireTenantContext();
   const t = await getTranslations("app.sites");
+  const locale = await getLocale();
 
   if (ctx.role !== "admin") {
     return <p className="text-muted-foreground">{t("adminOnly")}</p>;
@@ -144,10 +146,6 @@ export default async function SitesPage() {
 
   // Two-active-key rotation (PLAN.md §5.2). Dates are formatted here, on the
   // server, so the client component stays a plain renderer.
-  const dateFormat = new Intl.DateTimeFormat("es-PY", {
-    dateStyle: "short",
-    timeStyle: "short",
-  });
   const keysBySite = new Map<string, ApiKeyRow[]>(
     await Promise.all(
       sites.map(async (site): Promise<[string, ApiKeyRow[]]> => [
@@ -156,7 +154,7 @@ export default async function SitesPage() {
           id: key.id,
           prefix: key.apiKeyPrefix,
           label: key.label,
-          lastUsedAt: key.lastUsedAt ? dateFormat.format(key.lastUsedAt) : null,
+          lastUsedAt: key.lastUsedAt ? formatDateTime(key.lastUsedAt, locale) : null,
           revoked: !!key.revokedAt,
         })),
       ]),
@@ -177,7 +175,7 @@ export default async function SitesPage() {
             hookUrl: `${env.APP_URL}/api/v1/hooks/__TOKEN__`,
             tokenPrefix: site.hookTokenPrefix,
             lastUsedAt: site.hookTokenLastUsedAt
-              ? dateFormat.format(site.hookTokenLastUsedAt)
+              ? formatDateTime(site.hookTokenLastUsedAt, locale)
               : null,
             mapping: siteHookMapping(site),
             captureCount: captures.length,

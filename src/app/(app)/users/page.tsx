@@ -14,8 +14,8 @@ import {
   setUserActiveAction,
   setUserRoleAction,
 } from "./actions";
-
-const date = new Intl.DateTimeFormat("es-PY", { day: "2-digit", month: "2-digit", year: "numeric" });
+import { formatDate } from "@/lib/i18n/format";
+import { getLocale } from "next-intl/server";
 
 export default async function UsersPage({
   searchParams,
@@ -25,6 +25,7 @@ export default async function UsersPage({
   const { aviso } = await searchParams;
   const ctx = await requireTenantContext();
   const t = await getTranslations("app.users");
+  const locale = await getLocale();
   const tc = await getTranslations("common");
 
   if (ctx.role !== "admin") {
@@ -188,7 +189,7 @@ export default async function UsersPage({
                   <span className="font-medium">{invitation.email}</span>
                   <span className="text-xs text-muted-foreground">
                     {invitation.role === "admin" ? t("roles.admin") : t("roles.agent")} ·{" "}
-                    {t("expiresAt", { date: date.format(invitation.expiresAt) })}
+                    {t("expiresAt", { date: formatDate(invitation.expiresAt, locale) })}
                   </span>
                   <code className="mt-1 max-w-full overflow-x-auto font-mono text-xs text-muted-foreground">
                     {env.APP_URL}/accept-invite/{invitation.token}

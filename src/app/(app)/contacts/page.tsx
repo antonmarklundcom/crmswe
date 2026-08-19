@@ -25,12 +25,8 @@ import {
   parseContactQuery,
   type ContactSearchParams,
 } from "./query";
-
-const date = new Intl.DateTimeFormat("es-PY", {
-  day: "2-digit",
-  month: "2-digit",
-  year: "numeric",
-});
+import { formatDate } from "@/lib/i18n/format";
+import { getLocale } from "next-intl/server";
 
 export default async function ContactsPage({
   searchParams,
@@ -40,6 +36,7 @@ export default async function ContactsPage({
   const params = await searchParams;
   const ctx = await requireTenantContext();
   const t = await getTranslations("app.contacts");
+  const locale = await getLocale();
   const tc = await getTranslations("common");
 
   const query = parseContactQuery(params);
@@ -258,7 +255,7 @@ export default async function ContactsPage({
                 email: contact.email,
                 source: contact.source,
                 ownerName: contact.ownerUserId ? (userNames.get(contact.ownerUserId) ?? null) : null,
-                createdAtLabel: date.format(contact.createdAt),
+                createdAtLabel: formatDate(contact.createdAt, locale),
                 hasOpenDeal: openDeals.has(contact.id),
               }))}
               nameHeader={<SortHeader field="name" label={t("name")} />}

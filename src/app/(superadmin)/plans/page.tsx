@@ -3,6 +3,8 @@ import { requireSuperadminContext } from "@/modules/tenancy/context";
 import { listPlans } from "@/modules/tenancy/plans";
 import { PageHeader } from "@/components/page-header";
 import { CreatePlanForm } from "./CreatePlanForm";
+import { formatNumber } from "@/lib/i18n/format";
+import { getLocale } from "next-intl/server";
 
 // Defense in depth (§3.3): the (superadmin) layout already redirects a
 // non-superadmin, but a layout is not an authorization boundary — this page
@@ -10,6 +12,7 @@ import { CreatePlanForm } from "./CreatePlanForm";
 export default async function PlansPage() {
   await requireSuperadminContext();
   const t = await getTranslations("superadmin.plans");
+  const locale = await getLocale();
   const plans = await listPlans(true);
 
   return (
@@ -31,7 +34,7 @@ export default async function PlansPage() {
               <tr key={plan.id} className="border-b">
                 <td className="py-2">{plan.name}</td>
                 <td className="py-2">{plan.durationMonths}</td>
-                <td className="py-2">{plan.price.toLocaleString("es-PY")}</td>
+                <td className="py-2">{formatNumber(plan.price, locale)}</td>
                 <td className="py-2">{plan.isActive ? "✓" : "—"}</td>
               </tr>
             ))}

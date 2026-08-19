@@ -17,6 +17,12 @@ import {
 import { renderDocumentPdf } from "./pdf";
 import { balanceOf, paymentStateOf, type DocumentStatus } from "./types";
 
+// Thrown messages are stable codes, not copy (PLAN.md §13 H5 #4): a
+// literal Spanish sentence here is a string the user might see in an
+// unknown language, and one nothing can translate. The UI turns these into
+// the reader's own language — an action's form state where there is a form,
+// the route group's error boundary where there isn't.
+
 // Nota de venta delivery (PLAN.md §10 1Q) — the same shape as quote
 // delivery (§8): render the PDF with tenant branding, store it via the
 // storage adapter, send it as a WhatsApp document, with the public link
@@ -36,7 +42,7 @@ export async function generateDocumentPdf(
   documentId: string,
 ): Promise<Buffer> {
   const document = await getDocument(ctx, documentId);
-  if (!document) throw new Error(`Nota de venta ${documentId} no encontrada`);
+  if (!document) throw new Error(`document_not_found:${documentId}`);
 
   const [items, contact, tenant, paid] = await Promise.all([
     listDocumentItems(ctx, document.id),
@@ -44,7 +50,7 @@ export async function generateDocumentPdf(
     getTenant(ctx.tenantId),
     amountPaid(ctx, document.id),
   ]);
-  if (!contact) throw new Error("Contacto no encontrado");
+  if (!contact) throw new Error("contact_not_found");
 
   const settings = (tenant?.settings ?? {}) as TenantSettings;
 
@@ -65,6 +71,7 @@ export async function generateDocumentPdf(
     issuedAt: document.issuedAt,
     notes: document.notes,
     createdAt: document.createdAt,
+    locale: tenant?.locale,
     items: items.map((item) => ({
       description: item.description,
       qty: item.qty,
@@ -102,9 +109,9 @@ export async function sendDocumentToContact(
   documentId: string,
 ): Promise<SendDocumentResult> {
   const document = await getDocument(ctx, documentId);
-  if (!document) throw new Error(`Nota de venta ${documentId} no encontrada`);
+  if (!document) throw new Error(`document_not_found:${documentId}`);
   if (document.status === "void") {
-    throw new Error("No se puede enviar una nota de venta anulada");
+    throw new Error("document_void");
   }
 
   await generateDocumentPdf(ctx, document.id);

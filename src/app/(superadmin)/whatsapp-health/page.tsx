@@ -8,10 +8,13 @@ import {
 import { listDeadJobs, listStuckJobs, type OpsJob } from "@/lib/queue/ops";
 import { Button } from "@/components/ui/button";
 import { retryJobAction } from "./actions";
+import { formatDateTime } from "@/lib/i18n/format";
+import { getLocale } from "next-intl/server";
 
 export default async function WhatsappHealthPage() {
   const ctx = await requireSuperadminContext();
   const t = await getTranslations("superadmin.whatsappHealth");
+  const locale = await getLocale();
 
   const [accounts, failedEvents, deadJobs, queueDead, queueStuck] = await Promise.all([
     listAccountHealth(ctx),
@@ -66,7 +69,7 @@ export default async function WhatsappHealthPage() {
               <p className="font-medium">{event.phoneNumberId ?? "—"}</p>
               <p className="text-muted-foreground">{event.error}</p>
               <p className="text-xs text-muted-foreground">
-                {event.createdAt.toLocaleString("es-PY")}
+                {formatDateTime(event.createdAt, locale)}
               </p>
             </li>
           ))}

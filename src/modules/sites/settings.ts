@@ -5,6 +5,12 @@ import { tenantDb } from "@/modules/tenancy/db";
 import { encrypt, decrypt, type EncryptedPayload } from "@/lib/crypto";
 import { getSite } from "./sites";
 
+// Thrown messages are stable codes, not copy (PLAN.md §13 H5 #4): a
+// literal Spanish sentence here is a string the user might see in an
+// unknown language, and one nothing can translate. The UI turns these into
+// the reader's own language — an action's form state where there is a form,
+// the route group's error boundary where there isn't.
+
 // Per-site configuration (PLAN.md §5.2). Lives in the existing `settings`
 // JSON column rather than new columns, for the same reason tenant settings
 // do: this is site *configuration*, not site data, and it ships without a
@@ -78,7 +84,7 @@ export async function mergeSiteSettings(
   patch: SiteSettings,
 ): Promise<void> {
   const site = await getSite(ctx, siteId);
-  if (!site) throw new Error("Sitio no encontrado");
+  if (!site) throw new Error("site_not_found");
 
   const merged: SiteSettings = { ...siteSettings(site), ...patch };
   await tenantDb(ctx).update(sites).set({ settings: merged }).where(eq(sites.id, siteId));

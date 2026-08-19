@@ -6,6 +6,8 @@ import React from "react";
 import { Document, Page, Text, View, Image, StyleSheet, renderToBuffer } from "@react-pdf/renderer";
 import type { TenantBranding } from "@/modules/tenancy/settings";
 import type { PaymentState } from "./types";
+import { getTranslator } from "@/lib/i18n/translator";
+import { formatDate, formatNumber } from "@/lib/i18n/format";
 
 // Nota de venta PDF (PLAN.md §10 1Q), rendered with @react-pdf/renderer for
 // the same reason as quotes: pure JS, no headless Chrome on Hostinger (§2.3).
@@ -14,9 +16,6 @@ import type { PaymentState } from "./types";
 // a factura and carries no timbrado, so it must say so on its face — a
 // customer who files it as a tax document has a problem, and the cheapest
 // place to prevent that is the page itself.
-const DISCLAIMER =
-  "Documento no fiscal. Este comprobante no es una factura y no tiene validez tributaria.";
-
 export type DocumentPdfData = {
   number: string;
   tenantName: string;
@@ -35,27 +34,44 @@ export type DocumentPdfData = {
   notes: string | null;
   createdAt: Date;
   items: Array<{ description: string; qty: number; unitPrice: number; lineTotal: number }>;
+  /** The **tenant's** locale — this is read by their customer, not by
+   * whoever pressed send (PLAN.md §13 H5 #4). */
+  locale?: string | null;
 };
 
 // PYG has no decimal places (§2.3), so amounts are whole guaraníes and the
 // thousands separator is the only formatting needed.
-function money(amount: number, currency: string): string {
-  const formatted = new Intl.NumberFormat("es-PY", {
+function money(amount: number, currency: string, locale: string): string {
+  const formatted = formatNumber(amount, locale, {
     minimumFractionDigits: currency === "PYG" ? 0 : 2,
     maximumFractionDigits: currency === "PYG" ? 0 : 2,
-  }).format(amount);
+  });
   return `${currency} ${formatted}`;
 }
 
-function date(value: Date): string {
-  return new Intl.DateTimeFormat("es-PY", { dateStyle: "medium" }).format(value);
+function date(value: Date, locale: string): string {
+  return formatDate(value, locale, { dateStyle: "medium" });
 }
 
-const STATE_LABEL: Record<PaymentState, string> = {
-  unpaid: "PENDIENTE DE PAGO",
-  partial: "PAGO PARCIAL",
-  paid: "PAGADO",
-  void: "ANULADO",
+/** Resolved by renderDocumentPdf: the react-pdf tree renders synchronously
+ * and can't await a translator itself. The disclaimer is not decoration —
+ * this document is not a factura and must say so on its face, in whatever
+ * language the customer reads. */
+export type DocumentPdfLabels = {
+  title: string;
+  client: string;
+  dueAt: string;
+  description: string;
+  qty: string;
+  price: string;
+  total: string;
+  subtotal: string;
+  discount: string;
+  paid: string;
+  balance: string;
+  notes: string;
+  disclaimer: string;
+  state: Record<PaymentState, string>;
 };
 
 const STATE_COLOR: Record<PaymentState, string> = {
@@ -131,7 +147,14 @@ const styles = StyleSheet.create({
   },
 });
 
-export function NotaVentaDocument({ data }: { data: DocumentPdfData }) {
+export function NotaVentaDocument({
+  data,
+  labels,
+}: {
+  data: DocumentPdfData;
+  labels: DocumentPdfLabels;
+}) {
+  const locale = data.locale ?? "es";
   const accent = data.branding.primaryColor || "#111111";
 
   return (
@@ -147,78 +170,78 @@ export function NotaVentaDocument({ data }: { data: DocumentPdfData }) {
             )}
           </View>
           <View>
-            <Text style={[styles.title, { color: accent }]}>NOTA DE VENTA</Text>
+            <Text style={[styles.title, { color: accent }]}>{labels.title}</Text>
             <Text style={styles.meta}>{data.number}</Text>
-            <Text style={styles.meta}>{date(data.issuedAt ?? data.createdAt)}</Text>
+            <Text style={styles.meta}>{date(data.issuedAt ?? data.createdAt, locale)}</Text>
             <Text style={[styles.stamp, { color: STATE_COLOR[data.state] }]}>
-              {STATE_LABEL[data.state]}
+              {labels.state[data.state]}
             </Text>
           </View>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.label}>Cliente</Text>
+          <Text style={styles.label}>{labels.client}</Text>
           <Text>{data.contactName}</Text>
           <Text>{data.contactPhone}</Text>
           {data.dueAt && (
-            <Text style={{ marginTop: 6 }}>Vencimiento: {date(data.dueAt)}</Text>
+            <Text style={{ marginTop: 6 }}>{labels.dueAt} {date(data.dueAt, locale)}</Text>
           )}
         </View>
 
         <View style={styles.tableHeader}>
-          <Text style={styles.colDesc}>Descripción</Text>
-          <Text style={styles.colQty}>Cant.</Text>
-          <Text style={styles.colPrice}>Precio</Text>
-          <Text style={styles.colTotal}>Total</Text>
+          <Text style={styles.colDesc}>{labels.description}</Text>
+          <Text style={styles.colQty}>{labels.qty}</Text>
+          <Text style={styles.colPrice}>{labels.price}</Text>
+          <Text style={styles.colTotal}>{labels.total}</Text>
         </View>
 
         {data.items.map((item, index) => (
           <View key={index} style={styles.row}>
             <Text style={styles.colDesc}>{item.description}</Text>
             <Text style={styles.colQty}>{item.qty}</Text>
-            <Text style={styles.colPrice}>{money(item.unitPrice, data.currency)}</Text>
-            <Text style={styles.colTotal}>{money(item.lineTotal, data.currency)}</Text>
+            <Text style={styles.colPrice}>{money(item.unitPrice, data.currency, locale)}</Text>
+            <Text style={styles.colTotal}>{money(item.lineTotal, data.currency, locale)}</Text>
           </View>
         ))}
 
         <View style={styles.totals}>
           <View style={styles.totalsRow}>
-            <Text>Subtotal</Text>
-            <Text>{money(data.subtotal, data.currency)}</Text>
+            <Text>{labels.subtotal}</Text>
+            <Text>{money(data.subtotal, data.currency, locale)}</Text>
           </View>
           {data.discount > 0 && (
             <View style={styles.totalsRow}>
-              <Text>Descuento</Text>
-              <Text>-{money(data.discount, data.currency)}</Text>
+              <Text>{labels.discount}</Text>
+              <Text>-{money(data.discount, data.currency, locale)}</Text>
             </View>
           )}
           <View style={[styles.totalsRow, styles.grandTotal]}>
-            <Text>Total</Text>
-            <Text style={{ color: accent }}>{money(data.total, data.currency)}</Text>
+            <Text>{labels.total}</Text>
+            <Text style={{ color: accent }}>{money(data.total, data.currency, locale)}</Text>
           </View>
           {data.amountPaid > 0 && (
             <View style={styles.totalsRow}>
-              <Text>Pagado</Text>
-              <Text>-{money(data.amountPaid, data.currency)}</Text>
+              <Text>{labels.paid}</Text>
+              <Text>-{money(data.amountPaid, data.currency, locale)}</Text>
             </View>
           )}
           <View style={styles.balanceRow}>
-            <Text>Saldo</Text>
+            <Text>{labels.balance}</Text>
             <Text style={{ color: STATE_COLOR[data.state] }}>
-              {money(data.balance, data.currency)}
+              {money(data.balance, data.currency, locale)}
             </Text>
           </View>
         </View>
 
         {data.notes && (
           <View style={styles.notes}>
-            <Text style={styles.label}>Notas</Text>
+            <Text style={styles.label}>{labels.notes}</Text>
             <Text>{data.notes}</Text>
           </View>
         )}
 
         <View style={styles.disclaimer}>
-          <Text>{DISCLAIMER}</Text>
+          <Text>{labels.disclaimer}</Text>
         </View>
 
         <Text style={styles.footer}>{data.tenantName}</Text>
@@ -228,5 +251,28 @@ export function NotaVentaDocument({ data }: { data: DocumentPdfData }) {
 }
 
 export async function renderDocumentPdf(data: DocumentPdfData): Promise<Buffer> {
-  return renderToBuffer(<NotaVentaDocument data={data} />);
+  const t = await getTranslator(data.locale, "pdf.notaVenta");
+  const labels: DocumentPdfLabels = {
+    title: t("title"),
+    client: t("client"),
+    dueAt: t("dueAt"),
+    description: t("description"),
+    qty: t("qty"),
+    price: t("price"),
+    total: t("total"),
+    subtotal: t("subtotal"),
+    discount: t("discount"),
+    paid: t("paid"),
+    balance: t("balance"),
+    notes: t("notes"),
+    disclaimer: t("disclaimer"),
+    state: {
+      unpaid: t("state.unpaid"),
+      partial: t("state.partial"),
+      paid: t("state.paid"),
+      void: t("state.void"),
+    },
+  };
+
+  return renderToBuffer(<NotaVentaDocument data={data} labels={labels} />);
 }

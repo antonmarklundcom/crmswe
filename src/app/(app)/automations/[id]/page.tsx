@@ -7,11 +7,14 @@ import { flowGraphSchema, type FlowGraph, type TriggerType } from "@/modules/aut
 import { Button } from "@/components/ui/button";
 import { FlowEditor } from "./FlowEditor";
 import { setFlowStatusAction, cancelRunAction } from "../actions";
+import { formatDateTime } from "@/lib/i18n/format";
+import { getLocale } from "next-intl/server";
 
 export default async function FlowPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const ctx = await requireTenantContext();
   const t = await getTranslations("app.automations");
+  const locale = await getLocale();
 
   if (ctx.role !== "admin") {
     return <p className="text-muted-foreground">{t("adminOnly")}</p>;
@@ -77,7 +80,7 @@ export default async function FlowPage({ params }: { params: Promise<{ id: strin
                   )}
                 </td>
                 <td className="py-2">{run.currentNodeId ?? "—"}</td>
-                <td className="py-2">{run.createdAt.toLocaleString("es-PY")}</td>
+                <td className="py-2">{formatDateTime(run.createdAt, locale)}</td>
                 <td className="py-2 text-right">
                   {(run.status === "running" || run.status === "waiting") && (
                     <form action={cancelRunAction}>

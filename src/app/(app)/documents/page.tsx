@@ -9,10 +9,13 @@ import { listContacts } from "@/modules/crm/contacts";
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
 import { DocumentBuilder, type DocumentBuilderLabels } from "./DocumentBuilder";
+import { formatMoney } from "@/lib/i18n/format";
+import { getLocale } from "next-intl/server";
 
 export default async function DocumentsPage() {
   const ctx = await requireTenantContext();
   const t = await getTranslations("app.documents");
+  const locale = await getLocale();
 
   const [documents, contacts, products] = await Promise.all([
     listDocuments(ctx),
@@ -95,7 +98,7 @@ export default async function DocumentsPage() {
                       {t(`paymentStateValues.${state}` as "paymentStateValues.unpaid")}
                     </td>
                     <td className="py-2 text-right">
-                      {new Intl.NumberFormat("es-PY").format(document.total)} {document.currency}
+                      {formatMoney(document.total, document.currency, locale)}
                     </td>
                   </tr>
                 );

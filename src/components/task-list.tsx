@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { Check, RotateCcw, Trash2 } from "lucide-react";
+import { useLocale } from "next-intl";
+import { formatDateTime } from "@/lib/i18n/format";
 
 import { cn } from "@/lib/utils";
 
@@ -24,13 +26,6 @@ export type TaskListLabels = {
   overdue: string;
 };
 
-const dateTime = new Intl.DateTimeFormat("es-PY", {
-  day: "2-digit",
-  month: "2-digit",
-  hour: "2-digit",
-  minute: "2-digit",
-});
-
 export function TaskList({
   tasks,
   labels,
@@ -44,6 +39,7 @@ export function TaskList({
   onReopen: (formData: FormData) => Promise<void>;
   onDelete: (formData: FormData) => Promise<void>;
 }) {
+  const locale = useLocale();
   const now = Date.now();
 
   return (
@@ -60,7 +56,7 @@ export function TaskList({
                 {task.title}
               </span>
               <span className={cn("text-xs", overdue ? "text-destructive" : "text-muted-foreground")}>
-                {dateTime.format(task.dueAt)}
+                {formatDateTime(task.dueAt, locale)}
                 {overdue && ` · ${labels.overdue}`}
                 {task.contactName && task.contactId && (
                   <>

@@ -40,7 +40,7 @@ export async function GET(request: Request) {
       ? Math.floor((now.getTime() - alert.health.lastSuccessAt.getTime()) / (24 * 60 * 60_000))
       : STALE_AFTER_DAYS;
 
-    const { subject, html } = siteIngestAlertEmail({
+    const { subject, html } = await siteIngestAlertEmail({
       siteName: alert.site.name,
       kind: alert.kind,
       reason: alert.health.lastErrorReason,
@@ -48,6 +48,9 @@ export async function GET(request: Request) {
       lastSuccessAt: alert.health.lastSuccessAt,
       daysSilent,
       sitesUrl: `${env.APP_URL}/sites`,
+      // The tenant's language, not the platform default: these go to that
+      // tenant's own admins (PLAN.md §13 H5 #4).
+      locale: tenant.locale,
     });
 
     for (const admin of admins) {

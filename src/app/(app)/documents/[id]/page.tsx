@@ -15,6 +15,8 @@ import { Button } from "@/components/ui/button";
 import { DocumentBuilder, type DocumentBuilderLabels } from "../DocumentBuilder";
 import { issueDocumentAction, sendDocumentAction, deletePaymentAction } from "../actions";
 import { RecordPaymentForm, VoidDocumentForm } from "./DocumentActionForms";
+import { formatMoney } from "@/lib/i18n/format";
+import { getLocale } from "next-intl/server";
 
 export default async function DocumentDetailPage({
   params,
@@ -24,6 +26,7 @@ export default async function DocumentDetailPage({
   const { id } = await params;
   const ctx = await requireTenantContext();
   const t = await getTranslations("app.documents");
+  const locale = await getLocale();
 
   // Agents sell — issue documents, record payments — but the two destructive,
   // ledger-rewriting controls (void, delete payment) are admin-only (§3.2).
@@ -40,7 +43,7 @@ export default async function DocumentDetailPage({
     listProducts(ctx),
   ]);
 
-  const fmt = (n: number) => `${new Intl.NumberFormat("es-PY").format(n)} ${document.currency}`;
+  const fmt = (n: number) => formatMoney(n, document.currency, locale);
   const publicUrl = publicDocumentUrl(document.publicToken);
 
   const labels: DocumentBuilderLabels = {

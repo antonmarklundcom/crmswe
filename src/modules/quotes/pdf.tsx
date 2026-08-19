@@ -6,6 +6,8 @@
 import React from "react";
 import { Document, Page, Text, View, Image, StyleSheet, renderToBuffer } from "@react-pdf/renderer";
 import type { TenantBranding } from "@/modules/tenancy/settings";
+import { getTranslator } from "@/lib/i18n/translator";
+import { formatDate, formatNumber } from "@/lib/i18n/format";
 
 // Quote PDF (PLAN.md §8) rendered with @react-pdf/renderer — pure JS, no
 // headless Chrome, because Hostinger managed Node can't run one (§2.3).
@@ -24,20 +26,38 @@ export type QuotePdfData = {
   notes: string | null;
   createdAt: Date;
   items: Array<{ description: string; qty: number; unitPrice: number; lineTotal: number }>;
+  /** The **tenant's** locale, never the sending rep's: this document is read
+   * by their customer (PLAN.md §13 H5 #4). */
+  locale?: string | null;
+};
+
+/** Resolved by renderQuotePdf and passed in, because the react-pdf tree is
+ * rendered synchronously and can't await a translator itself. */
+export type QuotePdfLabels = {
+  title: string;
+  client: string;
+  description: string;
+  qty: string;
+  price: string;
+  total: string;
+  subtotal: string;
+  discount: string;
+  validUntil: string;
+  footer: string;
 };
 
 // PYG has no decimal places (§2.3), so amounts are whole guaraníes and the
 // thousands separator is the only formatting needed.
-function money(amount: number, currency: string): string {
-  const formatted = new Intl.NumberFormat("es-PY", {
+function money(amount: number, currency: string, locale: string): string {
+  const formatted = formatNumber(amount, locale, {
     minimumFractionDigits: currency === "PYG" ? 0 : 2,
     maximumFractionDigits: currency === "PYG" ? 0 : 2,
-  }).format(amount);
+  });
   return `${currency} ${formatted}`;
 }
 
-function date(value: Date): string {
-  return new Intl.DateTimeFormat("es-PY", { dateStyle: "medium" }).format(value);
+function date(value: Date, locale: string): string {
+  return formatDate(value, locale, { dateStyle: "medium" });
 }
 
 const styles = StyleSheet.create({
@@ -69,8 +89,15 @@ const styles = StyleSheet.create({
   footer: { position: "absolute", bottom: 30, left: 40, right: 40, textAlign: "center", color: "#999", fontSize: 8 },
 });
 
-export function QuoteDocument({ data }: { data: QuotePdfData }) {
+export function QuoteDocument({
+  data,
+  labels,
+}: {
+  data: QuotePdfData;
+  labels: QuotePdfLabels;
+}) {
   const accent = data.branding.primaryColor || "#111111";
+  const locale = data.locale ?? "es";
 
   return (
     <Document>
@@ -85,64 +112,80 @@ export function QuoteDocument({ data }: { data: QuotePdfData }) {
             )}
           </View>
           <View>
-            <Text style={[styles.title, { color: accent }]}>PRESUPUESTO</Text>
+            <Text style={[styles.title, { color: accent }]}>{labels.title}</Text>
             <Text style={styles.meta}>{data.number}</Text>
-            <Text style={styles.meta}>{date(data.createdAt)}</Text>
+            <Text style={styles.meta}>{date(data.createdAt, locale)}</Text>
           </View>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.label}>Cliente</Text>
+          <Text style={styles.label}>{labels.client}</Text>
           <Text>{data.contactName}</Text>
           <Text>{data.contactPhone}</Text>
         </View>
 
         <View style={styles.tableHeader}>
-          <Text style={styles.colDesc}>Descripción</Text>
-          <Text style={styles.colQty}>Cant.</Text>
-          <Text style={styles.colPrice}>Precio</Text>
-          <Text style={styles.colTotal}>Total</Text>
+          <Text style={styles.colDesc}>{labels.description}</Text>
+          <Text style={styles.colQty}>{labels.qty}</Text>
+          <Text style={styles.colPrice}>{labels.price}</Text>
+          <Text style={styles.colTotal}>{labels.total}</Text>
         </View>
 
         {data.items.map((item, index) => (
           <View key={index} style={styles.row}>
             <Text style={styles.colDesc}>{item.description}</Text>
             <Text style={styles.colQty}>{item.qty}</Text>
-            <Text style={styles.colPrice}>{money(item.unitPrice, data.currency)}</Text>
-            <Text style={styles.colTotal}>{money(item.lineTotal, data.currency)}</Text>
+            <Text style={styles.colPrice}>{money(item.unitPrice, data.currency, locale)}</Text>
+            <Text style={styles.colTotal}>{money(item.lineTotal, data.currency, locale)}</Text>
           </View>
         ))}
 
         <View style={styles.totals}>
           <View style={styles.totalsRow}>
-            <Text>Subtotal</Text>
-            <Text>{money(data.subtotal, data.currency)}</Text>
+            <Text>{labels.subtotal}</Text>
+            <Text>{money(data.subtotal, data.currency, locale)}</Text>
           </View>
           {data.discount > 0 && (
             <View style={styles.totalsRow}>
-              <Text>Descuento</Text>
-              <Text>-{money(data.discount, data.currency)}</Text>
+              <Text>{labels.discount}</Text>
+              <Text>-{money(data.discount, data.currency, locale)}</Text>
             </View>
           )}
           <View style={[styles.totalsRow, styles.grandTotal]}>
-            <Text>Total</Text>
-            <Text style={{ color: accent }}>{money(data.total, data.currency)}</Text>
+            <Text>{labels.total}</Text>
+            <Text style={{ color: accent }}>{money(data.total, data.currency, locale)}</Text>
           </View>
         </View>
 
         {data.validUntil && (
-          <Text style={styles.notes}>Válido hasta: {date(data.validUntil)}</Text>
+          <Text style={styles.notes}>
+            {labels.validUntil} {date(data.validUntil, locale)}
+          </Text>
         )}
         {data.notes && <Text style={styles.notes}>{data.notes}</Text>}
 
         <Text style={styles.footer}>
-          {data.tenantName} · Documento no fiscal · Factura electrónica próximamente
+          {data.tenantName} · {labels.footer}
         </Text>
       </Page>
     </Document>
   );
 }
 
-export function renderQuotePdf(data: QuotePdfData): Promise<Buffer> {
-  return renderToBuffer(<QuoteDocument data={data} />);
+export async function renderQuotePdf(data: QuotePdfData): Promise<Buffer> {
+  const t = await getTranslator(data.locale, "pdf.quote");
+  const labels: QuotePdfLabels = {
+    title: t("title"),
+    client: t("client"),
+    description: t("description"),
+    qty: t("qty"),
+    price: t("price"),
+    total: t("total"),
+    subtotal: t("subtotal"),
+    discount: t("discount"),
+    validUntil: t("validUntil"),
+    footer: t("footer"),
+  };
+
+  return renderToBuffer(<QuoteDocument data={data} labels={labels} />);
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { parseMinorUnits, previewTotals } from "@/lib/money";
 import { useEchoGeneration } from "@/lib/use-echo-generation";
@@ -11,6 +11,7 @@ import {
   type DocumentFormState,
   type UpdateDocumentFormState,
 } from "./actions";
+import { formatNumber } from "@/lib/i18n/format";
 
 // Declared here, not in actions.ts: a "use server" module may only export
 // async functions.
@@ -143,7 +144,8 @@ export function DocumentBuilder(props: CreateProps | EditProps) {
   // wherever the server would refuse the value — a displayed total is either
   // the one that will be stored or nothing at all.
   const totals = previewTotals(lines, discount);
-  const fmt = (n: number) => new Intl.NumberFormat("es-PY").format(n);
+  const locale = useLocale();
+  const fmt = (n: number) => formatNumber(n, locale);
   const blank = "—";
   function lineTotal(line: Line) {
     const qty = parseMinorUnits(line.qty);

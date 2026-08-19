@@ -1,0 +1,1607 @@
+{
+  "common": {
+    "appName": "VenderCRM",
+    "loading": "Laddar…",
+    "save": "Spara",
+    "saved": "Ändringarna sparades",
+    "cancel": "Avbryt",
+    "create": "Skapa",
+    "back": "Tillbaka",
+    "signOut": "Logga ut"
+  },
+  "auth": {
+    "login": {
+      "title": "Logga in",
+      "email": "E-post",
+      "password": "Lösenord",
+      "submit": "Logga in",
+      "error": "Fel e-post eller lösenord",
+      "forgotPassword": "Glömt lösenordet?",
+      "rateLimited": "För många försök. Vänta några minuter och försök igen."
+    },
+    "acceptInvite": {
+      "title": "Acceptera inbjudan",
+      "name": "Fullständigt namn",
+      "password": "Välj ett lösenord",
+      "submit": "Skapa konto",
+      "invalid": "Inbjudan är ogiltig eller har gått ut",
+      "success": "Kontot är skapat. Du kan logga in nu."
+    },
+    "forgotPassword": {
+      "title": "Återställ lösenord",
+      "intro": "Ange din e-post så skickar vi en länk där du väljer ett nytt lösenord.",
+      "email": "E-post",
+      "submit": "Skicka länk",
+      "sent": "Om den e-postadressen har ett konto är en återställningslänk på väg. Kolla inkorgen.",
+      "backToLogin": "Tillbaka till inloggningen"
+    },
+    "resetPassword": {
+      "title": "Välj nytt lösenord",
+      "newPassword": "Nytt lösenord",
+      "submit": "Spara lösenord",
+      "error": "Vi kunde inte återställa lösenordet. Länken kan ha gått ut.",
+      "invalidToken": "Länken är ogiltig eller har gått ut.",
+      "requestNew": "Begär en ny länk"
+    }
+  },
+  "tenancy": {
+    "status": {
+      "grace": {
+        "banner": "Din prenumeration har gått ut. Du har läsbehörighet tills betalningen registrerats."
+      },
+      "locked": {
+        "title": "Kontot är spärrat",
+        "body": "Åtkomsten till kontot är blockerad. Kontakta administratören för att reglera betalningen.",
+        "backToLogin": "Tillbaka till inloggningen"
+      }
+    },
+    "impersonation": {
+      "banner": "Du ser kontot som en annan användare.",
+      "exit": "Tillbaka till konsolen"
+    }
+  },
+  "app": {
+    "nav": {
+      "dashboard": "Start",
+      "contacts": "Kontakter",
+      "pipeline": "Pipeline",
+      "inbox": "Inkorg",
+      "forms": "Formulär",
+      "whatsapp": "WhatsApp",
+      "settings": "Inställningar",
+      "sites": "Webbplatser",
+      "quotes": "Offerter",
+      "documents": "Försäljningsnotor",
+      "products": "Produkter",
+      "facturaElectronica": "Elektronisk fakturering",
+      "soon": "Kommer snart",
+      "automations": "Automationer",
+      "users": "Team",
+      "groups": {
+        "crm": "CRM",
+        "capture": "Leadfångst",
+        "settings": "Inställningar"
+      }
+    },
+    "dashboard": {
+      "title": "Översikt för {tenant}",
+      "subtitle": "Dagens läge: öppna affärer, obesvarade meddelanden och offerter på gång.",
+      "stats": {
+        "openDeals": "Öppna affärer",
+        "openDealsHint": "{value} PYG i potten",
+        "unread": "Olästa meddelanden",
+        "unreadHint": "{count, plural, =0 {Inga konversationer väntar} one {i # konversation} other {i # konversationer}}",
+        "pendingQuotes": "Väntande offerter",
+        "pendingQuotesHint": "Utkast och skickade offerter utan svar",
+        "contacts": "Kontakter",
+        "contactsHint": "Personer i ditt register"
+      },
+      "checklist": {
+        "title": "Första stegen",
+        "intro": "Gå igenom stegen för att få CRM:et att fungera hela vägen. Varje steg bockas av automatiskt när du gjort det.",
+        "progress": "{done} av {total} klara",
+        "steps": {
+          "whatsapp": {
+            "title": "Anslut ditt WhatsApp-nummer",
+            "description": "Det är huvudkanalen: kundernas meddelanden hamnar i inkorgen och du svarar härifrån.",
+            "action": "Anslut"
+          },
+          "contact": {
+            "title": "Lägg in din första kontakt",
+            "description": "Telefonnumret identifierar kunden. Allt annat — affärer, meddelanden, offerter — hänger på kontakten.",
+            "action": "Lägg till kontakt"
+          },
+          "deal": {
+            "title": "Öppna din första affär i pipelinen",
+            "description": "Tavlan visar vilket steg varje affär är i, och du drar den vidare tills den är vunnen.",
+            "action": "Skapa affär"
+          },
+          "quote": {
+            "title": "Skicka din första offert",
+            "description": "Bygg offerten, skapa PDF:en och skicka den via WhatsApp utan att lämna systemet.",
+            "action": "Skapa offert"
+          },
+          "capture": {
+            "title": "Anslut en leadkälla",
+            "description": "Lägg till en webbplats som skickar sina leads via API:et, eller publicera ett formulär: kontakterna hamnar i pipelinen av sig själva.",
+            "action": "Konfigurera"
+          },
+          "automation": {
+            "title": "Slå på din första automation",
+            "description": "Autosvar och uppföljningar: om ingen svarar inom två dagar skickas till exempel en påminnelse.",
+            "action": "Skapa flöde"
+          }
+        }
+      },
+      "activity": {
+        "title": "Senaste aktivitet",
+        "empty": "Ingen aktivitet ännu. Så snart du lägger in en kontakt eller får ett meddelande dyker det upp här."
+      },
+      "dueTasks": {
+        "title": "Uppgifter att göra"
+      }
+    },
+    "pipeline": {
+      "title": "Pipeline",
+      "intro": "Varje affär flyttas mellan steg genom att dras över tavlan. Stegbytet sparas i kontaktens historik och kan trigga automationer.",
+      "noPipeline": "Ingen pipeline är konfigurerad ännu",
+      "noPipelineBody": "Pipelinen skapas tillsammans med ditt företag. Ser du ingen, hör av dig så konfigurerar vi den.",
+      "emptyTitle": "Tavlan är tom",
+      "emptyBody": "Öppna din första affär och dra den mellan stegen allt eftersom försäljningen går framåt.",
+      "needContact": "Du behöver minst en kontakt innan du kan öppna en affär.",
+      "goToContacts": "Till kontakter",
+      "createDealTitle": "Ny affär",
+      "dealTitle": "Titel",
+      "contact": "Kontakt",
+      "stage": "Steg",
+      "value": "Värde (PYG)",
+      "createDeal": "Skapa affär",
+      "switcherLabel": "Välj pipeline",
+      "newPipelineTitle": "Ny pipeline",
+      "newPipelineName": "Namn",
+      "newPipelineNamePlaceholder": "T.ex. Värderingar",
+      "newPipelineCreate": "Skapa pipeline",
+      "errors": {
+        "titleRequired": "Ge affären en titel.",
+        "contactRequired": "Välj vilken kontakt affären hör till.",
+        "stageRequired": "Välj vilket steg affären startar i.",
+        "valueInvalid": "Värdet anges i hela guaraní, utan decimaler eller tecken.",
+        "unknown": "Vi kunde inte skapa affären. Försök igen."
+      },
+      "moveFailed": "Vi kunde inte flytta affären. Den återgick till föregående steg."
+    },
+    "forms": {
+      "title": "Formulär",
+      "adminOnly": "Bara administratörer kan se den här sidan",
+      "intro": "Formulär som ligger här, för webbplatser utan egen backend. Varje inskick skapar eller uppdaterar kontakten och kan öppna en affär i det steg du väljer.",
+      "empty": "Inga formulär ännu",
+      "emptyTitle": "Inga formulär ännu",
+      "emptyBody": "Skapa ett formulär och klistra in länken på din webbplats eller i din profil: uppgifterna går rakt in i CRM:et, utan kalkylblad emellan.",
+      "publicUrl": "Publik länk",
+      "createTitle": "Nytt formulär",
+      "name": "Namn",
+      "slug": "Slug",
+      "targetPipeline": "Målpipeline",
+      "targetPipelineApply": "Uppdatera",
+      "targetStage": "Målsteg",
+      "noStage": "Inget",
+      "createForm": "Skapa formulär",
+      "errors": {
+        "nameRequired": "Ge formuläret ett namn.",
+        "slugInvalid": "Sluggen skrivs med små bokstäver, utan mellanslag eller accenter (t.ex. allman-kontakt).",
+        "unknown": "Vi kunde inte skapa formuläret. Försök igen."
+      },
+      "turnstileSite": "Botskydd med den här webbplatsens nycklar",
+      "turnstileNone": "Inget extra skydd",
+      "turnstileSave": "Spara"
+    },
+    "users": {
+      "title": "Team",
+      "intro": "Personerna på företaget som använder CRM:et. Administratörer konfigurerar WhatsApp, webbplatser och automationer; säljare arbetar med kontakter, affärer, inkorg och offerter.",
+      "adminOnly": "Bara administratörer kan se den här sidan",
+      "membersTitle": "Medlemmar",
+      "name": "Namn",
+      "email": "E-post",
+      "role": "Roll",
+      "you": "du",
+      "roles": {
+        "admin": "Administratör",
+        "agent": "Säljare"
+      },
+      "inviteTitle": "Bjud in någon",
+      "inviteHelp": "En inbjudningslänk som gäller i 7 dagar skapas. Kopiera länken och skicka den via WhatsApp eller där det passar.",
+      "invite": "Skapa inbjudan",
+      "linkTitle": "Inbjudningslänk",
+      "linkHelp": "Skicka den till personen. När hen öppnar den väljer hen lösenord och loggar in med den roll du angett.",
+      "copy": "Kopiera",
+      "copied": "Kopierat",
+      "pendingTitle": "Väntande inbjudningar",
+      "pendingEmptyTitle": "Inga väntande inbjudningar",
+      "pendingEmptyBody": "När du skapar en inbjudan syns den här tills personen accepterar den eller den går ut.",
+      "expiresAt": "går ut den {date}",
+      "revoke": "Återkalla",
+      "errors": {
+        "invalid": "Kontrollera e-postadressen och rollen.",
+        "emailTaken": "Den e-postadressen har redan ett konto.",
+        "readOnly": "Din prenumeration har gått ut: kontot är i läsläge.",
+        "unknown": "Vi kunde inte skapa inbjudan. Försök igen."
+      },
+      "stateColumn": "Status",
+      "actionsColumn": "Åtgärder",
+      "stateActive": "Aktiv",
+      "stateInactive": "Inaktiv",
+      "deactivate": "Avaktivera",
+      "reactivate": "Aktivera igen",
+      "sendReset": "Skicka lösenordsåterställning",
+      "resetSent": "Vi har mejlat en länk där hen kan välja ett nytt lösenord."
+    },
+    "products": {
+      "title": "Produkter",
+      "intro": "Din katalog, så att offerterna går snabbare. Den är frivillig: du kan också skriva rader för hand i en offert.",
+      "empty": "Inga produkter ännu",
+      "emptyTitle": "Inga produkter ännu",
+      "emptyBody": "Lägg in produkterna eller tjänsterna du säljer ofta med pris, så finns de att välja när du bygger en offert.",
+      "createTitle": "Ny produkt",
+      "name": "Namn",
+      "description": "Beskrivning",
+      "unitPrice": "Styckpris (PYG)",
+      "inactive": "inaktiv",
+      "activate": "Aktivera",
+      "deactivate": "Avaktivera",
+      "errors": {
+        "nameRequired": "Ge produkten ett namn.",
+        "unitPriceInvalid": "Priset anges i hela guaraní, utan decimaler eller tecken.",
+        "unknown": "Vi kunde inte spara produkten. Försök igen."
+      }
+    },
+    "contacts": {
+      "title": "Kontakter",
+      "intro": "Dina kunder och prospekt. Telefonnumret är varje kontakts identitet: WhatsApp-meddelanden, affärer och offerter kopplas automatiskt till det.",
+      "searchPlaceholder": "Sök på namn, telefon eller e-post",
+      "allTags": "Alla taggar",
+      "filter": "Filtrera",
+      "name": "Namn",
+      "phone": "Telefon",
+      "email": "E-post",
+      "source": "Källa",
+      "notes": "Anteckningar",
+      "empty": "Inga kontakter ännu",
+      "emptyTitle": "Inga kontakter ännu",
+      "emptyBody": "Lägg in din första kontakt med namn och telefonnummer, eller låt dem komma in av sig själva från ett formulär eller från WhatsApp.",
+      "emptyAction": "Lägg till kontakt",
+      "noResults": "Ingen kontakt matchar sökningen",
+      "noResultsBody": "Prova ett annat namn, telefonnummer eller en annan tagg.",
+      "clearFilters": "Rensa filter",
+      "exportCsv": "Exportera CSV",
+      "createTitle": "Ny kontakt",
+      "createTagTitle": "Ny tagg",
+      "addTag": "Lägg till tagg",
+      "dealsTitle": "Affärer",
+      "timelineTitle": "Historik",
+      "timelineEmpty": "Ingen aktivitet ännu",
+      "notePlaceholder": "Skriv en anteckning…",
+      "addNote": "Lägg till anteckning",
+      "activityTypes": {
+        "note": "Anteckning",
+        "call": "Samtal",
+        "stage_change": "Stegbyte",
+        "form_submission": "Formulär mottaget",
+        "quote_sent": "Offert skickad",
+        "system": "System"
+      },
+      "editTitle": "Kontaktuppgifter",
+      "conversationEmpty": "Ingen konversation ännu",
+      "conversationEmptyBody": "När personen skriver till dig på WhatsApp — eller när du skriver först med en mall — dyker chatten upp här, utan att du lämnar kontakten.",
+      "timelineMessageIn": "Mottaget meddelande",
+      "timelineMessageOut": "Skickat meddelande",
+      "timelineMedia": "Bifogad fil",
+      "timelineQuote": "Offert {number}",
+      "timelineLead": "Lead mottaget",
+      "tabs": {
+        "conversacion": "Konversation",
+        "actividad": "Aktivitet",
+        "datos": "Uppgifter",
+        "tareas": "Uppgifter att göra"
+      },
+      "searchLabel": "Sök",
+      "tag": "Tagg",
+      "allSources": "Alla källor",
+      "owner": "Ansvarig",
+      "allOwners": "Alla ansvariga",
+      "createdFrom": "Från",
+      "createdTo": "Till",
+      "onlyOpenDeal": "Bara med öppen affär",
+      "openDealBadge": "öppen affär",
+      "created": "Skapad",
+      "resultCount": "{count, plural, one {# kontakt} other {# kontakter}}",
+      "pageOf": "Sida {page} av {pages}",
+      "previous": "Föregående",
+      "next": "Nästa",
+      "tasks": {
+        "title": "Titel",
+        "titlePlaceholder": "Ring och bekräfta besöket",
+        "dueAt": "Förfaller",
+        "noDeal": "Ingen kopplad affär",
+        "create": "Skapa uppgift",
+        "complete": "Markera klar",
+        "reopen": "Öppna igen",
+        "delete": "Ta bort",
+        "overdue": "försenad",
+        "emptyTitle": "Inga uppgifter ännu",
+        "emptyBody": "Skapa en påminnelse med datum — ringa, bekräfta, följa upp — så syns den här och på din översikt tills du markerar den som klar.",
+        "showCompleted": "Visa {count} klara"
+      },
+      "bulk": {
+        "selectedCount": "{count} valda",
+        "addTag": "Lägg till tagg",
+        "chooseTag": "Välj tagg",
+        "assignOwner": "Tilldela ansvarig",
+        "chooseOwner": "Välj ansvarig",
+        "noOwner": "Ingen ansvarig",
+        "addToPipeline": "Lägg till i pipeline",
+        "chooseStage": "Välj steg",
+        "apply": "Verkställ",
+        "exportSelection": "Exportera urval",
+        "clearSelection": "Rensa urval"
+      },
+      "saved": "Ändringarna sparades",
+      "errors": {
+        "nameRequired": "Ge kontakten ett namn.",
+        "phoneRequired": "Telefonnumret är obligatoriskt: det är kontaktens identitet.",
+        "phoneTaken": "Du har redan en kontakt med det telefonnumret.",
+        "emailInvalid": "E-postadressen ser inte giltig ut. Rätta den eller lämna den tom.",
+        "notesTooLong": "Anteckningarna är för långa.",
+        "unknown": "Vi kunde inte spara kontakten. Försök igen."
+      }
+    },
+    "inbox": {
+      "title": "Inkorg",
+      "intro": "Hela teamets WhatsApp-konversationer på ett ställe, med varje kunds fullständiga historik.",
+      "empty": "Inga konversationer ännu",
+      "emptyTitle": "Inga konversationer ännu",
+      "emptyBody": "Konversationer dyker upp här så snart en kund skriver till ditt anslutna nummer, eller när du skriver först med en mall.",
+      "emptyNoAccountTitle": "Anslut ett nummer för att komma igång",
+      "emptyNoAccountBody": "Inkorgen fylls med meddelanden från ditt WhatsApp Business-nummer. Inget är anslutet ännu.",
+      "emptyAction": "Anslut WhatsApp",
+      "noMessages": "Inga meddelanden ännu",
+      "messagePlaceholder": "Skriv ett meddelande…",
+      "send": "Skicka",
+      "windowClosed": "24-timmarsfönstret är stängt. Bara godkända mallar kan skickas.",
+      "windowOpen": "24-timmarsfönstret är öppet — stänger om {remaining}",
+      "sendTemplate": "Skicka mall",
+      "noTemplates": "Inga godkända mallar ännu. Synka dem från WhatsApp-sidan.",
+      "windowOpenShort": "24-timmarsfönstret är öppet — stänger om",
+      "aiOn": "AI-svar är på i den här konversationen",
+      "aiOff": "AI-svar är av i den här konversationen",
+      "aiEnable": "Slå på AI igen",
+      "aiDisable": "Stäng av AI",
+      "aiDraftsTitle": "AI-utkast — granska innan du skickar",
+      "aiApprove": "Godkänn och skicka",
+      "aiDiscard": "Kasta",
+      "aiTokens": "{tokens} tokens",
+      "aiDraftWindowClosed": "Går inte att skicka: 24-timmarsfönstret är stängt.",
+      "errors": {
+        "bodyRequired": "Skriv ett meddelande innan du skickar.",
+        "bodyTooLong": "Meddelandet är för långt: max är 4096 tecken.",
+        "windowClosed": "24-timmarsfönstret stängdes. Bara godkända mallar kan skickas.",
+        "templateRequired": "Välj en mall i listan.",
+        "sendFailed": "Meddelandet kunde inte skickas. Försök igen.",
+        "aiWindowClosed": "Kunde inte skicka: 24-timmarsfönstret stängdes medan utkastet väntade.",
+        "aiConversationDisabled": "Kunde inte skicka: AI är avstängt i den här konversationen.",
+        "aiOptedOut": "Kunde inte skicka: kontakten har bett att inte få fler meddelanden.",
+        "aiSendFailed": "Utkastet kunde inte skickas. Försök igen."
+      },
+      "actionFailed": "Vi kunde inte slutföra åtgärden. Försök igen."
+    },
+    "whatsapp": {
+      "title": "WhatsApp",
+      "intro": "Anslut företagets nummer. Inkommande meddelanden hamnar i inkorgen, och godkända mallar låter dig skriva även efter att 24 timmar har gått.",
+      "adminOnly": "Bara administratörer kan se den här sidan",
+      "empty": "Inga nummer är anslutna ännu",
+      "emptyTitle": "Inga nummer är anslutna ännu",
+      "emptyBody": "Utan ett anslutet nummer kommer inga meddelanden in eller ut. Skapa uppgifterna i Meta Business Manager och fyll i dem i formuläret nedan.",
+      "status": {
+        "connected": "Ansluten",
+        "disconnected": "Frånkopplad",
+        "error": "Fel"
+      },
+      "connectTitle": "Anslut nummer",
+      "connectHelp": "Fyll i uppgifterna som skapats i Meta Business Manager.",
+      "wabaId": "WABA-ID",
+      "phoneNumberId": "Phone Number ID",
+      "displayNumber": "Nummer (som visas)",
+      "accessToken": "Åtkomsttoken",
+      "connect": "Anslut",
+      "syncTemplates": "Synka mallar",
+      "templateCount": "{approved} av {total} mallar godkända",
+      "errors": {
+        "wabaIdRequired": "Ange WABA-ID.",
+        "phoneNumberIdRequired": "Ange Phone Number ID.",
+        "accessTokenRequired": "Ange åtkomsttoken.",
+        "unknown": "Vi kunde inte ansluta numret. Försök igen."
+      }
+    },
+    "quotes": {
+      "title": "Offerter",
+      "intro": "Bygg offerten, skapa en PDF med din logotyp och skicka den via WhatsApp eller som publik länk. Elektronisk fakturering kommer i ett senare skede.",
+      "empty": "Inga offerter ännu",
+      "emptyTitle": "Inga offerter ännu",
+      "emptyBody": "Välj en kontakt, lägg till raderna och skapa PDF:en. Du kan skicka den via WhatsApp utan att lämna systemet.",
+      "createTitle": "Ny offert",
+      "needContact": "Du behöver minst en kontakt först.",
+      "goToContacts": "Till kontakter",
+      "number": "Nummer",
+      "status": "Status",
+      "contact": "Kontakt",
+      "description": "Beskrivning",
+      "qty": "Antal",
+      "unitPrice": "Pris",
+      "lineTotal": "Totalt",
+      "addLine": "Lägg till rad",
+      "removeLine": "Ta bort",
+      "fromCatalog": "Från katalogen",
+      "freeText": "Fri text",
+      "discount": "Rabatt",
+      "validUntil": "Giltig till",
+      "notes": "Anteckningar",
+      "subtotal": "Delsumma",
+      "total": "Totalt",
+      "createQuote": "Skapa offert",
+      "sendWhatsapp": "Skicka via WhatsApp",
+      "publicLink": "Publik länk",
+      "downloadPdf": "Ladda ner PDF",
+      "statusValues": {
+        "draft": "Utkast",
+        "sent": "Skickad",
+        "accepted": "Accepterad",
+        "rejected": "Avböjd",
+        "expired": "Utgången"
+      },
+      "markAs": {
+        "accepted": "Markera accepterad",
+        "rejected": "Markera avböjd"
+      },
+      "errors": {
+        "contactRequired": "Välj vilken kontakt offerten hör till.",
+        "itemsRequired": "Lägg till minst en rad med beskrivning.",
+        "itemInvalid": "Kontrollera raderna: antalet börjar på 1 och priset anges i hela guaraní, utan decimaler eller tecken.",
+        "discountInvalid": "Rabatten anges i hela guaraní, utan decimaler eller tecken.",
+        "unknown": "Vi kunde inte skapa offerten. Försök igen."
+      }
+    },
+    "documents": {
+      "title": "Försäljningsnotor",
+      "intro": "Registrera en avslutad försäljning och betalningarna som kommer in. Det här är ingen elektronisk faktura: det är ett icke-fiskalt affärskvitto.",
+      "nonFiscalNotice": "Icke-fiskalt dokument — saknar skattemässig giltighet.",
+      "emptyTitle": "Inga försäljningsnotor ännu",
+      "emptyBody": "Skapa en försäljningsnota från grunden, eller konvertera en accepterad offert från offertens egen sida.",
+      "createTitle": "Ny försäljningsnota",
+      "needContact": "Du behöver minst en kontakt först.",
+      "goToContacts": "Till kontakter",
+      "number": "Nummer",
+      "status": "Status",
+      "paymentState": "Betalning",
+      "contact": "Kontakt",
+      "description": "Beskrivning",
+      "qty": "Antal",
+      "unitPrice": "Pris",
+      "lineTotal": "Totalt",
+      "addLine": "Lägg till rad",
+      "removeLine": "Ta bort",
+      "fromCatalog": "Från katalogen",
+      "freeText": "Fri text",
+      "discount": "Rabatt",
+      "dueAt": "Förfaller",
+      "notes": "Anteckningar",
+      "subtotal": "Delsumma",
+      "total": "Totalt",
+      "create": "Skapa försäljningsnota",
+      "save": "Spara ändringar",
+      "issue": "Utfärda",
+      "issueWarning": "När notan utfärdats låses nummer, rader och summor och går inte längre att ändra.",
+      "issuedNotice": "Utfärdad — rader och summor kan inte längre ändras.",
+      "sendWhatsapp": "Skicka via WhatsApp",
+      "publicLink": "Publik länk",
+      "downloadPdf": "Ladda ner PDF",
+      "statusValues": {
+        "draft": "Utkast",
+        "issued": "Utfärdad",
+        "void": "Makulerad"
+      },
+      "paymentStateValues": {
+        "unpaid": "Obetald",
+        "partial": "Delbetald",
+        "paid": "Betald",
+        "void": "Makulerad"
+      },
+      "amountPaid": "Betalt",
+      "balance": "Saldo",
+      "paymentsTitle": "Betalningar",
+      "noPayments": "Inga betalningar är registrerade ännu.",
+      "amount": "Belopp",
+      "method": "Betalsätt",
+      "methodValues": {
+        "transfer": "Banköverföring",
+        "cash": "Kontant",
+        "card": "Kort",
+        "check": "Check",
+        "other": "Annat"
+      },
+      "reference": "Referens",
+      "paidAt": "Datum",
+      "recordPayment": "Registrera betalning",
+      "deletePayment": "Ta bort",
+      "voidTitle": "Makulera",
+      "voidReason": "Orsak",
+      "voidWarning": "Att makulera en försäljningsnota går inte att ångra.",
+      "voidBlockedByPayments": "Går inte att makulera: den har registrerade betalningar. Ta bort betalningarna först.",
+      "voidAction": "Makulera försäljningsnota",
+      "voidedNotice": "Makulerad: {reason}",
+      "editTitle": "Redigera utkast",
+      "convertFromQuote": "Konvertera till försäljningsnota",
+      "viewDocument": "Visa försäljningsnota",
+      "errors": {
+        "contactRequired": "Välj vilken kontakt försäljningsnotan hör till.",
+        "itemsRequired": "Lägg till minst en rad med beskrivning.",
+        "itemInvalid": "Kontrollera raderna: antalet börjar på 1 och priset anges i hela guaraní, utan decimaler eller tecken.",
+        "discountInvalid": "Rabatten anges i hela guaraní, utan decimaler eller tecken.",
+        "voidReasonRequired": "Ange orsaken till makuleringen.",
+        "amountInvalid": "Beloppet anges i hela guaraní, större än noll.",
+        "unknown": "Vi kunde inte spara. Försök igen."
+      }
+    },
+    "settings": {
+      "title": "Inställningar",
+      "intro": "Företagsuppgifterna som resten av systemet använder: varumärket som syns på offert-PDF:erna och öppettiderna som automationerna respekterar.",
+      "adminOnly": "Bara administratörer kan se den här sidan",
+      "brandingTitle": "Varumärke",
+      "logoUrl": "Logotypens URL",
+      "primaryColor": "Huvudfärg",
+      "timezoneTitle": "Tidszon",
+      "defaultCountryTitle": "Standardland",
+      "defaultCountryIntro": "Används för att fylla i landskoden när du skriver ett telefonnummer utan +, till exempel ett paraguayanskt 0981… eller ett svenskt 070….",
+      "countryNames": {
+        "PY": "Paraguay",
+        "AR": "Argentina",
+        "BR": "Brasilien",
+        "SE": "Sverige",
+        "US": "USA"
+      },
+      "reviewLinkTitle": "Länk för Google-recension",
+      "reviewLinkIntro": "Länken från din Google Business-profil för att be om recensioner ('Få fler recensioner' i Google Business Profile). Den används av automationsnoden 'Be om en Google-recension'.",
+      "businessHoursTitle": "Öppettider",
+      "sheetsTitle": "Google Sheets",
+      "sheetsIntro": "Dina kontakter i ett kalkylark som uppdaterar sig självt, utan att koppla ditt Google-konto och utan kostnad. Kalkylarket läser en privat länk som tillhör ditt företag; ingen annan får åtkomst.",
+      "sheetsSteps": {
+        "generate": "Skapa länken nedan. Den är privat: den som har den kan läsa dina kontakter, så behandla den som ett lösenord.",
+        "paste": "Öppna ett nytt kalkylark i Google Sheets, klicka på cell A1 och klistra in formeln.",
+        "refresh": "Google uppdaterar arket självt, ungefär varje timme. Vill du tvinga fram det raderar du formeln och klistrar in den igen."
+      },
+      "sheetsFormula": "Klistra in det här i cell A1",
+      "sheetsCopy": "Kopiera",
+      "sheetsCopied": "Kopierat",
+      "sheetsGenerate": "Skapa länk",
+      "sheetsRegenerate": "Skapa en ny länk",
+      "sheetsRegenerateWarning": "Skapar du en ny slutar den gamla fungera direkt, och kalkylark som använder den slutar uppdateras.",
+      "days": {
+        "mon": "Måndag",
+        "tue": "Tisdag",
+        "wed": "Onsdag",
+        "thu": "Torsdag",
+        "fri": "Fredag",
+        "sat": "Lördag",
+        "sun": "Söndag"
+      },
+      "aiTitle": "AI-svar",
+      "aiIntro": "AI:n skriver utkast till WhatsApp-svar utifrån din verksamhets sammanhang. Börja i utkastläge: en säljare granskar varje meddelande innan det går ut. Inget skickas någonsin utanför 24-timmarsfönstret.",
+      "aiNotConfigured": "Ingen AI-leverantör är konfigurerad på servern ännu. Du kan spara inställningarna, men inga svar genereras förrän operatören aktiverar det.",
+      "aiEnabled": "Slå på AI-svar",
+      "aiMode": "Svarsläge",
+      "aiModeDraft": "Utkast — en säljare godkänner varje meddelande",
+      "aiModeSend": "Skicka automatiskt",
+      "aiModeHelp": "I utkastläge lämnar AI:n meddelandet i konversationen och en säljare avgör. Vi rekommenderar utkastläge i minst en vecka innan du går över till automatisk sändning.",
+      "aiBusinessName": "Verksamhetens namn",
+      "aiAbout": "Vad verksamheten säljer",
+      "aiAboutPlaceholder": "Installation och underhåll av luftkonditionering i Asunción med omnejd.",
+      "aiTone": "Tonläge",
+      "aiTonePlaceholder": "Nära, personligt, utan fackspråk",
+      "aiHours": "Tider den får nämna",
+      "aiNeverPromise": "Vad den aldrig får lova",
+      "aiNeverPromisePlaceholder": "Priser, leveranstider, rabatter, lagerstatus",
+      "aiMaxPerConversation": "Max antal svar per konversation och dag",
+      "aiMaxPerTenant": "Max antal svar per dag (hela kontot)",
+      "aiHandoffKeyword": "Ord som lämnar över till en människa",
+      "aiUsageTitle": "Månadens förbrukning",
+      "aiUsageBody": "{replies} svar · {prompt} indatatokens · {completion} utdatatokens · {total} totalt.",
+      "errors": {
+        "logoUrlInvalid": "Logotypens URL ser inte giltig ut.",
+        "primaryColorInvalid": "Färgen anges i formatet #RRGGBB.",
+        "timezoneRequired": "Ange en giltig tidszon.",
+        "defaultCountryInvalid": "Välj ett giltigt land.",
+        "reviewLinkInvalid": "Länken ser inte giltig ut.",
+        "aiLimitInvalid": "Gränsen är inte ett giltigt tal.",
+        "aiHandoffKeywordRequired": "Ange ett ord som lämnar över till en människa.",
+        "unknown": "Vi kunde inte spara. Försök igen."
+      },
+      "language": {
+        "title": "Språk",
+        "intro": "Välj språk för gränssnittet. Det är ditt eget: det ändrar varken vad dina kollegor ser eller vad dina kunder får.",
+        "label": "Språk",
+        "save": "Spara"
+      }
+    },
+    "automations": {
+      "title": "Automationer",
+      "adminOnly": "Bara administratörer kan se den här sidan",
+      "intro": "Varje flöde börjar med en trigger och följer en sekvens av villkor, väntetider och åtgärder. Publicera flödet för att slå på det.",
+      "empty": "Inga flöden ännu",
+      "emptyTitle": "Inga flöden ännu",
+      "emptyBody": "Ett typiskt flöde: ett lead kommer in från webbplatsen, en WhatsApp-mall skickas, det väntar två dagar på svar och skickar en påminnelse om inget kommer.",
+      "createTitle": "Nytt flöde",
+      "createFlow": "Skapa flöde",
+      "name": "Namn",
+      "trigger": "Trigger",
+      "pause": "Pausa",
+      "activate": "Aktivera",
+      "runsTitle": "Körningar",
+      "runStatus": "Status",
+      "currentNode": "Aktuell nod",
+      "startedAt": "Startad",
+      "cancelRun": "Avbryt",
+      "noRuns": "Inga körningar ännu",
+      "triggers": {
+        "wa_message_received": "WhatsApp-meddelande mottaget",
+        "form_submitted": "Formulär inskickat",
+        "lead_received": "Lead mottaget (webbplats eller formulär)",
+        "deal_stage_changed": "Affären bytte steg",
+        "contact_created": "Kontakt skapad",
+        "tag_added": "Tagg tillagd"
+      },
+      "statusValues": {
+        "draft": "Utkast",
+        "active": "Aktivt",
+        "paused": "Pausat"
+      },
+      "runStatusValues": {
+        "running": "Pågår",
+        "waiting": "Väntar",
+        "completed": "Klar",
+        "failed": "Misslyckades",
+        "cancelled": "Avbruten"
+      },
+      "errors": {
+        "nameRequired": "Ge automationen ett namn.",
+        "unknown": "Vi kunde inte skapa automationen. Försök igen."
+      },
+      "editor": {
+        "triggerNode": "Trigger",
+        "saveDraft": "Spara utkast",
+        "publish": "Publicera",
+        "draftSaved": "Utkastet sparades",
+        "published": "Flödet är publicerat och aktivt",
+        "deleteNode": "Ta bort nod",
+        "palette": {
+          "send_whatsapp": "Skicka WhatsApp",
+          "send_template": "Skicka mall",
+          "add_tag": "Lägg till tagg",
+          "remove_tag": "Ta bort tagg",
+          "move_deal_stage": "Flytta steg",
+          "assign_user": "Tilldela användare",
+          "create_note": "Skapa anteckning",
+          "has_tag": "Har tagg?",
+          "deal_in_stage": "I steg?",
+          "business_hours": "Öppettider?",
+          "has_replied_since": "Har svarat?",
+          "wait_duration": "Vänta",
+          "wait_for_reply": "Vänta på svar",
+          "ai_reply": "Svara med AI",
+          "send_review_request": "Be om en Google-recension"
+        },
+        "fields": {
+          "text": "Text",
+          "textPlaceholder": "Hej {tag}…",
+          "template": "Mall",
+          "language": "Språk",
+          "tagId": "Tagg-ID",
+          "stageId": "Steg-ID",
+          "userId": "Användar-ID",
+          "minutes": "Minuter",
+          "instructions": "Instruktioner till AI:n",
+          "instructionsPlaceholder": "Besvara frågan och erbjud att boka ett besök.",
+          "aiMode": "Läge",
+          "aiModeDraft": "Utkast (en säljare godkänner)",
+          "aiModeSend": "Skicka automatiskt",
+          "aiModeHint": "Automatisk sändning måste också vara påslagen för hela kontot under Inställningar. Så länge kontot står i utkastläge skapar den här noden utkast.",
+          "reviewTextPlaceholder": "Tack för ditt köp! Lämna gärna en recension: {tag}",
+          "reviewTextHint": "Lämnar du fältet tomt skickas ett standardmeddelande med länken. Ange recensionslänken under Inställningar."
+        }
+      }
+    },
+    "sites": {
+      "title": "Webbplatser",
+      "intro": "Varje webbplats i ditt nätverk skickar sina leads hit med sin egen nyckel. En webbplats leads hamnar i det steg du väljer, så att tandvård och byggmaterial aldrig blandas ihop.",
+      "adminOnly": "Bara administratörer kan se den här sidan",
+      "empty": "Inga webbplatser är anslutna ännu",
+      "emptyTitle": "Inga webbplatser är anslutna ännu",
+      "emptyBody": "Anslut den första webbplatsen i ditt nätverk så att dess leads hamnar i pipelinen automatiskt, med kampanj och källa. Koden som ska ligga i webbplatsens backend finns nedan.",
+      "createTitle": "Anslut ny webbplats",
+      "createSite": "Skapa webbplats",
+      "name": "Namn",
+      "slug": "Slug",
+      "domain": "Domän",
+      "pipeline": "Pipeline",
+      "stage": "Målsteg",
+      "waAccount": "WhatsApp-nummer",
+      "none": "Inget",
+      "active": "Aktiv",
+      "inactive": "Inaktiv",
+      "activate": "Aktivera",
+      "deactivate": "Avaktivera",
+      "saveRouting": "Spara",
+      "copyNow": "Kopiera nyckeln nu — den visas aldrig igen.",
+      "leads": "leads",
+      "totalLeads": "leads totalt",
+      "leadsWithDeal": "med öppen affär",
+      "byCampaign": "Leads per kampanj",
+      "errors": {
+        "nameRequired": "Ge webbplatsen ett namn.",
+        "slugInvalid": "Sluggen skrivs med små bokstäver, utan mellanslag eller accenter (t.ex. tandlakare-asuncion).",
+        "slugTaken": "Du har redan en webbplats med den sluggen.",
+        "unknown": "Vi kunde inte skapa webbplatsen. Försök igen."
+      },
+      "howToTitle": "Så ansluter du en webbplats",
+      "howToIntro": "Från webbplatsens backend (aldrig från webbläsaren — det är så nyckeln hålls dold):",
+      "guide": {
+        "title": "Så ansluter du en webbplats",
+        "intro": "Fyra steg. Webbplatsens formulär skickar uppgifterna till din egen server, och din server vidarebefordrar dem hit med webbplatsens nyckel.",
+        "steps": {
+          "create": {
+            "title": "Skapa webbplatsen här och kopiera nyckeln",
+            "body": "Använd formuläret ovan. Nyckeln visas bara en gång: spara den direkt. Tappar du bort den skapar du en ny nyckel och återkallar den gamla när webbplatsen skickar med den nya."
+          },
+          "env": {
+            "title": "Spara nyckeln i webbplatsens miljö",
+            "body": "Som VENDERCRM_API_KEY i .env-filen eller i webbhotellets miljövariabler. Aldrig i HTML:en, i webbläsarens JavaScript eller i kodförrådet."
+          },
+          "handler": {
+            "title": "Klistra in hanteraren på din server",
+            "body": "Välj din teknik nedan och kopiera koden. Formuläret pekar på din egen endpoint, och det är den som anropar VenderCRM."
+          },
+          "verify": {
+            "title": "Testa med ett riktigt inskick",
+            "body": "Fyll i formuläret med ditt eget nummer. Inom några sekunder dyker kontakten upp och, om du satt ett målsteg, även affären i pipelinen. Gör den inte det, kolla serverloggen: svaret säger varför."
+          }
+        },
+        "snippetTitle": "Kod till din webbplats",
+        "copy": "Kopiera",
+        "copied": "Kopierat",
+        "securityTitle": "Fem saker du inte bör hoppa över",
+        "security": {
+          "serverSide": "Nyckeln bor på webbplatsens server. Lägger du den i webbläsaren kan vem som helst läsa den och skriva in i din pipeline.",
+          "idempotency": "Skicka alltid idempotency_key. Med samma nyckel skapar ett omförsök eller en dubbelklickning ingen dubblettkontakt.",
+          "phone": "Telefonnumret är obligatoriskt och är kontaktens identitet. Vi tar emot paraguayanskt lokalformat (0981 123 456) och normaliserar det till +595.",
+          "spam": "Lägg in honeypot och gärna Cloudflare Turnstile. Spam stoppas på din webbplats, inte inne i CRM:et.",
+          "nonBlocking": "Svarar inte VenderCRM ska besökaren ändå få tacksidan, och felet loggas hos dig. Förlora aldrig ett lead på en timeout."
+        }
+      },
+      "turnstile": {
+        "title": "Botskydd (Cloudflare Turnstile)",
+        "intro": "Frivilligt. Visar din webbplats Turnstile-widgeten klistrar du in de två nycklarna från Cloudflare här. Utan detta fungerar webbplatsen precis som i dag.",
+        "statusOn": "— konfigurerat",
+        "statusOff": "— inte konfigurerat",
+        "siteKey": "Webbplatsnyckel (site key)",
+        "secret": "Hemlig nyckel (secret key)",
+        "secretStored": "Redan sparad — klistra in den igen om du vill byta",
+        "requireOnIngest": "Kräv token även vid inskick från webbplatsens server",
+        "save": "Spara Turnstile",
+        "saved": "Klart, Turnstile är sparat.",
+        "remove": "Ta bort Turnstile",
+        "errors": {
+          "turnstileIncomplete": "Ange båda nycklarna: webbplatsnyckeln och den hemliga."
+        }
+      },
+      "keys": {
+        "issue": "Skapa ytterligare en nyckel",
+        "revoke": "Återkalla",
+        "label": "Anteckning",
+        "labelPlaceholder": "t.ex. nytt webbhotell",
+        "lastUsed": "senast använd {when}",
+        "neverUsed": "inte använd ännu",
+        "maxReached": "Du har redan två aktiva nycklar. Återkalla en för att skapa en till.",
+        "errors": {
+          "tooManyKeys": "Du har redan två aktiva nycklar på den här webbplatsen.",
+          "unknown": "Vi kunde inte skapa nyckeln. Försök igen."
+        }
+      },
+      "hook": {
+        "title": "Webhook för kunders webbplatser (Elementor, Wix, Zapier)",
+        "intro": "För webbplatser som inte kan lagra en nyckel på sin server. Du skapar en URL, klistrar in den i kundens formulär, ber om ett testinskick och väljer sedan vilket fält som är vad. URL:en är hemlig: den som har den kan skicka in leads på den här webbplatsen.",
+        "statusOff": "— inte aktiverat",
+        "statusCapturing": "— väntar på testinskick",
+        "statusMapped": "— aktivt",
+        "copyNow": "Kopiera URL:en nu — den visas aldrig i sin helhet igen.",
+        "issue": "Skapa webhook-URL",
+        "reissue": "Skapa en ny URL",
+        "revoke": "Återkalla webhook",
+        "lastUsed": "senaste inskick {when}",
+        "neverUsed": "har inte tagit emot något ännu",
+        "mappingTitle": "Vilket fält är vad",
+        "noCaptures": "Skicka ett testinskick från kundens formulär. Vi sparar det som kommer in, och här kan du sedan välja varje fält ur listan.",
+        "captureHelp": "Vi har {count} sparade testinskick. Välj i listan vilket fält som motsvarar varje uppgift.",
+        "manualPath": "Eller skriv sökvägen",
+        "saveMapping": "Spara fält",
+        "saved": "Klart, nu kan du ta emot leads via webhooken.",
+        "clearCaptures": "Radera sparade testinskick",
+        "fields": {
+          "phone": "Telefon (obligatoriskt)",
+          "name": "Namn",
+          "email": "E-post",
+          "message": "Meddelande"
+        },
+        "errors": {
+          "phoneRequired": "Välj vilket fält som är telefonnumret: utan det kan vi inte skapa kontakten.",
+          "unknown": "Vi kunde inte spara. Försök igen."
+        }
+      },
+      "health": {
+        "idle": "Har inte tagit emot några leads ännu",
+        "ok": "Fungerar — senaste lead {when}",
+        "failing": "Problem — fel {status} ({reason}) den {when}",
+        "errorCount": "{count} fel totalt",
+        "reasons": {
+          "invalid-key": "ogiltig nyckel",
+          "site-inactive": "webbplatsen avaktiverad",
+          "tenant-unavailable": "kontot inte tillgängligt",
+          "tenant-read-only": "kontot i läsläge",
+          "rate-limited": "för många inskick",
+          "turnstile-failed": "botkontrollen godkändes inte",
+          "invalid-body": "ogiltiga uppgifter",
+          "phone-missing": "kom in utan telefonnummer, eller så ändrades fältet",
+          "unknown": "okänt fel"
+        }
+      },
+      "hookGuide": {
+        "title": "Anslut en kunds webbplats (utan att röra deras server)",
+        "intro": "För Elementor, Wix, Webflow, Zapier eller Make. Kunden behöver varken installera något eller ge dig åtkomst till sitt webbhotell: du skapar webhook-URL:en på webbplatsen ovan, de klistrar in den i sitt formulär, klart.",
+        "captureTitle": "Ett testinskick först",
+        "captureBody": "Så snart URL:en är på plats ber du om ett testinskick från kundens formulär. Vi sparar inskicket precis som det kom in, och sedan väljer du ur en lista vilket fält som är telefonnumret, vilket som är namnet och vilket som är meddelandet. Tills dess sparas inskicken som tester och går inte in i pipelinen.",
+        "urlNote": "Webhook-URL:en är hemlig: den som har den kan skicka in leads på den webbplatsen. Skicka den via en privat kanal och återkalla den härifrån om den läcker.",
+        "platforms": [
+          {
+            "id": "elementor",
+            "label": "Elementor",
+            "steps": [
+              "Öppna sidan med formuläret och börja redigera den i Elementor.",
+              "Markera formulärwidgeten och gå till «Actions After Submit».",
+              "Lägg till åtgärden «Webhook».",
+              "Klistra in webhook-URL:en i fältet «Webhook URL» och spara sidan.",
+              "Skicka ett testinskick från den publicerade sidan, inte från redigeraren."
+            ]
+          },
+          {
+            "id": "wix",
+            "label": "Wix",
+            "steps": [
+              "Gå till «Automations» i Wix-panelen och skapa en ny automation.",
+              "Välj «Form is submitted» som trigger och markera webbplatsens formulär.",
+              "Välj «Send an HTTP request» (eller «Webhook») som åtgärd.",
+              "Metod POST, klistra in webhook-URL:en och låt kroppen innehålla formulärets uppgifter.",
+              "Slå på automationen och skicka ett testinskick från den publicerade webbplatsen."
+            ]
+          },
+          {
+            "id": "zapier",
+            "label": "Zapier / Make",
+            "steps": [
+              "Skapa en Zap (eller ett scenario i Make) med kundens formulär som trigger.",
+              "Lägg till steget «Webhooks by Zapier» → «POST» (i Make: HTTP-modulen → «Make a request»).",
+              "Klistra in webhook-URL:en och välj JSON som format för kroppen.",
+              "Mappa formulärets fält till kroppen som de kommer; du behöver inte byta namn, du väljer vad som är vad här efteråt.",
+              "Slå på din Zap och kör ett test."
+            ]
+          },
+          {
+            "id": "otro",
+            "label": "Annat / manuellt",
+            "steps": [
+              "Vilket verktyg som helst som kan skicka en POST fungerar: Webflow Logic, Formidable, Contact Form 7 med en webhook-plugin, eller webbplatsens egen backend.",
+              "Skicka en POST till webhook-URL:en med formulärets innehåll som JSON (vi tar även emot inskick som form-data).",
+              "Ingen särskild header eller separat nyckel behövs: URL:en är själva behörigheten.",
+              "Skicka ett testinskick och kom tillbaka hit för att välja fälten."
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "superadmin": {
+    "nav": {
+      "tenants": "Företag",
+      "plans": "Planer",
+      "whatsappHealth": "WhatsApp",
+      "superadmin": "Superadministratör",
+      "audit": "Granskningslogg"
+    },
+    "tenantUsers": {
+      "title": "Företagets användare",
+      "intro": "Skapa företagets första administratör här. Den personen kan sedan bjuda in resten av teamet från sitt eget konto.",
+      "noUsers": "Företaget har inga användare ännu: skapa administratören nedan.",
+      "createTitle": "Skapa användare",
+      "name": "Namn",
+      "email": "E-post",
+      "password": "Första lösenord",
+      "role": "Roll",
+      "roles": {
+        "admin": "Administratör",
+        "agent": "Säljare"
+      },
+      "submit": "Skapa användare",
+      "created": "Användaren är skapad. Ge vidare e-post och lösenord:",
+      "errors": {
+        "invalid": "Kontrollera uppgifterna: lösenordet behöver minst 8 tecken.",
+        "emailTaken": "Den e-postadressen har redan ett konto.",
+        "unknown": "Vi kunde inte skapa användaren. Försök igen."
+      },
+      "inactive": "inaktiv",
+      "newPassword": "Nytt lösenord",
+      "setPassword": "Ange lösenord"
+    },
+    "tenants": {
+      "title": "Företag",
+      "intro": "Alla företag som använder VenderCRM: skapa ett nytt, spärra åtkomsten eller logga in som dem för att ge support.",
+      "createTitle": "Nytt företag",
+      "name": "Namn",
+      "slug": "Slug",
+      "status": "Status",
+      "statusValues": {
+        "active": "Aktivt",
+        "suspended": "Spärrat",
+        "trial": "Testperiod"
+      },
+      "suspend": "Spärra",
+      "activate": "Aktivera",
+      "impersonate": "Visa som",
+      "errors": {
+        "nameRequired": "Ge företaget ett namn.",
+        "slugInvalid": "Sluggen skrivs med små bokstäver, utan mellanslag eller accenter (t.ex. mitt-foretag).",
+        "slugTaken": "Det finns redan ett företag med den sluggen.",
+        "unknown": "Vi kunde inte skapa företaget. Försök igen."
+      }
+    },
+    "subscriptions": {
+      "title": "Prenumeration",
+      "none": "Ingen aktiv prenumeration",
+      "plan": "Plan",
+      "expiresAt": "Går ut",
+      "accessStatus": "Åtkomst",
+      "createTitle": "Ny prenumeration",
+      "recordPaymentTitle": "Registrera betalning",
+      "amount": "Belopp (PYG)",
+      "method": "Metod",
+      "methodValues": {
+        "transfer": "Banköverföring",
+        "cash": "Kontant",
+        "other": "Annat"
+      },
+      "reference": "Referens",
+      "notes": "Anteckningar",
+      "submit": "Registrera betalning",
+      "planPlaceholder": "Välj en plan",
+      "createSubmit": "Skapa prenumeration",
+      "errors": {
+        "planRequired": "Välj en plan i listan.",
+        "amountInvalid": "Beloppet anges i hela guaraní, utan decimaler eller punkter (t.ex. 250000).",
+        "unknown": "Vi kunde inte registrera det. Försök igen."
+      }
+    },
+    "plans": {
+      "title": "Planer",
+      "intro": "Planerna som företag kan teckna, med löptid och pris.",
+      "createTitle": "Ny plan",
+      "name": "Namn",
+      "durationMonths": "Löptid (månader)",
+      "price": "Pris (PYG)",
+      "active": "Aktiv",
+      "errors": {
+        "nameRequired": "Ge planen ett namn.",
+        "priceInvalid": "Priset anges i hela guaraní, större än noll.",
+        "unknown": "Vi kunde inte skapa planen. Försök igen."
+      }
+    },
+    "whatsappHealth": {
+      "title": "WhatsApp-status",
+      "tenant": "Företag",
+      "number": "Nummer",
+      "status": "Status",
+      "quality": "Kvalitet",
+      "connectedVia": "Anslutning",
+      "noAccounts": "Inga nummer är anslutna ännu",
+      "failedWebhooks": "Misslyckade webhooks",
+      "noFailures": "Inga fel den senaste tiden",
+      "deadJobs": "Uttömda jobb",
+      "noDeadJobs": "Inga uttömda jobb",
+      "queueDead": "Uttömda jobb (hela kön)",
+      "noQueueDead": "Inga uttömda jobb",
+      "queueStuck": "Fastnade jobb",
+      "queueStuckIntro": "Kör fortfarande långt efter att de borde ha blivit klara: nästan alltid en process som dog halvvägs.",
+      "noQueueStuck": "Inga fastnade jobb",
+      "retryJob": "Försök igen"
+    }
+  },
+  "marketing": {
+    "nav": {
+      "home": "Start",
+      "metodo": "Metod",
+      "nosotros": "Om oss",
+      "contacto": "Kontakt",
+      "login": "Logga in",
+      "skipToContent": "Till innehållet",
+      "menu": "Meny"
+    },
+    "cta": {
+      "primary": "Boka din genomlysning",
+      "whatsapp": "Skriv till oss på WhatsApp",
+      "secondary": "Se hur vi arbetar",
+      "waPrefill": "Hej, jag kommer från clientes.com.py och vill boka en genomlysning."
+    },
+    "ribbon": {
+      "monthly": "Månad för månad, ingen bindningstid",
+      "measured": "Allt mäts: du vet vad varje förfrågan kostade",
+      "ownData": "Kontaktregistret är ditt",
+      "region": "Asunción och Stor-Asunción",
+      "ruc": "Org.nr {ruc}"
+    },
+    "home": {
+      "meta": {
+        "title": "Fler kunder till ditt företag | clientes.com.py",
+        "description": "Vi hjälper etablerade paraguayanska företag att få fler kunder med en ordnad säljprocess: leadfångst, uppföljning och mätning."
+      },
+      "hero": {
+        "eyebrow": "Kommersiell tillväxt i Paraguay",
+        "title": "Fler kunder. En ordnad säljprocess.",
+        "lead": "Vi hjälper redan etablerade paraguayanska företag att få fler kunder — med ett system, inte med tur.",
+        "body": "Har du redan en produkt som fungerar och kunder som återkommer är taket sällan efterfrågan. Det är att leadfångsten hänger på vem som råkar ha tid den veckan.",
+        "points": [
+          "En förfrågningskanal som inte stängs av när teamet har fullt upp",
+          "Uppföljning som sker ändå, oavsett vem som är i tjänst",
+          "Tydliga siffror: hur många förfrågningar kom in och hur många stängdes"
+        ],
+        "asideTitle": "Så börjar det",
+        "asideBody": "Ett genomlysningssamtal på 30 minuter. Vi går igenom var dina kunder kommer ifrån i dag, vad som tappas på vägen och vad som kan ordnas först.",
+        "asideNote": "Kostnadsfritt och utan förpliktelser. Ser vi inte hur vi kan hjälpa dig säger vi det direkt i samtalet."
+      },
+      "problem": {
+        "eyebrow": "Utgångsläget",
+        "title": "Det är inte kunder du saknar. Det är en process.",
+        "body": "De flesta företag vi arbetar med har varken ett produkt- eller marknadsproblem. De har förfrågningar som kommer in från fem olika håll, offerter som aldrig får svar och inget sätt att veta vad som fungerade förra månaden.",
+        "bodyTwo": "Det löses inte med mer annonsering. Det löses genom att ordna det som redan kommer in, och lägga leadfångst ovanpå en grund som håller.",
+        "symptomsTitle": "Det märks i konkreta saker",
+        "symptoms": [
+          "Förfrågningar via WhatsApp, telefon, Instagram och formuläret, utan en enda lista",
+          "Skickade offerter som ingen rör igen",
+          "Säljare som börjar varje månad från noll, utan att veta vem de ska ta upp igen",
+          "Bra och dåliga månader utan någon tydlig förklaring till varför"
+        ]
+      },
+      "services": {
+        "eyebrow": "Tjänster",
+        "title": "Vad vi gör",
+        "lead": "Allt pekar åt samma håll: att förfrågningar kommer in och att du hinner ta hand om dem. Vi väljer kanaler i genomlysningen, inte innan.",
+        "items": [
+          {
+            "name": "Google Ads",
+            "body": "Synas precis när någon söker efter det du säljer. Sök, Performance Max och remarketing."
+          },
+          {
+            "name": "Meta Ads",
+            "body": "Kampanjer på Facebook och Instagram riktade mot dem som köper, inte mot dem som skrollar. Kreativ, målgrupper och veckovis optimering."
+          },
+          {
+            "name": "SEO",
+            "body": "Lokal och nationell synlighet så att du hittas utan att betala för varje klick."
+          },
+          {
+            "name": "Webbplatser",
+            "body": "Snabba sidor, byggda för mobil och för att konvertera till WhatsApp. Inte digitala broschyrer."
+          },
+          {
+            "name": "Sociala medier och innehåll",
+            "body": "En närvaro som bär försäljningen: innehåll med avsikt och en kalender som faktiskt följs, inte publicering för publiceringens skull."
+          },
+          {
+            "name": "AI-automation",
+            "body": "Omedelbart svar på varje förfrågan och automatisk uppföljning via WhatsApp, så att inget hänger på vem som har tid den eftermiddagen."
+          }
+        ],
+        "fineprint": "Annonsbudgeten betalar du själv, direkt till Google eller Meta. Den går aldrig genom oss, och du ser alltid vad den gick till."
+      },
+      "method": {
+        "eyebrow": "Metoden",
+        "title": "Fyra steg, i den här ordningen",
+        "lead": "Vi börjar inte med annonseringen. Vi börjar med att förstå var dina kunder kommer ifrån i dag och vad som tappas.",
+        "linkLabel": "Se hela metoden",
+        "steps": [
+          {
+            "title": "Genomlysning",
+            "body": "Vi tittar på dina nuvarande kanaler, din säljcykel och vad som händer med en förfrågan från att den kommer in tills den stängs."
+          },
+          {
+            "title": "Leadfångst",
+            "body": "Vi ordnar närvaron och ingångarna så att en intresserad person kan kontakta dig utan friktion."
+          },
+          {
+            "title": "Uppföljning",
+            "body": "Varje förfrågan registreras och får en ansvarig, med egna påminnelser. Inget hänger på någons minne."
+          },
+          {
+            "title": "Mätning",
+            "body": "Hur många förfrågningar kom in, varifrån, hur många stängdes. Utifrån det avgörs vad som ska upprepas nästa månad."
+          }
+        ]
+      },
+      "verticals": {
+        "eyebrow": "Vilka vi arbetar med",
+        "title": "Branscher där metoden redan är prövad",
+        "lead": "Företag med ett validerat erbjudande och eget team, där tillväxten fastnar i leadfångst och uppföljning, inte i produkten.",
+        "items": [
+          {
+            "name": "Kliniker och mottagningar",
+            "body": "Patienter som hör av sig på WhatsApp utanför öppettiderna, och tider som går förlorade för att ingen svarade i tid."
+          },
+          {
+            "name": "Byggföretag",
+            "body": "Projekt och offerter med långa cykler, där uppföljningen avgör vem som till slut skriver på."
+          },
+          {
+            "name": "Fastighetsmäklare",
+            "body": "Förfrågningar och visningar som kommer in från flera portaler och slutar utan ansvarig och utan spår."
+          },
+          {
+            "name": "Professionella tjänster",
+            "body": "Byråer och konsulter som växer på rekommendation och vill ha en andra kanal som inte hänger på den."
+          },
+          {
+            "name": "B2B-företag",
+            "body": "Försäljning där flera personer beslutar, och att tappa tråden kostar månader."
+          }
+        ]
+      },
+      "statement": {
+        "text": "Ett system som inte hänger på vem som är i tjänst.",
+        "sub": "Det är det som skiljer en bra månad från ett bra år."
+      },
+      "closing": {
+        "eyebrow": "Nästa steg",
+        "title": "Låt oss börja med genomlysningen",
+        "body": "En halvtimme, kostnadsfritt. Du går därifrån med en tydlig bild av var arbete tappas, oavsett om du jobbar med oss eller inte.",
+        "panelTitle": "Vad vi behöver från dig",
+        "panelItems": [
+          "Var dina kunder kommer ifrån i dag",
+          "Hur många som säljer i ditt team",
+          "Vad som händer med en förfrågan när den kommit in"
+        ]
+      }
+    },
+    "metodo": {
+      "meta": {
+        "title": "Vår metod för att få fler kunder | clientes.com.py",
+        "description": "Genomlysning, leadfångst, uppföljning och mätning: de fyra stegen vi använder för att ordna kundanskaffningen hos paraguayanska företag."
+      },
+      "header": {
+        "eyebrow": "Metoden",
+        "title": "Så arbetar vi",
+        "lead": "En fast ordning, fyra steg och en regel: vi lägger inte leadfångst ovanpå en process som fortfarande tappar förfrågningar.",
+        "body": "Det som följer är bokstavligen vad vi gör, i den ordning vi gör det. Inget steg är valfritt: varje steg finns för att nästa inte fungerar utan det."
+      },
+      "steps": {
+        "eyebrow": "De fyra stegen",
+        "title": "Genomlysning, leadfångst, uppföljning, mätning",
+        "items": [
+          {
+            "title": "Genomlysning",
+            "lead": "Förstå innan något rörs.",
+            "body": "Vi går igenom var dina kunder kommer ifrån i dag, hur lång din säljcykel är och vad som händer med en förfrågan från att den kommer in tills den stängs eller tappas. Nästan alltid dyker det upp ett läckage som ingen tittade på.",
+            "points": [
+              "Karta över nuvarande kanaler och den faktiska volymen förfrågningar",
+              "Hela resan för en förfrågan, punkt för punkt",
+              "Var arbete tappas i dag, med konkreta exempel"
+            ]
+          },
+          {
+            "title": "Leadfångst",
+            "lead": "Den som vill kontakta dig ska kunna göra det.",
+            "body": "Vi ordnar närvaron och ingångarna: sidan, formuläret, WhatsApp-numret, Google-profilen. Målet är inte mer trafik, utan att den intresserade som redan finns inte faller mellan stolarna.",
+            "points": [
+              "Tydliga kontaktvägar och ett sätt in",
+              "Formulär som hamnar i en lista, inte i en lös inkorg",
+              "WhatsApp som ingång, med spår av det som kommer in"
+            ]
+          },
+          {
+            "title": "Uppföljning",
+            "lead": "Inget hänger på någons minne.",
+            "body": "Varje förfrågan registreras, med en ansvarig och en nästa åtgärd. Skickade offerter dyker upp igen av sig själva när det är dags. Det är här den största delen av det arbete som i dag tappas hämtas hem.",
+            "points": [
+              "En enda lista över förfrågningar, var och en med en ansvarig",
+              "Uppföljningspåminnelser som dyker upp utan att någon lägger in dem",
+              "Historik för varje konversation, tillgänglig för hela teamet"
+            ]
+          },
+          {
+            "title": "Mätning",
+            "lead": "Besluta med siffror, inte med känsla.",
+            "body": "Hur många förfrågningar som kom in, via vilken kanal, hur många som konverterade och hur lång tid de tog. Utifrån det avgörs vad som upprepas nästa månad och vad som stryks.",
+            "points": [
+              "Förfrågningar per kanal och per månad",
+              "Avslutsgrad och genomsnittlig cykeltid",
+              "En återkommande genomgång med beslut, inte bara rapporter"
+            ]
+          }
+        ]
+      },
+      "included": {
+        "eyebrow": "Vad som ingår",
+        "title": "Det som blir kvar och fungerar",
+        "lead": "Arbetet är klart när ditt team kan hålla igång det utan att vi står bredvid.",
+        "items": [
+          {
+            "title": "Plattformen",
+            "body": "Plattformen där ditt team ser varje förfrågan och varje uppföljning ingår. Den är vår, heter VenderCRM, och är inget du behöver köpa separat."
+          },
+          {
+            "title": "Den skrivna processen",
+            "body": "Vem som tar hand om vad, hur snabbt svar går ut och när en offert tas upp igen. Kort och användbart, inte en manual som ingen öppnar."
+          },
+          {
+            "title": "Det upplärda teamet",
+            "body": "Vi följer med de som säljer tills processen går av sig själv. Ett verktyg som ingen använder har inte förändrat något."
+          }
+        ]
+      },
+      "statement": {
+        "text": "Metoden är produkten.",
+        "sub": "Verktygen kommer sedan, och blir de som behövs."
+      },
+      "faq": {
+        "eyebrow": "Vanliga frågor",
+        "title": "Det vi oftast får frågor om",
+        "items": [
+          {
+            "q": "Hur lång tid tar det innan man ser resultat?",
+            "a": "Ordnad uppföljning brukar visa något redan de första veckorna, eftersom den hämtar hem förfrågningar du redan hade. Ny leadfångst tar längre tid och beror på säljcykeln i din bransch."
+          },
+          {
+            "q": "Arbetar ni med företag som precis har startat?",
+            "a": "Nej. Vi arbetar med företag som redan har kunder, ett team och ett erbjudande som fungerar. Håller du fortfarande på att validera vad du ska sälja är vi fel partner, och det säger vi."
+          },
+          {
+            "q": "Måste vi byta de verktyg vi redan använder?",
+            "a": "Bara det som behöver bytas. Fungerar något redan får det vara kvar. Det som inte kan vara kvar är en förfrågan som inte registreras."
+          },
+          {
+            "q": "Vad kostar det?",
+            "a": "Det beror på omfattningen och kommer ut ur genomlysningen. Vi ger hellre en siffra vi kan stå för än en prislista som inte liknar ditt fall."
+          }
+        ]
+      }
+    },
+    "nosotros": {
+      "meta": {
+        "title": "Vilka vi är | clientes.com.py",
+        "description": "Ett team inriktat på kommersiell tillväxt hos etablerade paraguayanska företag: varför Paraguay, varför dessa branscher och hur vi arbetar."
+      },
+      "header": {
+        "eyebrow": "Om oss",
+        "title": "Vilka som står bakom",
+        "lead": "Vi är ett litet team som arbetar med etablerade paraguayanska företag, vid punkten där tillväxt slutar handla om ansträngning och börjar handla om process."
+      },
+      "story": {
+        "eyebrow": "Varför det här",
+        "title": "Varför Paraguay och varför dessa branscher",
+        "body": "I Paraguay finns väldigt många stabila företag — kliniker med lång erfarenhet, byggföretag med jämn orderingång, byråer med egen kundstock — som vuxit på rekommendation och gott arbete. Den tillväxten fungerar tills den slutar skala.",
+        "bodyTwo": "Nästa kliv är nästan aldrig en kampanj. Det är att sluta tappa förfrågningar och kunna upprepa det som redan fungerar. Det är precis vad vi gör, och därför arbetar vi med företag som redan har något, inte med projekt som precis startat.",
+        "bodyThree": "Vi bygger själva det vi använder: plattformen där ditt team följer varje förfrågan har vi utvecklat. När något inte fungerar finns det ingen att skicka dig vidare till."
+      },
+      "principles": {
+        "eyebrow": "Så arbetar vi",
+        "title": "Tre saker vi inte förhandlar om",
+        "lead": "Det här är ingen värdegrund för väggen. Det är de tre regler som oftast kostat oss pengar att hålla fast vid.",
+        "items": [
+          {
+            "title": "Vi säger nej",
+            "body": "Ser vi i genomlysningen att vi inte kan flytta nålen säger vi det direkt. En felaktigt antagen kund kostar mer än den ger."
+          },
+          {
+            "title": "Siffror före åsikter",
+            "body": "Allt vi föreslår måste gå att mäta. Går det inte att mäta är det en idé, inte en rekommendation."
+          },
+          {
+            "title": "Det ska fungera utan oss",
+            "body": "Målet är att ditt team håller igång processen på egen hand. Ett permanent beroende vore bekvämt för oss och dåligt för dig."
+          }
+        ]
+      },
+      "statement": {
+        "text": "Vi arbetar med få företag åt gången.",
+        "sub": "Det är enda sättet att komma in på riktigt i varje verksamhet."
+      }
+    },
+    "contacto": {
+      "meta": {
+        "title": "Boka din genomlysning | clientes.com.py",
+        "description": "Berätta om ditt företag så bokar vi ett kostnadsfritt genomlysningssamtal på 30 minuter för att se var arbete tappas."
+      },
+      "header": {
+        "eyebrow": "Kontakt",
+        "title": "Låt oss boka genomlysningen",
+        "lead": "Berätta kort om ditt företag så bokar vi ett samtal på 30 minuter. Kostnadsfritt och utan förpliktelser."
+      },
+      "form": {
+        "name": "För- och efternamn",
+        "company": "Företag",
+        "phone": "Telefon eller WhatsApp",
+        "phonePlaceholder": "0981 123 456",
+        "phoneHint": "Det är snabbaste sättet att boka. Vi skriver innan vi ringer.",
+        "email": "E-post",
+        "emailOptional": "E-post (frivilligt)",
+        "sector": "Bransch",
+        "sectorPlaceholder": "Välj ett alternativ",
+        "sectorOptions": [
+          "Klinik eller mottagning",
+          "Byggföretag",
+          "Fastighetsmäklare",
+          "Professionella tjänster",
+          "B2B-företag",
+          "Annat"
+        ],
+        "message": "Berätta kort vad du vill lösa",
+        "messageOptional": "Berätta kort vad du vill lösa (frivilligt)",
+        "submit": "Skicka och boka",
+        "submitting": "Skickar…",
+        "privacy": "Vi använder dina uppgifter enbart för att kontakta dig om den här förfrågan.",
+        "honeypotLabel": "Lämna det här fältet tomt"
+      },
+      "success": {
+        "title": "Vi har tagit emot din förfrågan",
+        "body": "Vi hör av oss under kommande arbetstimmar för att boka en tid. Vill du snabba på det, skriv direkt till oss på WhatsApp.",
+        "backLabel": "Till startsidan"
+      },
+      "errors": {
+        "phone": "Vi behöver ett telefonnummer för att kunna boka. Kontrollera numret och försök igen.",
+        "generic": "Vi kunde inte skicka din förfrågan. Försök igen eller skriv till oss på WhatsApp."
+      },
+      "aside": {
+        "title": "Vad som händer sedan",
+        "steps": [
+          "Vi hör av oss för att boka dag och tid",
+          "Vi pratar i 30 minuter om ditt nuläge",
+          "Du får en tydlig bild, oavsett om vi jobbar ihop eller inte"
+        ],
+        "pricingTitle": "Om priser",
+        "pricingBody": "Skräddarsytt utifrån genomlysningen. Vi ger hellre en siffra vi kan stå för än en lista som inte liknar ditt fall.",
+        "whatsappTitle": "Jag skriver hellre nu",
+        "whatsappBody": "Vill du dra igång samtalet direkt, skriv till oss så svarar vi under arbetstid."
+      },
+      "faq": {
+        "title": "Innan du skriver",
+        "items": [
+          {
+            "q": "Hur mycket måste jag investera i annonsering?",
+            "a": "Det beror på bransch och område. I första samtalet ger vi dig ett realistiskt spann för ditt fall, innan du lagt en enda guaraní. Och tror vi att det ännu inte lönar sig för dig att investera säger vi det då."
+          },
+          {
+            "q": "Binder ni upp mig i ett långt avtal?",
+            "a": "Nej. Vi arbetar månad för månad. Ger arbetet inget lämnar du utan avgift."
+          },
+          {
+            "q": "Är kontakterna mina?",
+            "a": "Ja. De hamnar i ditt eget konto, med dina uppgifter. Slutar vi jobba ihop stannar registret hos dig."
+          },
+          {
+            "q": "Kostar det första samtalet något?",
+            "a": "Nej. Det är ett genomlysningssamtal på 30 minuter, kostnadsfritt och utan förpliktelser."
+          },
+          {
+            "q": "Arbetar ni utanför Asunción?",
+            "a": "Ja. Det mesta av arbetet sker på distans, så platsen är inget hinder."
+          }
+        ]
+      }
+    },
+    "footer": {
+      "tagline": "Vi hjälper etablerade paraguayanska företag att få fler kunder, med en ordnad säljprocess.",
+      "siteTitle": "Webbplatsen",
+      "contactTitle": "Kontakt",
+      "loginNote": "Är du kund?",
+      "rights": "Alla rättigheter förbehållna.",
+      "madeIn": "Gjort i Paraguay"
+    }
+  },
+  "errors": {
+    "global": {
+      "title": "Något gick fel",
+      "body": "Appen kunde inte laddas. Försök igen om några sekunder.",
+      "retry": "Försök igen"
+    },
+    "app": {
+      "title": "Vi kunde inte visa sidan",
+      "body": "Något gick fel när dina uppgifter laddades. Försök igen eller gå tillbaka till översikten.",
+      "retry": "Försök igen",
+      "back": "Till översikten"
+    },
+    "superadmin": {
+      "title": "Vi kunde inte visa sidan",
+      "body": "Något gick fel i administrationskonsolen.",
+      "retry": "Försök igen",
+      "back": "Till kunder"
+    },
+    "public": {
+      "title": "Vi kunde inte visa dokumentet",
+      "body": "Länken kan ha gått ut, eller så är dokumentet inte längre tillgängligt.",
+      "retry": "Försök igen"
+    },
+    "marketing": {
+      "title": "Något gick fel",
+      "body": "Vi kunde inte ladda den här delen av webbplatsen.",
+      "retry": "Försök igen",
+      "back": "Till startsidan"
+    },
+    "notFound": {
+      "app": {
+        "title": "Vi hittar inte sidan",
+        "body": "Länken kan vara felstavad, eller så har posten tagits bort.",
+        "back": "Till översikten"
+      },
+      "superadmin": {
+        "title": "Vi hittar inte sidan",
+        "body": "Länken kan vara felstavad, eller så har posten tagits bort.",
+        "back": "Till kunder"
+      },
+      "public": {
+        "title": "Ogiltig länk",
+        "body": "Länken finns inte eller har gått ut. Be den som skickade den om en ny."
+      },
+      "marketing": {
+        "title": "Sidan hittades inte",
+        "body": "Sidan du söker finns inte.",
+        "back": "Till startsidan"
+      }
+    },
+    "loading": {
+      "label": "Laddar innehåll"
+    }
+  },
+  "audit": {
+    "title": "Granskningslogg",
+    "intro": "Vem gjorde vad, och när. Åtgärder som utförts medan kontot visas som en annan användare visar också den verkliga superadministratören.",
+    "when": "Datum",
+    "action": "Åtgärd",
+    "entity": "Objekt",
+    "actor": "Användare",
+    "tenant": "Företag",
+    "via": "(via {user})",
+    "empty": "Ingen aktivitet är registrerad ännu."
+  },
+  "email": {
+    "invitation": {
+      "subject": "{inviter} har bjudit in dig till {tenant} i VenderCRM",
+      "title": "Du har blivit inbjuden till {tenant}",
+      "body": "{inviter} har bjudit in dig till teamet i VenderCRM. Länken gäller i 7 dagar.",
+      "cta": "Acceptera inbjudan"
+    },
+    "passwordReset": {
+      "subject": "Återställ ditt lösenord — VenderCRM",
+      "title": "Återställ ditt lösenord",
+      "body": "Du har begärt att återställa ditt lösenord. Var det inte du kan du bortse från det här mejlet — länken gäller i en timme.",
+      "cta": "Välj nytt lösenord"
+    },
+    "subscriptionExpiry": {
+      "subject": "Din prenumeration på VenderCRM går ut om {days} dagar",
+      "title": "Din prenumeration går snart ut",
+      "body": "Prenumerationen för <strong>{tenant}</strong> går ut den <strong>{date}</strong>. Därefter har du {grace} dagars läsbehörighet innan kontot spärras. Kontakta din leverantör för att förnya och undvika avbrott."
+    },
+    "siteIngestAlert": {
+      "lastLead": "Det senaste leadet kom in den <strong>{date}</strong>.",
+      "noLeadYet": "Vi har inte fått något lead från den här webbplatsen ännu.",
+      "staleSubject": "{site}: inga leads på {days} dagar",
+      "staleTitle": "{site} har tystnat",
+      "staleBody": "Inget lead har kommit in från den här webbplatsen på <strong>{days} dagar</strong>, och tidigare kom de in. {lastLead} Det kan vara en lugn period, eller så har formuläret gått sönder utan att någon märkt det. Skicka gärna ett testutskick.",
+      "staleLink": "Se status för dina webbplatser",
+      "failingSubject": "{site}: leads kommer inte in",
+      "failingTitle": "{site} kan inte skicka in leads",
+      "failingBody": "Senaste försöket misslyckades (fel {status}): {reason}. Så länge det står så här når formulärets inskick aldrig pipelinen.",
+      "failingLink": "Kontrollera webbplatsen",
+      "reasons": {
+        "invalid-key": "nyckeln som webbplatsen använder är ogiltig",
+        "site-inactive": "webbplatsen är avaktiverad",
+        "tenant-unavailable": "kontot är inte tillgängligt",
+        "tenant-read-only": "kontot är i läsläge",
+        "rate-limited": "för många inskick kom in i rad",
+        "turnstile-failed": "botkontrollen godkändes inte",
+        "invalid-body": "uppgifterna kom in ofullständiga eller i fel format",
+        "phone-missing": "det kom in utan telefonnummer, eller så har fältnamnet ändrats i formuläret",
+        "unknown": "okänt fel"
+      }
+    }
+  },
+  "pdf": {
+    "quote": {
+      "title": "OFFERT",
+      "client": "Kund",
+      "description": "Beskrivning",
+      "qty": "Antal",
+      "price": "Pris",
+      "total": "Totalt",
+      "subtotal": "Delsumma",
+      "discount": "Rabatt",
+      "validUntil": "Giltig till:",
+      "footer": "Icke-fiskalt dokument · Elektronisk fakturering kommer snart"
+    },
+    "notaVenta": {
+      "title": "FÖRSÄLJNINGSNOTA",
+      "client": "Kund",
+      "dueAt": "Förfaller:",
+      "description": "Beskrivning",
+      "qty": "Antal",
+      "price": "Pris",
+      "total": "Totalt",
+      "subtotal": "Delsumma",
+      "discount": "Rabatt",
+      "paid": "Betalt",
+      "balance": "Saldo",
+      "notes": "Anteckningar",
+      "disclaimer": "Icke-fiskalt dokument. Detta kvitto är ingen faktura och saknar skattemässig giltighet.",
+      "state": {
+        "unpaid": "OBETALD",
+        "partial": "DELBETALD",
+        "paid": "BETALD",
+        "void": "MAKULERAD"
+      }
+    }
+  },
+  "public": {
+    "shared": {
+      "rateLimited": "För många förfrågningar. Försök igen om en stund."
+    },
+    "quote": {
+      "title": "OFFERT",
+      "client": "Kund",
+      "description": "Beskrivning",
+      "qty": "Antal",
+      "price": "Pris",
+      "total": "Totalt",
+      "subtotal": "Delsumma",
+      "discount": "Rabatt",
+      "validUntil": "Giltig till:",
+      "downloadPdf": "Ladda ner PDF",
+      "footer": "Icke-fiskalt dokument · Elektronisk fakturering kommer snart"
+    },
+    "document": {
+      "title": "Försäljningsnota",
+      "client": "Kund",
+      "dueAt": "Förfaller:",
+      "description": "Beskrivning",
+      "qty": "Antal",
+      "price": "Pris",
+      "total": "Totalt",
+      "subtotal": "Delsumma",
+      "discount": "Rabatt",
+      "paid": "Betalt",
+      "balance": "Saldo",
+      "notes": "Anteckningar",
+      "downloadPdf": "Ladda ner PDF",
+      "disclaimer": "Icke-fiskalt dokument. Detta kvitto är ingen faktura och saknar skattemässig giltighet.",
+      "state": {
+        "unpaid": "Obetald",
+        "partial": "Delbetald",
+        "paid": "Betald",
+        "void": "Makulerad"
+      }
+    },
+    "form": {
+      "submit": "Skicka",
+      "thanksTitle": "Tack!",
+      "thanksBody": "Vi har tagit emot dina uppgifter. Vi hör av oss snart."
+    }
+  }
+}

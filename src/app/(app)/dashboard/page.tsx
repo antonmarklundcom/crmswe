@@ -9,7 +9,8 @@ import {
   Users,
   type LucideIcon,
 } from "lucide-react";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
+import { formatDateTime, formatNumber } from "@/lib/i18n/format";
 
 import { requireTenantContext } from "@/modules/tenancy/context";
 import { getTenant } from "@/modules/tenancy/tenants";
@@ -28,15 +29,6 @@ import {
 // attention today (the counters), and tell someone who just got their login
 // what to do first (the checklist). Every number comes from the tenant-scoped
 // read model in modules/dashboard — no raw db, no cross-tenant reads.
-
-const number = new Intl.NumberFormat("es-PY");
-
-const dateTime = new Intl.DateTimeFormat("es-PY", {
-  day: "2-digit",
-  month: "2-digit",
-  hour: "2-digit",
-  minute: "2-digit",
-});
 
 function StatCard({
   icon: Icon,
@@ -107,6 +99,8 @@ function ChecklistItem({
 export default async function DashboardPage() {
   const ctx = await requireTenantContext();
   const t = await getTranslations("app.dashboard");
+  const locale = await getLocale();
+  const formatNumberL = (value: number) => formatNumber(value, locale);
   const tActivity = await getTranslations("app.contacts.activityTypes");
 
   const [tenant, summary] = await Promise.all([
@@ -163,30 +157,30 @@ export default async function DashboardPage() {
         <StatCard
           icon={SquareKanban}
           label={t("stats.openDeals")}
-          value={number.format(stats.openDeals)}
+          value={formatNumberL(stats.openDeals)}
           hint={t("stats.openDealsHint", {
-            value: number.format(stats.openDealsValuePyg),
+            value: formatNumberL(stats.openDealsValuePyg),
           })}
           href="/pipeline"
         />
         <StatCard
           icon={MessagesSquare}
           label={t("stats.unread")}
-          value={number.format(stats.unreadMessages)}
+          value={formatNumberL(stats.unreadMessages)}
           hint={t("stats.unreadHint", { count: stats.unreadConversations })}
           href="/inbox"
         />
         <StatCard
           icon={FileText}
           label={t("stats.pendingQuotes")}
-          value={number.format(stats.pendingQuotes)}
+          value={formatNumberL(stats.pendingQuotes)}
           hint={t("stats.pendingQuotesHint")}
           href="/quotes"
         />
         <StatCard
           icon={Users}
           label={t("stats.contacts")}
-          value={number.format(stats.contacts)}
+          value={formatNumberL(stats.contacts)}
           hint={t("stats.contactsHint")}
           href="/contacts"
         />
@@ -266,7 +260,7 @@ export default async function DashboardPage() {
                     </span>
                   </span>
                   <span className="text-xs text-muted-foreground tabular-nums">
-                    {dateTime.format(activity.createdAt)}
+                    {formatDateTime(activity.createdAt, locale)}
                   </span>
                 </li>
               ))}

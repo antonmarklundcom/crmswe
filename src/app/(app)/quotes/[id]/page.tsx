@@ -8,6 +8,8 @@ import { getDocumentByQuote } from "@/modules/documents/documents";
 import { getContact } from "@/modules/crm/contacts";
 import { Button } from "@/components/ui/button";
 import { sendQuoteAction, setQuoteStatusAction, convertQuoteToDocumentAction } from "../actions";
+import { formatMoney } from "@/lib/i18n/format";
+import { getLocale } from "next-intl/server";
 
 export default async function QuoteDetailPage({
   params,
@@ -17,6 +19,7 @@ export default async function QuoteDetailPage({
   const { id } = await params;
   const ctx = await requireTenantContext();
   const t = await getTranslations("app.quotes");
+  const locale = await getLocale();
   const td = await getTranslations("app.documents");
 
   const quote = await getQuote(ctx, id);
@@ -28,7 +31,7 @@ export default async function QuoteDetailPage({
     getDocumentByQuote(ctx, quote.id),
   ]);
 
-  const fmt = (n: number) => `${new Intl.NumberFormat("es-PY").format(n)} ${quote.currency}`;
+  const fmt = (n: number) => formatMoney(n, quote.currency, locale);
   const publicUrl = publicQuoteUrl(quote.publicToken);
 
   return (

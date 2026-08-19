@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import Script from "next/script";
 import { getPublicForm } from "@/modules/forms/submissions";
 import type { FormField } from "@/modules/forms/forms";
+import { getTranslator } from "@/lib/i18n/translator";
 import { submitFormAction } from "./actions";
 
 export default async function PublicFormPage({
@@ -13,7 +14,10 @@ export default async function PublicFormPage({
   const resolved = await getPublicForm(tenantSlug, formSlug);
   if (!resolved) notFound();
 
-  const { form, turnstileSiteKey } = resolved;
+  const { tenant, form, turnstileSiteKey } = resolved;
+  // The tenant whose form this is decides the language of the chrome around
+  // their own field labels (PLAN.md §13 H5 #4).
+  const t = await getTranslator(tenant.locale, "public.form");
   const fields = form.fields as FormField[];
   const action = submitFormAction.bind(null, tenantSlug, formSlug);
 
@@ -69,7 +73,7 @@ export default async function PublicFormPage({
           </>
         )}
         <button type="submit" className="rounded-md bg-primary px-4 py-2 text-primary-foreground">
-          Enviar
+          {t("submit")}
         </button>
       </form>
     </main>

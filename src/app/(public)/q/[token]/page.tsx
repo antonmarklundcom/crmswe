@@ -5,16 +5,18 @@ import { getContact } from "@/modules/crm/contacts";
 import { getTenant } from "@/modules/tenancy/tenants";
 import type { TenantSettings } from "@/modules/tenancy/settings";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { getTranslator } from "@/lib/i18n/translator";
+import { formatDate, formatNumber } from "@/lib/i18n/format";
 
 // Public read-only quote view (PLAN.md §8) — the token is the secret, and
 // there is deliberately no accept/reject button in Phase 1: the rep sets
 // those by hand in the CRM.
 
-function money(amount: number, currency: string): string {
-  const formatted = new Intl.NumberFormat("es-PY", {
+function money(amount: number, currency: string, locale: string): string {
+  const formatted = formatNumber(amount, locale, {
     minimumFractionDigits: currency === "PYG" ? 0 : 2,
     maximumFractionDigits: currency === "PYG" ? 0 : 2,
-  }).format(amount);
+  });
   return `${currency} ${formatted}`;
 }
 
@@ -30,9 +32,12 @@ export default async function PublicQuotePage({
   // (lib/rate-limit documents the single-process limitation).
   const ip = (await headers()).get("x-forwarded-for") ?? "unknown";
   if (checkRateLimit(`quote-view:${ip}`, 60, 60_000).limited) {
+    // No tenant resolved yet at this point, so this one line is the single
+    // place the reference locale is the only thing available.
+    const tLimit = await getTranslator(null, "public.shared");
     return (
       <main className="mx-auto max-w-2xl p-6 text-sm text-muted-foreground">
-        Demasiadas solicitudes. Probá de nuevo en un momento.
+        {tLimit("rateLimited")}
       </main>
     );
   }
@@ -47,6 +52,11 @@ export default async function PublicQuotePage({
   ]);
   const branding = ((tenant?.settings ?? {}) as TenantSettings).branding ?? {};
   const accent = branding.primaryColor || undefined;
+
+  // The tenant's language, not the reader's browser: this page is the same
+  // artifact as the PDF beside it (PLAN.md §13 H5 #4).
+  const locale = tenant?.locale ?? "es";
+  const t = await getTranslator(locale, "public.quote");
 
   return (
     <main className="mx-auto flex max-w-2xl flex-col gap-6 p-6">
@@ -63,17 +73,17 @@ export default async function PublicQuotePage({
         </div>
         <div className="text-right">
           <p className="text-xl font-semibold" style={{ color: accent }}>
-            PRESUPUESTO
+            {t("title")}
           </p>
           <p className="text-sm text-muted-foreground">{quote.number}</p>
           <p className="text-sm text-muted-foreground">
-            {quote.createdAt.toLocaleDateString("es-PY")}
+            {formatDate(quote.createdAt, locale)}
           </p>
         </div>
       </header>
 
       <section className="text-sm">
-        <p className="text-muted-foreground">Cliente</p>
+        <p className="text-muted-foreground">{t("client")}</p>
         <p>{contact?.name}</p>
         <p>{contact?.phone}</p>
       </section>
@@ -81,10 +91,10 @@ export default async function PublicQuotePage({
       <table className="w-full text-left text-sm">
         <thead>
           <tr className="border-b">
-            <th className="py-2">Descripción</th>
-            <th className="py-2 text-right">Cant.</th>
-            <th className="py-2 text-right">Precio</th>
-            <th className="py-2 text-right">Total</th>
+            <th className="py-2">{t("description")}</th>
+            <th className="py-2 text-right">{t("qty")}</th>
+            <th className="py-2 text-right">{t("price")}</th>
+            <th className="py-2 text-right">{t("total")}</th>
           </tr>
         </thead>
         <tbody>
@@ -92,8 +102,8 @@ export default async function PublicQuotePage({
             <tr key={item.id} className="border-b">
               <td className="py-2">{item.description}</td>
               <td className="py-2 text-right">{item.qty}</td>
-              <td className="py-2 text-right">{money(item.unitPrice, quote.currency)}</td>
-              <td className="py-2 text-right">{money(item.lineTotal, quote.currency)}</td>
+              <td className="py-2 text-right">{money(item.unitPrice, quote.currency, locale)}</td>
+              <td className="py-2 text-right">{money(item.lineTotal, quote.currency, locale)}</td>
             </tr>
           ))}
         </tbody>
@@ -101,34 +111,34 @@ export default async function PublicQuotePage({
 
       <div className="flex flex-col items-end gap-1 text-sm">
         <div className="flex w-56 justify-between">
-          <span>Subtotal</span>
-          <span>{money(quote.subtotal, quote.currency)}</span>
+          <span>{t("subtotal")}</span>
+          <span>{money(quote.subtotal, quote.currency, locale)}</span>
         </div>
         {quote.discount > 0 && (
           <div className="flex w-56 justify-between">
-            <span>Descuento</span>
-            <span>-{money(quote.discount, quote.currency)}</span>
+            <span>{t("discount")}</span>
+            <span>-{money(quote.discount, quote.currency, locale)}</span>
           </div>
         )}
         <div className="flex w-56 justify-between text-base font-semibold">
-          <span>Total</span>
-          <span style={{ color: accent }}>{money(quote.total, quote.currency)}</span>
+          <span>{t("total")}</span>
+          <span style={{ color: accent }}>{money(quote.total, quote.currency, locale)}</span>
         </div>
       </div>
 
       {quote.validUntil && (
         <p className="text-sm text-muted-foreground">
-          Válido hasta: {quote.validUntil.toLocaleDateString("es-PY")}
+          {t("validUntil")} {formatDate(quote.validUntil, locale)}
         </p>
       )}
       {quote.notes && <p className="text-sm">{quote.notes}</p>}
 
       <a href={`/q/${token}/pdf`} className="text-sm underline">
-        Descargar PDF
+        {t("downloadPdf")}
       </a>
 
       <footer className="mt-8 text-center text-xs text-muted-foreground">
-        Documento no fiscal · Factura electrónica próximamente
+        {t("footer")}
       </footer>
     </main>
   );

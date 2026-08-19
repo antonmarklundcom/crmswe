@@ -68,10 +68,13 @@ export async function inviteUserAction(
     // the admin with no way to reach the invitee.
     const [inviter, tenant] = await Promise.all([getUserById(ctx.userId), getTenant(ctx.tenantId)]);
     if (inviter && tenant) {
-      const { subject, html } = invitationEmail({
+      const { subject, html } = await invitationEmail({
         tenantName: tenant.name,
         inviterName: inviter.name,
         acceptUrl: inviteUrl,
+        // The invitee has no account yet, so there is no user preference to
+        // read — the tenant they are joining decides the language.
+        locale: tenant.locale,
       });
       await sendEmail({ to: parsed.data.email, subject, html });
     }

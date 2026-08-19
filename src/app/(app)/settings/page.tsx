@@ -4,6 +4,7 @@ import { getTenant } from "@/modules/tenancy/tenants";
 import type { BusinessHours, TenantSettings } from "@/modules/tenancy/settings";
 import { PageHeader } from "@/components/page-header";
 import { AuditTable } from "@/components/audit-table";
+import { LanguageSwitcher } from "@/components/language-switcher";
 import { listAuditLogForTenant } from "@/modules/tenancy/audit";
 import { contactsFeedUrl } from "@/modules/crm/feed-url";
 import { isAiConfigured } from "@/lib/ai";
@@ -25,8 +26,17 @@ export default async function SettingsPage() {
   const t = await getTranslations("app.settings");
   const ta = await getTranslations("audit");
 
+  // Language is the one setting that isn't tenant configuration: it's the
+  // user's own, so an agent gets this page for that alone rather than the
+  // bare "admins only" line they used to hit (PLAN.md §13 H5 #2).
   if (ctx.role !== "admin") {
-    return <p className="text-muted-foreground">{t("adminOnly")}</p>;
+    return (
+      <div className="flex flex-col gap-8">
+        <PageHeader title={t("language.title")} description={t("language.intro")} />
+        <LanguageSwitcher />
+        <p className="text-sm text-muted-foreground">{t("adminOnly")}</p>
+      </div>
+    );
   }
 
   const tenant = await getTenant(ctx.tenantId);
@@ -151,6 +161,12 @@ export default async function SettingsPage() {
           }
           labels={sheetsLabels}
         />
+      </section>
+
+      <section>
+        <h2 className="mb-2 text-lg font-semibold">{t("language.title")}</h2>
+        <p className="mb-4 max-w-2xl text-sm text-muted-foreground">{t("language.intro")}</p>
+        <LanguageSwitcher />
       </section>
 
       {/* Own tenant only — the cross-tenant feed lives in the superadmin

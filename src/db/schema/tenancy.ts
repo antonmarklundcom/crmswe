@@ -66,6 +66,11 @@ export const users = mysqlTable(
     banned: boolean("banned").notNull().default(false),
     banReason: varchar("ban_reason", { length: 500 }),
     banExpires: datetime("ban_expires"),
+    // UI language for this user (PLAN.md §13 H5). Null = follow the tenant's
+    // locale, which is the default for everyone until they choose otherwise
+    // — `es` stays the reference locale (§1.2), this is a preference on top
+    // of it, not a second product.
+    locale: varchar("locale", { length: 10 }),
     createdAt: datetime("created_at")
       .notNull()
       .default(sql`CURRENT_TIMESTAMP`),

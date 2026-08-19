@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
 import messages from "../../messages/es.json";
+import en from "../../messages/en.json";
+import sv from "../../messages/sv.json";
+import { SUPPORTED_LOCALES } from "@/lib/i18n/locales";
 
 // Guards the Spanish copy file itself (PLAN.md §10 1H: "pass through UI for
 // Spanish copy consistency"). These are the three ways the file has actually
@@ -46,4 +49,43 @@ describe("messages/es.json", () => {
     const doubled = entries.filter(([, value]) => value.includes("{{"));
     expect(doubled).toEqual([]);
   });
+});
+
+// Key parity across locales (PLAN.md §13 H5 #3). `es` is the reference: a key
+// added there and forgotten in en/sv would render as the raw key path in the
+// UI, which is exactly the failure a Spanish-speaking author can't see. This
+// is the guard that makes the other locales maintainable rather than a
+// snapshot that rots.
+const LOCALES: Record<string, MessageNode> = {
+  en: en as MessageNode,
+  sv: sv as MessageNode,
+};
+
+const referenceKeys = new Set(entries.map(([key]) => key));
+
+describe("locale key parity", () => {
+  it("ships a messages file for every supported locale", () => {
+    expect(Object.keys(LOCALES).concat("es").sort()).toEqual([...SUPPORTED_LOCALES].sort());
+  });
+
+  for (const [locale, tree] of Object.entries(LOCALES)) {
+    const localeEntries = flatten(tree);
+    const localeKeys = new Set(localeEntries.map(([key]) => key));
+
+    it(`${locale} has every key es.json has`, () => {
+      expect([...referenceKeys].filter((key) => !localeKeys.has(key))).toEqual([]);
+    });
+
+    it(`${locale} has no key es.json lacks`, () => {
+      expect([...localeKeys].filter((key) => !referenceKeys.has(key))).toEqual([]);
+    });
+
+    it(`${locale} has no empty or whitespace-only copy`, () => {
+      expect(localeEntries.filter(([, value]) => value.trim() === "")).toEqual([]);
+    });
+
+    it(`${locale} uses no double-brace placeholders`, () => {
+      expect(localeEntries.filter(([, value]) => value.includes("{{"))).toEqual([]);
+    });
+  }
 });

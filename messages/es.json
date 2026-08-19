@@ -407,6 +407,12 @@
         "aiLimitInvalid": "Ese límite no es un número válido.",
         "aiHandoffKeywordRequired": "Poné una palabra para pasar a un humano.",
         "unknown": "No se pudo guardar. Intentá de nuevo."
+      },
+      "language": {
+        "title": "Idioma",
+        "intro": "Elegí el idioma de la interfaz. Es tuyo: no cambia lo que ven tus compañeros ni lo que reciben tus clientes.",
+        "label": "Idioma",
+        "save": "Guardar"
       }
     },
     "whatsapp": {
@@ -1475,5 +1481,127 @@
     "tenant": "Empresa",
     "via": "(vía {user})",
     "empty": "Todavía no hay actividad registrada."
+  },
+  "email": {
+    "invitation": {
+      "subject": "{inviter} te invitó a {tenant} en VenderCRM",
+      "title": "Te invitaron a {tenant}",
+      "body": "{inviter} te invitó a sumarte al equipo en VenderCRM. El enlace vence en 7 días.",
+      "cta": "Aceptar invitación"
+    },
+    "passwordReset": {
+      "subject": "Restablecer tu contraseña — VenderCRM",
+      "title": "Restablecé tu contraseña",
+      "body": "Pediste restablecer tu contraseña. Si no fuiste vos, ignorá este correo — el enlace vence en una hora.",
+      "cta": "Elegir nueva contraseña"
+    },
+    "subscriptionExpiry": {
+      "subject": "Tu suscripción a VenderCRM vence en {days} días",
+      "title": "Tu suscripción vence pronto",
+      "body": "La suscripción de <strong>{tenant}</strong> vence el <strong>{date}</strong>. Después de esa fecha tenés {grace} días de acceso de solo lectura antes de que la cuenta se suspenda. Contactá a tu proveedor para renovar y evitar interrupciones."
+    },
+    "siteIngestAlert": {
+      "lastLead": "El último lead entró el <strong>{date}</strong>.",
+      "noLeadYet": "Todavía no recibimos ningún lead de este sitio.",
+      "staleSubject": "{site}: hace {days} días que no entra ningún lead",
+      "staleTitle": "{site} está en silencio",
+      "staleBody": "Hace <strong>{days} días</strong> que no entra un lead de este sitio, y antes entraban. {lastLead} Puede ser una racha tranquila, o que el formulario del sitio se haya roto sin avisar. Vale la pena mandar un envío de prueba.",
+      "staleLink": "Ver el estado de tus sitios",
+      "failingSubject": "{site}: los leads no están entrando",
+      "failingTitle": "{site} no está pudiendo cargar leads",
+      "failingBody": "El último intento falló (error {status}): {reason}. Mientras siga así, los envíos de ese formulario no llegan al pipeline.",
+      "failingLink": "Revisar el sitio",
+      "reasons": {
+        "invalid-key": "la clave que está usando el sitio no es válida",
+        "site-inactive": "el sitio está desactivado",
+        "tenant-unavailable": "la cuenta no está disponible",
+        "tenant-read-only": "la cuenta está en modo solo lectura",
+        "rate-limited": "llegaron demasiados envíos seguidos",
+        "turnstile-failed": "no pasó la verificación anti-bots",
+        "invalid-body": "los datos llegaron incompletos o con formato inválido",
+        "phone-missing": "llegó sin teléfono, o cambió el nombre del campo en el formulario",
+        "unknown": "error desconocido"
+      }
+    }
+  },
+  "pdf": {
+    "quote": {
+      "title": "PRESUPUESTO",
+      "client": "Cliente",
+      "description": "Descripción",
+      "qty": "Cant.",
+      "price": "Precio",
+      "total": "Total",
+      "subtotal": "Subtotal",
+      "discount": "Descuento",
+      "validUntil": "Válido hasta:",
+      "footer": "Documento no fiscal · Factura electrónica próximamente"
+    },
+    "notaVenta": {
+      "title": "NOTA DE VENTA",
+      "client": "Cliente",
+      "dueAt": "Vencimiento:",
+      "description": "Descripción",
+      "qty": "Cant.",
+      "price": "Precio",
+      "total": "Total",
+      "subtotal": "Subtotal",
+      "discount": "Descuento",
+      "paid": "Pagado",
+      "balance": "Saldo",
+      "notes": "Notas",
+      "disclaimer": "Documento no fiscal. Este comprobante no es una factura y no tiene validez tributaria.",
+      "state": {
+        "unpaid": "PENDIENTE DE PAGO",
+        "partial": "PAGO PARCIAL",
+        "paid": "PAGADO",
+        "void": "ANULADO"
+      }
+    }
+  },
+  "public": {
+    "shared": {
+      "rateLimited": "Demasiadas solicitudes. Probá de nuevo en un momento."
+    },
+    "quote": {
+      "title": "PRESUPUESTO",
+      "client": "Cliente",
+      "description": "Descripción",
+      "qty": "Cant.",
+      "price": "Precio",
+      "total": "Total",
+      "subtotal": "Subtotal",
+      "discount": "Descuento",
+      "validUntil": "Válido hasta:",
+      "downloadPdf": "Descargar PDF",
+      "footer": "Documento no fiscal · Factura electrónica próximamente"
+    },
+    "document": {
+      "title": "Nota de venta",
+      "client": "Cliente",
+      "dueAt": "Vencimiento:",
+      "description": "Descripción",
+      "qty": "Cant.",
+      "price": "Precio",
+      "total": "Total",
+      "subtotal": "Subtotal",
+      "discount": "Descuento",
+      "paid": "Pagado",
+      "balance": "Saldo",
+      "notes": "Notas",
+      "downloadPdf": "Descargar PDF",
+      "disclaimer": "Documento no fiscal. Este comprobante no es una factura y no tiene validez tributaria.",
+      "state": {
+        "unpaid": "Pendiente de pago",
+        "partial": "Pago parcial",
+        "paid": "Pagado",
+        "void": "Anulado"
+      }
+    },
+    "form": {
+      "submit": "Enviar",
+      "thanksTitle": "¡Gracias!",
+      "thanksBody": "Recibimos tu información. Pronto te vamos a contactar."
+    }
   }
 }

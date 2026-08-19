@@ -11,6 +11,12 @@ import { sendDocument } from "@/modules/whatsapp/send";
 import { getQuote, listQuoteItems, setQuotePdfKey, setQuoteStatus } from "./quotes";
 import { renderQuotePdf } from "./pdf";
 
+// Thrown messages are stable codes, not copy (PLAN.md §13 H5 #4): a
+// literal Spanish sentence here is a string the user might see in an
+// unknown language, and one nothing can translate. The UI turns these into
+// the reader's own language — an action's form state where there is a form,
+// the route group's error boundary where there isn't.
+
 // Quote delivery (PLAN.md §8): render the PDF with tenant branding, store it
 // via the storage adapter, then send it as a WhatsApp document — with the
 // public link /q/[token] as the fallback and preview.
@@ -26,14 +32,14 @@ export function publicQuotePdfUrl(token: string): string {
 
 export async function generateQuotePdf(ctx: TenantContext, quoteId: string): Promise<Buffer> {
   const quote = await getQuote(ctx, quoteId);
-  if (!quote) throw new Error(`Presupuesto ${quoteId} no encontrado`);
+  if (!quote) throw new Error(`quote_not_found:${quoteId}`);
 
   const [items, contact, tenant] = await Promise.all([
     listQuoteItems(ctx, quote.id),
     getContact(ctx, quote.contactId),
     getTenant(ctx.tenantId),
   ]);
-  if (!contact) throw new Error("Contacto no encontrado");
+  if (!contact) throw new Error("contact_not_found");
 
   const settings = (tenant?.settings ?? {}) as TenantSettings;
 
@@ -50,6 +56,7 @@ export async function generateQuotePdf(ctx: TenantContext, quoteId: string): Pro
     validUntil: quote.validUntil,
     notes: quote.notes,
     createdAt: quote.createdAt,
+    locale: tenant?.locale,
     items: items.map((item) => ({
       description: item.description,
       qty: item.qty,
@@ -80,7 +87,7 @@ export type SendQuoteResult = {
  */
 export async function sendQuote(ctx: TenantContext, quoteId: string): Promise<SendQuoteResult> {
   const quote = await getQuote(ctx, quoteId);
-  if (!quote) throw new Error(`Presupuesto ${quoteId} no encontrado`);
+  if (!quote) throw new Error(`quote_not_found:${quoteId}`);
 
   await generateQuotePdf(ctx, quote.id);
 

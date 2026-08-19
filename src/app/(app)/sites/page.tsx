@@ -19,7 +19,11 @@ import { SiteGuide, type GuideLabels } from "./SiteGuide";
 import { NewSiteForm, SiteKeysPanel, type ApiKeyRow, type KeyLabels } from "./SiteKeyForms";
 import { SiteTurnstileForm } from "./SiteTurnstileForm";
 import { SiteHookForm, type HookPanelProps } from "./SiteHookForm";
-import { SiteHookGuide, type HookGuideLabels } from "./SiteHookGuide";
+import {
+  SiteHookGuide,
+  type HookGuideLabels,
+  type HookGuidePlatform,
+} from "./SiteHookGuide";
 import { toggleSiteActiveAction, updateSiteRoutingAction } from "./actions";
 import { Select } from "@/components/ui/form-fields";
 
@@ -136,11 +140,11 @@ export default async function SitesPage() {
     captureTitle: th("captureTitle"),
     captureBody: th("captureBody"),
     urlNote: th("urlNote"),
-    platforms: (["elementor", "wix", "zapier", "otro"] as const).map((id) => ({
-      id,
-      label: th(`platforms.${id}.label` as "platforms.elementor.label"),
-      steps: th.raw(`platforms.${id}.steps` as "platforms.elementor.steps") as string[],
-    })),
+    // `platforms` is stored as an ordered array, not an object keyed by id
+    // (see src/i18n/messages.test.ts), so it has to be read whole with
+    // t.raw(). Addressing it as `platforms.elementor.label` resolves nothing
+    // and left the page rendering key paths with undefined steps.
+    platforms: th.raw("platforms") as HookGuidePlatform[],
   };
 
   const leadsBySite = new Map(stats.bySite.map((bucket) => [bucket.key, bucket.count]));

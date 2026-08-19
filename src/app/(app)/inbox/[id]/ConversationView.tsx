@@ -17,6 +17,7 @@ import {
   type SendTextState,
 } from "../actions";
 import { formatDateTime } from "@/lib/i18n/format";
+import { Input, Select } from "@/components/ui/form-fields";
 
 export type ConversationData = {
   contact: { name: string; phone: string } | null;
@@ -212,12 +213,12 @@ export function ConversationView({
                   Keyed so a rejected send hands the typed text back — and so
                   a poll tick, which changes no action state, leaves a
                   half-typed reply exactly where it is. */}
-              <input
+              <Input
                 key={sendGeneration}
                 name="body"
                 defaultValue={sendState.values.body}
                 placeholder={t("messagePlaceholder")}
-                className="flex-1 rounded-md border px-3 py-2 text-sm"
+                className="flex-1"
               />
               <Button type="submit" disabled={busy}>
                 {t("send")}
@@ -239,18 +240,18 @@ export function ConversationView({
             <form action={templateFormAction} className="flex flex-col gap-1">
               <div className="flex gap-2">
                 <input type="hidden" name="conversationId" value={conversationId} />
-                <select
+                <Select
                   key={templateGeneration}
                   name="template"
                   defaultValue={templateState.values.template}
-                  className="flex-1 rounded-md border px-3 py-2 text-sm"
+                  className="flex-1"
                 >
                   {d.templates.map((template) => (
                     <option key={template.id} value={`${template.name}|${template.language}`}>
                       {template.name} ({template.language})
                     </option>
                   ))}
-                </select>
+                </Select>
                 <Button type="submit" disabled={busy}>
                   {t("sendTemplate")}
                 </Button>

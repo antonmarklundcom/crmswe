@@ -11,6 +11,7 @@ import {
   type HookTokenState,
   type HookMappingState,
 } from "./actions";
+import { Input, Select } from "@/components/ui/form-fields";
 
 // The webhook lane's per-site panel (PLAN.md §5.2). This is the surface a
 // non-developer uses: issue a URL, paste it into Elementor/Wix/Zapier, send
@@ -175,10 +176,10 @@ function MappingRow({
     <div className="flex flex-wrap items-end gap-2">
       <label className="flex flex-col gap-1">
         {label}
-        <select
+        <Select
           name={`${field}Choice`}
           defaultValue={known ? current : ""}
-          className="rounded-md border px-2 py-1"
+          className="px-2 py-1"
         >
           <option value="">—</option>
           {leaves.map((leaf) => (
@@ -186,15 +187,15 @@ function MappingRow({
               {leaf.path} · {leaf.value}
             </option>
           ))}
-        </select>
+        </Select>
       </label>
       <label className="flex flex-col gap-1">
         {manualLabel}
-        <input
+        <Input
           name={`${field}Path`}
           defaultValue={known ? "" : current}
           placeholder="fields.telefono.value"
-          className="rounded-md border px-2 py-1 font-mono text-xs"
+          className="px-2 py-1 font-mono text-xs"
         />
       </label>
     </div>

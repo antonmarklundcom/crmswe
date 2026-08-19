@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { authClient } from "@/lib/auth/client";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/form-fields";
 
 // Better Auth's own route always returns the same generic response whether
 // or not the email exists (timing-attack mitigation, see password.mjs) — so
@@ -47,7 +48,7 @@ export function ForgotPasswordForm() {
       <p className="text-sm text-muted-foreground">{t("intro")}</p>
       <label className="flex flex-col gap-1 text-sm">
         {t("email")}
-        <input type="email" name="email" required className="rounded-md border px-3 py-2" />
+        <Input type="email" name="email" required />
       </label>
       <Button type="submit" disabled={pending}>
         {t("submit")}

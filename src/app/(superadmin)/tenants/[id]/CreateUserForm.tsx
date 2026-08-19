@@ -4,6 +4,7 @@ import { useActionState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { createTenantUserAction, type CreateTenantUserState } from "./actions";
+import { Input, Select } from "@/components/ui/form-fields";
 
 export type CreateUserLabels = {
   name: string;
@@ -34,28 +35,28 @@ export function CreateUserForm({
         <input type="hidden" name="tenantId" value={tenantId} />
         <label className="flex flex-col gap-1 text-sm">
           {labels.name}
-          <input name="name" required className="rounded-md border px-3 py-2" />
+          <Input name="name" required />
         </label>
         <label className="flex flex-col gap-1 text-sm">
           {labels.email}
-          <input name="email" type="email" required className="rounded-md border px-3 py-2" />
+          <Input name="email" type="email" required />
         </label>
         <label className="flex flex-col gap-1 text-sm">
           {labels.password}
-          <input
+          <Input
             name="password"
             type="text"
             minLength={8}
             required
-            className="rounded-md border px-3 py-2 font-mono"
+            className="font-mono"
           />
         </label>
         <label className="flex flex-col gap-1 text-sm">
           {labels.role}
-          <select name="role" defaultValue="admin" className="rounded-md border px-3 py-2">
+          <Select name="role" defaultValue="admin">
             <option value="admin">{labels.roleAdmin}</option>
             <option value="agent">{labels.roleAgent}</option>
-          </select>
+          </Select>
         </label>
         <Button type="submit" disabled={pending}>
           {labels.submit}

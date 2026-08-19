@@ -12,6 +12,7 @@ import {
   type UpdateDocumentFormState,
 } from "./actions";
 import { formatNumber } from "@/lib/i18n/format";
+import { Input, Select, Textarea } from "@/components/ui/form-fields";
 
 // Declared here, not in actions.ts: a "use server" module may only export
 // async functions.
@@ -166,11 +167,10 @@ export function DocumentBuilder(props: CreateProps | EditProps) {
           {/* Remounted per action result so the echoed contact survives a
               rejected submit — see useEchoGeneration for why `defaultValue`
               alone, and a controlled value, both fail here. */}
-          <select
+          <Select
             key={generation}
             name="contactId"
             defaultValue={createState.values.contactId}
-            className="rounded-md border px-3 py-2"
           >
             <option value="" disabled>
               {labels.contact}
@@ -180,7 +180,7 @@ export function DocumentBuilder(props: CreateProps | EditProps) {
                 {contact.label}
               </option>
             ))}
-          </select>
+          </Select>
           {createState.field === "contactId" && createState.error && (
             <span role="alert" className="text-xs text-destructive">
               {t(`errors.${createState.error}` as "errors.unknown")}
@@ -197,10 +197,10 @@ export function DocumentBuilder(props: CreateProps | EditProps) {
           >
             <label className="flex flex-col gap-1">
               {labels.fromCatalog}
-              <select
+              <Select
                 value={line.productId}
                 onChange={(e) => pickProduct(line.key, e.target.value)}
-                className="rounded-md border px-2 py-1"
+                className="px-2 py-1"
               >
                 <option value="">{labels.freeText}</option>
                 {products.map((product) => (
@@ -208,7 +208,7 @@ export function DocumentBuilder(props: CreateProps | EditProps) {
                     {product.name}
                   </option>
                 ))}
-              </select>
+              </Select>
             </label>
             <input type="hidden" name="productId" value={line.productId} />
 
@@ -275,29 +275,27 @@ export function DocumentBuilder(props: CreateProps | EditProps) {
       <div className="flex max-w-sm flex-col gap-4">
         <label className="flex flex-col gap-1 text-sm">
           {labels.discount}
-          <input
+          <Input
             name="discount"
             inputMode="numeric"
             value={discount}
             onChange={(e) => setDiscount(e.target.value)}
-            className="rounded-md border px-3 py-2"
+            className="px-3 py-2"
           />
         </label>
         <label className="flex flex-col gap-1 text-sm">
           {labels.dueAt}
-          <input
+          <Input
             name="dueAt"
             type="date"
             defaultValue={props.mode === "edit" ? props.initial.dueAt : undefined}
-            className="rounded-md border px-3 py-2"
           />
         </label>
         <label className="flex flex-col gap-1 text-sm">
           {labels.notes}
-          <textarea
+          <Textarea
             name="notes"
             defaultValue={props.mode === "edit" ? props.initial.notes : undefined}
-            className="rounded-md border px-3 py-2"
           />
         </label>
       </div>

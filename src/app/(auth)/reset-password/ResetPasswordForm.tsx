@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { authClient } from "@/lib/auth/client";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/form-fields";
 
 // The token arrives as a query param — Better Auth's callback route
 // (GET /reset-password/:token) validates it server-side and redirects here
@@ -57,12 +58,11 @@ export function ResetPasswordForm() {
       <h1 className="text-xl font-semibold">{t("title")}</h1>
       <label className="flex flex-col gap-1 text-sm">
         {t("newPassword")}
-        <input
+        <Input
           type="password"
           name="password"
           required
           minLength={8}
-          className="rounded-md border px-3 py-2"
         />
       </label>
       {error && <p className="text-sm text-destructive">{error}</p>}

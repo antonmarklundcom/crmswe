@@ -3,6 +3,7 @@ import { documentSequences } from "@/db/schema";
 import { newId } from "@/lib/ids";
 import type { TenantContext } from "@/modules/tenancy/context";
 import { tenantTransaction } from "@/modules/tenancy/db";
+import { formatSequenceNumber } from "@/modules/renderable-document/format";
 import type { DocumentType } from "./types";
 
 // Per-tenant, per-type sequential numbers (PLAN.md §10 1Q), same discipline
@@ -11,15 +12,11 @@ import type { DocumentType } from "./types";
 // take the same number. The unique index on (tenant_id, number) is the
 // backstop if that ever fails.
 
-const PAD = 6;
-
 const DEFAULT_PREFIX: Record<DocumentType, string> = {
   nota_venta: "NV",
 };
 
-export function formatDocumentNumber(prefix: string, value: number): string {
-  return `${prefix}-${String(value).padStart(PAD, "0")}`;
-}
+export const formatDocumentNumber = formatSequenceNumber;
 
 export async function nextDocumentNumber(
   ctx: TenantContext,
@@ -38,7 +35,7 @@ export async function nextDocumentNumber(
       await tx
         .insert(documentSequences)
         .values({ id: newId(), docType: type, prefix, nextNumber: 2 });
-      return formatDocumentNumber(prefix, 1);
+      return formatSequenceNumber(prefix, 1);
     }
 
     const value = existing.nextNumber;
@@ -52,6 +49,6 @@ export async function nextDocumentNumber(
         ),
       );
 
-    return formatDocumentNumber(existing.prefix, value);
+    return formatSequenceNumber(existing.prefix, value);
   });
 }

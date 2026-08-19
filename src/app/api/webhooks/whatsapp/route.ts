@@ -8,6 +8,10 @@ import { verifySignature, persistRawEvent } from "@/modules/whatsapp/webhook";
 // tenants' traffic here by phone_number_id. GET is the one-time webhook
 // verification handshake; POST is the actual event delivery.
 
+// Meta's webhook expects plain-text bodies (and the verification handshake
+// expects the challenge echoed verbatim), so this route does not use the
+// JSON guards in lib/api/guards — its "credential" is the signature check
+// below, not a header a guard could read.
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const mode = url.searchParams.get("hub.mode");

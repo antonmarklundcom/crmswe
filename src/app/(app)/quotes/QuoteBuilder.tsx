@@ -7,6 +7,7 @@ import { parseMinorUnits, previewTotals } from "@/lib/money";
 import { useEchoGeneration } from "@/lib/use-echo-generation";
 import { createQuoteAction, type QuoteFormState } from "./actions";
 import { formatNumber } from "@/lib/i18n/format";
+import { Input, Select, Textarea } from "@/components/ui/form-fields";
 
 // Declared here, not in actions.ts: a "use server" module may only export
 // async functions.
@@ -93,11 +94,10 @@ export function QuoteBuilder({
             rejected submit — see useEchoGeneration for why `defaultValue`
             alone, and a controlled value, both fail here. Without it a
             second submit failed on contactRequired first. */}
-        <select
+        <Select
           key={generation}
           name="contactId"
           defaultValue={state.values.contactId}
-          className="rounded-md border px-3 py-2"
         >
           <option value="" disabled>
             {labels.contact}
@@ -107,7 +107,7 @@ export function QuoteBuilder({
               {contact.label}
             </option>
           ))}
-        </select>
+        </Select>
         {state.field === "contactId" && state.error && (
           <span role="alert" className="text-xs text-destructive">
             {t(`errors.${state.error}` as "errors.unknown")}
@@ -120,10 +120,10 @@ export function QuoteBuilder({
           <div key={line.key} className="flex flex-wrap items-end gap-2 rounded-md border p-2 text-sm">
             <label className="flex flex-col gap-1">
               {labels.fromCatalog}
-              <select
+              <Select
                 value={line.productId}
                 onChange={(e) => pickProduct(line.key, e.target.value)}
-                className="rounded-md border px-2 py-1"
+                className="px-2 py-1"
               >
                 <option value="">{labels.freeText}</option>
                 {products.map((product) => (
@@ -131,7 +131,7 @@ export function QuoteBuilder({
                     {product.name}
                   </option>
                 ))}
-              </select>
+              </Select>
             </label>
             <input type="hidden" name="productId" value={line.productId} />
 
@@ -198,21 +198,21 @@ export function QuoteBuilder({
       <div className="flex max-w-sm flex-col gap-4">
         <label className="flex flex-col gap-1 text-sm">
           {labels.discount}
-          <input
+          <Input
             name="discount"
             inputMode="numeric"
             value={discount}
             onChange={(e) => setDiscount(e.target.value)}
-            className="rounded-md border px-3 py-2"
+            className="px-3 py-2"
           />
         </label>
         <label className="flex flex-col gap-1 text-sm">
           {labels.validUntil}
-          <input name="validUntil" type="date" className="rounded-md border px-3 py-2" />
+          <Input name="validUntil" type="date" />
         </label>
         <label className="flex flex-col gap-1 text-sm">
           {labels.notes}
-          <textarea name="notes" className="rounded-md border px-3 py-2" />
+          <Textarea name="notes" />
         </label>
       </div>
 

@@ -4,6 +4,7 @@ import { getPublicForm } from "@/modules/forms/submissions";
 import type { FormField } from "@/modules/forms/forms";
 import { getTranslator } from "@/lib/i18n/translator";
 import { submitFormAction } from "./actions";
+import { Input, Select, Textarea } from "@/components/ui/form-fields";
 
 export default async function PublicFormPage({
   params,
@@ -38,21 +39,20 @@ export default async function PublicFormPage({
           <label key={field.key} className="flex flex-col gap-1 text-sm">
             {field.label}
             {field.type === "textarea" ? (
-              <textarea name={field.key} required={field.required} className="rounded-md border px-3 py-2" />
+              <Textarea name={field.key} required={field.required} />
             ) : field.type === "select" ? (
-              <select name={field.key} required={field.required} className="rounded-md border px-3 py-2">
+              <Select name={field.key} required={field.required}>
                 {(field.options ?? []).map((option) => (
                   <option key={option} value={option}>
                     {option}
                   </option>
                 ))}
-              </select>
+              </Select>
             ) : (
-              <input
+              <Input
                 name={field.key}
                 required={field.required}
                 type={field.type === "email" ? "email" : field.type === "phone" ? "tel" : "text"}
-                className="rounded-md border px-3 py-2"
               />
             )}
           </label>

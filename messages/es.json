@@ -1682,7 +1682,8 @@
       "subtotal": "Subtotal",
       "discount": "Descuento",
       "validUntil": "Válido hasta:",
-      "footer": "Documento no fiscal · Factura electrónica próximamente"
+      "footer": "Documento no fiscal · Factura electrónica próximamente",
+      "caption": "Presupuesto"
     },
     "notaVenta": {
       "title": "NOTA DE VENTA",
@@ -1703,7 +1704,8 @@
         "partial": "PAGO PARCIAL",
         "paid": "PAGADO",
         "void": "ANULADO"
-      }
+      },
+      "caption": "Nota de venta"
     }
   },
   "public": {

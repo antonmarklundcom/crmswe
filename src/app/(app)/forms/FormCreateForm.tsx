@@ -4,6 +4,7 @@ import { useActionState } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { createFormAction, type FormCreateField, type FormFormState } from "./actions";
+import { Input, Select } from "@/components/ui/form-fields";
 
 // Lives here, not in actions.ts: a "use server" module may only export
 // async functions.
@@ -38,19 +39,17 @@ export function FormCreateForm({
     <form action={formAction} className="flex max-w-sm flex-col gap-4">
       <label className="flex flex-col gap-1 text-sm">
         {t("name")}
-        <input
+        <Input
           name="name"
           defaultValue={state.values.name ?? ""}
-          className="rounded-md border px-3 py-2"
         />
         <FieldError field="name" />
       </label>
       <label className="flex flex-col gap-1 text-sm">
         {t("slug")}
-        <input
+        <Input
           name="slug"
           defaultValue={state.values.slug ?? ""}
-          className="rounded-md border px-3 py-2"
         />
         <FieldError field="slug" />
       </label>
@@ -59,10 +58,9 @@ export function FormCreateForm({
           <input type="hidden" name="targetPipelineId" value={pipelineId} />
           <label className="flex flex-col gap-1 text-sm">
             {t("targetStage")}
-            <select
+            <Select
               name="targetStageId"
               defaultValue={state.values.targetStageId ?? ""}
-              className="rounded-md border px-3 py-2"
             >
               <option value="">{t("noStage")}</option>
               {stages.map((stage) => (
@@ -70,17 +68,16 @@ export function FormCreateForm({
                   {stage.name}
                 </option>
               ))}
-            </select>
+            </Select>
           </label>
         </>
       )}
       {turnstileSites.length > 0 && (
         <label className="flex flex-col gap-1 text-sm">
           {t("turnstileSite")}
-          <select
+          <Select
             name="turnstileSiteId"
             defaultValue={state.values.turnstileSiteId ?? ""}
-            className="rounded-md border px-3 py-2"
           >
             <option value="">{t("turnstileNone")}</option>
             {turnstileSites.map((site) => (
@@ -88,7 +85,7 @@ export function FormCreateForm({
                 {site.name}
               </option>
             ))}
-          </select>
+          </Select>
         </label>
       )}
       {state.error && state.field === null && (

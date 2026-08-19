@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { authClient } from "@/lib/auth/client";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/form-fields";
 
 // Client component: hits /api/auth/sign-in/email directly, no server action
 // (the module rule §2.2 applies to business logic, not to a thin wrapper
@@ -57,20 +58,18 @@ export function LoginForm() {
       <h1 className="text-xl font-semibold">{t("title")}</h1>
       <label className="flex flex-col gap-1 text-sm">
         {t("email")}
-        <input
+        <Input
           type="email"
           name="email"
           required
-          className="rounded-md border px-3 py-2"
         />
       </label>
       <label className="flex flex-col gap-1 text-sm">
         {t("password")}
-        <input
+        <Input
           type="password"
           name="password"
           required
-          className="rounded-md border px-3 py-2"
         />
       </label>
       {error && <p className="text-sm text-destructive">{error}</p>}

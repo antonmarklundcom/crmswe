@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
-import { isValidCronSecret } from "@/lib/config/cron-secret";
 import { listSubscriptionsCrossingExpiryWarning } from "@/modules/tenancy/subscriptions";
 import { getTenant } from "@/modules/tenancy/tenants";
 import { listUsersForTenant } from "@/modules/tenancy/users";
 import { sendEmail } from "@/lib/email";
 import { subscriptionExpiryWarningEmail } from "@/lib/email/templates";
+import { requireCronSecret } from "@/lib/api/guards";
 
 // Subscription expiry warnings (PLAN.md §10 1M). Same shape as
 // api/cron/tick: a Hostinger cron job pings this daily with the shared
@@ -13,9 +13,8 @@ import { subscriptionExpiryWarningEmail } from "@/lib/email/templates";
 // route means it can be pinged on its own daily schedule independent of
 // whatever cadence the job-queue fallback uses.
 export async function GET(request: Request) {
-  if (!isValidCronSecret(request.headers.get("x-cron-secret"))) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const guard = requireCronSecret(request);
+  if (!guard.ok) return guard.response;
 
   const crossing = await listSubscriptionsCrossingExpiryWarning();
   let emailsSent = 0;

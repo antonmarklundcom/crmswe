@@ -27,6 +27,7 @@ import {
 } from "./query";
 import { formatDate } from "@/lib/i18n/format";
 import { getLocale } from "next-intl/server";
+import { Input, Select } from "@/components/ui/form-fields";
 
 export default async function ContactsPage({
   searchParams,
@@ -140,19 +141,17 @@ export default async function ContactsPage({
           <form className="flex flex-wrap items-end gap-2" method="get">
             <label className="flex flex-col gap-1 text-xs text-muted-foreground">
               {t("searchLabel")}
-              <input
+              <Input
                 name="search"
                 defaultValue={params.search ?? ""}
                 placeholder={t("searchPlaceholder")}
-                className="rounded-md border px-3 py-2 text-sm"
               />
             </label>
             <label className="flex flex-col gap-1 text-xs text-muted-foreground">
               {t("tag")}
-              <select
+              <Select
                 name="tagId"
                 defaultValue={params.tagId ?? ""}
-                className="rounded-md border px-3 py-2 text-sm"
               >
                 <option value="">{t("allTags")}</option>
                 {tags.map((tag) => (
@@ -160,14 +159,13 @@ export default async function ContactsPage({
                     {tag.name}
                   </option>
                 ))}
-              </select>
+              </Select>
             </label>
             <label className="flex flex-col gap-1 text-xs text-muted-foreground">
               {t("source")}
-              <select
+              <Select
                 name="source"
                 defaultValue={params.source ?? ""}
-                className="rounded-md border px-3 py-2 text-sm"
               >
                 <option value="">{t("allSources")}</option>
                 {sources.map((source) => (
@@ -175,14 +173,13 @@ export default async function ContactsPage({
                     {source}
                   </option>
                 ))}
-              </select>
+              </Select>
             </label>
             <label className="flex flex-col gap-1 text-xs text-muted-foreground">
               {t("owner")}
-              <select
+              <Select
                 name="ownerUserId"
                 defaultValue={params.ownerUserId ?? ""}
-                className="rounded-md border px-3 py-2 text-sm"
               >
                 <option value="">{t("allOwners")}</option>
                 {users.map((user) => (
@@ -190,24 +187,22 @@ export default async function ContactsPage({
                     {user.name}
                   </option>
                 ))}
-              </select>
+              </Select>
             </label>
             <label className="flex flex-col gap-1 text-xs text-muted-foreground">
               {t("createdFrom")}
-              <input
+              <Input
                 name="from"
                 type="date"
                 defaultValue={params.from ?? ""}
-                className="rounded-md border px-3 py-2 text-sm"
               />
             </label>
             <label className="flex flex-col gap-1 text-xs text-muted-foreground">
               {t("createdTo")}
-              <input
+              <Input
                 name="to"
                 type="date"
                 defaultValue={params.to ?? ""}
-                className="rounded-md border px-3 py-2 text-sm"
               />
             </label>
             <label className="flex items-center gap-2 py-2 text-sm">
@@ -343,10 +338,10 @@ export default async function ContactsPage({
       <section>
         <h2 className="mb-4 text-lg font-semibold">{t("createTagTitle")}</h2>
         <form action={createTagAction} className="flex max-w-sm gap-2">
-          <input
+          <Input
             name="name"
             required
-            className="flex-1 rounded-md border px-3 py-2 text-sm"
+            className="flex-1"
           />
           <Button type="submit" variant="outline">
             {tc("create")}

@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { getTenantContext } from "@/modules/tenancy/context";
 import {
   getConversation,
   listMessagesForConversation,
@@ -9,6 +8,7 @@ import {
 import { getContact } from "@/modules/crm/contacts";
 import { listApprovedTemplates } from "@/modules/whatsapp/templates";
 import { listPendingDrafts } from "@/modules/ai/replies";
+import { apiError, requireSession } from "@/lib/api/guards";
 
 // Backs the conversation thread's 5s poll (PLAN.md §6.5). Marking read is
 // best-effort here: a grace/locked tenant can still view the thread (the
@@ -19,11 +19,12 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
-  const ctx = await getTenantContext();
-  if (!ctx) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const guard = await requireSession();
+  if (!guard.ok) return guard.response;
+  const { ctx } = guard;
 
   const conversation = await getConversation(ctx, id);
-  if (!conversation) return NextResponse.json({ error: "not_found" }, { status: 404 });
+  if (!conversation) return apiError("not_found", 404);
 
   const [contact, messages, templates, aiDrafts] = await Promise.all([
     getContact(ctx, conversation.contactId),

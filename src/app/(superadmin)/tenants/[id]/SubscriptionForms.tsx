@@ -12,6 +12,7 @@ import {
   type SubscriptionField,
   type SubscriptionFormState,
 } from "./actions";
+import { Input, Select, Textarea } from "@/components/ui/form-fields";
 
 // Both forms here have a real user-fillable field (the plan picker, the
 // amount), so both get the useActionState treatment from PLAN.md §10 1R #6
@@ -54,11 +55,10 @@ export function CreateSubscriptionForm({
         {ts("plan")}
         {/* No `required`: the browser's bubble renders in the browser's
             language, and this app is Spanish-only (§1.2). */}
-        <select
+        <Select
           key={generation}
           name="planId"
           defaultValue={state.values.planId ?? ""}
-          className="rounded-md border px-3 py-2"
         >
           <option value="">{ts("planPlaceholder")}</option>
           {plans.map((p) => (
@@ -66,7 +66,7 @@ export function CreateSubscriptionForm({
               {p.name}
             </option>
           ))}
-        </select>
+        </Select>
         <FieldError field="planId" />
       </label>
       {state.error && state.field === null && (
@@ -120,41 +120,37 @@ export function RecordPaymentForm({
             with a browser-language bubble before the Spanish message can
             run. Amounts are integer minor units (§2.3) — the server says so
             in Spanish. */}
-        <input
+        <Input
           name="amount"
           inputMode="numeric"
           defaultValue={state.values.amount ?? ""}
-          className="rounded-md border px-3 py-2"
         />
         <FieldError field="amount" />
       </label>
       <label className="flex flex-col gap-1 text-sm">
         {ts("method")}
-        <select
+        <Select
           key={generation}
           name="method"
           defaultValue={state.values.method ?? "transfer"}
-          className="rounded-md border px-3 py-2"
         >
           <option value="transfer">{ts("methodValues.transfer")}</option>
           <option value="cash">{ts("methodValues.cash")}</option>
           <option value="other">{ts("methodValues.other")}</option>
-        </select>
+        </Select>
       </label>
       <label className="flex flex-col gap-1 text-sm">
         {ts("reference")}
-        <input
+        <Input
           name="reference"
           defaultValue={state.values.reference ?? ""}
-          className="rounded-md border px-3 py-2"
         />
       </label>
       <label className="flex flex-col gap-1 text-sm">
         {ts("notes")}
-        <textarea
+        <Textarea
           name="notes"
           defaultValue={state.values.notes ?? ""}
-          className="rounded-md border px-3 py-2"
         />
       </label>
       {state.error && state.field === null && (

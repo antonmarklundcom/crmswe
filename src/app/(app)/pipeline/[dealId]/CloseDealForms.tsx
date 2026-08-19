@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import { Button } from "@/components/ui/button";
 import { closeDealAction, type CloseDealState } from "./actions";
+import { Input } from "@/components/ui/form-fields";
 
 // Declared here, not in actions.ts: a "use server" module may only export
 // async functions.
@@ -28,11 +29,10 @@ export function CloseDealForms({ dealId, labels }: { dealId: string; labels: Clo
 
       <label className="flex flex-col gap-1 text-sm">
         {labels.reason}
-        <input
+        <Input
           name="reason"
           maxLength={500}
           placeholder={labels.reasonPlaceholder}
-          className="rounded-md border px-3 py-2 text-sm"
         />
       </label>
 

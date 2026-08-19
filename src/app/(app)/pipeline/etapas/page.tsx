@@ -11,6 +11,7 @@ import {
   moveStageAction,
   updateStageAction,
 } from "../actions";
+import { Input, Select } from "@/components/ui/form-fields";
 
 // Stage editor (PLAN.md §13 H8). Admin-only, like every other piece of
 // tenant configuration (§3.2, H1) — the page re-checks for itself rather
@@ -94,35 +95,33 @@ export default async function StagesPage({
 
                 <label className="flex flex-col gap-1 text-xs text-muted-foreground">
                   {t("name")}
-                  <input
+                  <Input
                     name="name"
                     defaultValue={stage.name}
                     maxLength={200}
-                    className="rounded-md border px-2 py-1 text-sm"
                   />
                 </label>
 
                 <label className="flex flex-col gap-1 text-xs text-muted-foreground">
                   {t("color")}
-                  <input
+                  <Input
                     type="color"
                     name="color"
                     defaultValue={stage.color ?? "#71717a"}
-                    className="h-8 w-16 rounded-md border"
+                    className="h-8 w-16"
                   />
                 </label>
 
                 <label className="flex flex-col gap-1 text-xs text-muted-foreground">
                   {t("outcome")}
-                  <select
+                  <Select
                     name="outcome"
                     defaultValue={stage.isWon ? "won" : stage.isLost ? "lost" : "none"}
-                    className="rounded-md border px-2 py-1 text-sm"
                   >
                     <option value="none">{t("outcomeNone")}</option>
                     <option value="won">{t("outcomeWon")}</option>
                     <option value="lost">{t("outcomeLost")}</option>
-                  </select>
+                  </Select>
                 </label>
 
                 <Button type="submit" size="sm" variant="outline">
@@ -179,7 +178,7 @@ export default async function StagesPage({
           <input type="hidden" name="pipelineId" value={pipeline.id} />
           <label className="flex flex-col gap-1 text-xs text-muted-foreground">
             {t("name")}
-            <input name="name" maxLength={200} className="rounded-md border px-2 py-1 text-sm" />
+            <Input name="name" maxLength={200} />
           </label>
           <Button type="submit" size="sm">
             {t("create")}

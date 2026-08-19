@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { randomUUID } from "node:crypto";
 import { tick } from "@/worker";
-import { isValidCronSecret } from "@/lib/config/cron-secret";
+import { requireCronSecret } from "@/lib/api/guards";
 
 // Hostinger-pinged fallback tick (PLAN.md §2.2: "api/cron/ — Hostinger-pinged
 // fallback tick (secret-guarded)"). The in-process worker (instrumentation.ts)
@@ -11,9 +11,8 @@ import { isValidCronSecret } from "@/lib/config/cron-secret";
 // this URL keeps the jobs table draining. Claims and processes at most one
 // job per call, same as a single worker tick.
 export async function GET(request: Request) {
-  if (!isValidCronSecret(request.headers.get("x-cron-secret"))) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const guard = requireCronSecret(request);
+  if (!guard.ok) return guard.response;
 
   const didWork = await tick(`cron-${randomUUID()}`);
   return NextResponse.json({ didWork });

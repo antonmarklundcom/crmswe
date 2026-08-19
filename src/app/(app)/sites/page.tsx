@@ -21,6 +21,7 @@ import { SiteTurnstileForm } from "./SiteTurnstileForm";
 import { SiteHookForm, type HookPanelProps } from "./SiteHookForm";
 import { SiteHookGuide, type HookGuideLabels } from "./SiteHookGuide";
 import { toggleSiteActiveAction, updateSiteRoutingAction } from "./actions";
+import { Select } from "@/components/ui/form-fields";
 
 /** Status line for one site: green when the last attempt worked, red with the
  * reason when it didn't, grey when the site has never been used. */
@@ -237,10 +238,10 @@ export default async function SitesPage() {
                 <input type="hidden" name="siteId" value={site.id} />
                 <label className="flex flex-col gap-1">
                   {t("stage")}
-                  <select
+                  <Select
                     name="defaultStageId"
                     defaultValue={site.defaultStageId ?? ""}
-                    className="rounded-md border px-2 py-1"
+                    className="px-2 py-1"
                   >
                     <option value="">{t("none")}</option>
                     {stageOptions.map((option) => (
@@ -248,14 +249,14 @@ export default async function SitesPage() {
                         {option.label}
                       </option>
                     ))}
-                  </select>
+                  </Select>
                 </label>
                 <label className="flex flex-col gap-1">
                   {t("waAccount")}
-                  <select
+                  <Select
                     name="waAccountId"
                     defaultValue={site.waAccountId ?? ""}
-                    className="rounded-md border px-2 py-1"
+                    className="px-2 py-1"
                   >
                     <option value="">{t("none")}</option>
                     {waAccounts.map((account) => (
@@ -263,7 +264,7 @@ export default async function SitesPage() {
                         {account.displayNumber || account.phoneNumberId}
                       </option>
                     ))}
-                  </select>
+                  </Select>
                 </label>
                 <Button type="submit" size="sm" variant="outline">
                   {t("saveRouting")}

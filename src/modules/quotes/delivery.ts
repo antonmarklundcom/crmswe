@@ -1,13 +1,14 @@
-import { storage } from "@/lib/storage";
 import { env } from "@/lib/config/env";
 import type { TenantContext } from "@/modules/tenancy/context";
 import { getTenant } from "@/modules/tenancy/tenants";
 import type { TenantSettings } from "@/modules/tenancy/settings";
 import { getContact } from "@/modules/crm/contacts";
 import { createActivity } from "@/modules/crm/activities";
-import { getPrimaryAccount } from "@/modules/whatsapp/accounts";
-import { getOrCreateConversation } from "@/modules/whatsapp/inbox";
-import { sendDocument } from "@/modules/whatsapp/send";
+import { getTranslator } from "@/lib/i18n/translator";
+import {
+  sendDocumentOverWhatsapp,
+  storeDocumentPdf,
+} from "@/modules/renderable-document/delivery";
 import { getQuote, listQuoteItems, setQuotePdfKey, setQuoteStatus } from "./quotes";
 import { renderQuotePdf } from "./pdf";
 
@@ -65,9 +66,8 @@ export async function generateQuotePdf(ctx: TenantContext, quoteId: string): Pro
     })),
   });
 
-  const key = `quotes/${ctx.tenantId}/${quote.id}.pdf`;
-  await storage.put(key, pdf, "application/pdf");
-  await setQuotePdfKey(ctx, quote.id, key);
+  const stored = await storeDocumentPdf(ctx, { kind: "quotes", id: quote.id, pdf });
+  await setQuotePdfKey(ctx, quote.id, stored.key);
 
   return pdf;
 }
@@ -92,25 +92,20 @@ export async function sendQuote(ctx: TenantContext, quoteId: string): Promise<Se
   await generateQuotePdf(ctx, quote.id);
 
   const publicUrl = publicQuoteUrl(quote.publicToken);
-  let messageId: string | null = null;
-  let whatsappError: string | undefined;
+  const tenant = await getTenant(ctx.tenantId);
+  // The caption reaches the customer, so it follows the tenant's locale like
+  // the PDF beside it (§13 H5 #4).
+  const t = await getTranslator(tenant?.locale, "pdf.quote");
+  const captionPrefix = t("caption");
 
-  const account = await getPrimaryAccount(ctx);
-  if (!account) {
-    whatsappError = "No hay un número de WhatsApp conectado";
-  } else {
-    try {
-      const conversation = await getOrCreateConversation(ctx, account.id, quote.contactId);
-      messageId = await sendDocument(ctx, {
-        conversationId: conversation.id,
-        link: publicQuotePdfUrl(quote.publicToken),
-        filename: `${quote.number}.pdf`,
-        caption: `Presupuesto ${quote.number}`,
-      });
-    } catch (err) {
-      whatsappError = err instanceof Error ? err.message : String(err);
-    }
-  }
+
+  const delivery = await sendDocumentOverWhatsapp(ctx, {
+    contactId: quote.contactId,
+    link: publicQuotePdfUrl(quote.publicToken),
+    filename: `${quote.number}.pdf`,
+    caption: `${captionPrefix} ${quote.number}`,
+  });
+  const { messageId, whatsappError } = delivery;
 
   await setQuoteStatus(ctx, quote.id, "sent");
   await createActivity(ctx, {

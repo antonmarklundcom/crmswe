@@ -10,6 +10,9 @@ import { receiveHookPayload } from "@/modules/sites/hooks";
 // URL ends up in third-party logs, which is why this lane has a tighter rate
 // limit and its own revocation.
 
+// Same reasoning as /api/v1/leads: the response body is what Elementor,
+// Wix and Zapier show the person wiring the form up, so it stays as-is
+// rather than moving to the internal error shape (§13 H9 #2).
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ token: string }> },

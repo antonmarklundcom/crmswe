@@ -4,6 +4,7 @@ import { useActionState } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { acceptInviteAction, type AcceptInviteState } from "./actions";
+import { Input } from "@/components/ui/form-fields";
 
 const initialState: AcceptInviteState = { error: null, success: false };
 
@@ -24,16 +25,15 @@ export function AcceptInviteForm({ token }: { token: string }) {
       <input type="hidden" name="token" value={token} />
       <label className="flex flex-col gap-1 text-sm">
         {t("name")}
-        <input name="name" required className="rounded-md border px-3 py-2" />
+        <Input name="name" required />
       </label>
       <label className="flex flex-col gap-1 text-sm">
         {t("password")}
-        <input
+        <Input
           type="password"
           name="password"
           required
           minLength={8}
-          className="rounded-md border px-3 py-2"
         />
       </label>
       {state.error && <p className="text-sm text-destructive">{t("invalid")}</p>}

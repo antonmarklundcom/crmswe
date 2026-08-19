@@ -11,6 +11,7 @@ import { createPipelineAction } from "./actions";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
+import { Input } from "@/components/ui/form-fields";
 
 export default async function PipelinePage({
   searchParams,
@@ -159,11 +160,10 @@ function NewPipelineForm({
       <form action={createPipelineAction} className="flex max-w-sm flex-col gap-4">
         <label className="flex flex-col gap-1 text-sm">
           {t("newPipelineName")}
-          <input
+          <Input
             name="name"
             required
             placeholder={t("newPipelineNamePlaceholder")}
-            className="rounded-md border px-3 py-2"
           />
         </label>
         <Button type="submit" variant="outline" className="w-fit">

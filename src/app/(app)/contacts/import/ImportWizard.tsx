@@ -11,6 +11,7 @@ import {
   type ImportState,
   type PreviewState,
 } from "./actions";
+import { Input, Select, Textarea } from "@/components/ui/form-fields";
 
 // Declared here, not in actions.ts: a "use server" module may only export
 // async functions.
@@ -114,10 +115,9 @@ export function ImportWizard({ tags }: { tags: Array<{ id: string; name: string 
                   {t(`fields.${field}` as "fields.name")}
                   {(field === "phone" || field === "name") && " *"}
                 </span>
-                <select
+                <Select
                   name={`map_${field}`}
                   defaultValue={preview.mapping[field] ?? ""}
-                  className="rounded-md border px-2 py-1 text-sm"
                 >
                   <option value="">{t("ignoreColumn")}</option>
                   {preview.headers.map((header) => (
@@ -125,7 +125,7 @@ export function ImportWizard({ tags }: { tags: Array<{ id: string; name: string 
                       {header}
                     </option>
                   ))}
-                </select>
+                </Select>
               </label>
             ))}
           </div>
@@ -136,26 +136,25 @@ export function ImportWizard({ tags }: { tags: Array<{ id: string; name: string 
 
           <label className="flex flex-wrap items-center gap-2 text-sm">
             <span className="w-40">{t("onDuplicate")}</span>
-            <select
+            <Select
               name="onDuplicate"
               defaultValue="update"
-              className="rounded-md border px-2 py-1 text-sm"
             >
               <option value="update">{t("onDuplicateUpdate")}</option>
               <option value="skip">{t("onDuplicateSkip")}</option>
-            </select>
+            </Select>
           </label>
 
           <label className="flex flex-wrap items-center gap-2 text-sm">
             <span className="w-40">{t("tagOnImport")}</span>
-            <select name="tagId" defaultValue="" className="rounded-md border px-2 py-1 text-sm">
+            <Select name="tagId" defaultValue="">
               <option value="">{t("noTag")}</option>
               {tags.map((tag) => (
                 <option key={tag.id} value={tag.id}>
                   {tag.name}
                 </option>
               ))}
-            </select>
+            </Select>
           </label>
         </section>
 
@@ -206,21 +205,20 @@ export function ImportWizard({ tags }: { tags: Array<{ id: string; name: string 
     <form action={previewAction} className="flex max-w-2xl flex-col gap-4">
       <label className="flex flex-col gap-1 text-sm">
         {t("file")}
-        <input
+        <Input
           type="file"
           name="file"
           accept=".csv,text/csv"
-          className="rounded-md border px-3 py-2 text-sm"
         />
       </label>
 
       <label className="flex flex-col gap-1 text-sm">
         {t("paste")}
-        <textarea
+        <Textarea
           name="pasted"
           rows={6}
           placeholder={t("pastePlaceholder")}
-          className="rounded-md border px-3 py-2 font-mono text-xs"
+          className="font-mono text-xs"
         />
       </label>
 

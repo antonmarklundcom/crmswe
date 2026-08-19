@@ -4,6 +4,7 @@ import { useActionState } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { connectAccountAction, type ConnectField, type ConnectFormState } from "./actions";
+import { Input } from "@/components/ui/form-fields";
 
 // Lives here, not in actions.ts: a "use server" module may only export
 // async functions.
@@ -26,35 +27,32 @@ export function WhatsappConnectForm() {
     <form action={formAction} className="flex max-w-sm flex-col gap-4">
       <label className="flex flex-col gap-1 text-sm">
         {t("wabaId")}
-        <input
+        <Input
           name="wabaId"
           defaultValue={state.values.wabaId ?? ""}
-          className="rounded-md border px-3 py-2"
         />
         <FieldError field="wabaId" />
       </label>
       <label className="flex flex-col gap-1 text-sm">
         {t("phoneNumberId")}
-        <input
+        <Input
           name="phoneNumberId"
           defaultValue={state.values.phoneNumberId ?? ""}
-          className="rounded-md border px-3 py-2"
         />
         <FieldError field="phoneNumberId" />
       </label>
       <label className="flex flex-col gap-1 text-sm">
         {t("displayNumber")}
-        <input
+        <Input
           name="displayNumber"
           defaultValue={state.values.displayNumber ?? ""}
-          className="rounded-md border px-3 py-2"
         />
       </label>
       <label className="flex flex-col gap-1 text-sm">
         {t("accessToken")}
         {/* Not echoed back on a rejected submit — a secret is worth
             retyping, unlike the rest of the form. */}
-        <input name="accessToken" type="password" className="rounded-md border px-3 py-2" />
+        <Input name="accessToken" type="password" />
         <FieldError field="accessToken" />
       </label>
       {state.error && state.field === null && (

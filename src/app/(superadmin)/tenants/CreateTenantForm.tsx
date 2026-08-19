@@ -4,6 +4,7 @@ import { useActionState } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { createTenantAction, type TenantField, type CreateTenantFormState } from "./actions";
+import { Input } from "@/components/ui/form-fields";
 
 // Lives here, not in actions.ts: a "use server" module may only export
 // async functions.
@@ -27,19 +28,17 @@ export function CreateTenantForm() {
     <form action={formAction} className="flex max-w-sm flex-col gap-4">
       <label className="flex flex-col gap-1 text-sm">
         {t("name")}
-        <input
+        <Input
           name="name"
           defaultValue={state.values.name ?? ""}
-          className="rounded-md border px-3 py-2"
         />
         <FieldError field="name" />
       </label>
       <label className="flex flex-col gap-1 text-sm">
         {t("slug")}
-        <input
+        <Input
           name="slug"
           defaultValue={state.values.slug ?? ""}
-          className="rounded-md border px-3 py-2"
         />
         <FieldError field="slug" />
       </label>

@@ -6,6 +6,7 @@ import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { inviteUserAction, type InviteState } from "./actions";
+import { Input, Select } from "@/components/ui/form-fields";
 
 // Invite form + the resulting link. Uses useActionState (the shape
 // acceptInviteAction already established) so validation failures land inline
@@ -46,19 +47,18 @@ export function InviteForm({ labels }: { labels: InviteLabels }) {
       <form action={formAction} className="flex flex-wrap items-end gap-2">
         <label className="flex flex-1 flex-col gap-1 text-sm">
           {labels.email}
-          <input
+          <Input
             name="email"
             type="email"
             required
-            className="rounded-md border px-3 py-2"
           />
         </label>
         <label className="flex flex-col gap-1 text-sm">
           {labels.role}
-          <select name="role" defaultValue="agent" className="rounded-md border px-3 py-2">
+          <Select name="role" defaultValue="agent">
             <option value="agent">{labels.roleAgent}</option>
             <option value="admin">{labels.roleAdmin}</option>
-          </select>
+          </Select>
         </label>
         <Button type="submit" disabled={pending}>
           {labels.submit}

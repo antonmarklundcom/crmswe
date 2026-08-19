@@ -1,13 +1,14 @@
 import { NextResponse } from "next/server";
-import { getTenantContext } from "@/modules/tenancy/context";
 import { listConversations } from "@/modules/whatsapp/inbox";
 import { getContact } from "@/modules/crm/contacts";
+import { requireSession } from "@/lib/api/guards";
 
 // Backs the inbox list's 5s poll (PLAN.md §6.5). Session-authenticated,
 // same-origin only — no API key path, unlike /api/v1/leads.
 export async function GET() {
-  const ctx = await getTenantContext();
-  if (!ctx) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const guard = await requireSession();
+  if (!guard.ok) return guard.response;
+  const { ctx } = guard;
 
   const conversations = await listConversations(ctx);
   const withContacts = await Promise.all(

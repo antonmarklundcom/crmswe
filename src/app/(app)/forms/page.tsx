@@ -11,6 +11,7 @@ import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
 import { FormCreateForm } from "./FormCreateForm";
 import { updateFormTurnstileAction } from "./actions";
+import { Select } from "@/components/ui/form-fields";
 
 export default async function FormsPage({
   searchParams,
@@ -73,10 +74,10 @@ export default async function FormsPage({
                     <input type="hidden" name="formId" value={form.id} />
                     <label className="flex flex-col gap-1">
                       {t("turnstileSite")}
-                      <select
+                      <Select
                         name="turnstileSiteId"
                         defaultValue={(form.settings as FormSettings).turnstileSiteId ?? ""}
-                        className="rounded-md border px-2 py-1"
+                        className="px-2 py-1"
                       >
                         <option value="">{t("turnstileNone")}</option>
                         {turnstileSites.map((site) => (
@@ -84,7 +85,7 @@ export default async function FormsPage({
                             {site.name}
                           </option>
                         ))}
-                      </select>
+                      </Select>
                     </label>
                     <Button type="submit" size="sm" variant="outline">
                       {t("turnstileSave")}
@@ -104,17 +105,16 @@ export default async function FormsPage({
           <form method="get" className="mb-4 flex items-end gap-2 text-sm">
             <label className="flex flex-col gap-1">
               {t("targetPipeline")}
-              <select
+              <Select
                 name="pipeline"
                 defaultValue={pipeline.id}
-                className="rounded-md border px-3 py-2"
               >
                 {pipelines.map((p) => (
                   <option key={p.id} value={p.id}>
                     {p.name}
                   </option>
                 ))}
-              </select>
+              </Select>
             </label>
             <Button type="submit" variant="outline">
               {t("targetPipelineApply")}

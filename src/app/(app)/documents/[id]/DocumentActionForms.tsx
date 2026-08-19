@@ -11,6 +11,7 @@ import {
   type RecordPaymentFormState,
   type VoidDocumentFormState,
 } from "../actions";
+import { Input, Select } from "@/components/ui/form-fields";
 
 // Both forms here have a real user-fillable field (amount, reason), unlike
 // the hidden-id-only buttons on this page — so both get the useActionState
@@ -46,43 +47,43 @@ export function RecordPaymentForm({ documentId }: { documentId: string }) {
       <input type="hidden" name="documentId" value={documentId} />
       <label className="flex flex-col gap-1">
         {t("amount")}
-        <input
+        <Input
           name="amount"
           inputMode="numeric"
           defaultValue={state.values.amount ?? ""}
-          className="w-32 rounded-md border px-2 py-1"
+          className="w-32 px-2 py-1"
         />
         <FieldError field="amount" />
       </label>
       <label className="flex flex-col gap-1">
         {t("method")}
-        <select
+        <Select
           name="method"
           defaultValue={state.values.method ?? PAYMENT_METHODS[0]}
-          className="rounded-md border px-2 py-1"
+          className="px-2 py-1"
         >
           {PAYMENT_METHODS.map((method) => (
             <option key={method} value={method}>
               {t(`methodValues.${method}` as "methodValues.cash")}
             </option>
           ))}
-        </select>
+        </Select>
       </label>
       <label className="flex flex-col gap-1">
         {t("reference")}
-        <input
+        <Input
           name="reference"
           defaultValue={state.values.reference ?? ""}
-          className="rounded-md border px-2 py-1"
+          className="px-2 py-1"
         />
       </label>
       <label className="flex flex-col gap-1">
         {t("paidAt")}
-        <input
+        <Input
           name="paidAt"
           type="date"
           defaultValue={state.values.paidAt ?? new Date().toISOString().slice(0, 10)}
-          className="rounded-md border px-2 py-1"
+          className="px-2 py-1"
         />
       </label>
       {state.error && state.field === null && (
@@ -109,10 +110,9 @@ export function VoidDocumentForm({ documentId }: { documentId: string }) {
       <input type="hidden" name="documentId" value={documentId} />
       <label className="flex flex-col gap-1">
         {t("voidReason")}
-        <input
+        <Input
           name="reason"
           defaultValue={state.values.reason}
-          className="rounded-md border px-3 py-2"
         />
         {state.error && (
           <span role="alert" className="text-xs text-destructive">

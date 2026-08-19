@@ -1,8 +1,13 @@
-import { getTenantContext, buildSystemTenantContext } from "@/modules/tenancy/context";
+import { buildSystemTenantContext } from "@/modules/tenancy/context";
 import { resolveTenantByContactsFeedToken } from "@/modules/tenancy/settings";
 import { exportContactsCsv } from "@/modules/crm/export";
 import { parseContactOptions, parseContactQuery } from "@/app/(app)/contacts/query";
-import { checkRateLimit } from "@/lib/rate-limit";
+import {
+  apiError,
+  requireSession,
+  requireToken,
+  requireWithinRateLimit,
+} from "@/lib/api/guards";
 
 // Contacts CSV. One endpoint, two ways in:
 //
@@ -40,27 +45,26 @@ export async function GET(request: Request) {
   if (token) {
     // Per-token limiter: a misconfigured sheet on a 1-minute refresh must not
     // be able to hammer the CRM.
-    if (checkRateLimit(`export-feed:${token.slice(0, 16)}`, 30, 60_000).limited) {
-      return new Response("Rate limit exceeded", { status: 429 });
-    }
+    const limited = requireWithinRateLimit(`export-feed:${token.slice(0, 16)}`, 30, 60_000);
+    if (!limited.ok) return limited.response;
 
-    const tenant = await resolveTenantByContactsFeedToken(token);
-    if (!tenant) return new Response("Not found", { status: 404 });
+    const guard = await requireToken(token, resolveTenantByContactsFeedToken);
+    if (!guard.ok) return guard.response;
 
-    const ctx = await buildSystemTenantContext(tenant.id);
-    if (!ctx) return new Response("Not found", { status: 404 });
+    const ctx = await buildSystemTenantContext(guard.resolved.id);
+    if (!ctx) return apiError("not_found", 404);
 
     // Deliberately unfiltered: a spreadsheet wants the whole book, and the
     // token carries no user identity to scope it by.
     return csvResponse(await exportContactsCsv(ctx), { download: false });
   }
 
-  const ctx = await getTenantContext();
-  if (!ctx) return new Response("Unauthorized", { status: 401 });
+  const session = await requireSession();
+  if (!session.ok) return session.response;
+  const { ctx } = session;
 
-  if (checkRateLimit(`export-download:${ctx.tenantId}`, 20, 60_000).limited) {
-    return new Response("Rate limit exceeded", { status: 429 });
-  }
+  const downloadLimit = requireWithinRateLimit(`export-download:${ctx.tenantId}`, 20, 60_000);
+  if (!downloadLimit.ok) return downloadLimit.response;
 
   // Same parser the list page uses, so the download is exactly the filtered
   // set on screen — including sort-independent filters like date range and

@@ -4,6 +4,7 @@ import { useActionState } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { type ContactField, type ContactFormState } from "../actions";
+import { Input, Textarea } from "@/components/ui/form-fields";
 
 // Same reason as the create form: "use server" modules export only async
 // functions, so the initial state is declared client-side.
@@ -42,29 +43,26 @@ export function ContactEditForm({
     <form action={formAction} className="flex max-w-sm flex-col gap-4">
       <label className="flex flex-col gap-1 text-sm">
         {t("name")}
-        <input
+        <Input
           name="name"
           defaultValue={state.values.name ?? defaults.name}
-          className="rounded-md border px-3 py-2"
         />
         <FieldError field="name" />
       </label>
       <label className="flex flex-col gap-1 text-sm">
         {t("email")}
-        <input
+        <Input
           name="email"
           inputMode="email"
           defaultValue={state.values.email ?? defaults.email}
-          className="rounded-md border px-3 py-2"
         />
         <FieldError field="email" />
       </label>
       <label className="flex flex-col gap-1 text-sm">
         {t("notes")}
-        <textarea
+        <Textarea
           name="notes"
           defaultValue={state.values.notes ?? defaults.notes}
-          className="rounded-md border px-3 py-2"
         />
         <FieldError field="notes" />
       </label>

@@ -14,6 +14,7 @@ import { PageHeader } from "@/components/page-header";
 import { formatDateTime, formatMoney } from "@/lib/i18n/format";
 import { CloseDealForms, type CloseLabels } from "./CloseDealForms";
 import { assignDealAction, reopenDealAction } from "./actions";
+import { Select } from "@/components/ui/form-fields";
 
 // Deal detail (PLAN.md §13 H8). Everything about one opportunity in one
 // place: what it's worth, who owns it, how it got to this stage, and what is
@@ -112,10 +113,9 @@ export default async function DealPage({ params }: { params: Promise<{ dealId: s
           {openStages.length > 0 && (
             <form action={reopenDealAction} className="flex flex-wrap items-center gap-2">
               <input type="hidden" name="dealId" value={deal.id} />
-              <select
+              <Select
                 name="toStageId"
                 defaultValue={openStages[0].id}
-                className="rounded-md border px-2 py-1 text-sm"
                 aria-label={t("stage")}
               >
                 {openStages.map((option) => (
@@ -123,7 +123,7 @@ export default async function DealPage({ params }: { params: Promise<{ dealId: s
                     {option.name}
                   </option>
                 ))}
-              </select>
+              </Select>
               <Button type="submit" size="sm" variant="outline">
                 {t("reopen")}
               </Button>
@@ -141,10 +141,9 @@ export default async function DealPage({ params }: { params: Promise<{ dealId: s
         <h2 className="text-lg font-semibold">{t("assignedTitle")}</h2>
         <form action={assignDealAction} className="flex flex-wrap items-center gap-2">
           <input type="hidden" name="dealId" value={deal.id} />
-          <select
+          <Select
             name="userId"
             defaultValue={deal.assignedUserId ?? ""}
-            className="rounded-md border px-2 py-1 text-sm"
             aria-label={t("assignedTitle")}
           >
             {users.map((user) => (
@@ -152,7 +151,7 @@ export default async function DealPage({ params }: { params: Promise<{ dealId: s
                 {user.name}
               </option>
             ))}
-          </select>
+          </Select>
           <Button type="submit" size="sm" variant="outline">
             {t("assign")}
           </Button>

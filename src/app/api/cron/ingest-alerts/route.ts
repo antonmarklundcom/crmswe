@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { env } from "@/lib/config/env";
-import { isValidCronSecret } from "@/lib/config/cron-secret";
 import { getTenant } from "@/modules/tenancy/tenants";
 import { listUsersForTenant } from "@/modules/tenancy/users";
 import { sendEmail } from "@/lib/email";
@@ -11,6 +10,7 @@ import {
   clearSiteAlert,
   STALE_AFTER_DAYS,
 } from "@/modules/sites/alerts";
+import { requireCronSecret } from "@/lib/api/guards";
 
 // Per-site ingest alerts (PLAN.md §5.2.5). Same shape as
 // api/cron/subscription-warnings: a Hostinger cron pings this daily with the
@@ -18,9 +18,8 @@ import {
 // been broken since Tuesday", and a broken client form is not fixed by
 // hearing about it four times an hour.
 export async function GET(request: Request) {
-  if (!isValidCronSecret(request.headers.get("x-cron-secret"))) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const guard = requireCronSecret(request);
+  if (!guard.ok) return guard.response;
 
   const now = new Date();
   const { alerts, recovered } = await collectIngestAlerts(now);

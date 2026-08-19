@@ -1,10 +1,9 @@
 import { NextResponse } from "next/server";
-import { getTenantContext } from "@/modules/tenancy/context";
 import { getTenant } from "@/modules/tenancy/tenants";
 import type { TenantSettings } from "@/modules/tenancy/settings";
 import { searchTenant } from "@/modules/crm/search";
-import { checkRateLimit } from "@/lib/rate-limit";
 import { DEFAULT_COUNTRY } from "@/lib/phone";
+import { requireSession, requireWithinRateLimit } from "@/lib/api/guards";
 
 // Backs the ⌘K palette (PLAN.md §13 H8). Session-scoped like the inbox
 // endpoints: the tenant comes from the session, never from the request, so
@@ -16,12 +15,12 @@ const LIMIT = 60;
 const WINDOW_MS = 60_000;
 
 export async function GET(request: Request) {
-  const ctx = await getTenantContext();
-  if (!ctx) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const session = await requireSession();
+  if (!session.ok) return session.response;
+  const { ctx } = session;
 
-  if (checkRateLimit(`search:${ctx.userId}`, LIMIT, WINDOW_MS).limited) {
-    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
-  }
+  const limited = requireWithinRateLimit(`search:${ctx.userId}`, LIMIT, WINDOW_MS);
+  if (!limited.ok) return limited.response;
 
   const query = new URL(request.url).searchParams.get("q") ?? "";
   if (query.trim().length < 2) return NextResponse.json({ query, hits: [] });

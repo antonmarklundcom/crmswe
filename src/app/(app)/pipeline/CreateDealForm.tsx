@@ -4,6 +4,7 @@ import { useActionState } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { createDealAction, type DealField, type DealFormState } from "./actions";
+import { Input, Select } from "@/components/ui/form-fields";
 
 // Declared here rather than in actions.ts: a "use server" module may only
 // export async functions.
@@ -50,41 +51,38 @@ export function CreateDealForm({
       <input type="hidden" name="pipelineId" value={pipelineId} />
       <label className="flex flex-col gap-1 text-sm">
         {t("dealTitle")}
-        <input
+        <Input
           name="title"
           defaultValue={state.values.title ?? ""}
-          className="rounded-md border px-3 py-2"
         />
         <FieldError field="title" />
       </label>
       <label className="flex flex-col gap-1 text-sm">
         {t("contact")}
-        <select
+        <Select
           name="contactId"
           defaultValue={state.values.contactId}
-          className="rounded-md border px-3 py-2"
         >
           {contacts.map((contact) => (
             <option key={contact.id} value={contact.id}>
               {contact.name}
             </option>
           ))}
-        </select>
+        </Select>
         <FieldError field="contactId" />
       </label>
       <label className="flex flex-col gap-1 text-sm">
         {t("stage")}
-        <select
+        <Select
           name="stageId"
           defaultValue={state.values.stageId}
-          className="rounded-md border px-3 py-2"
         >
           {stages.map((stage) => (
             <option key={stage.id} value={stage.id}>
               {stage.name}
             </option>
           ))}
-        </select>
+        </Select>
         <FieldError field="stageId" />
       </label>
       <label className="flex flex-col gap-1 text-sm">
@@ -93,11 +91,10 @@ export function CreateDealForm({
             silently blocks the submit on "1.5" with its own bubble, in its
             own language, and the Spanish message below never runs (§1.2).
             inputMode gets the numeric keypad without the validation. */}
-        <input
+        <Input
           name="value"
           inputMode="numeric"
           defaultValue={state.values.value ?? ""}
-          className="rounded-md border px-3 py-2"
         />
         <FieldError field="value" />
       </label>

@@ -1,13 +1,14 @@
-import { storage } from "@/lib/storage";
 import { env } from "@/lib/config/env";
 import type { TenantContext } from "@/modules/tenancy/context";
 import { getTenant } from "@/modules/tenancy/tenants";
 import type { TenantSettings } from "@/modules/tenancy/settings";
 import { getContact } from "@/modules/crm/contacts";
 import { createActivity } from "@/modules/crm/activities";
-import { getPrimaryAccount } from "@/modules/whatsapp/accounts";
-import { getOrCreateConversation } from "@/modules/whatsapp/inbox";
-import { sendDocument } from "@/modules/whatsapp/send";
+import { getTranslator } from "@/lib/i18n/translator";
+import {
+  sendDocumentOverWhatsapp,
+  storeDocumentPdf,
+} from "@/modules/renderable-document/delivery";
 import {
   amountPaid,
   getDocument,
@@ -80,9 +81,8 @@ export async function generateDocumentPdf(
     })),
   });
 
-  const key = `documents/${ctx.tenantId}/${document.id}.pdf`;
-  await storage.put(key, pdf, "application/pdf");
-  await setDocumentPdfKey(ctx, document.id, key);
+  const stored = await storeDocumentPdf(ctx, { kind: "documents", id: document.id, pdf });
+  await setDocumentPdfKey(ctx, document.id, stored.key);
 
   return pdf;
 }
@@ -117,25 +117,18 @@ export async function sendDocumentToContact(
   await generateDocumentPdf(ctx, document.id);
 
   const publicUrl = publicDocumentUrl(document.publicToken);
-  let messageId: string | null = null;
-  let whatsappError: string | undefined;
+  const tenant = await getTenant(ctx.tenantId);
+  const t = await getTranslator(tenant?.locale, "pdf.notaVenta");
+  const captionPrefix = t("caption");
 
-  const account = await getPrimaryAccount(ctx);
-  if (!account) {
-    whatsappError = "No hay un número de WhatsApp conectado";
-  } else {
-    try {
-      const conversation = await getOrCreateConversation(ctx, account.id, document.contactId);
-      messageId = await sendDocument(ctx, {
-        conversationId: conversation.id,
-        link: publicDocumentPdfUrl(document.publicToken),
-        filename: `${document.number}.pdf`,
-        caption: `Nota de venta ${document.number}`,
-      });
-    } catch (err) {
-      whatsappError = err instanceof Error ? err.message : String(err);
-    }
-  }
+
+  const delivery = await sendDocumentOverWhatsapp(ctx, {
+    contactId: document.contactId,
+    link: publicDocumentPdfUrl(document.publicToken),
+    filename: `${document.number}.pdf`,
+    caption: `${captionPrefix} ${document.number}`,
+  });
+  const { messageId, whatsappError } = delivery;
 
   await createActivity(ctx, {
     contactId: document.contactId,

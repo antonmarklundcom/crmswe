@@ -10,6 +10,7 @@ import { PageHeader } from "@/components/page-header";
 import { CreateUserForm, type CreateUserLabels } from "./CreateUserForm";
 import { CreateSubscriptionForm, RecordPaymentForm } from "./SubscriptionForms";
 import { impersonateAction, setTenantUserPasswordAction } from "./actions";
+import { Input } from "@/components/ui/form-fields";
 
 // Defense in depth (§3.3): the (superadmin) layout already redirects a
 // non-superadmin, but a layout is not an authorization boundary — this page
@@ -115,13 +116,12 @@ export default async function TenantDetailPage({
               <form action={setTenantUserPasswordAction} className="flex items-center gap-2">
                 <input type="hidden" name="tenantId" value={tenant.id} />
                 <input type="hidden" name="userId" value={user.id} />
-                <input
+                <Input
                   type="password"
                   name="password"
                   minLength={8}
                   required
                   placeholder={tu("newPassword")}
-                  className="rounded-md border px-2 py-1 text-sm"
                   aria-label={tu("newPassword")}
                 />
                 <Button type="submit" size="sm" variant="outline">

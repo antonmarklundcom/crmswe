@@ -34,6 +34,7 @@ import {
   deleteTaskAction,
   reopenTaskAction,
 } from "../tasks-actions";
+import { Input, Select, Textarea } from "@/components/ui/form-fields";
 
 // Contact record with the whole relationship in one place (PLAN.md §10 1J
 // #2): the WhatsApp conversation, the unified timeline, and the contact's
@@ -226,33 +227,31 @@ export default async function ContactDetailPage({
           >
             <label className="flex flex-1 flex-col gap-1 text-sm">
               {t("tasks.title")}
-              <input
+              <Input
                 name="title"
                 required
                 placeholder={t("tasks.titlePlaceholder")}
-                className="rounded-md border px-3 py-2"
               />
             </label>
             <label className="flex flex-col gap-1 text-sm">
               {t("tasks.dueAt")}
-              <input
+              <Input
                 name="dueAt"
                 type="datetime-local"
                 required
-                className="rounded-md border px-3 py-2"
               />
             </label>
             {deals.length > 0 && (
               <label className="flex flex-col gap-1 text-sm">
                 {t("dealsTitle")}
-                <select name="dealId" className="rounded-md border px-3 py-2">
+                <Select name="dealId">
                   <option value="">{t("tasks.noDeal")}</option>
                   {deals.map((deal) => (
                     <option key={deal.id} value={deal.id}>
                       {deal.title}
                     </option>
                   ))}
-                </select>
+                </Select>
               </label>
             )}
             <Button type="submit" size="sm">
@@ -309,11 +308,10 @@ export default async function ContactDetailPage({
       {tab === "actividad" && (
         <div className="flex flex-col gap-4">
           <form action={addNote} className="flex max-w-sm flex-col gap-2">
-            <textarea
+            <Textarea
               name="note"
               required
               placeholder={t("notePlaceholder")}
-              className="rounded-md border px-3 py-2 text-sm"
             />
             <Button type="submit" size="sm" className="w-fit">
               {t("addNote")}
@@ -361,13 +359,13 @@ export default async function ContactDetailPage({
             <section>
               <h2 className="mb-3 text-lg font-semibold">{t("addTag")}</h2>
               <form action={addTag} className="flex max-w-xs gap-2">
-                <select name="tagId" className="flex-1 rounded-md border px-3 py-2 text-sm">
+                <Select name="tagId" className="flex-1">
                   {availableTags.map((tag) => (
                     <option key={tag.id} value={tag.id}>
                       {tag.name}
                     </option>
                   ))}
-                </select>
+                </Select>
                 <Button type="submit" size="sm" variant="outline">
                   {t("addTag")}
                 </Button>

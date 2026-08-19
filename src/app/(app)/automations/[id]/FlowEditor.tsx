@@ -17,6 +17,7 @@ import "@xyflow/react/dist/style.css";
 import { Button } from "@/components/ui/button";
 import type { FlowGraph, TriggerType } from "@/modules/automations/graph";
 import { saveDraftAction, publishFlowAction } from "../actions";
+import { Input, Select, Textarea } from "@/components/ui/form-fields";
 
 // React Flow canvas (PLAN.md §7.1). The canvas is the source of truth while
 // editing; saving serialises it back into the same graph JSON the engine
@@ -299,13 +300,13 @@ function NodeConfigPanel({
       {(kind === "send_whatsapp" || kind === "create_note") && (
         <label className="flex flex-1 flex-col gap-1">
           {t("fields.text")}
-          <textarea
+          <Textarea
             value={String(config.text ?? "")}
             onChange={(e) => set("text", e.target.value)}
             // The merge tag is passed as an ICU argument rather than written
             // into the message: `{{…}}` is invalid ICU syntax.
             placeholder={t("fields.textPlaceholder", { tag: "{{contact.name}}" })}
-            className="rounded-md border px-2 py-1"
+            className="px-2 py-1"
           />
         </label>
       )}
@@ -313,11 +314,11 @@ function NodeConfigPanel({
       {kind === "send_review_request" && (
         <label className="flex flex-1 flex-col gap-1">
           {t("fields.text")}
-          <textarea
+          <Textarea
             value={String(config.text ?? "")}
             onChange={(e) => set("text", e.target.value)}
             placeholder={t("fields.reviewTextPlaceholder", { tag: "{{review_link}}" })}
-            className="rounded-md border px-2 py-1"
+            className="px-2 py-1"
           />
           {/* Left blank uses a sensible Spanish default with the link —
               see modules/automations/actions.ts DEFAULT_REVIEW_REQUEST_TEXT. */}
@@ -329,23 +330,23 @@ function NodeConfigPanel({
         <>
           <label className="flex flex-1 flex-col gap-1">
             {t("fields.instructions")}
-            <textarea
+            <Textarea
               value={String(config.instructions ?? "")}
               onChange={(e) => set("instructions", e.target.value)}
               placeholder={t("fields.instructionsPlaceholder")}
-              className="rounded-md border px-2 py-1"
+              className="px-2 py-1"
             />
           </label>
           <label className="flex flex-col gap-1">
             {t("fields.aiMode")}
-            <select
+            <Select
               value={config.mode === "send" ? "send" : "draft"}
               onChange={(e) => set("mode", e.target.value)}
-              className="rounded-md border px-2 py-1"
+              className="px-2 py-1"
             >
               <option value="draft">{t("fields.aiModeDraft")}</option>
               <option value="send">{t("fields.aiModeSend")}</option>
-            </select>
+            </Select>
           </label>
           {/* The tenant-level mode is a ceiling over this one, so picking
               "send" here does nothing until an admin also turns the tenant
@@ -359,18 +360,18 @@ function NodeConfigPanel({
         <>
           <label className="flex flex-col gap-1">
             {t("fields.template")}
-            <input
+            <Input
               value={String(config.templateName ?? "")}
               onChange={(e) => set("templateName", e.target.value)}
-              className="rounded-md border px-2 py-1"
+              className="px-2 py-1"
             />
           </label>
           <label className="flex flex-col gap-1">
             {t("fields.language")}
-            <input
+            <Input
               value={String(config.language ?? "es")}
               onChange={(e) => set("language", e.target.value)}
-              className="w-20 rounded-md border px-2 py-1"
+              className="w-20 px-2 py-1"
             />
           </label>
         </>
@@ -379,10 +380,10 @@ function NodeConfigPanel({
       {(kind === "add_tag" || kind === "remove_tag" || kind === "has_tag") && (
         <label className="flex flex-col gap-1">
           {t("fields.tagId")}
-          <input
+          <Input
             value={String(config.tagId ?? "")}
             onChange={(e) => set("tagId", e.target.value)}
-            className="rounded-md border px-2 py-1"
+            className="px-2 py-1"
           />
         </label>
       )}
@@ -390,10 +391,10 @@ function NodeConfigPanel({
       {(kind === "move_deal_stage" || kind === "deal_in_stage") && (
         <label className="flex flex-col gap-1">
           {t("fields.stageId")}
-          <input
+          <Input
             value={String(config.stageId ?? "")}
             onChange={(e) => set("stageId", e.target.value)}
-            className="rounded-md border px-2 py-1"
+            className="px-2 py-1"
           />
         </label>
       )}
@@ -401,10 +402,10 @@ function NodeConfigPanel({
       {kind === "assign_user" && (
         <label className="flex flex-col gap-1">
           {t("fields.userId")}
-          <input
+          <Input
             value={String(config.userId ?? "")}
             onChange={(e) => set("userId", e.target.value)}
-            className="rounded-md border px-2 py-1"
+            className="px-2 py-1"
           />
         </label>
       )}
@@ -412,12 +413,12 @@ function NodeConfigPanel({
       {(kind === "wait_duration" || kind === "wait_for_reply" || kind === "has_replied_since") && (
         <label className="flex flex-col gap-1">
           {t("fields.minutes")}
-          <input
+          <Input
             type="number"
             min={1}
             value={Number(config.minutes ?? 60)}
             onChange={(e) => set("minutes", Number(e.target.value))}
-            className="w-28 rounded-md border px-2 py-1"
+            className="w-28 px-2 py-1"
           />
         </label>
       )}

@@ -13,6 +13,7 @@ import {
   updateTimezoneAction,
   type SettingsFormState,
 } from "./actions";
+import { Input, Select, Textarea } from "@/components/ui/form-fields";
 
 // Every settings form here shares the useActionState shape (PLAN.md §10 1R
 // #6): declared client-side because a "use server" module may only export
@@ -67,19 +68,18 @@ export function BrandingForm({
         {t("logoUrl")}
         {/* Not type="url": the browser's own bubble in its own language
             would beat the server's Spanish message (§1.2, §10 1R #6). */}
-        <input
+        <Input
           name="logoUrl"
           defaultValue={state.values.logoUrl ?? logoUrl}
-          className="rounded-md border px-3 py-2"
         />
       </label>
       <label className="flex flex-col gap-1 text-sm">
         {t("primaryColor")}
-        <input
+        <Input
           name="primaryColor"
           type="color"
           defaultValue={state.values.primaryColor ?? primaryColor}
-          className="h-10 w-20 rounded-md border"
+          className="h-10 w-20"
         />
       </label>
       <ErrorOrSaved state={state} tc={tc} t={t} />
@@ -98,10 +98,10 @@ export function TimezoneForm({ timezone }: { timezone: string }) {
   return (
     <form action={formAction} className="flex max-w-sm flex-col gap-2">
       <div className="flex gap-2">
-        <input
+        <Input
           name="timezone"
           defaultValue={state.values.timezone ?? timezone}
-          className="flex-1 rounded-md border px-3 py-2 text-sm"
+          className="flex-1"
         />
         <Button type="submit" variant="outline" disabled={pending}>
           {tc("save")}
@@ -126,17 +126,17 @@ export function DefaultCountryForm({
   return (
     <form action={formAction} className="flex max-w-sm flex-col gap-2">
       <div className="flex gap-2">
-        <select
+        <Select
           name="defaultCountry"
           defaultValue={state.values.defaultCountry ?? defaultCountry}
-          className="flex-1 rounded-md border px-3 py-2 text-sm"
+          className="flex-1"
         >
           {countryCodes.map((code) => (
             <option key={code} value={code}>
               {t(`countryNames.${code}` as "countryNames.PY")}
             </option>
           ))}
-        </select>
+        </Select>
         <Button type="submit" variant="outline" disabled={pending}>
           {tc("save")}
         </Button>
@@ -156,11 +156,11 @@ export function ReviewLinkForm({ reviewLink }: { reviewLink: string }) {
       <div className="flex gap-2">
         {/* Not type="url": same reason as the logo field — the browser's
             own validation bubble would beat the server's Spanish message. */}
-        <input
+        <Input
           name="reviewLink"
           defaultValue={state.values.reviewLink ?? reviewLink}
           placeholder="https://g.page/r/.../review"
-          className="flex-1 rounded-md border px-3 py-2 text-sm"
+          className="flex-1"
         />
         <Button type="submit" variant="outline" disabled={pending}>
           {tc("save")}
@@ -197,18 +197,18 @@ export function BusinessHoursForm({ businessHours }: { businessHours: BusinessHo
             />
             {t(`days.${day}` as "days.mon")}
           </label>
-          <input
+          <Input
             type="time"
             name={`${day}_start`}
             defaultValue={state.values[`${day}_start`] ?? businessHours[day]?.start ?? "08:00"}
-            className="min-w-0 rounded-md border px-2 py-1"
+            className="min-w-0 px-2 py-1"
           />
           <span>—</span>
-          <input
+          <Input
             type="time"
             name={`${day}_end`}
             defaultValue={state.values[`${day}_end`] ?? businessHours[day]?.end ?? "18:00"}
-            className="min-w-0 rounded-md border px-2 py-1"
+            className="min-w-0 px-2 py-1"
           />
         </div>
       ))}
@@ -262,65 +262,60 @@ export function AiSettingsForm({
 
       <label className="flex flex-col gap-1 text-sm">
         {t("aiMode")}
-        <select
+        <Select
           name="mode"
           defaultValue={state.values.mode ?? mode}
-          className="max-w-xs rounded-md border px-3 py-2"
+          className="max-w-xs"
         >
           <option value="draft">{t("aiModeDraft")}</option>
           <option value="send">{t("aiModeSend")}</option>
-        </select>
+        </Select>
         <span className="text-xs text-muted-foreground">{t("aiModeHelp")}</span>
       </label>
 
       <label className="flex flex-col gap-1 text-sm">
         {t("aiBusinessName")}
-        <input
+        <Input
           name="businessName"
           defaultValue={state.values.businessName ?? businessName}
           placeholder={businessNamePlaceholder}
-          className="rounded-md border px-3 py-2"
         />
       </label>
 
       <label className="flex flex-col gap-1 text-sm">
         {t("aiAbout")}
-        <textarea
+        <Textarea
           name="about"
           rows={3}
           defaultValue={state.values.about ?? about}
           placeholder={t("aiAboutPlaceholder")}
-          className="rounded-md border px-3 py-2"
         />
       </label>
 
       <label className="flex flex-col gap-1 text-sm">
         {t("aiTone")}
-        <input
+        <Input
           name="tone"
           defaultValue={state.values.tone ?? tone}
           placeholder={t("aiTonePlaceholder")}
-          className="rounded-md border px-3 py-2"
         />
       </label>
 
       <label className="flex flex-col gap-1 text-sm">
         {t("aiHours")}
-        <input
+        <Input
           name="hours"
           defaultValue={state.values.hours ?? hours}
-          className="rounded-md border px-3 py-2"
         />
       </label>
 
       <label className="flex flex-col gap-1 text-sm">
         {t("aiNeverPromise")}
-        <textarea
+        <Textarea
           name="neverPromise"
           rows={2}
           defaultValue={state.values.neverPromise ?? neverPromise}
           placeholder={t("aiNeverPromisePlaceholder")}
-          className="rounded-md border px-3 py-2"
         />
       </label>
 
@@ -330,30 +325,30 @@ export function AiSettingsForm({
           {/* inputMode, not type="number": server validates the ceiling
               (§10 1R #6), a browser bubble in the wrong language shouldn't
               beat it there. */}
-          <input
+          <Input
             inputMode="numeric"
             name="maxRepliesPerConversationPerDay"
             defaultValue={
               state.values.maxRepliesPerConversationPerDay ?? String(maxRepliesPerConversationPerDay)
             }
-            className="w-28 rounded-md border px-3 py-2"
+            className="w-28"
           />
         </label>
         <label className="flex flex-col gap-1 text-sm">
           {t("aiMaxPerTenant")}
-          <input
+          <Input
             inputMode="numeric"
             name="maxRepliesPerTenantPerDay"
             defaultValue={state.values.maxRepliesPerTenantPerDay ?? String(maxRepliesPerTenantPerDay)}
-            className="w-28 rounded-md border px-3 py-2"
+            className="w-28"
           />
         </label>
         <label className="flex flex-col gap-1 text-sm">
           {t("aiHandoffKeyword")}
-          <input
+          <Input
             name="handoffKeyword"
             defaultValue={state.values.handoffKeyword ?? handoffKeyword}
-            className="w-40 rounded-md border px-3 py-2"
+            className="w-40"
           />
         </label>
       </div>

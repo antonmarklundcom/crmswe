@@ -8,6 +8,7 @@ import {
   type ContactField,
   type ContactFormState,
 } from "./actions";
+import { Input } from "@/components/ui/form-fields";
 
 // Lives here, not in actions.ts: a "use server" module may only export
 // async functions, so a shared constant there breaks the build.
@@ -49,38 +50,34 @@ export function ContactCreateForm() {
     <form action={formAction} className="flex max-w-sm flex-col gap-4">
       <label className="flex flex-col gap-1 text-sm">
         {t("name")}
-        <input
+        <Input
           name="name"
           defaultValue={state.values.name ?? ""}
-          className="rounded-md border px-3 py-2"
         />
         <FieldError field="name" />
       </label>
       <label className="flex flex-col gap-1 text-sm">
         {t("phone")}
-        <input
+        <Input
           name="phone"
           defaultValue={state.values.phone ?? ""}
-          className="rounded-md border px-3 py-2"
         />
         <FieldError field="phone" />
       </label>
       <label className="flex flex-col gap-1 text-sm">
         {t("email")}
-        <input
+        <Input
           name="email"
           inputMode="email"
           defaultValue={state.values.email ?? ""}
-          className="rounded-md border px-3 py-2"
         />
         <FieldError field="email" />
       </label>
       <label className="flex flex-col gap-1 text-sm">
         {t("source")}
-        <input
+        <Input
           name="source"
           defaultValue={state.values.source ?? ""}
-          className="rounded-md border px-3 py-2"
         />
       </label>
       {/* Form-level slot: errors with no field to sit under (§10 1R #6). */}

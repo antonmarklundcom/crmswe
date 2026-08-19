@@ -7,6 +7,7 @@ import { Download } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { bulkAddTagAction, bulkAddToPipelineAction, bulkAssignOwnerAction } from "./bulk-actions";
+import { Select } from "@/components/ui/form-fields";
 
 // Row selection + bulk actions (PLAN.md §10 1J #1). Calls the server actions
 // directly as plain async functions rather than through a <form> — Next.js
@@ -108,10 +109,10 @@ export function ContactsTable({
             {labels.selectedCount.replace("{count}", String(selected.size))}
           </span>
 
-          <select
+          <Select
             value={tagId}
             onChange={(event) => setTagId(event.target.value)}
-            className="rounded-md border bg-background px-2 py-1"
+            className="bg-background px-2 py-1"
           >
             <option value="">{labels.chooseTag}</option>
             {tags.map((tag) => (
@@ -119,7 +120,7 @@ export function ContactsTable({
                 {tag.name}
               </option>
             ))}
-          </select>
+          </Select>
           <Button
             type="button"
             size="sm"
@@ -135,10 +136,10 @@ export function ContactsTable({
             {labels.addTag}
           </Button>
 
-          <select
+          <Select
             value={ownerId}
             onChange={(event) => setOwnerId(event.target.value)}
-            className="rounded-md border bg-background px-2 py-1"
+            className="bg-background px-2 py-1"
           >
             <option value="">{labels.chooseOwner}</option>
             <option value="__none__">{labels.noOwner}</option>
@@ -147,7 +148,7 @@ export function ContactsTable({
                 {user.name}
               </option>
             ))}
-          </select>
+          </Select>
           <Button
             type="button"
             size="sm"
@@ -165,10 +166,10 @@ export function ContactsTable({
 
           {stages.length > 0 && (
             <>
-              <select
+              <Select
                 value={stageId}
                 onChange={(event) => setStageId(event.target.value)}
-                className="rounded-md border bg-background px-2 py-1"
+                className="bg-background px-2 py-1"
               >
                 <option value="">{labels.chooseStage}</option>
                 {stages.map((stage) => (
@@ -176,7 +177,7 @@ export function ContactsTable({
                     {stage.label}
                   </option>
                 ))}
-              </select>
+              </Select>
               <Button
                 type="button"
                 size="sm"

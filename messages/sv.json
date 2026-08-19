@@ -1682,7 +1682,8 @@
       "subtotal": "Delsumma",
       "discount": "Rabatt",
       "validUntil": "Giltig till:",
-      "footer": "Icke-fiskalt dokument · Elektronisk fakturering kommer snart"
+      "footer": "Icke-fiskalt dokument · Elektronisk fakturering kommer snart",
+      "caption": "Offert"
     },
     "notaVenta": {
       "title": "FÖRSÄLJNINGSNOTA",
@@ -1703,7 +1704,8 @@
         "partial": "DELBETALD",
         "paid": "BETALD",
         "void": "MAKULERAD"
-      }
+      },
+      "caption": "Försäljningsnota"
     }
   },
   "public": {

@@ -1682,7 +1682,8 @@
       "subtotal": "Subtotal",
       "discount": "Discount",
       "validUntil": "Valid until:",
-      "footer": "Non-fiscal document · Electronic invoicing coming soon"
+      "footer": "Non-fiscal document · Electronic invoicing coming soon",
+      "caption": "Quote"
     },
     "notaVenta": {
       "title": "SALES NOTE",
@@ -1703,7 +1704,8 @@
         "partial": "PARTIALLY PAID",
         "paid": "PAID",
         "void": "VOID"
-      }
+      },
+      "caption": "Sales note"
     }
   },
   "public": {

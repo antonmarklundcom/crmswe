@@ -8,6 +8,7 @@ import {
   clearSiteTurnstileAction,
   type TurnstileFormState,
 } from "./actions";
+import { Input } from "@/components/ui/form-fields";
 
 // Per-site Cloudflare Turnstile (PLAN.md §5.2). A site with nothing saved
 // here behaves exactly as it did before — this panel is entirely additive.
@@ -47,20 +48,20 @@ export function SiteTurnstileForm({
         <input type="hidden" name="siteId" value={siteId} />
         <label className="flex flex-col gap-1">
           {t("siteKey")}
-          <input
+          <Input
             name="turnstileSiteKey"
             defaultValue={state.values.turnstileSiteKey ?? siteKey ?? ""}
-            className="rounded-md border px-2 py-1 font-mono text-xs"
+            className="px-2 py-1 font-mono text-xs"
           />
         </label>
         <label className="flex flex-col gap-1">
           {t("secret")}
-          <input
+          <Input
             name="turnstileSecret"
             type="password"
             autoComplete="off"
             placeholder={configured ? t("secretStored") : ""}
-            className="rounded-md border px-2 py-1 font-mono text-xs"
+            className="px-2 py-1 font-mono text-xs"
           />
         </label>
         <label className="flex items-center gap-2">

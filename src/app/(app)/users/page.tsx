@@ -16,6 +16,7 @@ import {
 } from "./actions";
 import { formatDate } from "@/lib/i18n/format";
 import { getLocale } from "next-intl/server";
+import { Select } from "@/components/ui/form-fields";
 
 export default async function UsersPage({
   searchParams,
@@ -110,15 +111,14 @@ export default async function UsersPage({
                       ) : (
                         <form action={setUserRoleAction} className="flex items-center gap-2">
                           <input type="hidden" name="userId" value={user.id} />
-                          <select
+                          <Select
                             name="role"
                             defaultValue={user.role ?? "agent"}
-                            className="rounded-md border px-2 py-1 text-sm"
                             aria-label={t("role")}
                           >
                             <option value="admin">{t("roles.admin")}</option>
                             <option value="agent">{t("roles.agent")}</option>
-                          </select>
+                          </Select>
                           <Button type="submit" size="sm" variant="outline">
                             {tc("save")}
                           </Button>

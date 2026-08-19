@@ -11,6 +11,7 @@ import {
   type IssueKeyState,
   type SiteField,
 } from "./actions";
+import { Input, Select } from "@/components/ui/form-fields";
 
 // Lives here, not in actions.ts: a "use server" module may only export
 // async functions.
@@ -79,63 +80,60 @@ export function NewSiteForm({
       <form action={formAction} className="flex flex-col gap-4">
         <label className="flex flex-col gap-1 text-sm">
           {labels.name}
-          <input
+          <Input
             name="name"
             defaultValue={state.values.name ?? ""}
-            className="rounded-md border px-3 py-2"
           />
           <FieldError field="name" />
         </label>
         <label className="flex flex-col gap-1 text-sm">
           {labels.slug}
-          <input
+          <Input
             name="slug"
             defaultValue={state.values.slug ?? ""}
-            className="rounded-md border px-3 py-2"
           />
           <FieldError field="slug" />
         </label>
         <label className="flex flex-col gap-1 text-sm">
           {labels.domain}
-          <input
+          <Input
             name="domain"
             defaultValue={state.values.domain ?? ""}
             placeholder="dentista.com.py"
-            className="rounded-md border px-3 py-2"
           />
         </label>
         <label className="flex flex-col gap-1 text-sm">
           {labels.pipeline}
-          <select name="defaultPipelineId" className="rounded-md border px-3 py-2">
+          <Select name="defaultPipelineId">
             <option value="">{labels.none}</option>
             {pipelines.map((option) => (
               <option key={option.id} value={option.id}>
                 {option.label}
               </option>
             ))}
-          </select>
+          </Select>
         </label>
         <label className="flex flex-col gap-1 text-sm">
           {labels.stage}
-          <select name="defaultStageId" className="rounded-md border px-3 py-2">
+          <Select name="defaultStageId">
             <option value="">{labels.none}</option>
             {stages.map((option) => (
               <option key={option.id} value={option.id}>
                 {option.label}
               </option>
             ))}
-          </select>
+          </Select>
         </label>
         <label className="flex flex-col gap-1 text-sm">
           {labels.waAccount}
-          <select name="waAccountId" className="rounded-md border px-3 py-2">
+          <Select name="waAccountId">
             <option value="">{labels.none}</option>
             {waAccounts.map((option) => (
               <option key={option.id} value={option.id}>
                 {option.label}
               </option>
             ))}
-          </select>
+          </Select>
         </label>
         {state.error && state.field === null && (
           <p role="alert" className="text-sm text-destructive">
@@ -219,10 +217,10 @@ export function SiteKeysPanel({
           <input type="hidden" name="siteId" value={siteId} />
           <label className="flex flex-col gap-1">
             {t("label")}
-            <input
+            <Input
               name="label"
               placeholder={t("labelPlaceholder")}
-              className="rounded-md border px-2 py-1"
+              className="px-2 py-1"
             />
           </label>
           <Button type="submit" size="sm" variant="outline" disabled={pending}>

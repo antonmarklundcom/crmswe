@@ -5,6 +5,7 @@ import { EmptyState } from "@/components/empty-state";
 import { cn } from "@/lib/utils";
 import { useLocale } from "next-intl";
 import { formatDateTime } from "@/lib/i18n/format";
+import { Select, Textarea } from "@/components/ui/form-fields";
 
 // The WhatsApp thread rendered inside the contact record. Same 24h-window
 // rules the inbox enforces (§6.5): inside the window, free-form text; once it
@@ -104,12 +105,11 @@ export function ConversationThread({
       {windowOpen ? (
         <form action={sendMessage} className="flex flex-col gap-2">
           <input type="hidden" name="conversationId" value={conversationId} />
-          <textarea
+          <Textarea
             name="body"
             required
             rows={3}
             placeholder={labels.placeholder}
-            className="rounded-md border px-3 py-2 text-sm"
           />
           <Button type="submit" size="sm" className="w-fit">
             {labels.send}
@@ -118,7 +118,7 @@ export function ConversationThread({
       ) : templates.length > 0 ? (
         <form action={sendTemplate} className="flex flex-wrap items-end gap-2">
           <input type="hidden" name="conversationId" value={conversationId} />
-          <select name="template" className="rounded-md border px-3 py-2 text-sm">
+          <Select name="template">
             {templates.map((template) => (
               <option
                 key={`${template.name}|${template.language}`}
@@ -127,7 +127,7 @@ export function ConversationThread({
                 {template.name} ({template.language})
               </option>
             ))}
-          </select>
+          </Select>
           <Button type="submit" size="sm" variant="outline">
             {labels.sendTemplate}
           </Button>

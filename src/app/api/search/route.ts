@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getLocale } from "next-intl/server";
 import { getTenant } from "@/modules/tenancy/tenants";
 import type { TenantSettings } from "@/modules/tenancy/settings";
 import { searchTenant } from "@/modules/crm/search";
@@ -32,6 +33,7 @@ export async function GET(request: Request) {
     ctx,
     query.slice(0, 100),
     settings.defaultCountry ?? DEFAULT_COUNTRY,
+    await getLocale(),
   );
 
   return NextResponse.json(results);

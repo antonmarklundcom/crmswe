@@ -1,5 +1,7 @@
-import { like, or, sql } from "drizzle-orm";
+import { inArray, like, or, sql } from "drizzle-orm";
 import { contacts, conversations, deals, documents, quotes } from "@/db/schema";
+import { formatMoney } from "@/lib/i18n/format";
+import { escapeLike } from "@/lib/sql-like";
 import { normalizePhone, type CountryCode } from "@/lib/phone";
 import type { TenantContext } from "@/modules/tenancy/context";
 import { tenantDb } from "@/modules/tenancy/db";
@@ -8,6 +10,11 @@ import { tenantDb } from "@/modules/tenancy/db";
 // goes through tenantDb, so a result set can only ever contain the caller's
 // own tenant — the palette is the one place in the product that reads across
 // five tables at once, which makes that scoping the whole security story.
+//
+// The other constraint is volume: this runs on every keystroke the debounce
+// lets through, so every query below is bounded in SQL. Fetching a whole
+// table and slicing in JS is affordable on a page load and not here — see
+// PER_KIND and the conversations lookup.
 
 export type SearchKind = "contact" | "deal" | "quote" | "document" | "conversation";
 
@@ -45,76 +52,89 @@ export async function searchTenant(
   ctx: TenantContext,
   rawQuery: string,
   defaultCountry?: CountryCode,
+  locale = "es",
 ): Promise<SearchResults> {
   const query = rawQuery.trim();
   if (query.length < 2) return { query, hits: [] };
 
-  const term = `%${query}%`;
+  const term = `%${escapeLike(query)}%`;
   const db = tenantDb(ctx);
 
   const phoneMatches = phoneVariants(query, defaultCountry).map(
     // Compare digits to digits: stored phones are E.164, the typed query
     // rarely is.
-    (digits) => sql`replace(replace(replace(${contacts.phone}, '+', ''), '-', ''), ' ', '') like ${`%${digits}%`}`,
+    (digits) =>
+      sql`replace(replace(replace(${contacts.phone}, '+', ''), '-', ''), ' ', '') like ${`%${escapeLike(digits)}%`}`,
   );
 
-  const [contactRows, dealRows, quoteRows, documentRows, conversationRows] = await Promise.all([
-    db.select(
-      contacts,
-      or(like(contacts.name, term), like(contacts.email, term), ...phoneMatches),
-    ),
-    db.select(deals, like(deals.title, term)),
-    db.select(quotes, like(quotes.number, term)),
-    db.select(documents, like(documents.number, term)),
-    // Conversations carry no text of their own; they are reached by the
-    // contact behind them, which is how a rep thinks about them anyway.
-    db.select(conversations),
+  const [contactRows, dealRows, quoteRows, documentRows] = await Promise.all([
+    db
+      .select(contacts, or(like(contacts.name, term), like(contacts.email, term), ...phoneMatches))
+      .limit(PER_KIND),
+    db.select(deals, like(deals.title, term)).limit(PER_KIND),
+    db.select(quotes, like(quotes.number, term)).limit(PER_KIND),
+    db.select(documents, like(documents.number, term)).limit(PER_KIND),
   ]);
 
+  // Conversations carry no text of their own; they are reached by the
+  // contact behind them, which is how a rep thinks about them anyway. That
+  // makes them a lookup *by the contacts already matched* — previously this
+  // read every conversation row the tenant owned, on every keystroke, to
+  // then throw nearly all of them away.
   const contactById = new Map(contactRows.map((row) => [row.id, row]));
+  const conversationRows = contactById.size
+    ? await db
+        .select(conversations, inArray(conversations.contactId, [...contactById.keys()]))
+        .limit(PER_KIND)
+    : [];
+
+  const money = (amount: number, currency: string) => formatMoney(amount, currency, locale);
 
   const hits: SearchHit[] = [
-    ...contactRows.slice(0, PER_KIND).map((row) => ({
+    ...contactRows.map((row) => ({
       kind: "contact" as const,
       id: row.id,
       title: row.name,
       subtitle: row.phone,
       href: `/contacts/${row.id}`,
     })),
-    ...dealRows.slice(0, PER_KIND).map((row) => ({
+    ...dealRows.map((row) => ({
       kind: "deal" as const,
       id: row.id,
       title: row.title,
-      subtitle: `${row.value} ${row.currency}`,
+      // Money goes through the same formatter as every other screen (§13
+      // H5 #5) — the palette used to print raw minor units, so a deal worth
+      // 1.500.000 PYG read as "1500000 PYG" here and correctly everywhere else.
+      subtitle: money(row.value, row.currency),
       href: `/pipeline/${row.id}`,
     })),
-    ...quoteRows.slice(0, PER_KIND).map((row) => ({
+    ...quoteRows.map((row) => ({
       kind: "quote" as const,
       id: row.id,
       title: row.number,
-      subtitle: `${row.total} ${row.currency}`,
+      subtitle: money(row.total, row.currency),
       href: `/quotes/${row.id}`,
     })),
-    ...documentRows.slice(0, PER_KIND).map((row) => ({
+    ...documentRows.map((row) => ({
       kind: "document" as const,
       id: row.id,
       title: row.number,
-      subtitle: `${row.total} ${row.currency}`,
+      subtitle: money(row.total, row.currency),
       href: `/documents/${row.id}`,
     })),
-    ...conversationRows
-      .filter((row) => contactById.has(row.contactId))
-      .slice(0, PER_KIND)
-      .map((row) => {
-        const contact = contactById.get(row.contactId)!;
-        return {
+    ...conversationRows.flatMap((row) => {
+      const contact = contactById.get(row.contactId);
+      if (!contact) return [];
+      return [
+        {
           kind: "conversation" as const,
           id: row.id,
           title: contact.name,
           subtitle: contact.phone,
           href: `/inbox/${row.id}`,
-        };
-      }),
+        },
+      ];
+    }),
   ];
 
   return { query, hits };

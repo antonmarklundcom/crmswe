@@ -1495,13 +1495,40 @@ Ordered by what actually blocks the run, not by size:
    action row for a link to it.
 
 **Operator tasks, not code** — these gate putting real client leads in, and
-none of them are done:
+none of them are done. The first two now have the code they were waiting on;
+what's left in both is an operator running it against the real environment:
 - **Verify MySQL backups actually restore.** 1H listed backup verification;
   it has never been exercised. Restore into a scratch database and check row
-  counts before a real lead depends on it.
+  counts before a real lead depends on it. **Automated**:
+  `npm run verify-restore` (`scripts/verify-restore.ts`) points at a restored
+  throwaway database via `RESTORE_DATABASE_URL` and asserts that every table
+  in the Drizzle schema exists, that `tenants`/`users`/`contacts`/`deals` are
+  non-empty, and that the newest contact and deal are recent enough that the
+  backup isn't a stale file with a fresh timestamp — exiting non-zero with a
+  report naming each failure, so it can be scheduled and its failure
+  noticed. Read-only. The decision logic is `src/db/restore-check.ts`, unit
+  tested without a database; the expected-table list is derived from
+  `src/db/schema` rather than hand-kept, so a later migration's table is
+  covered the day it lands. docs/BACKUPS.md §2 is now this command plus the
+  hPanel steps around it.
 - **1K's live R2 smoke test** — put a key, read it back, sign a URL. Until
   then `STORAGE_DRIVER=local` means WhatsApp media and quote/document PDFs
   sit on Hostinger disk, which §2.1 says to treat as non-durable.
+  **Automated**: `npm run smoke-storage` (`scripts/smoke-storage.ts`) runs
+  put → read-back (byte-identical) → sign → prove the signed URL → delete →
+  confirm gone, against whatever `STORAGE_DRIVER` is configured, and cleans
+  up its own object even when a step fails. Driver-agnostic on purpose so it
+  is runnable today on `local` and unchanged on the R2 cutover day. The one
+  real difference between the drivers is the signed URL, so the script
+  splits there: an S3 presigned URL is absolute and gets fetched over HTTP;
+  the local driver's is an app-relative HMAC token, so the token contract is
+  verified instead (the driver's own signature verifies, a forged one and an
+  expired one are rejected) and the HTTP leg is reported as **skipped** — a
+  fetch would 404, because **nothing in this repo serves `/api/storage`
+  yet**. `storage.getSignedUrl` has no caller today (PDFs and WhatsApp media
+  only ever `put`), so the local driver's serving route was never built; it
+  becomes a gap the moment a feature signs a URL under `STORAGE_DRIVER=local`.
+  Flagged rather than built here — it is new surface, not an operator task.
 - **Deploy and migrate**: 1O and 1Q add migrations `0010` and `0011`.
 
 **Exit**: the owner runs a full day — leads arriving from a live site into

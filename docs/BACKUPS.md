@@ -1,10 +1,13 @@
 # MySQL backup verification — Hostinger
 
-PLAN.md §10 1H #5. This is a runbook, not automation — Hostinger's managed
-MySQL backups are a hosting-panel feature, not something this app's code
-controls. Run this check after initial launch and roughly monthly after
-that (put it on a recurring reminder — see `docs/SMOKE_TEST.md` for the
-after-every-deploy checks, this one is calendar-based instead).
+PLAN.md §10 1H #5. Mostly a runbook — Hostinger's managed MySQL backups are
+a hosting-panel feature, not something this app's code controls, so taking
+and restoring a backup is done by hand. The part that *is* automated is the
+judgement call at the end: `npm run verify-restore` (§2) decides whether a
+restored database is a real restore, and says so with an exit code. Run this
+check after initial launch and roughly monthly after that (put it on a
+recurring reminder — see `docs/SMOKE_TEST.md` for the after-every-deploy
+checks, this one is calendar-based instead).
 
 ## 1. Confirm backups are actually running
 
@@ -33,11 +36,37 @@ database**, never the production one:
 2. Restore the most recent backup into it (hPanel's restore-to UI, or
    download the backup file and import manually via phpMyAdmin / `mysql`
    CLI if hPanel only supports in-place restore).
-3. Spot-check the restored data:
-   - `SELECT COUNT(*) FROM tenants;` and `SELECT COUNT(*) FROM contacts;`
-     return non-zero counts matching roughly what's expected.
-   - A specific recently-created row (e.g. today's newest contact or deal)
-     is present — confirms the backup isn't stale despite its timestamp.
+3. Run the checker against it — this is the spot-check, automated:
+
+   ```
+   RESTORE_DATABASE_URL='mysql://<user>:<pass>@<host>:<port>/vendercrm_restore_test' \
+   npm run verify-restore
+   ```
+
+   It is read-only (nothing but `SELECT`s) and exits non-zero with a report
+   naming every failed check, so it can be put on a schedule and its failure
+   actually noticed. It asserts:
+   - **Every table in the Drizzle schema exists.** The list comes from
+     `src/db/schema` itself, so a table added by a later migration is covered
+     the day it lands. A restore that stopped after the DDL, or one taken
+     before the last migration, fails here.
+   - **The tables a live CRM cannot have empty are populated** — `tenants`,
+     `users`, `contacts`, `deals` by default. Row counts for every schema
+     table are printed as the report's evidence, so an unexpected empty is
+     visible even where no expectation was set.
+   - **The newest `contacts`/`deals` row is recent enough** — 48h by default,
+     measured against the restored server's own clock. This is the check that
+     catches a stale dump wearing a fresh timestamp.
+
+   Overrides, all optional: `RESTORE_MAX_AGE_HOURS` (default 48),
+   `RESTORE_EXPECT_ROWS` and `RESTORE_FRESH_TABLES` (comma-separated table
+   lists), and `RESTORE_ALLOW_PRODUCTION_URL=1` to bypass the guard that
+   refuses to run when `RESTORE_DATABASE_URL` points at the same database as
+   `DATABASE_URL` — verifying the live database proves nothing about the
+   backup, and is the easy mistake to make with both URLs in one shell.
+
+   Exit codes: `0` all checks passed, `1` a check failed, `2` the script
+   could not run (missing/invalid config, or the database was unreachable).
 4. Drop the temporary database once verified.
 
 ## 3. Manual fallback export (if automated backups are unavailable/unverified)

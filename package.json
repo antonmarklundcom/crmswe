@@ -14,7 +14,9 @@
     "db:studio": "drizzle-kit studio",
     "worker": "tsx watch src/worker/index.ts",
     "create-superadmin": "tsx scripts/create-superadmin.ts",
-    "seed-tenant": "tsx scripts/seed-tenant.ts"
+    "seed-tenant": "tsx scripts/seed-tenant.ts",
+    "verify-restore": "tsx scripts/verify-restore.ts",
+    "smoke-storage": "tsx scripts/smoke-storage.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1100.0",

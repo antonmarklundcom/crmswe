@@ -71,6 +71,7 @@ export default async function ContactDetailPage({
   const t = await getTranslations("app.contacts");
   const locale = await getLocale();
   const tq = await getTranslations("app.quotes");
+  const td = await getTranslations("app.documents");
   const ti = await getTranslations("app.inbox");
 
   const contact = await getContact(ctx, id);
@@ -153,6 +154,11 @@ export default async function ContactDetailPage({
         return {
           title: t("timelineQuote", { number: entry.number }),
           detail: `${tq(`statusValues.${entry.status}` as "statusValues.draft")} · ${formatMoney(entry.total, entry.currency, locale)}`,
+        };
+      case "document":
+        return {
+          title: t("timelineDocument", { number: entry.number }),
+          detail: `${td(`statusValues.${entry.status}` as "statusValues.draft")} · ${formatMoney(entry.total, entry.currency, locale)}`,
         };
       case "lead":
         return {

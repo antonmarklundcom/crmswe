@@ -8,6 +8,7 @@ import { getContact } from "@/modules/crm/contacts";
 import { listActivitiesForContact } from "@/modules/crm/activities";
 import { listTasksForContact } from "@/modules/crm/tasks";
 import { listQuotesForContact } from "@/modules/quotes/quotes";
+import { listDocumentsForContact } from "@/modules/documents/documents";
 import { listTenantUsers } from "@/modules/tenancy/users";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/page-header";
@@ -38,7 +39,17 @@ export default async function DealPage({
   const deal = await getDeal(ctx, dealId);
   if (!deal) notFound();
 
-  const [pipeline, stages, contact, users, tasks, quotes, activities, deleteBlockers] =
+  const [
+    pipeline,
+    stages,
+    contact,
+    users,
+    tasks,
+    quotes,
+    documents,
+    activities,
+    deleteBlockers,
+  ] =
     await Promise.all([
       getPipeline(ctx, deal.pipelineId),
       listStagesForPipeline(ctx, deal.pipelineId),
@@ -46,6 +57,7 @@ export default async function DealPage({
       listTenantUsers(ctx),
       listTasksForContact(ctx, deal.contactId),
       listQuotesForContact(ctx, deal.contactId),
+      listDocumentsForContact(ctx, deal.contactId),
       listActivitiesForContact(ctx, deal.contactId),
       // Only an admin can delete, so only an admin pays for the scan.
       ctx.role === "admin"
@@ -204,6 +216,31 @@ export default async function DealPage({
                   </Link>
                   <span className="ml-2 text-muted-foreground">
                     {formatMoney(quote.total, quote.currency, locale)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        <div className="flex flex-col gap-2">
+          {/* Notas de venta, alongside the quotes they usually come from —
+              1Q shipped after this page and was never listed here. */}
+          <h2 className="text-lg font-semibold">{t("documentsTitle")}</h2>
+          {documents.length === 0 ? (
+            <p className="text-sm text-muted-foreground">{t("documentsEmpty")}</p>
+          ) : (
+            <ul className="flex flex-col gap-2 text-sm">
+              {documents.map((document) => (
+                <li key={document.id} className="rounded-md border px-3 py-2">
+                  <Link
+                    href={`/documents/${document.id}`}
+                    className="underline underline-offset-4"
+                  >
+                    {document.number}
+                  </Link>
+                  <span className="ml-2 text-muted-foreground">
+                    {formatMoney(document.total, document.currency, locale)}
                   </span>
                 </li>
               ))}

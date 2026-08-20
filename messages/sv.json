@@ -308,6 +308,7 @@
       "timelineMessageOut": "Skickat meddelande",
       "timelineMedia": "Bifogad fil",
       "timelineQuote": "Offert {number}",
+      "timelineDocument": "Försäljningsnota {number}",
       "timelineLead": "Lead mottaget",
       "tabs": {
         "conversacion": "Konversation",
@@ -1033,6 +1034,8 @@
       "historyEmpty": "Den har inte bytt steg ännu.",
       "quotesTitle": "Offerter",
       "quotesEmpty": "Inga offerter för den här kontakten.",
+      "documentsTitle": "Försäljningsnotor",
+      "documentsEmpty": "Inga försäljningsnotor för den här kontakten.",
       "tasksTitle": "Uppgifter",
       "tasksEmpty": "Inga uppgifter för den här affären.",
       "errors": {

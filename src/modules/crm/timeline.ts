@@ -1,5 +1,5 @@
 import { eq } from "drizzle-orm";
-import { leadSubmissions, quotes } from "@/db/schema";
+import { documents, leadSubmissions, quotes } from "@/db/schema";
 import type { TenantContext } from "@/modules/tenancy/context";
 import { tenantDb } from "@/modules/tenancy/db";
 import {
@@ -42,6 +42,19 @@ export type TimelineEntry =
       currency: string;
     }
   | {
+      // Notas de venta (§10 1Q). Added after the timeline shipped: without
+      // it a document issued against a contact was invisible on the record
+      // it belongs to, which defeats the "whole relationship in one place"
+      // this list exists for.
+      kind: "document";
+      id: string;
+      at: Date;
+      number: string;
+      status: string;
+      total: number;
+      currency: string;
+    }
+  | {
       kind: "lead";
       id: string;
       at: Date;
@@ -55,7 +68,7 @@ type Utm = { campaign?: string };
 /**
  * Everything that ever happened with this contact, newest first.
  *
- * Assembled in memory from four tenant-scoped reads rather than a UNION: the
+ * Assembled in memory from five tenant-scoped reads rather than a UNION: the
  * per-contact row counts are small, and each source already has a service
  * that applies the tenant predicate — reaching for raw SQL here would mean
  * rebuilding those guarantees by hand.
@@ -64,12 +77,14 @@ export async function getContactTimeline(
   ctx: TenantContext,
   contactId: string,
 ): Promise<TimelineEntry[]> {
-  const [activities, conversations, contactQuotes, leads] = await Promise.all([
-    listActivitiesForContact(ctx, contactId),
-    listConversationsForContact(ctx, contactId),
-    tenantDb(ctx).select(quotes, eq(quotes.contactId, contactId)),
-    tenantDb(ctx).select(leadSubmissions, eq(leadSubmissions.contactId, contactId)),
-  ]);
+  const [activities, conversations, contactQuotes, contactDocuments, leads] =
+    await Promise.all([
+      listActivitiesForContact(ctx, contactId),
+      listConversationsForContact(ctx, contactId),
+      tenantDb(ctx).select(quotes, eq(quotes.contactId, contactId)),
+      tenantDb(ctx).select(documents, eq(documents.contactId, contactId)),
+      tenantDb(ctx).select(leadSubmissions, eq(leadSubmissions.contactId, contactId)),
+    ]);
 
   const messages = (
     await Promise.all(
@@ -110,6 +125,20 @@ export async function getContactTimeline(
         status: quote.status,
         total: quote.total,
         currency: quote.currency,
+      }),
+    ),
+    ...contactDocuments.map(
+      (document): TimelineEntry => ({
+        kind: "document",
+        id: document.id,
+        // issuedAt is the date the customer sees on the document; a draft
+        // has none yet, and until it does the timeline shows when it was
+        // started.
+        at: document.issuedAt ?? document.createdAt,
+        number: document.number,
+        status: document.status,
+        total: document.total,
+        currency: document.currency,
       }),
     ),
     ...leads.map(

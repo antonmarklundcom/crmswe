@@ -233,6 +233,37 @@ describe.skipIf(!hasDb)("documents (MySQL)", () => {
     expect(await mod.getDocumentByPublicToken(token)).toBeNull();
   });
 
+  it("shows up on the contact's timeline, issued date first", async () => {
+    // The timeline is what a rep reads on the contact record; 1Q shipped
+    // after it and was invisible there until documents were added as a
+    // fifth source.
+    const { getContactTimeline } = await import("@/modules/crm/timeline");
+    const { createContact } = await import("@/modules/crm/contacts");
+
+    const contact = await createContact(ctxA, {
+      name: "Cliente Timeline",
+      phone: `+59598${Math.floor(1_000_000 + Math.random() * 8_999_999)}`,
+    });
+    const document = await mod.createDocument(ctxA, {
+      contactId: contact!.id,
+      items: lines,
+    });
+    await mod.issueDocument(ctxA, document!.id);
+
+    const entry = (await getContactTimeline(ctxA, contact!.id)).find(
+      (candidate) => candidate.kind === "document",
+    );
+    expect(entry).toMatchObject({
+      id: document!.id,
+      number: document!.number,
+      status: "issued",
+      total: 2_500_000,
+    });
+
+    const issued = await mod.getDocument(ctxA, document!.id);
+    expect(entry!.at.getTime()).toBe(issued!.issuedAt!.getTime());
+  });
+
   it("isolates documents, items and payments across tenants", async () => {
     const doc = await mod.createDocument(ctxA, { contactId: contactA, items: lines });
     await mod.issueDocument(ctxA, doc!.id);

@@ -87,10 +87,6 @@ export async function getContactByPhone(
   return row ?? null;
 }
 
-export async function deleteContact(ctx: TenantContext, id: string) {
-  await tenantDb(ctx).delete(contacts, eq(contacts.id, id));
-}
-
 /** List with search (name/phone/email) and tag/owner/source filters (§5). */
 export async function listContacts(ctx: TenantContext, filters: ListContactsFilters = {}) {
   const conditions: SQL[] = [];

@@ -82,6 +82,3 @@ export function listSites(ctx: TenantContext) {
     .then((rows) => rows.sort((a, b) => a.name.localeCompare(b.name)));
 }
 
-export async function deleteSite(ctx: TenantContext, id: string) {
-  await tenantDb(ctx).delete(sites, eq(sites.id, id));
-}

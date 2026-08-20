@@ -86,6 +86,10 @@ const products = {
   createProduct: vi.fn(async () => ({ id: "product-1" })),
   updateProduct: vi.fn(async () => undefined),
 };
+const deletion = {
+  deleteContactRecord: vi.fn(async () => undefined),
+  deleteDealRecord: vi.fn(async () => undefined),
+};
 const documents = {
   createDocument: vi.fn(async () => ({ id: "doc-1" })),
   updateDraftDocument: vi.fn(async () => undefined),
@@ -102,6 +106,13 @@ vi.mock("@/modules/crm/pipelines", () => pipelines);
 vi.mock("@/modules/crm/deals", () => deals);
 vi.mock("@/modules/quotes/products", () => products);
 vi.mock("@/modules/documents/documents", () => documents);
+vi.mock("@/modules/crm/deletion", async (importOriginal) => ({
+  // RecordDeleteError stays real: the actions catch it by instance, so a
+  // stubbed class would change which branch they take.
+  ...(await importOriginal<typeof import("@/modules/crm/deletion")>()),
+  ...deletion,
+}));
+vi.mock("@/modules/tenancy/audit", () => ({ writeAuditLog: vi.fn(async () => undefined) }));
 vi.mock("@/modules/documents/delivery", () => ({
   sendDocumentToContact: vi.fn(async () => undefined),
 }));
@@ -111,6 +122,7 @@ const formActions = await import("@/app/(app)/forms/actions");
 const pipelineActions = await import("@/app/(app)/pipeline/actions");
 const productActions = await import("@/app/(app)/products/actions");
 const documentActions = await import("@/app/(app)/documents/actions");
+const contactActions = await import("@/app/(app)/contacts/actions");
 
 function form(fields: Record<string, string>): FormData {
   const data = new FormData();
@@ -216,6 +228,16 @@ const adminOnlyActions: Array<{
         { error: null, values: { reason: "" } },
         form({ documentId: "doc-1", reason: "cargada por error" }),
       ),
+  },
+  {
+    name: "contacts: deleteContactAction",
+    service: () => deletion.deleteContactRecord,
+    call: () => contactActions.deleteContactAction(form({ contactId: "contact-1" })),
+  },
+  {
+    name: "pipeline: deleteDealAction",
+    service: () => deletion.deleteDealRecord,
+    call: () => pipelineActions.deleteDealAction(form({ dealId: "deal-1" })),
   },
   {
     name: "documents: deletePaymentAction",

@@ -25,6 +25,12 @@ Meta connection.
 - [ ] Contact's timeline shows the form submission and the stage change
 - [ ] As a non-admin agent, confirm tenant settings pages are blocked
       (admin-only gate)
+- [ ] As an admin, delete a freshly created contact with no history
+      (*Datos* → eliminar) — it disappears from `/contacts`. Try the same on
+      a contact that already has a quote or a conversation: the button is
+      disabled and the page names what is in the way. Same on a deal from
+      its detail page (1S)
+- [ ] As an agent (not admin), neither page shows the delete section (1S)
 
 ## 2. WhatsApp (1D exit)
 

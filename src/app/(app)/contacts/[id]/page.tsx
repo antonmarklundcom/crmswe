@@ -7,6 +7,7 @@ import { getContact, listTags, listTagsForContact } from "@/modules/crm/contacts
 import { getContactTimeline, type TimelineEntry } from "@/modules/crm/timeline";
 import { listDealsForContact } from "@/modules/crm/deals";
 import { listTasksForContact } from "@/modules/crm/tasks";
+import { findContactDeleteBlockers, type ContactBlocker } from "@/modules/crm/deletion";
 import {
   listConversationsForContact,
   listMessagesForConversation,
@@ -22,6 +23,7 @@ import { ConversationThread, type ThreadLabels } from "./ConversationThread";
 import { ContactEditForm } from "./ContactEditForm";
 import {
   addNoteAction,
+  deleteContactAction,
   addTagToContactAction,
   removeTagFromContactAction,
   sendContactMessageAction,
@@ -61,10 +63,10 @@ export default async function ContactDetailPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ tab?: string }>;
+  searchParams: Promise<{ tab?: string; deleteError?: string }>;
 }) {
   const { id } = await params;
-  const { tab: rawTab } = await searchParams;
+  const { tab: rawTab, deleteError } = await searchParams;
   const ctx = await requireTenantContext();
   const t = await getTranslations("app.contacts");
   const locale = await getLocale();
@@ -76,14 +78,19 @@ export default async function ContactDetailPage({
 
   const tab: Tab = TABS.includes(rawTab as Tab) ? (rawTab as Tab) : "conversacion";
 
-  const [timeline, deals, contactTags, allTags, conversations, tasks] = await Promise.all([
-    getContactTimeline(ctx, id),
-    listDealsForContact(ctx, id),
-    listTagsForContact(ctx, id),
-    listTags(ctx),
-    listConversationsForContact(ctx, id),
-    listTasksForContact(ctx, id),
-  ]);
+  const [timeline, deals, contactTags, allTags, conversations, tasks, deleteBlockers] =
+    await Promise.all([
+      getContactTimeline(ctx, id),
+      listDealsForContact(ctx, id),
+      listTagsForContact(ctx, id),
+      listTags(ctx),
+      listConversationsForContact(ctx, id),
+      listTasksForContact(ctx, id),
+      // Only an admin can delete, so only an admin pays for the scan.
+      ctx.role === "admin"
+        ? findContactDeleteBlockers(ctx, id)
+        : Promise.resolve<ContactBlocker[]>([]),
+    ]);
 
   // One contact can in principle have a conversation per connected number;
   // the most recent is the one worth showing inline.
@@ -384,6 +391,39 @@ export default async function ContactDetailPage({
               }}
             />
           </section>
+
+          {/* Deletion is for a record created by mistake, so it is offered
+              only while the contact has no history and only to an admin
+              (§13 H1). The action re-checks both — this just doesn't dangle
+              an option that would be refused. */}
+          {ctx.role === "admin" && (
+            <section>
+              <h2 className="mb-3 text-lg font-semibold">{t("deleteTitle")}</h2>
+              <p className="mb-3 text-sm text-muted-foreground">
+                {deleteBlockers.length > 0
+                  ? t("deleteBlocked", {
+                      reasons: deleteBlockers
+                        .map((blocker) => t(`deleteBlockers.${blocker}`))
+                        .join(", "),
+                    })
+                  : t("deleteHint")}
+              </p>
+              {deleteError && (
+                <p className="mb-3 text-sm text-destructive">{t("deleteFailed")}</p>
+              )}
+              <form action={deleteContactAction}>
+                <input type="hidden" name="contactId" value={contact.id} />
+                <Button
+                  type="submit"
+                  size="sm"
+                  variant="outline"
+                  disabled={deleteBlockers.length > 0}
+                >
+                  {t("delete")}
+                </Button>
+              </form>
+            </section>
+          )}
         </div>
       )}
     </div>

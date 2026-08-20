@@ -298,7 +298,20 @@
           "invalid": "Revisá los datos e intentá de nuevo."
         }
       },
-      "importAction": "Importar CSV"
+      "importAction": "Importar CSV",
+      "delete": "Eliminar contacto",
+      "deleteTitle": "Eliminar contacto",
+      "deleteHint": "Se elimina el contacto con sus etiquetas, sus notas y sus tareas. No se puede deshacer.",
+      "deleteBlocked": "No se puede eliminar: el contacto ya tiene {reasons}. Editalo en lugar de eliminarlo.",
+      "deleteFailed": "No se pudo eliminar el contacto: algo se creó mientras mirabas esta página. Volvé a revisar lo que tiene asociado.",
+      "deleteBlockers": {
+        "deals": "negocios",
+        "quotes": "presupuestos",
+        "documents": "notas de venta",
+        "conversations": "conversaciones de WhatsApp",
+        "submissions": "leads recibidos",
+        "automationRuns": "automatizaciones ejecutadas"
+      }
     },
     "pipeline": {
       "title": "Pipeline",
@@ -1027,6 +1040,16 @@
         "notFound": "No encontramos el negocio.",
         "invalid": "Revisá los datos e intentá de nuevo.",
         "unknown": "No se pudo cerrar el negocio. Intentá de nuevo."
+      },
+      "delete": "Eliminar negocio",
+      "deleteTitle": "Eliminar negocio",
+      "deleteHint": "Se elimina el negocio con sus tareas y su historial. El contacto no se toca. No se puede deshacer.",
+      "deleteBlocked": "No se puede eliminar: el negocio ya tiene {reasons}.",
+      "deleteFailed": "No se pudo eliminar el negocio: algo se creó mientras mirabas esta página. Volvé a revisar lo que tiene asociado.",
+      "deleteBlockers": {
+        "quotes": "presupuestos",
+        "documents": "notas de venta",
+        "submissions": "leads recibidos"
       }
     },
     "stages": {

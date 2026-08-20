@@ -1539,6 +1539,37 @@ what's left in both is an operator running it against the real environment:
 the right pipeline, WhatsApp follow-up in a self-refreshing inbox, a nota de
 venta issued and paid — without opening a terminal or another tab.
 
+### 1S — Deleting a record created by mistake *(added after 1R)* — ✅ done
+
+Nothing in the app could remove a contact or a deal. `deleteContact`,
+`deleteDeal` and `deleteSite` existed in the service layer with zero callers
+— unconditional row deletes, never wired to a button. That is the wrong
+shape to wire: §4's schema has no foreign keys, so an unconditional delete
+leaves a numbered quote pointing at a contact that no longer exists, and the
+first thing a dogfooding run produces is exactly the record you want gone —
+a mistyped contact, a deal opened on the wrong pipeline.
+
+**As built** (`src/modules/crm/deletion.ts`). Deletion is permitted only
+while the record has no history of its own, where history is anything with
+meaning outside the record: for a contact, a deal, quote, nota de venta,
+WhatsApp conversation, lead submission or automation run; for a deal, a
+quote, nota de venta or lead submission. Rows that describe *only* the
+record — its tags, activity feed, tasks, AI drafts — are deleted with it.
+The blocker scan runs twice: once for the page, which disables the button
+and names what is in the way, and once inside the delete's own transaction,
+so a quote created between render and click still wins. Refusals come back
+as a `RecordDeleteError` carrying the blocker keys, which the actions turn
+into a `?deleteError=` redirect — the same shape `deleteStageAction` already
+used for "this stage still holds deals".
+
+Both actions are `requireTenantAdmin()` + `auditLog`, matching §13 H1's rule
+for destructive actions, and both are covered in
+`modules/tenancy/authorization.test.ts` (the no-database suite) plus a MySQL
+integration suite for the guard itself. The three unguarded service
+functions are gone: leaving one next to the guarded one is an invitation to
+call the wrong one. Nothing here is a soft delete — a contact with real
+history stays and is corrected by editing it.
+
 ### 1P — Google Business Profile *(idea; not scheduled)*
 
 GBP is where the owner's local-SEO work and this CRM meet: reviews, questions,

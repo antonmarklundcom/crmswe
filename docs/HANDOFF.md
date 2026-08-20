@@ -1,0 +1,200 @@
+# Handoff — after PR #51 (`x-forwarded-for`)
+
+Written 2026-08-20. Two parts: **what you do** (deploy + verify + dogfood) and
+**what Claude Code does next** (a prompt to paste into a fresh window).
+
+---
+
+## Part 1 — What to do yourself
+
+### 1.1 Deploy and migrate (do this first; everything else depends on it)
+
+The live app is behind `main` by several merged PRs, and two of them add
+tables. Migrations run from **your machine, not Hostinger SSH** (docs/DEPLOY.md
+§3 — Hostinger's IPv6 routing breaks the external MySQL host).
+
+```bash
+git pull origin main
+npm ci
+# DATABASE_URL pointed at the EXTERNAL srv####.hstgr.io host, not localhost
+npm run migrate
+```
+
+Expected to apply: `0010_add_ai_replies`, `0011_add_nonfiscal_documents`, and
+everything after them through `0018_add_deal_close_reason`.
+
+Then in hPanel → the app's environment variables, add the one new var:
+
+```
+TRUSTED_PROXY_HOPS=1
+```
+
+Redeploy. `1` is the default even if you forget, so this is belt-and-braces —
+but set it explicitly so the value is visible next to the others.
+
+### 1.2 Confirm `TRUSTED_PROXY_HOPS` is right (10 minutes, do it once)
+
+This is the one thing PR #51 could not verify from CI, and it is the whole
+point of the PR. Full procedure with the failure modes is in **docs/DEPLOY.md
+§10**; the short version:
+
+1. From your laptop, note your public IP: `curl -s https://ifconfig.me`
+2. Submit one lead to the live app:
+   ```bash
+   curl -X POST https://<app-url>/api/v1/leads \
+     -H 'content-type: application/json' \
+     -H 'x-api-key: <a real site key from /sites>' \
+     -d '{"phone":"+595981000000","name":"prueba xff","source":"handoff-check"}'
+   ```
+3. Read back what got stored:
+   ```sql
+   SELECT ip_address, created_at FROM lead_submissions ORDER BY created_at DESC LIMIT 1;
+   ```
+4. Compare:
+   - **your own public IP** → correct, nothing to change;
+   - **a private address** (`10.x`, `172.16–31.x`, `127.0.0.1`) → too low,
+     set `TRUSTED_PROXY_HOPS=2` and repeat;
+   - **an address that is neither yours nor private** → a CDN edge is in the
+     chain, set `2` and repeat;
+   - **NULL** → no proxy header at all; tell Claude, that changes the design.
+
+Delete the test contact afterwards from `/contacts` (admin only, guarded
+delete — it has no history so it will let you).
+
+### 1.3 The two operator scripts that have never been run
+
+Both exist and are unrun; both gate putting real client leads in.
+
+**Backup restore** (docs/BACKUPS.md §2):
+```bash
+# after restoring a real hPanel dump into a throwaway database
+RESTORE_DATABASE_URL=mysql://... npm run verify-restore
+```
+Exits non-zero with a named report if any table is missing, if
+tenants/users/contacts/deals are empty, or if the newest rows are too old
+(i.e. a stale file with a fresh timestamp).
+
+**Storage smoke test:**
+```bash
+SMOKE_STORAGE_BASE_URL=https://<app-url> npm run smoke-storage
+```
+Runs put → read-back → sign → fetch the signed URL → delete → confirm gone.
+Run it once on `local` today. Run it again the day you cut `STORAGE_DRIVER=s3`
+over to Cloudflare R2 — same command, no changes. Until then WhatsApp media
+sits on Hostinger disk, which PLAN.md §2.1 says to treat as non-durable.
+
+### 1.4 URLs to click through
+
+Tenant app (logged in as **admin**):
+
+| URL | What to confirm |
+|---|---|
+| `/dashboard` | loads, numbers are not all zero |
+| `/inbox` | list refreshes on its own every 5s without eating a half-typed reply |
+| `/inbox/<id>` | send a text inside the 24h window; send a template outside it |
+| `/contacts` → `/contacts/<id>` | timeline shows quotes, notas de venta, conversations |
+| `/contacts/import` | import a small CSV with a deliberate duplicate and a bad row |
+| `/pipeline?pipeline=<id>` | the switcher survives a reload; drag a deal between stages |
+| `/pipeline/<dealId>` | won/lost with a reason; the deal leaves the active columns |
+| `/pipeline/etapas` | rename/reorder a stage |
+| `/quotes/<id>` | send over WhatsApp; "convertir presupuesto" into a nota de venta |
+| `/documents/<id>` | issue, record a payment, confirm void is blocked once paid |
+| `/products`, `/forms`, `/sites`, `/automations`, `/users`, `/settings` | load; admin-only actions present |
+
+Public, unauthenticated — **open these in a private window**, they must work
+with no session at all:
+
+| URL | What to confirm |
+|---|---|
+| `/q/<token>` and `/q/<token>/pdf` | quote view + PDF render |
+| `/d/<token>` and `/d/<token>/pdf` | nota de venta + PDF, with the "no tiene validez tributaria" notice |
+| `/f/<tenantSlug>/<formSlug>` | submit; lands in the CRM; `/gracias` after |
+| `/api/storage?key=…&sig=…` | a valid signed URL serves; a mangled one 404s (never 403) |
+
+Superadmin console (a **superadmin** account, not a tenant admin):
+
+| URL | What to confirm |
+|---|---|
+| `/tenants`, `/tenants/<id>` | list and detail load |
+| `/plans` | plan limits visible |
+| `/audit` | rows appear for the deletes and voids you did above |
+| `/whatsapp-health` | per-tenant status; dead/stuck jobs listed |
+| impersonation | enter a tenant, banner shows, "volver a la consola" returns you |
+
+### 1.5 Roles to check
+
+Three identities. The fastest real test is **log in as an agent and confirm the
+admin-only things are not merely hidden but refused.**
+
+- **agent** — should NOT be able to: create/publish automations, create forms,
+  create a pipeline, create/toggle products, void a document, delete a payment,
+  delete a contact or deal, ban a user or change a role. Should be able to:
+  everything selling — inbox, quotes, issue documents, record payments, move
+  deals.
+- **admin** — all of the above, plus `/users` (invite, deactivate, role change)
+  and `/settings`.
+- **superadmin** — the console only. Confirm a superadmin session cannot read
+  a tenant's data *without* impersonating.
+- **banned user** — ban an agent from `/users`, then reload in the browser
+  where that agent is logged in. The live session must be dead on the very
+  next request, not at the next login.
+
+### 1.6 Your dogfooding day (PLAN.md §10 1R exit criterion)
+
+The bar is one full working day on the three sites — dentista, tasacion, pozo
+— where a lead arrives from a live site into the right pipeline, gets WhatsApp
+follow-up in the self-refreshing inbox, and ends in a nota de venta issued and
+paid — **without opening a terminal or another tab.** Note every place you had
+to leave the app; that list is the next phase's spec.
+
+---
+
+## Part 2 — Prompt for a fresh Claude Code window tomorrow
+
+Paste this verbatim:
+
+> VenderCRM (antonmarklundcom/vendercrm), continuing after PR #51 merged — that
+> was the `x-forwarded-for` fix: one `clientIp()` helper in
+> `src/lib/http/client-ip.ts` counting from the right, `TRUSTED_PROXY_HOPS`
+> env, documented in docs/DEPLOY.md §10. Read PLAN.md §10 1R/1S/1T and §13
+> first for the conventions and the recent examples of the right size of task.
+>
+> Pick up **inbox conversation ownership**. `assignConversation(ctx, id,
+> userId)` exists in `src/modules/whatsapp/inbox.ts` with zero callers — the
+> `conversations.assignedUserId` column is written by nothing in the app, so in
+> a two-rep tenant both reps answer the same customer and neither can tell.
+> Wire it:
+>
+> - a server action in `src/app/(app)/inbox/actions.ts`, zod-parsed like the
+>   others, agent-accessible (assigning a conversation is selling work, not
+>   config — same call `assignDeal` already makes);
+> - an assignee picker in `ConversationView.tsx` listing the tenant's active
+>   users plus "sin asignar", and the current assignee shown in `InboxList.tsx`
+>   so the list is triageable at a glance;
+> - the same picker on the contact detail's conversation tab;
+> - decide and state whether the 5s poll should clobber a picker the rep has
+>   open — the half-typed-reply rule in §10 1R #3 applies here too;
+> - every string through next-intl in `messages/es|en|sv.json` (the parity test
+>   fails on a missing key);
+> - tests beside the module, and extend `modules/tenancy/authorization.test.ts`
+>   if you conclude it should be admin-only after all.
+>
+> Conventions that matter: services take `TenantContext` first and reach the DB
+> only through `tenantDb`; zod in every server action; destructive actions are
+> `requireTenantAdmin()` + `writeAuditLog`.
+>
+> No MySQL in this container, so the DB-backed suites can only be verified in
+> CI — run `npm run lint`, `npm run typecheck`, `npm test` and `npm run build`
+> locally, say plainly which suites could not run, and let CI be the check on
+> those. Work on a new branch, open a PR, merge it once both CI jobs are green.
+> Ask me before anything that needs a product decision.
+
+**If instead you want bug-hunting rather than a feature**, swap the middle for:
+
+> Hunt for real bugs in the money, WhatsApp-24h-window and automation-engine
+> paths — `src/lib/money.ts`, `src/modules/whatsapp/send.ts`,
+> `src/modules/automations/`. Read them adversarially, look for rounding that
+> loses guaraníes, window checks that use the wrong timestamp, and automation
+> runs that can fire twice or strand a job. Fix what you find, with a
+> regression test per fix, and tell me plainly if you find nothing rather than
+> inventing work.

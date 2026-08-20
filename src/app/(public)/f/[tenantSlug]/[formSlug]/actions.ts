@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
+import { clientIpOrNull } from "@/lib/http/client-ip";
 import { submitForm } from "@/modules/forms/submissions";
 import { TURNSTILE_RESPONSE_FIELD } from "@/lib/turnstile";
 
@@ -27,7 +28,7 @@ export async function submitFormAction(
     // Present only when the form's linked site has Turnstile on (§5.2);
     // submitForm decides whether it's required, not this action.
     turnstileToken: formData.get(TURNSTILE_RESPONSE_FIELD)?.toString(),
-    ipAddress: headersList.get("x-forwarded-for") ?? undefined,
+    ipAddress: clientIpOrNull(headersList),
     userAgent: headersList.get("user-agent") ?? undefined,
   });
 

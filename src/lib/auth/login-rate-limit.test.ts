@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { checkLoginAttempt, clientIp, isGuardedAuthPath } from "./login-rate-limit";
+import { checkLoginAttempt, isGuardedAuthPath } from "./login-rate-limit";
 
 describe("isGuardedAuthPath", () => {
   it("covers the credential and password-reset endpoints", () => {
@@ -11,16 +11,6 @@ describe("isGuardedAuthPath", () => {
   it("leaves the rest of Better Auth alone", () => {
     expect(isGuardedAuthPath("/api/auth/get-session")).toBe(false);
     expect(isGuardedAuthPath("/api/auth/sign-out")).toBe(false);
-  });
-});
-
-describe("clientIp", () => {
-  it("takes the first hop of x-forwarded-for", () => {
-    expect(clientIp(new Headers({ "x-forwarded-for": "1.2.3.4, 10.0.0.1" }))).toBe("1.2.3.4");
-  });
-
-  it("falls back to a shared bucket rather than to no limit", () => {
-    expect(clientIp(new Headers())).toBe("unknown");
   });
 });
 

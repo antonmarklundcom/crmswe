@@ -4,6 +4,7 @@ import { getPublicQuote } from "@/modules/quotes/quotes";
 import { getContact } from "@/modules/crm/contacts";
 import { getTenant } from "@/modules/tenancy/tenants";
 import type { TenantSettings } from "@/modules/tenancy/settings";
+import { clientIp } from "@/lib/http/client-ip";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { getTranslator } from "@/lib/i18n/translator";
 import { formatDate } from "@/lib/i18n/format";
@@ -24,7 +25,7 @@ export default async function PublicQuotePage({
   // Per-IP limit — the token itself is the secret, so this isn't for
   // brute-forcing defense, it's to keep the page from being scraped/hammered
   // (lib/rate-limit documents the single-process limitation).
-  const ip = (await headers()).get("x-forwarded-for") ?? "unknown";
+  const ip = clientIp(await headers());
   if (checkRateLimit(`quote-view:${ip}`, 60, 60_000).limited) {
     // No tenant resolved yet at this point, so this one line is the single
     // place the reference locale is the only thing available.

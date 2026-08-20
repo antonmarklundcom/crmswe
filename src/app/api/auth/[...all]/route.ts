@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { toNextJsHandler } from "better-auth/next-js";
 import { auth } from "@/lib/auth/server";
-import { checkLoginAttempt, clientIp, isGuardedAuthPath } from "@/lib/auth/login-rate-limit";
+import { checkLoginAttempt, isGuardedAuthPath } from "@/lib/auth/login-rate-limit";
+import { clientIp } from "@/lib/http/client-ip";
 
 // Better Auth's catch-all route handler — mounts sign-in/sign-up/session and
 // the admin plugin's impersonation/ban/list-users endpoints under

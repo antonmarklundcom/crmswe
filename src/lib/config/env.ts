@@ -24,6 +24,15 @@ const envSchema = z
     // Cloudflare's own docs tell every client to send.
     S3_REGION: z.string().default("auto"),
     CRON_SECRET: z.string().min(1, "CRON_SECRET is required"),
+    /**
+     * How many reverse proxies sit in front of this app. Decides which
+     * `x-forwarded-for` entry lib/http/client-ip trusts, counting from the
+     * right — see that module and docs/DEPLOY.md §10. 1 is Hostinger's
+     * managed Node.js hosting as deployed (LiteSpeed → app); a CDN in front
+     * makes it 2. Getting it wrong costs accuracy in the rate limiters, not
+     * correctness elsewhere, so it defaults rather than being required.
+     */
+    TRUSTED_PROXY_HOPS: z.coerce.number().int().min(1).max(10).default(1),
     // Better Auth session/cookie signing secret (distinct from APP_ENCRYPTION_KEY,
     // which is reserved for AES-256-GCM secrets-at-rest per §3.4).
     BETTER_AUTH_SECRET: z

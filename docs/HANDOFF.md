@@ -1,6 +1,7 @@
-# Handoff — after PR #51 (`x-forwarded-for`)
+# Handoff — after PRs #51 and #52
 
-Written 2026-08-20. Two parts: **what you do** (deploy + verify + dogfood) and
+Written 2026-08-20. #51 was the `x-forwarded-for` fix; #52 wired conversation
+ownership. Two parts: **what you do** (deploy + verify + dogfood) and
 **what Claude Code does next** (a prompt to paste into a fresh window).
 
 ---
@@ -92,7 +93,9 @@ Tenant app (logged in as **admin**):
 | `/dashboard` | loads, numbers are not all zero |
 | `/inbox` | list refreshes on its own every 5s without eating a half-typed reply |
 | `/inbox/<id>` | send a text inside the 24h window; send a template outside it |
+| `/inbox` + `/inbox/<id>` | **new:** assign the conversation to a rep, confirm the list row shows the owner, reassign to "sin asignar" |
 | `/contacts` → `/contacts/<id>` | timeline shows quotes, notas de venta, conversations |
+| `/contacts/<id>` → conversación tab | **new:** the same owner picker, in sync with the inbox's |
 | `/contacts/import` | import a small CSV with a deliberate duplicate and a bad row |
 | `/pipeline?pipeline=<id>` | the switcher survives a reload; drag a deal between stages |
 | `/pipeline/<dealId>` | won/lost with a reason; the deal leaves the active columns |
@@ -151,50 +154,51 @@ to leave the app; that list is the next phase's spec.
 
 ## Part 2 — Prompt for a fresh Claude Code window tomorrow
 
+`assignConversation` is done (PR #52). What is left to code is the bug hunt.
 Paste this verbatim:
 
-> VenderCRM (antonmarklundcom/vendercrm), continuing after PR #51 merged — that
-> was the `x-forwarded-for` fix: one `clientIp()` helper in
+> VenderCRM (antonmarklundcom/vendercrm), continuing after PRs #51 and #52
+> merged. #51 was the `x-forwarded-for` fix — one `clientIp()` helper in
 > `src/lib/http/client-ip.ts` counting from the right, `TRUSTED_PROXY_HOPS`
-> env, documented in docs/DEPLOY.md §10. Read PLAN.md §10 1R/1S/1T and §13
-> first for the conventions and the recent examples of the right size of task.
+> env, procedure in docs/DEPLOY.md §10. #52 wired inbox conversation
+> ownership — `AssigneePicker`, agent-accessible, guarded by an active-member
+> check. Read PLAN.md §10 1R/1S/1T/1U and §13 first for the conventions and
+> for recent examples of the right size of task.
 >
-> Pick up **inbox conversation ownership**. `assignConversation(ctx, id,
-> userId)` exists in `src/modules/whatsapp/inbox.ts` with zero callers — the
-> `conversations.assignedUserId` column is written by nothing in the app, so in
-> a two-rep tenant both reps answer the same customer and neither can tell.
-> Wire it:
+> Hunt for real bugs in three paths and fix what you find, with a regression
+> test per fix:
 >
-> - a server action in `src/app/(app)/inbox/actions.ts`, zod-parsed like the
->   others, agent-accessible (assigning a conversation is selling work, not
->   config — same call `assignDeal` already makes);
-> - an assignee picker in `ConversationView.tsx` listing the tenant's active
->   users plus "sin asignar", and the current assignee shown in `InboxList.tsx`
->   so the list is triageable at a glance;
-> - the same picker on the contact detail's conversation tab;
-> - decide and state whether the 5s poll should clobber a picker the rep has
->   open — the half-typed-reply rule in §10 1R #3 applies here too;
-> - every string through next-intl in `messages/es|en|sv.json` (the parity test
->   fails on a missing key);
-> - tests beside the module, and extend `modules/tenancy/authorization.test.ts`
->   if you conclude it should be admin-only after all.
+> - **Money** — `src/lib/money.ts` and everything that totals a quote or a
+>   nota de venta (`src/modules/quotes/`, `src/modules/documents/`,
+>   `src/modules/renderable-document/`). Guaraníes have no minor unit; look
+>   for rounding that loses or invents one, IVA computed on an already-rounded
+>   subtotal, and a payment ledger whose balance can disagree with the sum of
+>   its rows.
+> - **The WhatsApp 24h window** — `src/modules/whatsapp/send.ts` and
+>   `isWithinFreeFormWindow`. Which timestamp closes the window, what happens
+>   exactly at the boundary, and whether an AI draft approved a moment late is
+>   re-checked rather than trusted.
+> - **The automation engine** — `src/modules/automations/`. Runs that can fire
+>   twice for one trigger, a job that strands mid-flow, a flow edited while a
+>   run is in flight.
 >
-> Conventions that matter: services take `TenantContext` first and reach the DB
-> only through `tenantDb`; zod in every server action; destructive actions are
-> `requireTenantAdmin()` + `writeAuditLog`.
+> Tell me plainly if a path is clean rather than inventing work — a "no bugs
+> found, here is what I checked and how" answer is a good outcome.
+>
+> Conventions: services take `TenantContext` first and reach the DB only
+> through `tenantDb`; zod in every server action; destructive actions are
+> `requireTenantAdmin()` + `writeAuditLog`; every user-facing string goes
+> through next-intl in `messages/es|en|sv.json` (the parity test fails on a
+> missing key); tests live beside the module.
 >
 > No MySQL in this container, so the DB-backed suites can only be verified in
 > CI — run `npm run lint`, `npm run typecheck`, `npm test` and `npm run build`
 > locally, say plainly which suites could not run, and let CI be the check on
-> those. Work on a new branch, open a PR, merge it once both CI jobs are green.
-> Ask me before anything that needs a product decision.
+> those. Work on a new branch, open a PR, merge it once both CI jobs are
+> green. Ask me before anything that needs a product decision.
 
-**If instead you want bug-hunting rather than a feature**, swap the middle for:
+### If the dogfooding day comes first
 
-> Hunt for real bugs in the money, WhatsApp-24h-window and automation-engine
-> paths — `src/lib/money.ts`, `src/modules/whatsapp/send.ts`,
-> `src/modules/automations/`. Read them adversarially, look for rounding that
-> loses guaraníes, window checks that use the wrong timestamp, and automation
-> runs that can fire twice or strand a job. Fix what you find, with a
-> regression test per fix, and tell me plainly if you find nothing rather than
-> inventing work.
+Skip the prompt above and just run the day (§1.6). A bug you hit yourself
+with a real lead in front of you is worth more than one found by reading, and
+the list of places you had to leave the app is the next phase's spec.

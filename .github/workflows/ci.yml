@@ -5,6 +5,10 @@ on:
     branches: [main]
   pull_request:
 
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   DATABASE_URL: mysql://root:root@127.0.0.1:3306/vendercrm
   APP_ENCRYPTION_KEY: aa1188c9c4f0d2e6b7a35f0091c2d8e4b6a7c1f3d9e0a2b4c6d8e0f2a4b6c8d0
@@ -23,6 +27,7 @@ env:
 jobs:
   lint-typecheck-build:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -36,6 +41,7 @@ jobs:
 
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     services:
       mysql:
         image: mysql:8

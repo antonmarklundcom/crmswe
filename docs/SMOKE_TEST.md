@@ -111,6 +111,33 @@ moving is not.
 - [ ] On the marketing host: `/robots.txt` lists the sitemap and disallows
       `/api/`, `/q/`, `/d/`, `/f/`; `/sitemap.xml` lists the four pages
 
+## 8. Object storage (1K)
+
+Not a click-through — one command, run on the deployed environment (or with
+that environment's storage env vars in the shell) so it exercises the driver
+production actually uses:
+
+```
+npm run smoke-storage
+```
+
+It puts a key, reads it back byte-for-byte, signs a URL, proves the signed
+URL works, deletes, and confirms the object is gone; non-zero exit on any
+failure, and it cleans up its own object even when a step fails.
+
+- [ ] Passes with the environment's configured `STORAGE_DRIVER`
+- [ ] Re-run after switching `STORAGE_DRIVER=local` → `s3` (the R2 cutover) —
+      this is the check that says the bucket and token are right before
+      WhatsApp media depends on them
+
+On `s3` the signed URL is absolute and gets fetched over HTTP, so the check
+is end-to-end. On `local` it is an app-relative HMAC token, so the script
+verifies the token contract instead (the driver's own signature verifies; a
+forged one and an expired one are rejected) and reports the HTTP leg as
+skipped — nothing in this repo serves `/api/storage` yet. Set
+`SMOKE_STORAGE_BASE_URL` to a running app's origin to exercise that leg once
+something does.
+
 ## If anything fails
 
 Don't leave a failing smoke test unresolved before calling a deploy done —

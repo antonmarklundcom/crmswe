@@ -30,6 +30,9 @@ first deploy and every routine redeploy after it.
      for good if the disk is. Switch to `s3` before onboarding any tenant
      beyond the owner's own.
    - `STORAGE_LOCAL_PATH` — only read when `STORAGE_DRIVER=local`.
+     Whichever driver is chosen, verify it with `npm run smoke-storage`
+     (`docs/SMOKE_TEST.md` §8) — it runs the whole put/read/sign/delete
+     lifecycle against the configured driver and exits non-zero on failure.
    - `S3_ENDPOINT`, `S3_BUCKET`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY` —
      required when `STORAGE_DRIVER=s3`; the app fails to boot without them
      (validated in `src/lib/config/env.ts`). For Cloudflare R2: dashboard →

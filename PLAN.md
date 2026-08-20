@@ -1521,14 +1521,18 @@ what's left in both is an operator running it against the real environment:
   is runnable today on `local` and unchanged on the R2 cutover day. The one
   real difference between the drivers is the signed URL, so the script
   splits there: an S3 presigned URL is absolute and gets fetched over HTTP;
-  the local driver's is an app-relative HMAC token, so the token contract is
-  verified instead (the driver's own signature verifies, a forged one and an
-  expired one are rejected) and the HTTP leg is reported as **skipped** — a
-  fetch would 404, because **nothing in this repo serves `/api/storage`
-  yet**. `storage.getSignedUrl` has no caller today (PDFs and WhatsApp media
-  only ever `put`), so the local driver's serving route was never built; it
-  becomes a gap the moment a feature signs a URL under `STORAGE_DRIVER=local`.
-  Flagged rather than built here — it is new surface, not an operator task.
+  the local driver's is an app-relative HMAC token verified by
+  `src/app/api/storage/route.ts`, which now serves the object on a valid,
+  unexpired signature (404 — never 403 — for anything else: forged, expired,
+  missing key, or `STORAGE_DRIVER=s3`) with `Cache-Control: private, no-store`
+  and the content type recorded alongside the object by `local.ts`'s `put()`
+  (falling back to `application/octet-stream` for objects written before that
+  existed). Same capability model as `/q/[token]`: the signature is the auth,
+  no session or tenant gate — and, like that route, per-IP rate limited
+  (120/60s, checked *before* the signature, so what gets throttled is a flood
+  of guesses and not just successful serves). With `SMOKE_STORAGE_BASE_URL`
+  set to a running app's origin, step 5 fetches the signed URL over HTTP and
+  confirms it comes back byte-identical instead of skipping.
 - **Deploy and migrate**: 1O and 1Q add migrations `0010` and `0011`.
 
 **Exit**: the owner runs a full day — leads arriving from a live site into

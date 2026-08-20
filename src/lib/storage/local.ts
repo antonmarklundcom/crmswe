@@ -20,6 +20,23 @@ function resolveKeyPath(key: string): string {
   return path;
 }
 
+// put()'s contentType has no filesystem home of its own, and keys like
+// whatsapp-media/<tenantId>/<mediaId> carry no extension to guess it back
+// from — so it rides alongside the object in a sidecar file the serving
+// route reads. Missing sidecar (object written before this existed) just
+// means the route falls back to a generic content type.
+function contentTypePath(key: string): string {
+  return `${resolveKeyPath(key)}.contenttype`;
+}
+
+export async function getLocalContentType(key: string): Promise<string | undefined> {
+  try {
+    return (await readFile(contentTypePath(key), "utf8")).trim() || undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 export function signLocalKey(key: string, expiresAt: number): string {
   return createHmac("sha256", env.APP_ENCRYPTION_KEY)
     .update(`${key}:${expiresAt}`)
@@ -40,10 +57,13 @@ export function verifyLocalSignature(
 }
 
 export const localStorage: StorageAdapter = {
-  async put(key, data) {
+  async put(key, data, contentType) {
     const path = resolveKeyPath(key);
     await mkdir(dirname(path), { recursive: true });
     await writeFile(path, data);
+    if (contentType) {
+      await writeFile(contentTypePath(key), contentType, "utf8");
+    }
   },
 
   async get(key) {
@@ -63,5 +83,6 @@ export const localStorage: StorageAdapter = {
 
   async delete(key) {
     await rm(resolveKeyPath(key), { force: true });
+    await rm(contentTypePath(key), { force: true });
   },
 };

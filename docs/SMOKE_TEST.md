@@ -126,17 +126,19 @@ URL works, deletes, and confirms the object is gone; non-zero exit on any
 failure, and it cleans up its own object even when a step fails.
 
 - [ ] Passes with the environment's configured `STORAGE_DRIVER`
+- [ ] On `local`, hammer a signed `/api/storage` URL repeatedly — confirm a
+      429 eventually appears (per-IP rate limiting, 1H #2)
 - [ ] Re-run after switching `STORAGE_DRIVER=local` → `s3` (the R2 cutover) —
       this is the check that says the bucket and token are right before
       WhatsApp media depends on them
 
 On `s3` the signed URL is absolute and gets fetched over HTTP, so the check
-is end-to-end. On `local` it is an app-relative HMAC token, so the script
-verifies the token contract instead (the driver's own signature verifies; a
-forged one and an expired one are rejected) and reports the HTTP leg as
-skipped — nothing in this repo serves `/api/storage` yet. Set
-`SMOKE_STORAGE_BASE_URL` to a running app's origin to exercise that leg once
-something does.
+is end-to-end. On `local` it is an app-relative HMAC token served by
+`/api/storage`, so the script verifies the token contract (the driver's own
+signature verifies; a forged one and an expired one are rejected) and, if
+`SMOKE_STORAGE_BASE_URL` is set to a running app's origin, also fetches the
+signed URL over HTTP against it — without that variable the HTTP leg is
+skipped.
 
 ## If anything fails
 

@@ -415,7 +415,20 @@
           "invalid": "Kontrollera uppgifterna och försök igen."
         }
       },
-      "importAction": "Importera CSV"
+      "importAction": "Importera CSV",
+      "delete": "Ta bort kontakt",
+      "deleteTitle": "Ta bort kontakt",
+      "deleteHint": "Kontakten tas bort tillsammans med sina taggar, anteckningar och uppgifter. Det går inte att ångra.",
+      "deleteBlocked": "Går inte att ta bort: kontakten har redan {reasons}. Redigera den i stället för att ta bort den.",
+      "deleteFailed": "Kunde inte ta bort kontakten: något skapades medan du hade sidan öppen. Kontrollera vad som hänger ihop med den igen.",
+      "deleteBlockers": {
+        "deals": "affärer",
+        "quotes": "offerter",
+        "documents": "försäljningsnotor",
+        "conversations": "WhatsApp-konversationer",
+        "submissions": "inkomna leads",
+        "automationRuns": "körda automationer"
+      }
     },
     "inbox": {
       "title": "Inkorg",
@@ -1027,6 +1040,16 @@
         "notFound": "Vi hittade inte affären.",
         "invalid": "Kontrollera uppgifterna och försök igen.",
         "unknown": "Vi kunde inte stänga affären. Försök igen."
+      },
+      "delete": "Ta bort affär",
+      "deleteTitle": "Ta bort affär",
+      "deleteHint": "Affären tas bort tillsammans med sina uppgifter och sin historik. Kontakten rörs inte. Det går inte att ångra.",
+      "deleteBlocked": "Går inte att ta bort: affären har redan {reasons}.",
+      "deleteFailed": "Kunde inte ta bort affären: något skapades medan du hade sidan öppen. Kontrollera vad som hänger ihop med den igen.",
+      "deleteBlockers": {
+        "quotes": "offerter",
+        "documents": "försäljningsnotor",
+        "submissions": "inkomna leads"
       }
     },
     "stages": {

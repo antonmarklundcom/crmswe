@@ -415,7 +415,20 @@
           "invalid": "Check the details and try again."
         }
       },
-      "importAction": "Import CSV"
+      "importAction": "Import CSV",
+      "delete": "Delete contact",
+      "deleteTitle": "Delete contact",
+      "deleteHint": "Deletes the contact along with its tags, notes and tasks. This cannot be undone.",
+      "deleteBlocked": "Can't delete: this contact already has {reasons}. Edit it instead of deleting it.",
+      "deleteFailed": "Couldn't delete the contact: something was created while you had this page open. Check what is attached to it again.",
+      "deleteBlockers": {
+        "deals": "deals",
+        "quotes": "quotes",
+        "documents": "sales notes",
+        "conversations": "WhatsApp conversations",
+        "submissions": "captured leads",
+        "automationRuns": "automation runs"
+      }
     },
     "inbox": {
       "title": "Inbox",
@@ -1027,6 +1040,16 @@
         "notFound": "We couldn't find the deal.",
         "invalid": "Check the details and try again.",
         "unknown": "We couldn't close the deal. Try again."
+      },
+      "delete": "Delete deal",
+      "deleteTitle": "Delete deal",
+      "deleteHint": "Deletes the deal along with its tasks and history. The contact is left alone. This cannot be undone.",
+      "deleteBlocked": "Can't delete: this deal already has {reasons}.",
+      "deleteFailed": "Couldn't delete the deal: something was created while you had this page open. Check what is attached to it again.",
+      "deleteBlockers": {
+        "quotes": "quotes",
+        "documents": "sales notes",
+        "submissions": "captured leads"
       }
     },
     "stages": {

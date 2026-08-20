@@ -14,13 +14,22 @@ import { PageHeader } from "@/components/page-header";
 import { formatDateTime, formatMoney } from "@/lib/i18n/format";
 import { CloseDealForms, type CloseLabels } from "./CloseDealForms";
 import { assignDealAction, reopenDealAction } from "./actions";
+import { deleteDealAction } from "../actions";
+import { findDealDeleteBlockers, type DealBlocker } from "@/modules/crm/deletion";
 import { Select } from "@/components/ui/form-fields";
 
 // Deal detail (PLAN.md §13 H8). Everything about one opportunity in one
 // place: what it's worth, who owns it, how it got to this stage, and what is
 // attached to it — plus the two buttons the board can't offer, won and lost.
-export default async function DealPage({ params }: { params: Promise<{ dealId: string }> }) {
+export default async function DealPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ dealId: string }>;
+  searchParams: Promise<{ deleteError?: string }>;
+}) {
   const { dealId } = await params;
+  const { deleteError } = await searchParams;
   const ctx = await requireTenantContext();
   const t = await getTranslations("app.deal");
   const tp = await getTranslations("app.pipeline");
@@ -29,15 +38,20 @@ export default async function DealPage({ params }: { params: Promise<{ dealId: s
   const deal = await getDeal(ctx, dealId);
   if (!deal) notFound();
 
-  const [pipeline, stages, contact, users, tasks, quotes, activities] = await Promise.all([
-    getPipeline(ctx, deal.pipelineId),
-    listStagesForPipeline(ctx, deal.pipelineId),
-    getContact(ctx, deal.contactId),
-    listTenantUsers(ctx),
-    listTasksForContact(ctx, deal.contactId),
-    listQuotesForContact(ctx, deal.contactId),
-    listActivitiesForContact(ctx, deal.contactId),
-  ]);
+  const [pipeline, stages, contact, users, tasks, quotes, activities, deleteBlockers] =
+    await Promise.all([
+      getPipeline(ctx, deal.pipelineId),
+      listStagesForPipeline(ctx, deal.pipelineId),
+      getContact(ctx, deal.contactId),
+      listTenantUsers(ctx),
+      listTasksForContact(ctx, deal.contactId),
+      listQuotesForContact(ctx, deal.contactId),
+      listActivitiesForContact(ctx, deal.contactId),
+      // Only an admin can delete, so only an admin pays for the scan.
+      ctx.role === "admin"
+        ? findDealDeleteBlockers(ctx, dealId)
+        : Promise.resolve<DealBlocker[]>([]),
+    ]);
 
   const stageById = new Map(stages.map((stage) => [stage.id, stage]));
   const stage = stageById.get(deal.stageId);
@@ -215,6 +229,37 @@ export default async function DealPage({ params }: { params: Promise<{ dealId: s
           )}
         </div>
       </section>
+
+      {/* Deletion is for a deal opened by mistake, so it is offered only
+          while nothing real hangs off it and only to an admin (§13 H1). The
+          action re-checks both — this just doesn't dangle an option that
+          would be refused. */}
+      {ctx.role === "admin" && (
+        <section className="flex flex-col gap-2">
+          <h2 className="text-lg font-semibold">{t("deleteTitle")}</h2>
+          <p className="text-sm text-muted-foreground">
+            {deleteBlockers.length > 0
+              ? t("deleteBlocked", {
+                  reasons: deleteBlockers
+                    .map((blocker) => t(`deleteBlockers.${blocker}`))
+                    .join(", "),
+                })
+              : t("deleteHint")}
+          </p>
+          {deleteError && <p className="text-sm text-destructive">{t("deleteFailed")}</p>}
+          <form action={deleteDealAction}>
+            <input type="hidden" name="dealId" value={deal.id} />
+            <Button
+              type="submit"
+              size="sm"
+              variant="outline"
+              disabled={deleteBlockers.length > 0}
+            >
+              {t("delete")}
+            </Button>
+          </form>
+        </section>
+      )}
 
       <p className="text-sm text-muted-foreground">
         <Link href={`/pipeline?pipeline=${deal.pipelineId}`} className="underline underline-offset-4">

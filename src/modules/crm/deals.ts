@@ -121,10 +121,6 @@ export async function moveDeal(
   return getDeal(ctx, dealId);
 }
 
-export async function deleteDeal(ctx: TenantContext, id: string) {
-  await tenantDb(ctx).delete(deals, eq(deals.id, id));
-}
-
 
 // --- Closing a deal (PLAN.md §13 H8) -----------------------------------
 //

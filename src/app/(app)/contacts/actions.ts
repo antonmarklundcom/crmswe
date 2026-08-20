@@ -2,7 +2,9 @@
 
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
-import { requireTenantContext } from "@/modules/tenancy/context";
+import { redirect } from "next/navigation";
+import { requireTenantContext, requireTenantAdmin } from "@/modules/tenancy/context";
+import { writeAuditLog } from "@/modules/tenancy/audit";
 import { getTenant } from "@/modules/tenancy/tenants";
 import type { TenantSettings } from "@/modules/tenancy/settings";
 import { DEFAULT_COUNTRY } from "@/lib/phone";
@@ -17,6 +19,7 @@ import {
 import { createActivity } from "@/modules/crm/activities";
 import { sendText, sendTemplate } from "@/modules/whatsapp/send";
 import { checkPlanLimit } from "@/modules/tenancy/limits";
+import { RecordDeleteError, deleteContactRecord } from "@/modules/crm/deletion";
 
 // The contact forms are useActionState-shaped (PLAN.md §10 1R #6): a
 // validation failure comes back as state the form renders next to the field
@@ -221,4 +224,38 @@ export async function sendContactTemplateAction(contactId: string, formData: For
     language: input.template.slice(separator + 1),
   });
   revalidatePath(`/contacts/${contactId}`);
+}
+
+// Deleting a contact created by mistake (see modules/crm/deletion.ts for why
+// this is narrow). Admin-only and audited, like the other destructive
+// actions in §13 H1 — and the refusal travels back in the URL exactly as
+// deleteStageAction's does, since "it still has quotes" is what the admin
+// needs to read and is not secret.
+export async function deleteContactAction(formData: FormData) {
+  const ctx = await requireTenantAdmin();
+  const parsed = z.string().min(1).max(26).safeParse(formData.get("contactId"));
+  if (!parsed.success) return;
+  const contactId = parsed.data;
+
+  try {
+    await deleteContactRecord(ctx, contactId);
+  } catch (err) {
+    if (err instanceof RecordDeleteError) {
+      if (err.code === "notFound") redirect("/contacts");
+      redirect(`/contacts/${contactId}?tab=datos&deleteError=${err.blockers.join(",")}`);
+    }
+    throw err;
+  }
+
+  await writeAuditLog({
+    tenantId: ctx.tenantId,
+    actorUserId: ctx.userId,
+    impersonatorUserId: ctx.impersonatorUserId,
+    action: "contact.deleted",
+    entity: "contact",
+    entityId: contactId,
+  });
+
+  revalidatePath("/contacts");
+  redirect("/contacts");
 }

@@ -5,6 +5,8 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireTenantContext, requireTenantAdmin } from "@/modules/tenancy/context";
 import { moveDeal, createDeal } from "@/modules/crm/deals";
+import { RecordDeleteError, deleteDealRecord } from "@/modules/crm/deletion";
+import { writeAuditLog } from "@/modules/tenancy/audit";
 import {
   StageConfigError,
   createPipelineWithDefaultStages,
@@ -207,4 +209,36 @@ export async function createStageAction(formData: FormData) {
   });
 
   revalidatePath("/pipeline");
+}
+
+// Deleting a deal opened by mistake. Same contract as deleteStageAction
+// above — admin-only, refuses while anything real hangs off it, and says
+// which thing in the URL (modules/crm/deletion.ts).
+export async function deleteDealAction(formData: FormData) {
+  const ctx = await requireTenantAdmin();
+  const parsed = z.string().min(1).max(26).safeParse(formData.get("dealId"));
+  if (!parsed.success) return;
+  const dealId = parsed.data;
+
+  try {
+    await deleteDealRecord(ctx, dealId);
+  } catch (err) {
+    if (err instanceof RecordDeleteError) {
+      if (err.code === "notFound") redirect("/pipeline");
+      redirect(`/pipeline/${dealId}?deleteError=${err.blockers.join(",")}`);
+    }
+    throw err;
+  }
+
+  await writeAuditLog({
+    tenantId: ctx.tenantId,
+    actorUserId: ctx.userId,
+    impersonatorUserId: ctx.impersonatorUserId,
+    action: "deal.deleted",
+    entity: "deal",
+    entityId: dealId,
+  });
+
+  revalidatePath("/pipeline");
+  redirect("/pipeline");
 }

@@ -4,6 +4,7 @@ import { getDocumentByPublicToken } from "@/modules/documents/documents";
 import { getContact } from "@/modules/crm/contacts";
 import { getTenant } from "@/modules/tenancy/tenants";
 import type { TenantSettings } from "@/modules/tenancy/settings";
+import { clientIp } from "@/lib/http/client-ip";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { getTranslator } from "@/lib/i18n/translator";
 import { documentDate as date, money } from "@/modules/renderable-document/format";
@@ -32,7 +33,7 @@ export default async function PublicDocumentPage({
 
   // Per-IP limit — the token itself is the secret, so this isn't
   // brute-force defense, it's to keep the page from being hammered.
-  const ip = (await headers()).get("x-forwarded-for") ?? "unknown";
+  const ip = clientIp(await headers());
   if (checkRateLimit(`document-view:${ip}`, 60, 60_000).limited) {
     // No tenant resolved yet, so the reference locale is all there is.
     const tLimit = await getTranslator(null, "public.shared");

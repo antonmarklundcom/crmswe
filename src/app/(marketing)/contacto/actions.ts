@@ -3,6 +3,7 @@
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
+import { clientIp } from "@/lib/http/client-ip";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { SITE_URL } from "@/lib/site-config";
 import { idempotencyKey, readAttribution, sendLead } from "@/lib/vendercrm-lead";
@@ -41,10 +42,7 @@ export async function submitContactAction(formData: FormData) {
   }
 
   const requestHeaders = await headers();
-  const ip =
-    requestHeaders.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-    requestHeaders.get("x-real-ip")?.trim() ||
-    "unknown";
+  const ip = clientIp(requestHeaders);
 
   if (checkRateLimit(`marketing:contacto:${ip}`, SUBMIT_LIMIT, SUBMIT_WINDOW_MS).limited) {
     // Same answer as the honeypot: a flood gets a thank-you page and no

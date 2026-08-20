@@ -1,5 +1,6 @@
 import { getPublicQuote } from "@/modules/quotes/quotes";
 import { generateQuotePdf } from "@/modules/quotes/delivery";
+import { clientIp } from "@/lib/http/client-ip";
 import { checkRateLimit } from "@/lib/rate-limit";
 
 // Serves the quote PDF at a public, unauthenticated URL. This is the URL
@@ -15,7 +16,7 @@ export async function GET(
   // is worth protecting even though the token is unguessable. Generous
   // limit — Meta itself fetches this URL when delivering the WhatsApp
   // document.
-  const ip = request.headers.get("x-forwarded-for") ?? "unknown";
+  const ip = clientIp(request.headers);
   if (checkRateLimit(`quote-pdf:${ip}`, 30, 60_000).limited) {
     return new Response("Too many requests", { status: 429 });
   }

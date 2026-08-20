@@ -1,4 +1,5 @@
 import { env } from "@/lib/config/env";
+import { clientIp } from "@/lib/http/client-ip";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { getLocalContentType, verifyLocalSignature } from "@/lib/storage/local";
 import { classifySignedUrl } from "@/lib/storage/signed-url";
@@ -22,9 +23,9 @@ const RATE_WINDOW_MS = 60_000;
 export async function GET(request: Request) {
   // Before the signature check, not after: what is worth throttling is a
   // flood of *guesses*, and those never reach the serving path. Same key
-  // shape as /q/[token]/pdf — x-forwarded-for, with its own namespace so the
-  // two routes can't share a bucket.
-  const ip = request.headers.get("x-forwarded-for") ?? "unknown";
+  // shape as /q/[token]/pdf — the caller's address per lib/http/client-ip,
+  // with its own namespace so the two routes can't share a bucket.
+  const ip = clientIp(request.headers);
   if (checkRateLimit(`storage:${ip}`, RATE_LIMIT, RATE_WINDOW_MS).limited) {
     return new Response("Too many requests", { status: 429 });
   }

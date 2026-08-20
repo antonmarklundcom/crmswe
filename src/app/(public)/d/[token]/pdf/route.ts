@@ -1,5 +1,6 @@
 import { getDocumentByPublicToken } from "@/modules/documents/documents";
 import { generateDocumentPdf } from "@/modules/documents/delivery";
+import { clientIp } from "@/lib/http/client-ip";
 import { checkRateLimit } from "@/lib/rate-limit";
 
 // Serves the nota de venta PDF at a public, unauthenticated URL (PLAN.md
@@ -14,7 +15,7 @@ export async function GET(
   // Rendering is on-demand and CPU/memory-bound, so this route is worth
   // protecting even though the token is unguessable. Generous limit — Meta
   // itself fetches this URL when delivering the WhatsApp document.
-  const ip = request.headers.get("x-forwarded-for") ?? "unknown";
+  const ip = clientIp(request.headers);
   if (checkRateLimit(`document-pdf:${ip}`, 30, 60_000).limited) {
     return new Response("Too many requests", { status: 429 });
   }

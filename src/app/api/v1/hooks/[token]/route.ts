@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { clientIpOrNull } from "@/lib/http/client-ip";
 import { receiveHookPayload } from "@/modules/sites/hooks";
 
 // Inbound webhook receiver (PLAN.md §5.2) — the second ingest lane, for
@@ -46,7 +47,7 @@ export async function POST(
   }
 
   const outcome = await receiveHookPayload(token, payload, {
-    ipAddress: request.headers.get("x-forwarded-for") ?? undefined,
+    ipAddress: clientIpOrNull(request.headers),
     userAgent: request.headers.get("user-agent") ?? undefined,
     contentType: contentType || undefined,
     pageUrl: request.headers.get("referer") ?? undefined,

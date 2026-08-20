@@ -88,4 +88,22 @@ describe.skipIf(!hasEnv)("GET /api/storage", () => {
     expect((await route.GET(request(signedPath(key), flooding))).status).toBe(429);
     expect((await route.GET(request(signedPath(key), "10.0.0.5"))).status).toBe(200);
   });
+
+  it("cannot be escaped by prepending entries to x-forwarded-for", async () => {
+    // The regression this route used to have: the bucket key was the raw
+    // header, so every forged prefix bought a fresh allowance. The address
+    // now comes from lib/http/client-ip, which counts from the trusted end.
+    const key = "route-test/served.png";
+    const real = "10.0.0.6";
+    for (let i = 0; i < RATE_LIMIT; i++) {
+      expect((await route.GET(request(signedPath(key), real))).status).toBe(200);
+    }
+
+    for (const forged of ["1.2.3.4", "9.9.9.9, 8.8.8.8", ""]) {
+      const spoofed = new Request(`http://localhost:3000${signedPath(key)}`, {
+        headers: { "x-forwarded-for": forged ? `${forged}, ${real}` : real },
+      });
+      expect((await route.GET(spoofed)).status).toBe(429);
+    }
+  });
 });

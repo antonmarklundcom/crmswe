@@ -260,3 +260,41 @@ directly is equivalent.
 - [ ] `/api/cron/tick` returns 401 without the header and 200 with it
 - [ ] Meta webhook shows as verified and subscribed to `messages` (§4)
 - [ ] Sentry (if configured) shows the deploy's release/environment
+
+## 10. Confirming `TRUSTED_PROXY_HOPS`
+
+Every per-IP rate limit in the app — the public quote and nota de venta
+pages and their PDF routes, `/api/storage`, the login limiter, the public
+form endpoint — asks `src/lib/http/client-ip.ts` who the caller is. That
+helper reads `x-forwarded-for` **from the right**, because the right-hand
+entries are the ones our own infrastructure appended; anything further left
+was supplied by the caller and can say whatever it likes. `TRUSTED_PROXY_HOPS`
+is how many entries at that end belong to us.
+
+`1` is the default and matches this deploy as it stands: LiteSpeed proxies to
+the Node process and appends the address it accepted the connection from.
+**Put a CDN in front — Cloudflare, or Hostinger's own — and the value becomes
+`2`**, because the CDN edge appends one entry and LiteSpeed appends the edge's
+address on top of it. Nothing in the code changes; only the env var does.
+
+Too low and the limiter keys on our own proxy's address, so every visitor
+shares one bucket. Too high and it keys on a caller-supplied entry, which is
+the spoofable state this exists to prevent. So verify it once per topology
+change, and again after any CDN or DNS change:
+
+1. Submit one lead from a machine whose public IP you know — the live public
+   form, or `curl -X POST https://<app>/api/v1/leads -H 'x-api-key: …'` with a
+   throwaway payload.
+2. Read back what was stored:
+   ```sql
+   SELECT ip_address, created_at FROM lead_submissions ORDER BY created_at DESC LIMIT 1;
+   ```
+3. Compare:
+   - **Your own public IP** → the value is right.
+   - **A private address** (`10.x`, `172.16–31.x`, `127.0.0.1`) → too low; the
+     proxy's own address is winning. Increase by one and repeat.
+   - **A CDN edge** (Cloudflare's ranges, an address that isn't yours and
+     isn't private) → too low by exactly the CDN hop; set `2`.
+   - **An address you can't account for** → too high: the header is shorter
+     than configured and the helper has clamped to a caller-supplied entry.
+     Decrease and repeat.

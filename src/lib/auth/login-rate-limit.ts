@@ -22,15 +22,6 @@ export function isGuardedAuthPath(pathname: string): boolean {
   return GUARDED.some((path) => pathname.endsWith(path));
 }
 
-/** First proxy hop; Hostinger fronts the app, so the socket address is the
- * proxy's, not the client's. Falls back to a shared bucket rather than to no
- * limit — an unknown IP must not be the way around the limiter. */
-export function clientIp(headers: Headers): string {
-  const forwarded = headers.get("x-forwarded-for");
-  if (forwarded) return forwarded.split(",")[0]!.trim();
-  return headers.get("x-real-ip")?.trim() || "unknown";
-}
-
 export function checkLoginAttempt(input: { ip: string; email?: string | null }): boolean {
   const byIp = checkRateLimit(`auth:ip:${input.ip}`, IP_LIMIT, WINDOW_MS);
   const email = input.email?.trim().toLowerCase();

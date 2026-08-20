@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { clientIpOrNull } from "@/lib/http/client-ip";
 import { ingestLead } from "@/modules/sites/ingest";
 
 // Public lead ingest (PLAN.md §5.1). Server-to-server only — the site's own
@@ -22,7 +23,7 @@ export async function POST(request: Request) {
   }
 
   const outcome = await ingestLead(request.headers.get("x-api-key"), body, {
-    ipAddress: request.headers.get("x-forwarded-for") ?? undefined,
+    ipAddress: clientIpOrNull(request.headers),
     userAgent: request.headers.get("user-agent") ?? undefined,
   });
 

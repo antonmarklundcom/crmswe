@@ -1570,6 +1570,39 @@ functions are gone: leaving one next to the guarded one is an invitation to
 call the wrong one. Nothing here is a soft delete — a contact with real
 history stays and is corrected by editing it.
 
+### 1T — One answer to "who is the caller?" *(added after 1S)* — ✅ done
+
+Every per-IP rate limit in the app read `x-forwarded-for` for itself, and no
+two read it the same way. The five public routes (`/q/[token]` and its PDF,
+`/d/[token]` and its PDF, `/api/storage`) keyed their bucket on the **raw
+header string**, so `1.2.3.4` and `1.2.3.4, 9.9.9.9` were two different
+buckets and a client could mint a fresh allowance per request by varying a
+header nobody validated. The login limiter and the marketing form took the
+**first** entry — the one entry no proxy vouches for, since a caller can
+simply send it. The three ingest lanes (`/api/v1/leads`, `/api/v1/hooks`, the
+public form action) stored the raw header in `ip_address varchar(45)`, which
+a two-hop chain overflows.
+
+**As built** (`src/lib/http/client-ip.ts`). One `clientIp(headers)` helper,
+used by all ten call sites. It counts **from the right**, because the
+right-hand entries are the ones our own infrastructure appended: with `hops`
+trusted proxies in front, index `length - hops` is the address the outermost
+trusted proxy actually observed, and everything left of it is caller-supplied
+and ignored. `hops` comes from `TRUSTED_PROXY_HOPS` (default 1 = Hostinger's
+LiteSpeed alone); putting a CDN in front is `2`, an env change rather than a
+code change. The helper also strips an appended port so one client is one
+bucket, and caps the value at the 45 characters the `ip_address` columns
+hold. The three lanes that *store* the address use `clientIpOrNull`, so an
+undeterminable caller is NULL in the column rather than the literal string
+`"unknown"` — which would read like an address someone reported.
+
+**Delta from the spec**: the hop count is configured rather than measured,
+because there is no live deploy to probe — `docs/DEPLOY.md §10` carries the
+procedure to confirm it (submit one lead, read back `lead_submissions.
+ip_address`) and what each wrong answer looks like. `"unknown"` stays a single
+shared bucket rather than a bypass: an address the app cannot determine must
+not be the way around a limit.
+
 ### 1P — Google Business Profile *(idea; not scheduled)*
 
 GBP is where the owner's local-SEO work and this CRM meet: reviews, questions,

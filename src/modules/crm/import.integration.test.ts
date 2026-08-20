@@ -47,7 +47,11 @@ describe.skipIf(!hasDb)("contact import (MySQL integration)", () => {
     };
   });
 
-  it("imports a 1k-row file with mixed duplicates and errors, and reports it correctly", async () => {
+  // A thousand rows through real MySQL is the point of this test, and it
+  // does not fit vitest's 5s default on a loaded CI runner — it timed out
+  // there while passing locally. The bound still has to exist (a hung import
+  // must fail, not hang the job), so it is stated rather than inherited.
+  it("imports a 1k-row file with mixed duplicates and errors, and reports it correctly", { timeout: 60_000 }, async () => {
     // One contact already exists, so the file's copy of it is an update.
     await createContact(ctx, { name: "Existing", phone: "0981000001" });
 

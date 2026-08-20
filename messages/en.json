@@ -308,6 +308,7 @@
       "timelineMessageOut": "Message sent",
       "timelineMedia": "Attachment",
       "timelineQuote": "Quote {number}",
+      "timelineDocument": "Sales note {number}",
       "timelineLead": "Lead received",
       "tabs": {
         "conversacion": "Conversation",
@@ -1033,6 +1034,8 @@
       "historyEmpty": "It has not changed stage yet.",
       "quotesTitle": "Quotes",
       "quotesEmpty": "No quotes for this contact.",
+      "documentsTitle": "Sales notes",
+      "documentsEmpty": "No sales notes for this contact.",
       "tasksTitle": "Tasks",
       "tasksEmpty": "No tasks for this deal.",
       "errors": {

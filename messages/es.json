@@ -191,6 +191,7 @@
       "timelineMessageOut": "Mensaje enviado",
       "timelineMedia": "Archivo adjunto",
       "timelineQuote": "Presupuesto {number}",
+      "timelineDocument": "Nota de venta {number}",
       "timelineLead": "Lead recibido",
       "tabs": {
         "conversacion": "Conversación",
@@ -1033,6 +1034,8 @@
       "historyEmpty": "Todavía no cambió de etapa.",
       "quotesTitle": "Presupuestos",
       "quotesEmpty": "Sin presupuestos para este contacto.",
+      "documentsTitle": "Notas de venta",
+      "documentsEmpty": "Sin notas de venta para este contacto.",
       "tasksTitle": "Tareas",
       "tasksEmpty": "Sin tareas para este negocio.",
       "errors": {

@@ -126,6 +126,8 @@ URL works, deletes, and confirms the object is gone; non-zero exit on any
 failure, and it cleans up its own object even when a step fails.
 
 - [ ] Passes with the environment's configured `STORAGE_DRIVER`
+- [ ] On `local`, hammer a signed `/api/storage` URL repeatedly — confirm a
+      429 eventually appears (per-IP rate limiting, 1H #2)
 - [ ] Re-run after switching `STORAGE_DRIVER=local` → `s3` (the R2 cutover) —
       this is the check that says the bucket and token are right before
       WhatsApp media depends on them

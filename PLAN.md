@@ -1528,9 +1528,11 @@ what's left in both is an operator running it against the real environment:
   and the content type recorded alongside the object by `local.ts`'s `put()`
   (falling back to `application/octet-stream` for objects written before that
   existed). Same capability model as `/q/[token]`: the signature is the auth,
-  no session or tenant gate. With `SMOKE_STORAGE_BASE_URL` set to a running
-  app's origin, step 5 fetches the signed URL over HTTP and confirms it comes
-  back byte-identical instead of skipping.
+  no session or tenant gate — and, like that route, per-IP rate limited
+  (120/60s, checked *before* the signature, so what gets throttled is a flood
+  of guesses and not just successful serves). With `SMOKE_STORAGE_BASE_URL`
+  set to a running app's origin, step 5 fetches the signed URL over HTTP and
+  confirms it comes back byte-identical instead of skipping.
 - **Deploy and migrate**: 1O and 1Q add migrations `0010` and `0011`.
 
 **Exit**: the owner runs a full day — leads arriving from a live site into

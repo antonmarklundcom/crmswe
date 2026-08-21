@@ -12,6 +12,8 @@ import { createContact, getContactByPhone } from "@/modules/crm/contacts";
 import { resolveAccountByPhoneNumberId, getDecryptedAccessToken } from "./accounts";
 import { GRAPH_API_BASE } from "./graph";
 import { whatsappEvents } from "./events";
+import { inboundMessageTime, latest } from "./inbound-time";
+import { advancesMessageStatus, type MessageStatus } from "./message-status";
 
 // Webhook ingestion (PLAN.md §6.3, reliability-critical). The route handler
 // (app/api/webhooks/whatsapp/route.ts) does only steps 1-2 — verify
@@ -125,6 +127,16 @@ async function processValue(eventId: string, value: z.infer<typeof webhookValueS
   }
 
   for (const status of value.statuses ?? []) {
+    // Read before writing: Meta redelivers, and status events can arrive out
+    // of order, so a blind update can walk a message backwards from `read`
+    // to `sent`. See ./message-status.ts.
+    const [message] = await tenantDb(ctx).select(
+      messagesTable,
+      eq(messagesTable.waMessageId, status.id),
+    );
+    if (!message) continue;
+    if (!advancesMessageStatus(message.status as MessageStatus, status.status)) continue;
+
     await tenantDb(ctx)
       .update(messagesTable)
       .set({ status: status.status, error: status.errors ? { errors: status.errors } : null })
@@ -165,7 +177,12 @@ async function ingestInboundMessage(
     )
   ).find((c) => c.waAccountId === account.id);
 
-  const now = new Date();
+  // The 24h window runs from when the customer sent the message, not from
+  // when this job happened to process it — see ./inbound-time.ts for why the
+  // difference is load-bearing rather than cosmetic.
+  const receivedAt = new Date();
+  const sentAt = inboundMessageTime(message.timestamp, receivedAt);
+
   if (!conversation) {
     const conversationId = newId();
     await tenantDb(ctx)
@@ -175,8 +192,8 @@ async function ingestInboundMessage(
         waAccountId: account.id,
         contactId: contact.id,
         status: "open",
-        lastMessageAt: now,
-        lastInboundAt: now,
+        lastMessageAt: sentAt,
+        lastInboundAt: sentAt,
         unreadCount: 1,
       });
     const [row] = await tenantDb(ctx).select(conversations, eq(conversations.id, conversationId));
@@ -186,8 +203,8 @@ async function ingestInboundMessage(
       .update(conversations)
       .set({
         status: "open",
-        lastMessageAt: now,
-        lastInboundAt: now,
+        lastMessageAt: latest(conversation.lastMessageAt, sentAt),
+        lastInboundAt: latest(conversation.lastInboundAt, sentAt),
         unreadCount: conversation.unreadCount + 1,
       })
       .where(eq(conversations.id, conversation.id));
@@ -217,6 +234,9 @@ async function ingestInboundMessage(
       mediaId: mediaRef?.id,
       storageKey,
       status: "delivered",
+      // Stamped from Meta's timestamp too, so a thread read after a backlog
+      // shows when the customer wrote, not when the queue caught up.
+      createdAt: sentAt,
     });
 
   await whatsappEvents.emit("wa.message_received", {

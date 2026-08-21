@@ -1,4 +1,4 @@
-# Handoff — after PRs #51 and #52
+# Handoff — after PRs #51, #52 and the 1V bug hunt
 
 Written 2026-08-20. #51 was the `x-forwarded-for` fix; #52 wired conversation
 ownership. Two parts: **what you do** (deploy + verify + dogfood) and
@@ -152,10 +152,39 @@ to leave the app; that list is the next phase's spec.
 
 ---
 
+## Part 1.7 — What changed in the 1V bug hunt (nothing for you to do)
+
+The bug hunt Part 2 used to schedule has been run and merged (PLAN.md §10
+1V). Nothing in it needs an operator action; it is listed here so the
+behaviour change isn't a surprise during the dogfooding day.
+
+- **The 24h window now starts when the customer wrote**, not when the
+  webhook job ran. If the worker has been down, conversations will correctly
+  show *less* window remaining than they did before. Inbound messages are
+  also timestamped from Meta, so a thread read after a backlog shows the
+  customer's own times.
+- **A message's delivery ticks no longer go backwards** when Meta redelivers
+  a status webhook.
+- **A flow that dies mid-run no longer replays from the start** when the
+  stuck-job reaper retries it — it resumes at the node that was in flight.
+  If you have ever seen a duplicate automated WhatsApp message, that was
+  this.
+- **The money path was audited and not changed** — quote and nota de venta
+  totals, and the payment ledger, were found correct.
+
+---
+
 ## Part 2 — Prompt for a fresh Claude Code window tomorrow
 
-`assignConversation` is done (PR #52). What is left to code is the bug hunt.
-Paste this verbatim:
+**This prompt has been run and its work is merged** (PLAN.md §10 1V — the
+money path was clean; the window and the engine each had one real bug). It
+is kept below as the record of what was asked for. With it done, there is no
+unblocked code work left in the repo: everything else is either an operator
+task in Part 1, or gated on someone else — 1N on Meta Tech Provider approval,
+1P's API half on Google's review, the R2 cutover on opening the account.
+**The dogfooding day (§1.6) is now the next thing that produces new work.**
+
+The original prompt, for the record:
 
 > VenderCRM (antonmarklundcom/vendercrm), continuing after PRs #51 and #52
 > merged. #51 was the `x-forwarded-for` fix — one `clientIp()` helper in

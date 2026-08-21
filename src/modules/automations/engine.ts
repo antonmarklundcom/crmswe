@@ -100,6 +100,31 @@ async function recordStep(
 }
 
 /**
+ * Writes the interpreter's position after each node it finishes.
+ *
+ * Without this the loop only persisted at a wait, at completion or at a
+ * failure, so `currentNodeId` stayed on the node the job *started* at for
+ * the whole synchronous run. A process that died mid-flow — a deploy,
+ * Hostinger recycling the app, an OOM kill — left the row pointing at the
+ * start, and the stuck-job reaper (worker/maintenance.ts) then re-queued
+ * `automation.advance`, which replayed every action already executed. For a
+ * flow whose first node is `send_whatsapp` that is a second message to a
+ * real customer. Persisting after every node bounds the replay to the one
+ * node that was in flight when the process died.
+ */
+async function persistProgress(
+  ctx: TenantContext,
+  runId: string,
+  currentNodeId: string | null,
+  steps: number,
+) {
+  await tenantDb(ctx)
+    .update(flowRuns)
+    .set({ currentNodeId, stepCount: steps })
+    .where(eq(flowRuns.id, runId));
+}
+
+/**
  * Runs the interpreter until the run finishes or parks on a wait. Called
  * from the `automation.advance` job, so a crash mid-flow just means the job
  * retries and the run picks up from its persisted currentNodeId.
@@ -135,6 +160,7 @@ export async function advanceRun(ctx: TenantContext, runId: string): Promise<voi
 
     if (node.type === "trigger") {
       currentNodeId = nextNodeId(graph, node.id);
+      await persistProgress(ctx, runId, currentNodeId, steps);
       continue;
     }
 
@@ -142,6 +168,7 @@ export async function advanceRun(ctx: TenantContext, runId: string): Promise<voi
       const passed = await evaluateCondition(ctx, node, run.contactId);
       await recordStep(ctx, runId, node, "ok", { passed });
       currentNodeId = nextNodeId(graph, node.id, passed ? "yes" : "no");
+      await persistProgress(ctx, runId, currentNodeId, steps);
       continue;
     }
 
@@ -202,6 +229,7 @@ export async function advanceRun(ctx: TenantContext, runId: string): Promise<voi
     }
 
     currentNodeId = nextNodeId(graph, node.id);
+    await persistProgress(ctx, runId, currentNodeId, steps);
   }
 
   await tenantDb(ctx)

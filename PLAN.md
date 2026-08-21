@@ -1643,6 +1643,81 @@ shows up immediately. The user list is passed once from the page rather than
 returned by the polling route — it does not change between ticks, and the
 conversations route is the most repeated query in the product.
 
+### 1V — Bug hunt: money, the 24h window, the automation engine *(added after 1U)* — ✅ done
+
+With every 1R build item shipped and the remaining 1R work owner-side
+(deploy, the restore and storage scripts, the dogfooding day), the code left
+to write was not new surface but the defects the surface already had. Three
+paths were read end to end, chosen because each one fails *silently* and each
+one is load-bearing on the dogfooding day.
+
+**Money — clean, nothing changed.** `lib/money.ts` and everything totalling a
+quote or a nota de venta was audited for the failure modes §2.3 invites:
+rounding that loses or invents a guaraní, IVA computed on an already-rounded
+subtotal, a payment ledger whose balance can disagree with the sum of its
+rows. None are present. Every operation is integer arithmetic over minor
+units with no division anywhere, so there is nothing to round; there is no
+IVA in Phase 1 at all (that arrives with SIFEN, §9); and the balance is
+derived on every read by `getDocumentTotals` from `amountPaid`'s sum of
+`document_payments` rather than kept in a column, so the two cannot drift
+apart by construction. The one lenient spot — `recordPayment` accepting a
+fractional amount and flooring it — is unreachable from the UI, whose zod
+schema is `z.coerce.number().int().min(1)`, and was left alone rather than
+changed on speculation.
+
+**The 24h window — one real bug, fixed.** `conversations.lastInboundAt` is
+what §6.4 measures the free-form window from, and the webhook ingest stamped
+it with `new Date()` — the moment the *job* ran, not the moment the customer
+wrote. Those two clocks are equal only when the queue is empty, and they
+diverge exactly when it matters: ingestion is deliberately off the request
+path (§6.3), so a worker that was down for six hours comes back to a backlog
+and tells every one of those conversations that its window closes six hours
+late. A rep then sends a free-form reply the CRM believes is legal, Meta
+rejects it (131047), and it lands in the thread as `failed` for no reason the
+rep can see. `inboundMessageTime` (`modules/whatsapp/inbound-time.ts`, pure
+and unit-tested like `lib/money.ts` and `lib/phone.ts`) reads Meta's own
+`timestamp`, falls back to receipt time for anything unparseable, and refuses
+a future timestamp — the two ways honoring the payload could hold the window
+open *longer* than the truth. `lastInboundAt`/`lastMessageAt` became
+high-water marks via `latest()`, because Meta redelivers and a redelivered
+older message must not drag the window's start backwards. The inbound
+message row is stamped from the same timestamp, so a thread read after a
+backlog shows when the customer wrote rather than when the queue caught up.
+
+The layered re-checks the AI path already had (`deliverReply` re-reads the
+window, then `sendText` re-reads it again) were audited and are correct: an
+approved-late draft is refused, not sent.
+
+**The automation engine — one real bug, fixed.** `advanceRun` walks the graph
+in one synchronous loop but only wrote `currentNodeId` back when it parked on
+a wait, completed, or failed. So for the whole span of a run the row pointed
+at the node the job *started* on. A process that dies mid-flow — a deploy,
+Hostinger recycling the app, an OOM kill — leaves that row untouched, and the
+stuck-job reaper (§13 H3 #2) then re-queues `automation.advance`, which
+replays every action already executed. On a flow whose first node is
+`send_whatsapp`, that is a second message to a real customer: precisely the
+"runs that can fire twice for one trigger" this engine's durable state exists
+to prevent. Progress is now persisted after every node, which bounds the
+replay to the single node that was in flight when the process died. The
+regression test proves it through an observable consequence rather than by
+reading the column alone: a run whose second action throws is left pointing
+at the node that failed, and re-entering `advanceRun` the way the reaper does
+does not create the first action's note a second time.
+
+Two other engine worries were checked and are clean. A flow edited while a
+run is in flight cannot change that run: `saveDraft` never mutates a
+published version and runs pin to `flowVersionId` (§7.1). The wait-for-reply
+race is genuinely resolved by `claimWaitingRun`'s compare-and-set on
+`status = 'waiting'`, with the loser's update matching zero rows.
+
+**Also fixed alongside**: status webhooks were applied blind, so a
+redelivered `sent` arriving after `read` walked an outbound message
+backwards in the inbox. Inbound messages are deduplicated by Meta's message
+id, but a status event carries the id of the message it *describes* and is
+re-appliable by design, so the guard belongs in the transition itself —
+`advancesMessageStatus` (`modules/whatsapp/message-status.ts`), with `failed`
+terminal in both directions.
+
 ### 1P — Google Business Profile *(idea; not scheduled)*
 
 GBP is where the owner's local-SEO work and this CRM meet: reviews, questions,
@@ -1680,6 +1755,7 @@ treats Meta verification.
 | Notas de venta (1Q) | — ✅ done, engine + UI merged |
 | Daily-driver readiness (1R) | 🟡 **items #1-#6 done** — operator tasks (§10 1R) and the owner's dogfooding day still open |
 | Multi-lane ingest (§5.2: Turnstile, key rotation, webhook receiver, ingest health, alerts) | — ✅ done, five PRs merged |
+| Bug hunt: money / 24h window / automation engine (1V) | — ✅ done, money clean, two real bugs fixed |
 | Google Business Profile (1P) | unscheduled |
 
 Estimates assume focused build sessions against this spec; Fable review gates (after

@@ -344,6 +344,86 @@ describe.skipIf(!hasDb)("automation engine (MySQL)", () => {
     expect(await hasOptedOut(ctx, contact.id)).toBe(true);
   });
 
+  /**
+   * A crash mid-flow used to replay the whole run. `advanceRun` walks the
+   * graph in one synchronous loop, and it only wrote `currentNodeId` back
+   * when it parked on a wait or finished — so a process that died halfway
+   * left the row pointing at the node the job *started* on, and the
+   * stuck-job reaper (worker/maintenance.ts) then re-queued
+   * `automation.advance`, which re-executed every action already done. On a
+   * flow whose first node sends WhatsApp that is a second message to a real
+   * customer.
+   *
+   * The observable proof is a run that fails on its second action: the row
+   * must be left pointing at the node that failed, and re-entering
+   * `advanceRun` the way the reaper does must not run the first action
+   * again.
+   */
+  it("persists progress between nodes, so a retried advance never repeats a completed action", async () => {
+    const { createPipelineWithDefaultStages } = await import("@/modules/crm/pipelines");
+    const { createDeal } = await import("@/modules/crm/deals");
+    const { listActivitiesForContact } = await import("@/modules/crm/activities");
+
+    const contact = await newContact();
+    const pipeline = await createPipelineWithDefaultStages(ctx, `Retry ${newId()}`);
+    const { listStagesForPipeline } = await import("@/modules/crm/pipelines");
+    const [firstStage] = await listStagesForPipeline(ctx, pipeline!.id);
+    await createDeal(ctx, {
+      contactId: contact.id,
+      pipelineId: pipeline!.id,
+      stageId: firstStage.id,
+      title: "Retry",
+    });
+
+    const noteText = `paso-uno-${newId()}`;
+    const flow = await createFlow(ctx, { name: "Reintento", triggerType: "form_submitted" });
+    await saveDraft(ctx, flow!.id, {
+      nodes: [
+        { id: "t1", type: "trigger", config: { triggerType: "form_submitted" } },
+        { id: "a1", type: "action", config: { kind: "create_note", text: noteText } },
+        // Deliberately unreachable stage: moveDeal throws, which is how the
+        // run stops with a1 already done and a2 in flight.
+        { id: "a2", type: "action", config: { kind: "move_deal_stage", stageId: "no-such-stage" } },
+      ],
+      edges: [
+        { id: "e1", source: "t1", target: "a1", branch: "default" },
+        { id: "e2", source: "a1", target: "a2", branch: "default" },
+      ],
+    });
+    const published = await publishFlow(ctx, flow!.id);
+    expect(published.ok).toBe(true);
+    if (!published.ok) return;
+
+    const runId = await startRun(ctx, {
+      flowId: flow!.id,
+      flowVersionId: published.versionId,
+      contactId: contact.id,
+      startedBy: {},
+    });
+    await advanceRun(ctx, runId!);
+
+    const failed = await getRun(ctx, runId!);
+    expect(failed!.status).toBe("failed");
+    // The whole point: the row moved past the action that succeeded.
+    expect(failed!.currentNodeId).toBe("a2");
+
+    const countNotes = async () =>
+      (await listActivitiesForContact(ctx, contact.id)).filter(
+        (a) => (a.payload as { text?: string })?.text === noteText,
+      ).length;
+    expect(await countNotes()).toBe(1);
+
+    // What the reaper produces: the run row as the dead process left it,
+    // and the advance job queued again.
+    await db
+      .update(schema.flowRuns)
+      .set({ status: "running" })
+      .where(eq(schema.flowRuns.id, runId!));
+    await advanceRun(ctx, runId!);
+
+    expect(await countNotes()).toBe(1);
+  });
+
   it("flows and runs are isolated per tenant", async () => {
     const { listFlows } = await import("./flows");
     const tag = await createTag(ctx, { name: `iso-${newId()}` });

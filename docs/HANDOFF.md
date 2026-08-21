@@ -8,7 +8,14 @@ ownership. Two parts: **what you do** (deploy + verify + dogfood) and
 
 ## Part 1 — What to do yourself
 
-### 1.1 Deploy and migrate (do this first; everything else depends on it)
+> **Order matters more than it looks.** §1.3's `verify-restore` belongs
+> *before* §1.1's migration run, not after. §1.1 applies nine migrations
+> (`0010`→`0018`) to a live database, and the only thing standing between a
+> migration that fails halfway and a lost tenant is a backup nobody has ever
+> restored. Restoring one takes twenty minutes; discovering it doesn't
+> restore, after the schema is half-migrated, takes the whole product.
+
+### 1.1 Deploy and migrate (do this once the backup is proven)
 
 The live app is behind `main` by several merged PRs, and two of them add
 tables. Migrations run from **your machine, not Hostinger SSH** (docs/DEPLOY.md
@@ -64,7 +71,8 @@ delete — it has no history so it will let you).
 
 ### 1.3 The two operator scripts that have never been run
 
-Both exist and are unrun; both gate putting real client leads in.
+Both exist and are unrun; both gate putting real client leads in. **Run the
+backup one first, before §1.1** — see the note at the top of Part 1.
 
 **Backup restore** (docs/BACKUPS.md §2):
 ```bash
@@ -174,17 +182,89 @@ behaviour change isn't a surprise during the dogfooding day.
 
 ---
 
-## Part 2 — Prompt for a fresh Claude Code window tomorrow
+## Part 2 — Prompts for tomorrow
 
-**This prompt has been run and its work is merged** (PLAN.md §10 1V — the
-money path was clean; the window and the engine each had one real bug). It
-is kept below as the record of what was asked for. With it done, there is no
-unblocked code work left in the repo: everything else is either an operator
-task in Part 1, or gated on someone else — 1N on Meta Tech Provider approval,
-1P's API half on Google's review, the R2 cutover on opening the account.
-**The dogfooding day (§1.6) is now the next thing that produces new work.**
+The 1V bug hunt this section used to schedule has been run and merged, and
+with it there is **no unblocked code work left in the repo**. Everything
+still open is either an operator task in Part 1 or gated on someone else:
+1N on Meta Tech Provider approval, 1P's API half on Google's review, the R2
+cutover on opening the account. So tomorrow is not a build session. It is
+the deploy and the dogfooding day, with Claude Code alongside to fix what
+the day surfaces.
 
-The original prompt, for the record:
+Three prompts below, for the three shapes tomorrow can take. Use one.
+
+### 2A — The dogfooding day (the one to use if the deploy went fine)
+
+Paste this in the morning and leave the window open all day. Bring it every
+friction point as you hit it, in whatever words you'd use to complain about
+it. That is the session's input.
+
+> VenderCRM (antonmarklundcom/vendercrm), `main` at the 1V merge. I am
+> running the §10 1R dogfooding day today: real leads from dentista,
+> tasacion and pozo into the live app, WhatsApp follow-up in the inbox, and
+> a nota de venta issued and paid — without opening a terminal or another
+> tab. Read PLAN.md §10 1R (the exit criterion), §10 1S/1T/1U/1V for the
+> right size of task, and §13 for the conventions.
+>
+> Your job today is not to build a phase. It is to sit next to a live run:
+> I will paste friction as I hit it, and for each one decide which it is,
+> out loud, before touching anything —
+>
+> - **a bug** → smallest fix that closes it, a regression test beside the
+>   module, one PR, merged when CI is green;
+> - **a missing affordance** → say what it would cost and what it displaces,
+>   and wait for me to say go;
+> - **working as designed** → say so plainly and tell me why, rather than
+>   coding around my complaint.
+>
+> Keep a running list of everything I report, in the order I report it, and
+> at the end of the day write it into PLAN.md as the next phase's spec —
+> ordered by what actually blocked the day, not by size, the way §10 1R is
+> ordered. That list is the real output; the fixes are a side effect.
+>
+> Conventions: services take `TenantContext` first and reach the DB only
+> through `tenantDb`; zod in every server action; destructive actions are
+> `requireTenantAdmin()` + `writeAuditLog`; every user-facing string goes
+> through next-intl in `messages/es|en|sv.json`; tests live beside the
+> module. No MySQL in the container, so DB-backed suites only run in CI —
+> run `npm run lint`, `npm run typecheck`, `npm test`, `npm run build`
+> locally and say plainly which suites could not run.
+
+### 2B — The deploy went wrong
+
+> VenderCRM (antonmarklundcom/vendercrm). I tried the §1.1 deploy and it
+> failed. Here is what I ran and what came back: <paste>. Read
+> docs/DEPLOY.md and PLAN.md §2.1 first — the Hostinger constraints there
+> are the reason the procedure looks the way it does, and the failure is
+> more likely to be one of those than something new. Diagnose before
+> changing anything, and tell me whether the fix belongs in the app, in the
+> hPanel config, or in the procedure doc.
+
+### 2C — A Fable review gate, if you want one before letting real leads in
+
+Worth one short session. §13 exists because Fable read the whole repo once;
+every wave it produced has now merged, and nothing has re-read the result.
+
+> VenderCRM (antonmarklundcom/vendercrm), `main` at the 1V merge. You wrote
+> PLAN.md §13 after a full-repo review; every batch in it (H1–H9) has since
+> merged, plus §10 1R–1V. Re-read the repo and answer three things:
+>
+> 1. **What did §13 miss?** Not what it deferred on purpose (§13.1 lists
+>    that) — what a reader looking at the whole thing fresh would now flag.
+> 2. **What did the batches break or half-finish?** Nine waves of change
+>    landed against a spec written before any of them; say where the code
+>    and PLAN.md have drifted apart.
+> 3. **What is the riskiest hour in Part 1 of docs/HANDOFF.md**, and is the
+>    procedure written for it good enough? Specifically: nine migrations
+>    (`0010`→`0018`) applied to a live database whose backups have never
+>    been restore-tested, with no rollback step written down.
+>
+> Output the same shape §13 has: numbered batches, one PR each, file-
+> disjoint within a wave, with a model tier and exit criteria per batch. No
+> code this session.
+
+### The original 1V prompt, for the record
 
 > VenderCRM (antonmarklundcom/vendercrm), continuing after PRs #51 and #52
 > merged. #51 was the `x-forwarded-for` fix — one `clientIp()` helper in

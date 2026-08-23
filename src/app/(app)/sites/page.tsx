@@ -7,7 +7,7 @@ import { listSites } from "@/modules/sites/sites";
 import { listApiKeys, MAX_ACTIVE_KEYS_PER_SITE } from "@/modules/sites/keys";
 import { siteSettings, siteTurnstileSiteKey } from "@/modules/sites/settings";
 import { listHookCaptures, captureLeafPaths, siteHookMapping } from "@/modules/sites/hooks";
-import { listSiteHealth, siteHealthStatus } from "@/modules/sites/health";
+import { ingestReasonKey, listSiteHealth, siteHealthStatus } from "@/modules/sites/health";
 import { listPipelines, listStagesForPipeline } from "@/modules/crm/pipelines";
 import { listAccountsForTenant } from "@/modules/whatsapp/accounts";
 import { getLeadStats } from "@/modules/leads/stats";
@@ -19,11 +19,8 @@ import { SiteGuide, type GuideLabels } from "./SiteGuide";
 import { NewSiteForm, SiteKeysPanel, type ApiKeyRow, type KeyLabels } from "./SiteKeyForms";
 import { SiteTurnstileForm } from "./SiteTurnstileForm";
 import { SiteHookForm, type HookPanelProps } from "./SiteHookForm";
-import {
-  SiteHookGuide,
-  type HookGuideLabels,
-  type HookGuidePlatform,
-} from "./SiteHookGuide";
+import { SiteHookGuide, type HookGuideLabels } from "./SiteHookGuide";
+import { hookGuidePlatforms } from "./hook-guide-labels";
 import { toggleSiteActiveAction, updateSiteRoutingAction } from "./actions";
 import { Select } from "@/components/ui/form-fields";
 
@@ -48,7 +45,7 @@ async function SiteHealthBadge({
         ●{" "}
         {t("failing", {
           status: health.lastErrorStatus ?? 0,
-          reason: t(`reasons.${health.lastErrorReason ?? "unknown"}` as "reasons.unknown"),
+          reason: t(`reasons.${ingestReasonKey(health.lastErrorReason)}` as "reasons.unknown"),
           when: formatDateTime(health.lastErrorAt, locale),
         })}
       </p>
@@ -144,7 +141,11 @@ export default async function SitesPage() {
     // (see src/i18n/messages.test.ts), so it has to be read whole with
     // t.raw(). Addressing it as `platforms.elementor.label` resolves nothing
     // and left the page rendering key paths with undefined steps.
-    platforms: th.raw("platforms") as HookGuidePlatform[],
+    //
+    // Validated rather than cast: t.raw() returns the JSON unchecked, and a
+    // cast that turns out to be wrong reaches the client component as a
+    // string it will call .map() on. See hook-guide-labels.ts.
+    platforms: hookGuidePlatforms(th.raw("platforms")),
   };
 
   const leadsBySite = new Map(stats.bySite.map((bucket) => [bucket.key, bucket.count]));

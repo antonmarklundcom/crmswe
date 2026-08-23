@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { classifyIngestError, siteHealthStatus, type SiteHealthRow } from "./health";
+import {
+  classifyIngestError,
+  ingestReasonKey,
+  siteHealthStatus,
+  type SiteHealthRow,
+} from "./health";
 
 // The two pure decisions per-site health makes (PLAN.md §5.2): what a failure
 // is called, and whether a site reads as failing. Both matter more than they
@@ -93,5 +98,43 @@ describe("siteHealthStatus", () => {
         health({ lastOutcome: "ok", lastSuccessAt: sameSecond, lastErrorAt: sameSecond }),
       ),
     ).toBe("ok");
+  });
+});
+
+// `last_error_reason` is a varchar, so the UI can be handed a code this build
+// has no translation for — by an older row, a hand-edited fix, or a code a
+// later build adds. next-intl answers a missing key with the key path, which
+// is how the status column ended up able to read
+// "error 422 (app.sites.health.reasons.payload-too-large)" to an operator.
+describe("ingestReasonKey", () => {
+  it("passes known reasons through untouched", () => {
+    expect(ingestReasonKey("phone-missing")).toBe("phone-missing");
+    expect(ingestReasonKey("turnstile-failed")).toBe("turnstile-failed");
+    expect(ingestReasonKey("unknown")).toBe("unknown");
+  });
+
+  it("degrades anything it does not recognise to `unknown`", () => {
+    expect(ingestReasonKey("payload-too-large")).toBe("unknown");
+    expect(ingestReasonKey("")).toBe("unknown");
+    expect(ingestReasonKey(null)).toBe("unknown");
+    expect(ingestReasonKey(undefined)).toBe("unknown");
+  });
+
+  it("covers every reason classifyIngestError can produce", () => {
+    const produced = [
+      classifyIngestError(429, ""),
+      classifyIngestError(401, ""),
+      classifyIngestError(422, "phone required"),
+      classifyIngestError(422, "bad body"),
+      classifyIngestError(403, "Turnstile failed"),
+      classifyIngestError(403, "site is inactive"),
+      classifyIngestError(403, "tenant is read-only"),
+      classifyIngestError(403, ""),
+      classifyIngestError(500, ""),
+    ];
+
+    for (const reason of produced) {
+      expect(ingestReasonKey(reason)).toBe(reason);
+    }
   });
 });

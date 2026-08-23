@@ -32,6 +32,34 @@ export type IngestErrorReason =
   | "phone-missing"
   | "unknown";
 
+const REASONS = [
+  "invalid-key",
+  "site-inactive",
+  "tenant-unavailable",
+  "tenant-read-only",
+  "rate-limited",
+  "turnstile-failed",
+  "invalid-body",
+  "phone-missing",
+  "unknown",
+] as const satisfies readonly IngestErrorReason[];
+
+/**
+ * The reason code the UI is allowed to look a translation up by.
+ *
+ * `last_error_reason` is a `varchar(200)`, not an enum: a row written by an
+ * older build, a hand-edited fix or a future code this build doesn't know
+ * yet all land in it. next-intl answers a missing key with the key path
+ * itself, so without this the status column reads
+ * "error 422 (app.sites.health.reasons.payload-too-large)" to the operator.
+ * Anything unrecognised degrades to `unknown`, which every locale defines.
+ */
+export function ingestReasonKey(reason: string | null | undefined): IngestErrorReason {
+  return (REASONS as readonly string[]).includes(reason ?? "")
+    ? (reason as IngestErrorReason)
+    : "unknown";
+}
+
 /**
  * Maps an ingest failure onto a reason code. Deliberately lossy: the
  * underlying message can carry zod field paths and Cloudflare error strings,

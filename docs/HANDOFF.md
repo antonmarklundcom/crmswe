@@ -25,8 +25,14 @@ tables. Migrations run from **your machine, not Hostinger SSH** (docs/DEPLOY.md
 git pull origin main
 npm ci
 # DATABASE_URL pointed at the EXTERNAL srv####.hstgr.io host, not localhost
-npm run migrate
+npm run db:migrate
 ```
+
+> **On Windows, run these in PowerShell** from the repo folder. `db:migrate`
+> reads `.env` on its own (`drizzle.config.ts` loads dotenv), so put the
+> external `DATABASE_URL` in a local `.env` rather than exporting it — the
+> `VAR=value command` prefix form below is bash syntax and does nothing in
+> PowerShell.
 
 Expected to apply: `0010_add_ai_replies`, `0011_add_nonfiscal_documents`, and
 everything after them through `0018_add_deal_close_reason`.
@@ -79,6 +85,14 @@ backup one first, before §1.1** — see the note at the top of Part 1.
 # after restoring a real hPanel dump into a throwaway database
 RESTORE_DATABASE_URL=mysql://... npm run verify-restore
 ```
+
+PowerShell — set the variable first, since the one-line prefix form is bash
+only, and `verify-restore` does not read `.env`:
+
+```powershell
+$env:RESTORE_DATABASE_URL = "mysql://user:pass@srv####.hstgr.io:3306/vendercrm_restore_test"
+npm run verify-restore
+```
 Exits non-zero with a named report if any table is missing, if
 tenants/users/contacts/deals are empty, or if the newest rows are too old
 (i.e. a stale file with a fresh timestamp).
@@ -86,6 +100,15 @@ tenants/users/contacts/deals are empty, or if the newest rows are too old
 **Storage smoke test:**
 ```bash
 SMOKE_STORAGE_BASE_URL=https://<app-url> npm run smoke-storage
+```
+
+PowerShell, same shape — and this one also needs the app's own env
+(`DATABASE_URL`, `APP_ENCRYPTION_KEY`, `STORAGE_*`), which `tsx` will not read
+from `.env` by itself:
+
+```powershell
+$env:SMOKE_STORAGE_BASE_URL = "https://<app-url>"
+npx tsx --env-file=.env scripts/smoke-storage.ts
 ```
 Runs put → read-back → sign → fetch the signed URL → delete → confirm gone.
 Run it once on `local` today. Run it again the day you cut `STORAGE_DRIVER=s3`

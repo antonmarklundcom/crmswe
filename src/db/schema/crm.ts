@@ -190,6 +190,7 @@ export const activities = mysqlTable(
         "form_submission",
         "quote_sent",
         "booking",
+        "chat",
         "system",
       ],
     }).notNull(),

@@ -92,7 +92,8 @@
       },
       "calendar": "Agenda",
       "reports": "Informes",
-      "booking": "Reservas"
+      "booking": "Reservas",
+      "chat": "Chat web"
     },
     "dashboard": {
       "title": "Panel de {tenant}",
@@ -1291,6 +1292,54 @@
         "invalidTime": "El horario tiene que ser como 08:00.",
         "invalidRange": "La hora de fin tiene que ser después de la de inicio."
       }
+    },
+    "chat": {
+      "title": "Chat del sitio",
+      "intro": "Las conversaciones del widget de tu sitio web. Un visitante todavía no es un contacto: cuando deja su teléfono, se convierte en uno y entra al pipeline.",
+      "adminOnly": "Solo un administrador puede configurar el widget.",
+      "empty": "Todavía no hay conversaciones.",
+      "settingsTitle": "Widget por sitio",
+      "settingsIntro": "Un widget por sitio: cada cliente tiene su marca, su saludo y sus instrucciones para la IA.",
+      "noSites": "Primero creá un sitio en Sitios. El widget se configura por sitio.",
+      "createWidget": "Crear el widget",
+      "widgetName": "Nombre que ve el visitante",
+      "greeting": "Saludo",
+      "color": "Color",
+      "systemPrompt": "Instrucciones para la IA",
+      "systemPromptHelp": "Se agregan a las reglas de seguridad que ya trae el sistema; nunca las reemplazan.",
+      "neverPromise": "Nunca prometas",
+      "mode": "Modo",
+      "modeOff": "Apagado",
+      "modeDraft": "Borrador (un asesor aprueba)",
+      "modeSend": "Automático",
+      "modeCeiling": "Si la IA de la empresa está en borrador, el widget no puede enviar solo. Se cambia en Configuración.",
+      "askForPhone": "Pedir teléfono en el chat",
+      "captureAfter": "Pedirlo después de N mensajes",
+      "createDeal": "Abrir una oportunidad al capturar",
+      "allowedOrigins": "Dominios permitidos",
+      "allowedOriginsHelp": "Uno por línea. Vacío significa cualquier dominio. No es una contraseña: sirve para evitar copias por descuido, no ataques.",
+      "maxPerConversation": "Máximo de respuestas de IA por conversación por día",
+      "capsShared": "El tope diario de la empresa se comparte con WhatsApp: es un solo presupuesto.",
+      "save": "Guardar",
+      "embedTitle": "Código para pegar en el sitio",
+      "embedHelp": "Pegalo antes de </body> en todas las páginas. La clave es pública, como la de un captcha.",
+      "rotateKey": "Cambiar la clave",
+      "rotateHelp": "El código viejo deja de funcionar hasta que peguen el nuevo.",
+      "conversationTitle": "Conversación",
+      "visitor": "Visitante",
+      "unknownVisitor": "Visitante sin identificar",
+      "reply": "Responder",
+      "approveDraft": "Aprobar y enviar",
+      "discardDraft": "Descartar",
+      "pendingDraft": "Borrador de la IA, esperando aprobación",
+      "silenceAi": "Silenciar la IA en esta conversación",
+      "resumeAi": "Reactivar la IA",
+      "close": "Cerrar la conversación",
+      "errors": {
+        "nameRequired": "Poné un nombre.",
+        "siteRequired": "Elegí un sitio.",
+        "exists": "Ese sitio ya tiene un widget."
+      }
     }
   },
   "superadmin": {
@@ -2162,6 +2211,22 @@
       "locationPhone": "Por teléfono",
       "locationVideo": "Por videollamada",
       "locationWhatsapp": "Por WhatsApp"
+    },
+    "chat": {
+      "title": "Chat",
+      "placeholder": "Escribí tu mensaje…",
+      "send": "Enviar",
+      "close": "Cerrar",
+      "greetingFallback": "¡Hola! ¿En qué te podemos ayudar?",
+      "pendingHuman": "Un asesor te responde enseguida.",
+      "askContactTitle": "¿Cómo te contactamos?",
+      "name": "Nombre",
+      "phone": "Teléfono (WhatsApp)",
+      "sendContact": "Enviar",
+      "captured": "¡Gracias! Te escribimos en un rato.",
+      "error": "No pudimos enviar tu mensaje. Probá de nuevo.",
+      "rateLimited": "Estás escribiendo muy rápido. Esperá un momento.",
+      "offline": "Ahora no hay nadie en línea, pero dejanos tus datos y te contactamos."
     }
   }
 }

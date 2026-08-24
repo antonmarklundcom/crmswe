@@ -41,6 +41,7 @@ export const flows = mysqlTable(
         "booking_created",
         "booking_cancelled",
         "booking_no_show",
+        "chat_lead_captured",
       ],
     }).notNull(),
     triggerConfig: json("trigger_config").notNull().default({}),

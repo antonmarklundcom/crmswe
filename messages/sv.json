@@ -92,7 +92,8 @@
       },
       "calendar": "Kalender",
       "reports": "Rapporter",
-      "booking": "Bokningar"
+      "booking": "Bokningar",
+      "chat": "Webbchatt"
     },
     "dashboard": {
       "title": "Översikt för {tenant}",
@@ -1291,6 +1292,54 @@
         "invalidTime": "Tider skrivs som 08:00.",
         "invalidRange": "Sluttiden måste vara efter starttiden."
       }
+    },
+    "chat": {
+      "title": "Webbchatt",
+      "intro": "Konversationer från webbplatsens widget. En besökare är inte en kontakt än: när de lämnar ett telefonnummer blir de en och hamnar i pipelinen.",
+      "adminOnly": "Bara en administratör kan ställa in widgeten.",
+      "empty": "Inga konversationer än.",
+      "settingsTitle": "Widget per webbplats",
+      "settingsIntro": "En widget per webbplats: varje kund får egen profil, egen hälsning och egna AI-instruktioner.",
+      "noSites": "Skapa en webbplats under Sajter först. Widgeten ställs in per webbplats.",
+      "createWidget": "Skapa widgeten",
+      "widgetName": "Namn som besökaren ser",
+      "greeting": "Hälsning",
+      "color": "Färg",
+      "systemPrompt": "AI-instruktioner",
+      "systemPromptHelp": "Läggs till säkerhetsreglerna som systemet redan har; de ersätter dem aldrig.",
+      "neverPromise": "Lova aldrig",
+      "mode": "Läge",
+      "modeOff": "Av",
+      "modeDraft": "Utkast (en säljare godkänner)",
+      "modeSend": "Automatiskt",
+      "modeCeiling": "Så länge företagets AI står på utkast kan widgeten inte skicka själv. Ändras under Inställningar.",
+      "askForPhone": "Fråga efter telefonnummer i chatten",
+      "captureAfter": "Fråga efter N meddelanden",
+      "createDeal": "Öppna en affär vid registrering",
+      "allowedOrigins": "Tillåtna domäner",
+      "allowedOriginsHelp": "En per rad. Tomt betyder vilken domän som helst. Det är inget lösenord: det stoppar slarv, inte attacker.",
+      "maxPerConversation": "Max antal AI-svar per konversation och dag",
+      "capsShared": "Företagets dagliga tak delas med WhatsApp: det är en budget.",
+      "save": "Spara",
+      "embedTitle": "Kod att klistra in på webbplatsen",
+      "embedHelp": "Klistra in före </body> på alla sidor. Nyckeln är publik, precis som en captchas.",
+      "rotateKey": "Byt nyckel",
+      "rotateHelp": "Den gamla koden slutar fungera tills de klistrat in den nya.",
+      "conversationTitle": "Konversation",
+      "visitor": "Besökare",
+      "unknownVisitor": "Oidentifierad besökare",
+      "reply": "Svara",
+      "approveDraft": "Godkänn och skicka",
+      "discardDraft": "Kasta",
+      "pendingDraft": "AI-utkast, väntar på godkännande",
+      "silenceAi": "Tysta AI:n i den här konversationen",
+      "resumeAi": "Slå på AI:n igen",
+      "close": "Stäng konversationen",
+      "errors": {
+        "nameRequired": "Ange ett namn.",
+        "siteRequired": "Välj en webbplats.",
+        "exists": "Webbplatsen har redan en widget."
+      }
     }
   },
   "superadmin": {
@@ -2162,6 +2211,22 @@
       "locationPhone": "Per telefon",
       "locationVideo": "Videosamtal",
       "locationWhatsapp": "På WhatsApp"
+    },
+    "chat": {
+      "title": "Chatt",
+      "placeholder": "Skriv ditt meddelande…",
+      "send": "Skicka",
+      "close": "Stäng",
+      "greetingFallback": "Hej! Hur kan vi hjälpa till?",
+      "pendingHuman": "Någon svarar strax.",
+      "askContactTitle": "Hur når vi dig?",
+      "name": "Namn",
+      "phone": "Telefon (WhatsApp)",
+      "sendContact": "Skicka",
+      "captured": "Tack! Vi hör av oss snart.",
+      "error": "Vi kunde inte skicka ditt meddelande. Försök igen.",
+      "rateLimited": "Du skriver väldigt snabbt. Vänta ett ögonblick.",
+      "offline": "Ingen är online just nu, men lämna dina uppgifter så återkommer vi."
     }
   }
 }

@@ -14,8 +14,23 @@ export const aiReplies = mysqlTable(
   {
     id: char("id", { length: 26 }).primaryKey(),
     tenantId: char("tenant_id", { length: 26 }).notNull(),
-    conversationId: char("conversation_id", { length: 26 }).notNull(),
-    contactId: char("contact_id", { length: 26 }).notNull(),
+    /**
+     * Which surface the reply belongs to (docs/SPEC-CHAT-WIDGET.md §1.3).
+     * Generalised rather than given a second table so the **per-tenant daily
+     * spend cap stays one number**: cost is per-token and per-tenant, and two
+     * independent counters would silently double a tenant's ceiling the day
+     * the widget shipped. Defaulted to 'whatsapp', so every row written
+     * before this column existed keeps its meaning.
+     */
+    channel: varchar("channel", { length: 10, enum: ["whatsapp", "chat"] })
+      .notNull()
+      .default("whatsapp"),
+    /** WhatsApp conversation. Null on the chat channel. */
+    conversationId: char("conversation_id", { length: 26 }),
+    /** Website chat conversation. Null on the whatsapp channel. */
+    chatConversationId: char("chat_conversation_id", { length: 26 }),
+    /** Null until a website visitor gives a phone and becomes a contact. */
+    contactId: char("contact_id", { length: 26 }),
     /** Set once the draft is approved/sent — the `messages` row it produced. */
     messageId: char("message_id", { length: 26 }),
     /** Which automation run and node produced it, when it came from a flow. */
@@ -64,5 +79,11 @@ export const aiReplies = mysqlTable(
     // The monthly token total in settings, and the per-tenant daily cap.
     index("ai_replies_tenant_created_idx").on(table.tenantId, table.createdAt),
     index("ai_replies_tenant_status_idx").on(table.tenantId, table.status),
+    // The chat channel's per-conversation daily cap, and its inbox drafts.
+    index("ai_replies_tenant_chat_conversation_idx").on(
+      table.tenantId,
+      table.chatConversationId,
+      table.createdAt,
+    ),
   ],
 );

@@ -92,7 +92,8 @@
       },
       "calendar": "Calendar",
       "reports": "Reports",
-      "booking": "Bookings"
+      "booking": "Bookings",
+      "chat": "Web chat"
     },
     "dashboard": {
       "title": "{tenant} dashboard",
@@ -1291,6 +1292,54 @@
         "invalidTime": "Times look like 08:00.",
         "invalidRange": "The end time has to be after the start time."
       }
+    },
+    "chat": {
+      "title": "Website chat",
+      "intro": "Conversations from your website widget. A visitor is not a contact yet: when they leave a phone number they become one and enter the pipeline.",
+      "adminOnly": "Only an admin can configure the widget.",
+      "empty": "No conversations yet.",
+      "settingsTitle": "Widget per site",
+      "settingsIntro": "One widget per site: each client gets their own branding, greeting and AI instructions.",
+      "noSites": "Create a site under Sites first. The widget is configured per site.",
+      "createWidget": "Create the widget",
+      "widgetName": "Name the visitor sees",
+      "greeting": "Greeting",
+      "color": "Colour",
+      "systemPrompt": "AI instructions",
+      "systemPromptHelp": "Added to the safety rules the system already ships; they never replace them.",
+      "neverPromise": "Never promise",
+      "mode": "Mode",
+      "modeOff": "Off",
+      "modeDraft": "Draft (a rep approves)",
+      "modeSend": "Autonomous",
+      "modeCeiling": "While the business's AI is on draft, the widget cannot send on its own. Change it under Settings.",
+      "askForPhone": "Ask for a phone number in chat",
+      "captureAfter": "Ask after N messages",
+      "createDeal": "Open a deal on capture",
+      "allowedOrigins": "Allowed domains",
+      "allowedOriginsHelp": "One per line. Empty means any domain. This is not a password: it stops careless copies, not attacks.",
+      "maxPerConversation": "Maximum AI replies per conversation per day",
+      "capsShared": "The business's daily ceiling is shared with WhatsApp: it is one budget.",
+      "save": "Save",
+      "embedTitle": "Code to paste on the site",
+      "embedHelp": "Paste it before </body> on every page. The key is public, like a captcha's.",
+      "rotateKey": "Change the key",
+      "rotateHelp": "The old snippet stops working until they paste the new one.",
+      "conversationTitle": "Conversation",
+      "visitor": "Visitor",
+      "unknownVisitor": "Unidentified visitor",
+      "reply": "Reply",
+      "approveDraft": "Approve and send",
+      "discardDraft": "Discard",
+      "pendingDraft": "AI draft, waiting for approval",
+      "silenceAi": "Silence the AI in this conversation",
+      "resumeAi": "Turn the AI back on",
+      "close": "Close the conversation",
+      "errors": {
+        "nameRequired": "Enter a name.",
+        "siteRequired": "Pick a site.",
+        "exists": "That site already has a widget."
+      }
     }
   },
   "superadmin": {
@@ -2162,6 +2211,22 @@
       "locationPhone": "By phone",
       "locationVideo": "Video call",
       "locationWhatsapp": "On WhatsApp"
+    },
+    "chat": {
+      "title": "Chat",
+      "placeholder": "Type your message…",
+      "send": "Send",
+      "close": "Close",
+      "greetingFallback": "Hi! How can we help?",
+      "pendingHuman": "Someone will reply in a moment.",
+      "askContactTitle": "How can we reach you?",
+      "name": "Name",
+      "phone": "Phone (WhatsApp)",
+      "sendContact": "Send",
+      "captured": "Thanks! We will be in touch shortly.",
+      "error": "We could not send your message. Please try again.",
+      "rateLimited": "You are typing very fast. Give it a moment.",
+      "offline": "Nobody is online right now, but leave your details and we will get back to you."
     }
   }
 }

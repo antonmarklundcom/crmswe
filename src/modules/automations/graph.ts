@@ -16,6 +16,10 @@ export const TRIGGER_TYPES = [
   "booking_created",
   "booking_cancelled",
   "booking_no_show",
+  // Website chat (docs/SPEC-CHAT-WIDGET.md §6). Only the capture, because
+  // that is the moment a contact exists for a flow to act on — a trigger on
+  // every visitor message would be a bill, not a feature.
+  "chat_lead_captured",
 ] as const;
 export type TriggerType = (typeof TRIGGER_TYPES)[number];
 

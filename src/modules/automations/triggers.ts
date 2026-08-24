@@ -3,6 +3,7 @@ import { buildSystemTenantContext, type TenantContext } from "@/modules/tenancy/
 import { crmEvents } from "@/modules/crm/events";
 import { leadEvents } from "@/modules/leads/events";
 import { bookingEvents } from "@/modules/booking/events";
+import { chatEvents } from "@/modules/chatwidget/events";
 import { whatsappEvents } from "@/modules/whatsapp/events";
 import { listActiveFlowsForTrigger } from "./flows";
 import { startRun } from "./engine";
@@ -57,6 +58,7 @@ function matchesTriggerConfig(
   if (config.stageId && config.stageId !== payload.data.toStageId) return false;
   if (config.tagId && config.tagId !== payload.data.tagId) return false;
   if (config.bookingTypeId && config.bookingTypeId !== payload.data.bookingTypeId) return false;
+  if (config.widgetId && config.widgetId !== payload.data.widgetId) return false;
 
   if (config.keyword) {
     const body = String(payload.data.body ?? "").toLowerCase();
@@ -146,6 +148,15 @@ export function registerAutomationTriggers() {
       triggerType: "booking_no_show",
       contactId,
       data: { bookingId, bookingTypeId },
+    });
+  });
+
+  chatEvents.on("chat.captured", async ({ tenantId, contactId, widgetId, siteId }) => {
+    await fireTrigger({
+      tenantId,
+      triggerType: "chat_lead_captured",
+      contactId,
+      data: { widgetId, siteId },
     });
   });
 

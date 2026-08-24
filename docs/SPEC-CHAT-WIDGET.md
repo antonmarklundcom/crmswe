@@ -1,7 +1,8 @@
 # Spec — Embeddable AI chat widget (`modules/chatwidget/`)
 
-> **Status: draft, awaiting sign-off.** Not in PLAN.md yet. On approval this
-> folds into PLAN.md as `§10 1X`. Written against §1.2 (locked), §2.2, §3.3,
+> **Status: signed off and built.** Folds into PLAN.md as `§10 1X`.
+> Differences between this spec and what shipped are recorded in
+> **§9 As built** at the end. Written against §1.2 (locked), §2.2, §3.3,
 > §5.1 (public surface + "the only client-side code this project ships"),
 > §10 1O (the AI driver, its guardrails and its spend caps) and `docs/DEPLOY.md §5`.
 
@@ -304,3 +305,50 @@ RAG over tenant documents · proactive/exit-intent triggers · chat in
   answering 404/403 and spending no tokens.
 - A regression assert that no `Access-Control-Allow-Origin` header is emitted
   by any route under `api/v1/`.
+
+---
+
+## 9. As built (differences from the spec above)
+
+- **`ai_replies` was generalised exactly as §1.3 proposed**: `channel`
+  (default `'whatsapp'`), `chat_conversation_id`, and `conversation_id` /
+  `contact_id` relaxed to nullable. `countRepliesTodayForTenant` needed no
+  change at all — it already counted every row a tenant has, which is the
+  whole argument for one table made concrete.
+- **One consequence the spec did not name**: `deliverReply` (the WhatsApp
+  approve-and-send path) now has to refuse a chat row explicitly, since a
+  chat reply has no conversation to send into. It answers "not a WhatsApp
+  reply" rather than reaching `sendText` with a null. There is a test for it.
+- **Chat drafts stay out of the WhatsApp inbox for free**: `listPendingDrafts`
+  filters on `conversation_id`, which a chat row does not have. The chat side
+  gets its own `listPendingChatDrafts`. One shared table, two inboxes, no
+  filtering the caller has to remember.
+- **The origin allowlist rejects lookalike hosts.** A naïve suffix match would
+  accept `evil-example.com` for `example.com`; a bare host now matches only
+  itself, and a leading dot (`.example.com`) is the explicit
+  "and its subdomains" form. Still documented as not an auth boundary.
+- **The visitor id is minted in the iframe's own `localStorage`**, not by the
+  server. It is a conversation handle rather than a credential — it grants
+  nothing the public widget key doesn't — and a blocked storage jar degrades
+  to a fresh thread per load instead of no chat at all.
+- **`w.js` forwards the host page's URL, referrer and `vc_attr` cookie** by
+  `postMessage` and query string. The spec noted the cookie is unreadable
+  from our iframe; this is the mechanism. It is also why the iframe's
+  `message` listener checks `event.origin` — an arbitrary page must not be
+  able to drive someone's chat.
+- **A tripped cap, a draft, a provider error and a handoff all look identical
+  to the visitor**: "a person is coming". Implemented as one `pendingHuman`
+  flag rather than distinct statuses, so no future branch can leak the
+  tenant's billing state to their customer.
+- **`business_hours_mode` is checked before the driver is called**, not after,
+  so an out-of-hours message costs nothing.
+
+**Verified**: `widgets.test.ts` — 11 pure cases (origin matching including
+the lookalike and subdomain edges, the pinned WhatsApp-only guards, both caps,
+the draft ceiling in all four mode pairs). `chat.integration.test.ts` — 11
+cases against MySQL: all three modes; a WhatsApp reply spending the chat's
+tenant budget; the handoff keyword; capture creating a contact and one
+timeline entry even when repeated; the origin refusal and the unknown/inactive
+key both spending zero tokens; cross-tenant isolation; chat drafts absent from
+the WhatsApp inbox; and `deliverReply` refusing a chat row. Lint, typecheck,
+build and the full 620-test suite green.

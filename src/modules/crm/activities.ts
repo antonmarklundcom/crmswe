@@ -16,6 +16,8 @@ export type ActivityType =
   | "quote_sent"
   /** A public booking reserved, cancelled or marked no-show. */
   | "booking"
+  /** A website chat visitor left their details — the transcript, on the timeline. */
+  | "chat"
   | "system";
 
 export type CreateActivityInput = {

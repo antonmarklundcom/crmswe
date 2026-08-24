@@ -1,10 +1,10 @@
 # Spec — Booking system (`modules/booking/`)
 
-> **Status: draft, awaiting sign-off.** Not in PLAN.md yet. On approval this
-> folds into PLAN.md as `§10 1W`, in the same shape as `1O`/`1Q` (sketch, then
-> "as built"). Written against PLAN.md §1.2 (locked), §2.2 (module rule),
-> §3.3 (isolation), §5.1–5.2 (public-surface pattern) and the existing
-> `modules/calendar/`.
+> **Status: signed off and built.** Folds into PLAN.md as `§10 1W` in the same
+> shape as `1O`/`1Q`. Written against PLAN.md §1.2 (locked), §2.2 (module
+> rule), §3.3 (isolation), §5.1–5.2 (public-surface pattern) and the existing
+> `modules/calendar/`. Differences between this spec and what shipped are
+> recorded in **§10 As built** at the end.
 
 ---
 
@@ -325,3 +325,50 @@ appears there because it *is* a calendar event.
   reserve where exactly one wins with `409`; cancel frees the slot and deletes
   the event; reschedule chains; cross-tenant isolation on every service and on
   both public routes; token guessing gets 404.
+
+---
+
+## 10. As built (differences from the spec above)
+
+- **`activities.type` needed no migration.** The column is a `varchar(30)`
+  with a *drizzle-level* enum, not a MySQL `ENUM`, so widening it is a type
+  change only. §2's "one change to an existing table" was true about the
+  code and wrong about the database — better than expected, and worth
+  recording so nobody goes looking for the ALTER.
+- **`lead_submissions` gained `booking_type_id`**, a third entry path beside
+  `site_id` and `form_id`. Not in the spec, and the alternative — a bespoke
+  contact upsert inside `modules/booking` — was rejected for §5.1's own
+  reason: a booking arrives from a page with UTMs and a referrer, so it *is*
+  a lead, and it belongs in the one attribution table rather than a fourth
+  place every dashboard query would have to UNION. One additive nullable
+  column, no backfill.
+- **A booking fires `lead_received` as well as `booking_created`**, because it
+  goes through the shared ingest engine. This is deliberate and it is the
+  reason `matchesTriggerConfig` learned `bookingTypeId`: a flow that wants
+  only bookings narrows on it, while a flow that wants every inbound stranger
+  keeps working unchanged. A tenant who wires both without narrowing will get
+  two runs — stated here rather than discovered later.
+- **Reminders are limited by the 24h window, and it matters more than the
+  spec implied.** A visitor who booked on the website has usually never
+  messaged the business, so there is no open window and the reminder is
+  *skipped*, not sent. Reaching that person needs a Meta-approved template
+  (§6.4) with a review cycle attached, which is real work and is deliberately
+  not in this first cut. Today the reminder serves the case that already works
+  — a contact mid-conversation — and never fails a booking when it can't.
+- **The advance horizon counts from today in the tenant's timezone**, not from
+  the window the visitor asked for, so paging to next month cannot drag
+  `maxAdvanceDays` along with it. The first implementation did the latter; the
+  test for it is in `slots.test.ts`.
+- **`generateSlots` returns a resource list per start**, sorted, and
+  assignment picks from it at booking time. The spec said "collapse to
+  distinct start times"; the sort is the addition, and it is what makes
+  round-robin deterministic enough to unit test.
+- **Rate limits shipped as specced**, with one clarification: the recorded IP
+  and the limiter's bucket key are different values. An address the app cannot
+  determine is `undefined` in the column (NULL is the honest answer) and
+  `"unknown"` in the limiter (one shared bucket, never a free pass) — the
+  distinction `lib/http/client-ip` already draws.
+
+**Verified**: `slots.test.ts` — 21 pure cases, no database and no clock.
+`bookings.integration.test.ts` — 15 cases against MySQL covering the whole
+list in §9. Lint, typecheck, build and the full 620-test suite green.

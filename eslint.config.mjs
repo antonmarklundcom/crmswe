@@ -80,6 +80,12 @@ const eslintConfig = defineConfig([
       // are the only raw-db use here; slots, reservations and cancellations
       // all go through tenantDb once the tenant is known.
       "src/modules/booking/**/*.{ts,tsx}",
+      // Same rationale as booking: the public chat widget resolves a
+      // `widgetKey` from an embed snippet to its tenant before any
+      // TenantContext exists (docs/SPEC-CHAT-WIDGET.md §3). That one lookup
+      // is the only raw-db use here; conversations, messages and the AI
+      // spend caps all go through tenantDb once the tenant is known.
+      "src/modules/chatwidget/**/*.{ts,tsx}",
       // JUDGMENT CALL (flagged for Fable review, not explicit in PLAN.md
       // §3.3's exemption list): the Better Auth instance (src/lib/auth/server.ts)
       // is infra wiring handed the raw `db` client by the Drizzle adapter,

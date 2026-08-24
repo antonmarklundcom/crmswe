@@ -12,8 +12,15 @@ import { tenantDb } from "@/modules/tenancy/db";
 export type AiReplyRow = typeof aiReplies.$inferSelect;
 
 export type RecordReplyInput = {
-  conversationId: string;
-  contactId: string;
+  /** Which surface (docs/SPEC-CHAT-WIDGET.md §1.3). Absent means whatsapp,
+   * so every existing call site keeps its meaning. */
+  channel?: "whatsapp" | "chat";
+  /** WhatsApp conversation; null on the chat channel. */
+  conversationId?: string;
+  /** Website chat conversation; null on the whatsapp channel. */
+  chatConversationId?: string;
+  /** Null until a website visitor gives a phone and becomes a contact. */
+  contactId?: string;
   mode: "draft" | "send";
   status: "draft" | "sent" | "failed";
   prompt: string;
@@ -34,8 +41,10 @@ export async function recordReply(ctx: TenantContext, input: RecordReplyInput) {
     .insert(aiReplies)
     .values({
       id,
-      conversationId: input.conversationId,
-      contactId: input.contactId,
+      channel: input.channel ?? "whatsapp",
+      conversationId: input.conversationId ?? null,
+      chatConversationId: input.chatConversationId ?? null,
+      contactId: input.contactId ?? null,
       mode: input.mode,
       status: input.status,
       // The full prompt is the audit record; truncated only against the
@@ -98,6 +107,28 @@ export async function countRepliesTodayForConversation(
     aiReplies,
     and(
       eq(aiReplies.conversationId, conversationId),
+      gte(aiReplies.createdAt, startOfDay(now)),
+    ),
+  );
+  return rows.length;
+}
+
+/**
+ * Rows created today for one website chat conversation. The chat channel's
+ * half of the per-conversation cap; the per-*tenant* cap needs no channel
+ * variant at all, because countRepliesTodayForTenant already counts every
+ * row the tenant has — which is exactly why the channel lives on this table
+ * rather than in a second one (docs/SPEC-CHAT-WIDGET.md §1.3).
+ */
+export async function countRepliesTodayForChatConversation(
+  ctx: TenantContext,
+  chatConversationId: string,
+  now: Date = new Date(),
+): Promise<number> {
+  const rows = await tenantDb(ctx).select(
+    aiReplies,
+    and(
+      eq(aiReplies.chatConversationId, chatConversationId),
       gte(aiReplies.createdAt, startOfDay(now)),
     ),
   );

@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 
 import { Button } from "@/components/ui/button";
 import { Input, Select, Textarea } from "@/components/ui/form-fields";
+import { ContactPicker, type PickedContact } from "./ContactPicker";
 import type { CalendarField, CalendarFormState } from "./actions";
 
 // Lives here, not in actions.ts: a "use server" module may only export async
@@ -38,13 +39,14 @@ export type EventFormDefaults = {
 export function EventForm({
   action,
   defaults,
-  contacts,
+  contact,
   users,
   submitLabel,
 }: {
   action: (state: CalendarFormState, formData: FormData) => Promise<CalendarFormState>;
   defaults: EventFormDefaults;
-  contacts: { id: string; name: string }[];
+  /** The contact this event is already about, when editing one. */
+  contact?: PickedContact | null;
   users: { id: string; name: string }[];
   submitLabel: string;
 }) {
@@ -115,17 +117,10 @@ export function EventForm({
       </label>
 
       <div className="flex flex-wrap gap-3">
-        <label className="flex flex-col gap-1 text-sm">
+        <span className="flex flex-col gap-1 text-sm">
           {t("form.contact")}
-          <Select name="contactId" defaultValue={value("contactId")}>
-            <option value="">{t("form.noContact")}</option>
-            {contacts.map((contact) => (
-              <option key={contact.id} value={contact.id}>
-                {contact.name}
-              </option>
-            ))}
-          </Select>
-        </label>
+          <ContactPicker name="contactId" initial={contact} />
+        </span>
         <label className="flex flex-col gap-1 text-sm">
           {t("form.assignee")}
           <Select name="assignedUserId" defaultValue={value("assignedUserId")}>

@@ -14,6 +14,9 @@ import type { TenantContext } from "@/modules/tenancy/context";
 import { tenantDb } from "@/modules/tenancy/db";
 import type { ActivityType } from "@/modules/crm/activities";
 import { listOpenTasksDueBy } from "@/modules/crm/tasks";
+import { listCalendarEvents } from "@/modules/calendar/events";
+import { startOfDay, addDays, todayIn } from "@/modules/calendar/zoned-time";
+import { DEFAULT_TIMEZONE } from "@/lib/i18n/format";
 
 // Tenant dashboard read model (PLAN.md §10 1C "dashboard"): summary counters
 // plus the onboarding checklist state a brand-new tenant lands on.
@@ -73,6 +76,18 @@ export type DueTask = {
   contactName: string;
 };
 
+export type TodayAppointment = {
+  id: string;
+  title: string;
+  startsAt: Date;
+  endsAt: Date;
+  allDay: boolean;
+  location: string | null;
+  contactId: string | null;
+  contactName: string | null;
+  assignedUserId: string | null;
+};
+
 export type DashboardSummary = {
   stats: DashboardStats;
   checklist: OnboardingChecklist;
@@ -81,14 +96,23 @@ export type DashboardSummary = {
    * query (§10 1J #3), so the dashboard renders one list and lets the date
    * itself signal which is which. */
   dueTasks: DueTask[];
+  /** Everything on today's agenda, in the tenant's timezone — the other half
+   * of "what does today look like", which used to need a second screen. */
+  todayAppointments: TodayAppointment[];
   /** True until every checklist step is done — drives showing the guide. */
   onboardingPending: boolean;
 };
 
 export async function getDashboardSummary(
   ctx: TenantContext,
+  options: { timeZone?: string; now?: Date } = {},
 ): Promise<DashboardSummary> {
   const db = tenantDb(ctx);
+  // "Today" is the tenant's today (§2.3): a nine o'clock visit belongs to the
+  // day the business is living in, not the day the server happens to be in.
+  const timeZone = options.timeZone ?? DEFAULT_TIMEZONE;
+  const now = options.now ?? new Date();
+  const today = todayIn(timeZone, now);
 
   const [
     dealRows,
@@ -102,6 +126,7 @@ export async function getDashboardSummary(
     formRows,
     flowRows,
     dueTaskRows,
+    appointmentRows,
   ] = await Promise.all([
     db.select(deals),
     db.select(stages),
@@ -113,7 +138,8 @@ export async function getDashboardSummary(
     db.select(sites),
     db.select(forms),
     db.select(flows),
-    listOpenTasksDueBy(ctx),
+    listOpenTasksDueBy(ctx, now),
+    listCalendarEvents(ctx, startOfDay(today, timeZone), startOfDay(addDays(today, 1), timeZone)),
   ]);
 
   const closedStageIds = new Set(
@@ -168,6 +194,17 @@ export async function getDashboardSummary(
       dueAt: task.dueAt,
       contactId: task.contactId,
       contactName: contactNames.get(task.contactId) ?? task.contactId,
+    })),
+    todayAppointments: appointmentRows.map((event) => ({
+      id: event.id,
+      title: event.title,
+      startsAt: event.startsAt,
+      endsAt: event.endsAt,
+      allDay: event.allDay,
+      location: event.location,
+      contactId: event.contactId,
+      contactName: event.contactId ? (contactNames.get(event.contactId) ?? null) : null,
+      assignedUserId: event.assignedUserId,
     })),
     onboardingPending: Object.values(checklist).some((done) => !done),
   };

@@ -5,7 +5,6 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { requireTenantContext } from "@/modules/tenancy/context";
 import { getTenant } from "@/modules/tenancy/tenants";
 import { listTenantUsers } from "@/modules/tenancy/users";
-import { queryContacts } from "@/modules/crm/contact-list";
 import { listCalendarEntries } from "@/modules/calendar/agenda";
 import { bucketByDay, buildRange, isCalendarView, type CalendarView } from "@/modules/calendar/grid";
 import { isDayKey, startOfDay, todayIn, weekdayOf } from "@/modules/calendar/zoned-time";
@@ -52,13 +51,9 @@ export default async function CalendarPage({
 
   const assignedUserId = params.assignedUserId || undefined;
 
-  const [entries, users, contactPage] = await Promise.all([
+  const [entries, users] = await Promise.all([
     listCalendarEntries(ctx, range.from, range.to, { assignedUserId }),
     listTenantUsers(ctx),
-    // The booking form's contact picker. Alphabetical and capped: a tenant
-    // with thousands of contacts books against the ones they can find by
-    // name here, and against the rest from the contact record itself.
-    queryContacts(ctx, {}, { sort: "name", direction: "asc", perPage: 200 }),
   ]);
 
   const buckets = bucketByDay(entries, range.days, timeZone);
@@ -235,10 +230,6 @@ export default async function CalendarPage({
           <EventForm
             action={createCalendarEventAction}
             defaults={{ startDate: anchor, endDate: anchor }}
-            contacts={contactPage.rows.map((contact) => ({
-              id: contact.id,
-              name: contact.name,
-            }))}
             users={users.map((user) => ({ id: user.id, name: user.name }))}
             submitLabel={t("createAction")}
           />

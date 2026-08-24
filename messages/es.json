@@ -156,6 +156,11 @@
         "bySource": "Por origen (utm_source)",
         "byCampaign": "Por campaña (utm_campaign)",
         "empty": "Sin datos todavía"
+      },
+      "todayAgenda": {
+        "title": "Hoy en la agenda",
+        "viewAll": "Ver la agenda",
+        "allDay": "Todo el día"
       }
     },
     "contacts": {
@@ -407,7 +412,11 @@
         "assignee": "Responsable",
         "noAssignee": "Sin responsable",
         "description": "Notas",
-        "saved": "Cambios guardados"
+        "saved": "Cambios guardados",
+        "searchContact": "Buscar por nombre o teléfono",
+        "searching": "Buscando…",
+        "noMatches": "Ningún contacto coincide",
+        "clearContact": "Quitar el contacto"
       },
       "errors": {
         "titleRequired": "Poné un título",
@@ -1785,7 +1794,10 @@
       "title": "Hola {name}",
       "body": "Tenés {count} tarea(s) pendientes, {overdue} de ellas vencidas.",
       "overdue": "vencida",
-      "cta": "Abrir el CRM"
+      "cta": "Abrir el CRM",
+      "appointmentsSubject": "Tenés {count} cita(s) para hoy",
+      "appointmentsBody": "En tu agenda para las próximas 24 horas: {count} cita(s).",
+      "allDay": "Todo el día"
     }
   },
   "pdf": {

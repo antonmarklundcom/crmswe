@@ -156,6 +156,11 @@
         "bySource": "By source (utm_source)",
         "byCampaign": "By campaign (utm_campaign)",
         "empty": "No data yet"
+      },
+      "todayAgenda": {
+        "title": "Today's agenda",
+        "viewAll": "Open the calendar",
+        "allDay": "All day"
       }
     },
     "pipeline": {
@@ -223,7 +228,11 @@
         "assignee": "Assignee",
         "noAssignee": "Unassigned",
         "description": "Notes",
-        "saved": "Changes saved"
+        "saved": "Changes saved",
+        "searchContact": "Search by name or phone",
+        "searching": "Searching…",
+        "noMatches": "No contact matches",
+        "clearContact": "Remove the contact"
       },
       "errors": {
         "titleRequired": "Give it a title",
@@ -1785,7 +1794,10 @@
       "title": "Hi {name}",
       "body": "You have {count} open task(s), {overdue} of them overdue.",
       "overdue": "overdue",
-      "cta": "Open the CRM"
+      "cta": "Open the CRM",
+      "appointmentsSubject": "You have {count} appointment(s) today",
+      "appointmentsBody": "On your calendar for the next 24 hours: {count} appointment(s).",
+      "allDay": "All day"
     }
   },
   "pdf": {

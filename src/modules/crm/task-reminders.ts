@@ -3,24 +3,62 @@ import { listTenants } from "@/modules/tenancy/tenants";
 import { listUsersForTenant } from "@/modules/tenancy/users";
 import { getContact } from "@/modules/crm/contacts";
 import { listOpenTasksDueBy } from "@/modules/crm/tasks";
+import { listCalendarEvents, type CalendarEvent } from "@/modules/calendar/events";
 import { sendEmail } from "@/lib/email";
 import { taskRemindersEmail } from "@/lib/email/templates";
 import { env } from "@/lib/config/env";
 import { reportError } from "@/lib/observability";
 
-// Daily task reminders (PLAN.md §13 H6). listOpenTasksDueBy has existed
-// since the tasks work landed and nothing ever called it outside the
-// dashboard — a task due yesterday sat there until someone happened to look.
+// The daily reminder (PLAN.md §13 H6). listOpenTasksDueBy has existed since
+// the tasks work landed and nothing ever called it outside the dashboard — a
+// task due yesterday sat there until someone happened to look.
 //
-// One email per user per run, listing only *their* assigned tasks: a shared
-// digest of the whole tenant's work is a digest everyone ignores. Users who
-// opted out (users.task_reminders) are skipped, and a user with nothing due
-// gets nothing — an empty reminder is how a daily email becomes noise.
+// It now carries the day's appointments too. A visit at nine tomorrow is
+// exactly the thing a reminder exists for, and it arrives in the same mail
+// rather than a second one: two daily emails from the same product is how
+// both get filtered.
+//
+// One email per user per run, listing only *their* work: a shared digest of
+// the whole tenant's day is a digest everyone ignores. Users who opted out
+// (users.task_reminders) are skipped, and a user with nothing due and nothing
+// booked gets nothing — an empty reminder is how a daily email becomes noise.
 
-export type TaskReminderResult = { usersEmailed: number; tasksListed: number };
+export type TaskReminderResult = {
+  usersEmailed: number;
+  tasksListed: number;
+  appointmentsListed: number;
+};
+
+/** How far ahead the mail looks for appointments — one run's worth. */
+export const APPOINTMENT_HORIZON_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * The appointments that belong in one person's reminder.
+ *
+ * Assigned to them, or unassigned but theirs — somebody who books a visit
+ * without naming an owner still means themselves, and mailing an unassigned
+ * appointment to the whole business would make the reminder noise for
+ * everyone else. Overlap rather than start time, for the same reason the
+ * grid uses it: a visit already under way at send time is still today's.
+ */
+export function appointmentsForUser<
+  T extends Pick<CalendarEvent, "assignedUserId" | "createdByUserId" | "startsAt" | "endsAt">,
+>(events: T[], userId: string, from: Date, to: Date): T[] {
+  return events
+    .filter((event) =>
+      event.assignedUserId
+        ? event.assignedUserId === userId
+        : event.createdByUserId === userId,
+    )
+    .filter(
+      (event) => event.startsAt.getTime() < to.getTime() && event.endsAt.getTime() > from.getTime(),
+    )
+    .sort((a, b) => a.startsAt.getTime() - b.startsAt.getTime());
+}
 
 export async function sendTaskReminders(now: Date = new Date()): Promise<TaskReminderResult> {
-  const result: TaskReminderResult = { usersEmailed: 0, tasksListed: 0 };
+  const result: TaskReminderResult = { usersEmailed: 0, tasksListed: 0, appointmentsListed: 0 };
+  const horizon = new Date(now.getTime() + APPOINTMENT_HORIZON_MS);
 
   for (const tenant of await listTenants()) {
     // Reminders are work *about* the tenant's data, not writes to it, so a
@@ -30,8 +68,11 @@ export async function sendTaskReminders(now: Date = new Date()): Promise<TaskRem
     if (!ctx) continue;
 
     try {
-      const due = await listOpenTasksDueBy(ctx, now);
-      if (due.length === 0) continue;
+      const [due, booked] = await Promise.all([
+        listOpenTasksDueBy(ctx, now),
+        listCalendarEvents(ctx, now, horizon),
+      ]);
+      if (due.length === 0 && booked.length === 0) continue;
 
       const users = await listUsersForTenant(tenant.id);
 
@@ -39,7 +80,8 @@ export async function sendTaskReminders(now: Date = new Date()): Promise<TaskRem
         if (!user.email || user.banned || !user.taskReminders) continue;
 
         const mine = due.filter((task) => task.assignedUserId === user.id);
-        if (mine.length === 0) continue;
+        const appointments = appointmentsForUser(booked, user.id, now, horizon);
+        if (mine.length === 0 && appointments.length === 0) continue;
 
         const items = await Promise.all(
           mine.map(async (task) => {
@@ -54,9 +96,24 @@ export async function sendTaskReminders(now: Date = new Date()): Promise<TaskRem
           }),
         );
 
+        const appointmentItems = await Promise.all(
+          appointments.map(async (event) => {
+            const contact = event.contactId ? await getContact(ctx, event.contactId) : null;
+            return {
+              title: event.title,
+              startsAt: event.startsAt,
+              allDay: event.allDay,
+              location: event.location,
+              contactName: contact?.name ?? null,
+              url: `${env.APP_URL}/calendar/${event.id}`,
+            };
+          }),
+        );
+
         const { subject, html } = await taskRemindersEmail({
           userName: user.name,
           items,
+          appointments: appointmentItems,
           tasksUrl: `${env.APP_URL}/dashboard`,
           locale: user.locale ?? tenant.locale,
         });
@@ -64,6 +121,7 @@ export async function sendTaskReminders(now: Date = new Date()): Promise<TaskRem
         const sent = await sendEmail({ to: user.email, subject, html });
         if (sent) result.usersEmailed += 1;
         result.tasksListed += mine.length;
+        result.appointmentsListed += appointments.length;
       }
     } catch (err) {
       // One tenant's failure must not stop everyone else's reminders.

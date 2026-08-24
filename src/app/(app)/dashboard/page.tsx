@@ -10,7 +10,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
-import { formatDateTime, formatNumber } from "@/lib/i18n/format";
+import { DEFAULT_TIMEZONE, formatDateTime, formatNumber, formatTime } from "@/lib/i18n/format";
 
 import { requireTenantContext } from "@/modules/tenancy/context";
 import { getTenant } from "@/modules/tenancy/tenants";
@@ -105,9 +105,13 @@ export default async function DashboardPage() {
   const formatNumberL = (value: number) => formatNumber(value, locale);
   const tActivity = await getTranslations("app.contacts.activityTypes");
 
-  const [tenant, summary, leadStats, sites] = await Promise.all([
-    getTenant(ctx.tenantId),
-    getDashboardSummary(ctx),
+  // The tenant is read first because the summary needs its timezone: which
+  // appointments count as "today" is a question only the business can answer.
+  const tenant = await getTenant(ctx.tenantId);
+  const timeZone = tenant?.timezone || DEFAULT_TIMEZONE;
+
+  const [summary, leadStats, sites] = await Promise.all([
+    getDashboardSummary(ctx, { timeZone }),
     getLeadStats(ctx),
     listSites(ctx),
   ]);
@@ -116,7 +120,8 @@ export default async function DashboardPage() {
   // what the submission row carries.
   const siteNames = new Map(sites.map((site) => [site.id, site.name]));
 
-  const { stats, checklist, recentActivity, dueTasks, onboardingPending } = summary;
+  const { stats, checklist, recentActivity, dueTasks, todayAppointments, onboardingPending } =
+    summary;
   const tTasks = await getTranslations("app.contacts.tasks");
   const tLeads = await getTranslations("app.dashboard.leads");
   const taskLabels: TaskListLabels = {
@@ -194,6 +199,45 @@ export default async function DashboardPage() {
           href="/contacts"
         />
       </section>
+
+      {todayAppointments.length > 0 && (
+        <section className="flex flex-col gap-3">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <h2 className="text-lg font-semibold">{t("todayAgenda.title")}</h2>
+            <Link href="/calendar" className="text-sm underline underline-offset-4">
+              {t("todayAgenda.viewAll")}
+            </Link>
+          </div>
+          <ul className="flex flex-col divide-y rounded-xl border bg-card">
+            {todayAppointments.map((appointment) => (
+              <li key={appointment.id} className="flex flex-wrap items-baseline gap-x-3 gap-y-1 p-3">
+                <span className="w-16 text-sm tabular-nums text-muted-foreground">
+                  {appointment.allDay
+                    ? t("todayAgenda.allDay")
+                    : formatTime(appointment.startsAt, locale, timeZone)}
+                </span>
+                <Link
+                  href={`/calendar/${appointment.id}`}
+                  className="text-sm font-medium underline underline-offset-4"
+                >
+                  {appointment.title}
+                </Link>
+                {appointment.contactName && appointment.contactId && (
+                  <Link
+                    href={`/contacts/${appointment.contactId}`}
+                    className="text-sm text-muted-foreground underline underline-offset-4"
+                  >
+                    {appointment.contactName}
+                  </Link>
+                )}
+                {appointment.location && (
+                  <span className="text-sm text-muted-foreground">{appointment.location}</span>
+                )}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       {dueTasks.length > 0 && (
         <section className="flex flex-col gap-3">

@@ -178,6 +178,16 @@ export async function taskRemindersEmail(input: {
     contactName: string | null;
     url: string;
   }>;
+  /** The day's appointments, when there are any — the agenda half of the
+   * same mail (modules/crm/task-reminders.ts). */
+  appointments?: Array<{
+    title: string;
+    startsAt: Date;
+    allDay: boolean;
+    location: string | null;
+    contactName: string | null;
+    url: string;
+  }>;
   tasksUrl: string;
   locale?: string | null;
 }): Promise<Email> {
@@ -185,6 +195,7 @@ export async function taskRemindersEmail(input: {
   const t = await getTranslator(locale, "email.taskReminders");
 
   const overdueCount = input.items.filter((item) => item.overdue).length;
+  const appointments = input.appointments ?? [];
 
   const rows = input.items
     .map((item) => {
@@ -200,13 +211,49 @@ export async function taskRemindersEmail(input: {
     })
     .join("");
 
+  const appointmentRows = appointments
+    .map((appointment) => {
+      const when = appointment.allDay
+        ? t("allDay")
+        : formatDate(appointment.startsAt, locale, {
+            day: "2-digit",
+            month: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit",
+          });
+      const where = appointment.location ? ` · ${appointment.location}` : "";
+      const who = appointment.contactName ? ` · ${appointment.contactName}` : "";
+      return `<li style="margin-bottom:8px;"><a href="${appointment.url}">${appointment.title}</a><br /><span style="color:#71717a;">${when}${who}${where}</span></li>`;
+    })
+    .join("");
+
+  // Whichever half is empty is left out entirely: a heading over nothing
+  // reads as a bug, and both halves are optional by construction (the sender
+  // skips a user only when both are empty).
+  const taskSection =
+    input.items.length > 0
+      ? `
+      ${paragraph(t("body", { count: input.items.length, overdue: overdueCount }))}
+      <ul style="font-size:14px;line-height:1.5;color:#3f3f46;padding-left:18px;">${rows}</ul>`
+      : "";
+
+  const appointmentSection =
+    appointments.length > 0
+      ? `
+      ${paragraph(t("appointmentsBody", { count: appointments.length }))}
+      <ul style="font-size:14px;line-height:1.5;color:#3f3f46;padding-left:18px;">${appointmentRows}</ul>`
+      : "";
+
   return {
-    subject: t("subject", { count: input.items.length }),
+    subject:
+      input.items.length > 0
+        ? t("subject", { count: input.items.length })
+        : t("appointmentsSubject", { count: appointments.length }),
     html: layout(
       `
       ${heading(t("title", { name: input.userName }))}
-      ${paragraph(t("body", { count: input.items.length, overdue: overdueCount }))}
-      <ul style="font-size:14px;line-height:1.5;color:#3f3f46;padding-left:18px;">${rows}</ul>
+      ${taskSection}
+      ${appointmentSection}
       ${button(input.tasksUrl, t("cta"))}
     `,
       locale,

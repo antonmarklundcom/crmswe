@@ -5,7 +5,6 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { requireTenantContext } from "@/modules/tenancy/context";
 import { getTenant } from "@/modules/tenancy/tenants";
 import { listTenantUsers } from "@/modules/tenancy/users";
-import { queryContacts } from "@/modules/crm/contact-list";
 import { getContact } from "@/modules/crm/contacts";
 import { canModifyEvent, getCalendarEvent } from "@/modules/calendar/events";
 import { toLocalFields } from "@/modules/calendar/zoned-time";
@@ -39,9 +38,8 @@ export default async function CalendarEventPage({
   const tenant = await getTenant(ctx.tenantId);
   const timeZone = tenant?.timezone || DEFAULT_TIMEZONE;
 
-  const [users, contactPage, contact] = await Promise.all([
+  const [users, contact] = await Promise.all([
     listTenantUsers(ctx),
-    queryContacts(ctx, {}, { sort: "name", direction: "asc", perPage: 200 }),
     event.contactId ? getContact(ctx, event.contactId) : Promise.resolve(null),
   ]);
 
@@ -135,7 +133,7 @@ export default async function CalendarEventPage({
               contactId: event.contactId ?? "",
               assignedUserId: event.assignedUserId ?? "",
             }}
-            contacts={contactPage.rows.map((row) => ({ id: row.id, name: row.name }))}
+            contact={contact ? { id: contact.id, name: contact.name } : null}
             users={users.map((user) => ({ id: user.id, name: user.name }))}
             submitLabel={t("saveAction")}
           />

@@ -1091,6 +1091,10 @@
         "lastStage": "No se puede eliminar la única etapa de la pipeline.",
         "notFound": "No encontramos la etapa."
       }
+    },
+    "business": {
+      "switcherTitle": "Empresa",
+      "switcherCurrent": "Elegí una empresa"
     }
   },
   "superadmin": {

@@ -1091,6 +1091,10 @@
         "lastStage": "Can't delete a pipeline's only stage.",
         "notFound": "We couldn't find the stage."
       }
+    },
+    "business": {
+      "switcherTitle": "Business",
+      "switcherCurrent": "Choose a business"
     }
   },
   "superadmin": {

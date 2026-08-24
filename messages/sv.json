@@ -1091,6 +1091,10 @@
         "lastStage": "Går inte att ta bort pipelinens enda steg.",
         "notFound": "Vi hittade inte steget."
       }
+    },
+    "business": {
+      "switcherTitle": "Företag",
+      "switcherCurrent": "Välj företag"
     }
   },
   "superadmin": {

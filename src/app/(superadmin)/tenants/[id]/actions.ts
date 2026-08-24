@@ -246,6 +246,9 @@ export async function addExistingUserToTenantAction(
 
 const impersonateSchema = z.object({
   userId: z.string().min(1),
+  // Which business to act in. One person can be in several (PLAN.md §3.1), so
+  // "ver como" from *this* tenant's page has to mean this tenant.
+  tenantId: z.string().min(1),
 });
 
 // Hidden-id-only, and deliberately *not* given form state (PLAN.md §10 1R
@@ -265,11 +268,14 @@ const impersonateSchema = z.object({
 // swallowed. Any rejection therefore returns with the session untouched and
 // the superadmin still on the tenant page — never half-swapped.
 export async function impersonateAction(formData: FormData) {
-  const parsed = impersonateSchema.safeParse({ userId: formData.get("userId") });
+  const parsed = impersonateSchema.safeParse({
+    userId: formData.get("userId"),
+    tenantId: formData.get("tenantId"),
+  });
   if (!parsed.success) return;
 
   try {
-    await startImpersonation(parsed.data.userId);
+    await startImpersonation(parsed.data.userId, parsed.data.tenantId);
   } catch {
     return;
   }

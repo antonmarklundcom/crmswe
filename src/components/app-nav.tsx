@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  CalendarDays,
   ClipboardList,
   FileText,
   Globe,
@@ -33,6 +34,7 @@ const ICONS = {
   dashboard: LayoutDashboard,
   contacts: Users,
   pipeline: SquareKanban,
+  calendar: CalendarDays,
   inbox: MessagesSquare,
   quotes: FileText,
   documents: ScrollText,

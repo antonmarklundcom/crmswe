@@ -103,7 +103,7 @@ src/
       cron/              # Hostinger-pinged fallback tick (secret-guarded)
       ...                # route handlers where server actions don't fit
   modules/               # feature modules — each owns its service layer
-    tenancy/  auth/  crm/  forms/  inbox/  whatsapp/  automations/
+    tenancy/  auth/  crm/  calendar/  forms/  inbox/  whatsapp/  automations/
     quotes/  billing/  audit/
     # Phase 2 adds: sifen/ (engine) + invoicing/ (CRM-side integration) — see §9
   db/
@@ -1817,7 +1817,7 @@ is planned, not discovered:
 | Lead capture from sites | **Replaced in 1E** | — |
 | Transactional/marketing **email** | Not built | Resend or Postmark + own domain warmup — you now own deliverability |
 | **SMS** | Not built | Twilio; Paraguay SMS pricing is poor and WhatsApp is the stronger channel anyway |
-| **Booking / calendar** | Not built | Cal.com self-hosted |
+| **Booking / calendar** | **Internal agenda built** (`modules/calendar`): week/month grid, appointments against a contact or a rep, tasks drawn beside them, all in the tenant's timezone. What it is *not* is public self-booking. | Cal.com self-hosted, for the public booking page only |
 | **Missed-call textback** | Not built | Needs a telephony number (Twilio) + a 1G flow |
 | Traffic analytics / funnels | Not built, **by decision** (§1.2) | Self-hosted Umami as a separate app |
 
@@ -2033,5 +2033,6 @@ green; zero remaining inline `rounded-md border px-3 py-2` input literals.
 
 Owner-scoped "agent sees only own deals" visibility mode (would reopen §1.2's
 shared-pipeline decision — needs an owner call first), custom fields, duplicate
-merge UI, email-as-channel, calendar/booking, native mobile app (H7's PWA is
-the Phase-1 answer), payment gateway, websockets/SSE for the inbox.
+merge UI, email-as-channel, *public* self-booking (the internal agenda has
+since been built — §11's table), native mobile app (H7's PWA is the Phase-1
+answer), payment gateway, websockets/SSE for the inbox.

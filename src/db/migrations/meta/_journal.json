@@ -148,6 +148,13 @@
       "when": 1787561618895,
       "tag": "0020_add_contact_views",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "5",
+      "when": 1787565116705,
+      "tag": "0021_add_calendar_events",
+      "breakpoints": true
     }
   ]
 }

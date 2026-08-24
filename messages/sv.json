@@ -1449,6 +1449,40 @@
         "messages": "Meddelanden",
         "lastMessage": "Senaste meddelande"
       }
+    },
+    "tenantWhatsapp": {
+      "title": "WhatsApp",
+      "intro": "Hantera det här företagets WhatsApp-anslutning å deras vägnar — samma skärm som de själva skulle använda, med företaget redan valt.",
+      "empty": "Inga nummer anslutna än",
+      "number": "Nummer",
+      "wabaId": "WABA-ID",
+      "status": "Status",
+      "quality": "Kvalitet",
+      "connectedVia": "Anslutet via",
+      "actionsColumn": "Åtgärder",
+      "accountStatus": {
+        "connected": "Ansluten",
+        "disconnected": "Frånkopplad",
+        "error": "Fel"
+      },
+      "connectedViaValues": {
+        "embedded": "inbäddad registrering",
+        "manual": "manuellt"
+      },
+      "disconnect": "Koppla från",
+      "connectTitle": "Anslut ett nummer",
+      "connectHelp": "Ange uppgifterna som genererades i Meta Business Manager för det här företaget.",
+      "wabaIdLabel": "WABA-ID",
+      "phoneNumberId": "Phone Number ID",
+      "displayNumber": "Nummer (visas)",
+      "accessToken": "Åtkomsttoken",
+      "connect": "Anslut",
+      "errors": {
+        "wabaIdRequired": "Ange WABA-ID.",
+        "phoneNumberIdRequired": "Ange Phone Number ID.",
+        "accessTokenRequired": "Ange åtkomsttoken.",
+        "unknown": "Kunde inte ansluta numret. Försök igen."
+      }
     }
   },
   "marketing": {

@@ -1449,6 +1449,40 @@
         "messages": "Mensajes",
         "lastMessage": "Último mensaje"
       }
+    },
+    "tenantWhatsapp": {
+      "title": "WhatsApp",
+      "intro": "Gestioná la conexión de WhatsApp de esta empresa en su nombre — misma pantalla que usarían ellos, con la empresa ya elegida.",
+      "empty": "Todavía no hay números conectados",
+      "number": "Número",
+      "wabaId": "WABA ID",
+      "status": "Estado",
+      "quality": "Calidad",
+      "connectedVia": "Conectado vía",
+      "actionsColumn": "Acciones",
+      "accountStatus": {
+        "connected": "Conectado",
+        "disconnected": "Desconectado",
+        "error": "Error"
+      },
+      "connectedViaValues": {
+        "embedded": "registro integrado",
+        "manual": "manual"
+      },
+      "disconnect": "Desconectar",
+      "connectTitle": "Conectar número",
+      "connectHelp": "Ingresá los datos generados en Meta Business Manager para esta empresa.",
+      "wabaIdLabel": "WABA ID",
+      "phoneNumberId": "Phone Number ID",
+      "displayNumber": "Número (para mostrar)",
+      "accessToken": "Token de acceso",
+      "connect": "Conectar",
+      "errors": {
+        "wabaIdRequired": "Ingresá el WABA ID.",
+        "phoneNumberIdRequired": "Ingresá el Phone Number ID.",
+        "accessTokenRequired": "Ingresá el token de acceso.",
+        "unknown": "No se pudo conectar el número. Intentá de nuevo."
+      }
     }
   },
   "marketing": {

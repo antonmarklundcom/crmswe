@@ -2,8 +2,9 @@
 
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
-import { requireSuperadminContext } from "@/modules/tenancy/context";
+import { buildSystemTenantContext, requireSuperadminContext } from "@/modules/tenancy/context";
 import { createSubscription, recordPayment } from "@/modules/tenancy/subscriptions";
+import { connectAccountManually, disconnectAccount } from "@/modules/whatsapp/accounts";
 import {
   createTenantAdminUser,
   getUserByEmail,
@@ -404,4 +405,132 @@ export async function resetTenantMemberPasswordAction(
 
   revalidatePath(`/tenants/${parsed.data.tenantId}`);
   return { error: null, resetUrl: url };
+}
+
+// --- WhatsApp connection, on the tenant's behalf (PLAN.md §6.2). Same
+// manual-connect service the tenant admin's own form calls
+// (`modules/whatsapp/accounts.ts`'s `connectAccountManually`) and the same
+// encrypted-at-rest token handling (§3.4) — this is "expose the existing
+// capability to superadmin, tenant-scoped", not a second WhatsApp
+// integration. `buildSystemTenantContext` builds the tenant context the
+// module services expect from a plain tenant id, exactly as
+// whatsapp-health/actions.ts's `syncTemplatesAction` already does when
+// acting on a tenant's behalf. ---------------------------------------------
+
+const connectWhatsappSchema = z.object({
+  tenantId: z.string().min(1).max(26),
+  wabaId: z.string().min(1),
+  phoneNumberId: z.string().min(1),
+  displayNumber: z.string().optional().or(z.literal("")),
+  accessToken: z.string().min(1),
+});
+
+export type ConnectWhatsappField = "wabaId" | "phoneNumberId" | "accessToken";
+
+export type ConnectWhatsappState = {
+  error: string | null;
+  field: ConnectWhatsappField | null;
+  values: Record<string, string>;
+};
+
+const CONNECT_WHATSAPP_FIELD_ERRORS: Record<ConnectWhatsappField, string> = {
+  wabaId: "wabaIdRequired",
+  phoneNumberId: "phoneNumberIdRequired",
+  accessToken: "accessTokenRequired",
+};
+
+export async function connectTenantWhatsappAction(
+  _prevState: ConnectWhatsappState,
+  formData: FormData,
+): Promise<ConnectWhatsappState> {
+  const superadmin = await requireSuperadminContext();
+
+  // accessToken is dropped rather than echoed: this state is serialized back
+  // to the browser, and the token is a per-tenant secret (§3.4) that only
+  // ever belongs in wa_accounts encrypted — same rule the tenant-side form
+  // follows.
+  const values = Object.fromEntries(
+    [...formData.entries()].filter(
+      (entry): entry is [string, string] =>
+        typeof entry[1] === "string" && entry[0] !== "accessToken",
+    ),
+  );
+
+  const parsed = connectWhatsappSchema.safeParse({
+    tenantId: formData.get("tenantId"),
+    wabaId: formData.get("wabaId"),
+    phoneNumberId: formData.get("phoneNumberId"),
+    displayNumber: formData.get("displayNumber") || undefined,
+    accessToken: formData.get("accessToken"),
+  });
+
+  if (!parsed.success) {
+    const field = parsed.error.issues[0]?.path[0];
+    if (typeof field === "string" && field in CONNECT_WHATSAPP_FIELD_ERRORS) {
+      const key = field as ConnectWhatsappField;
+      return { error: CONNECT_WHATSAPP_FIELD_ERRORS[key], field: key, values };
+    }
+    return { error: "unknown", field: null, values };
+  }
+
+  const tenantCtx = await buildSystemTenantContext(parsed.data.tenantId);
+  if (!tenantCtx) return { error: "unknown", field: null, values };
+
+  try {
+    await connectAccountManually(tenantCtx, {
+      wabaId: parsed.data.wabaId,
+      phoneNumberId: parsed.data.phoneNumberId,
+      displayNumber: parsed.data.displayNumber,
+      accessToken: parsed.data.accessToken,
+    });
+  } catch {
+    return { error: "unknown", field: null, values };
+  }
+
+  await writeAuditLog({
+    tenantId: parsed.data.tenantId,
+    actorUserId: superadmin.userId,
+    action: "whatsapp.connected_by_superadmin",
+    entity: "tenant",
+    entityId: parsed.data.tenantId,
+    payload: { wabaId: parsed.data.wabaId, phoneNumberId: parsed.data.phoneNumberId },
+  });
+
+  revalidatePath(`/tenants/${parsed.data.tenantId}`);
+  return { error: null, field: null, values: {} };
+}
+
+const disconnectWhatsappSchema = z.object({
+  tenantId: z.string().min(1).max(26),
+  accountId: z.string().min(1).max(26),
+});
+
+/**
+ * Clears a broken (or unwanted) connection. No form state: the account id
+ * comes from the rendered list, same as the impersonate button — there is
+ * no user-fillable field for a rejection to sit under.
+ */
+export async function disconnectTenantWhatsappAction(formData: FormData) {
+  const superadmin = await requireSuperadminContext();
+
+  const parsed = disconnectWhatsappSchema.safeParse({
+    tenantId: formData.get("tenantId"),
+    accountId: formData.get("accountId"),
+  });
+  if (!parsed.success) return;
+
+  const tenantCtx = await buildSystemTenantContext(parsed.data.tenantId);
+  if (!tenantCtx) return;
+
+  await disconnectAccount(tenantCtx, parsed.data.accountId);
+
+  await writeAuditLog({
+    tenantId: parsed.data.tenantId,
+    actorUserId: superadmin.userId,
+    action: "whatsapp.disconnected_by_superadmin",
+    entity: "wa_account",
+    entityId: parsed.data.accountId,
+  });
+
+  revalidatePath(`/tenants/${parsed.data.tenantId}`);
 }

@@ -867,6 +867,38 @@
         "nameRequired": "Poné un nombre para el producto.",
         "unitPriceInvalid": "El precio va en guaraníes enteros, sin decimales ni signos.",
         "unknown": "No se pudo guardar el producto. Intentá de nuevo."
+      },
+      "exportCsv": "Exportar CSV",
+      "importAction": "Importar CSV",
+      "import": {
+        "title": "Importar productos",
+        "intro": "Subí un CSV con columnas name, description, unit_price, currency, is_active. Buscamos un producto existente por nombre (sin importar mayúsculas): si lo encontramos lo actualizamos, si no lo creamos.",
+        "matchNote": "El nombre es la columna que decide si una fila actualiza un producto existente o crea uno nuevo — dos filas con el mismo nombre (sin importar mayúsculas) se tratan como el mismo producto.",
+        "file": "Archivo CSV",
+        "paste": "O pegá el contenido",
+        "pastePlaceholder": "name,description,unit_price,currency,is_active",
+        "import": "Importar",
+        "importing": "Importando…",
+        "reportTitle": "Resultado de la importación",
+        "reportSummary": "{total} filas: {created} creadas, {updated} actualizadas, {errors} con error.",
+        "errorRow": "Fila",
+        "errorReason": "Motivo",
+        "errorsTruncated": "Y {count} error(es) más.",
+        "backToProducts": "Volver a productos",
+        "errorReasons": {
+          "nameMissing": "Sin nombre",
+          "unitPriceInvalid": "Precio unitario inválido",
+          "currencyInvalid": "Moneda inválida (3 letras, ej. PYG)",
+          "activeInvalid": "Valor de is_active inválido",
+          "duplicateInFile": "Nombre repetido en el archivo",
+          "failed": "No se pudo guardar"
+        },
+        "errors": {
+          "empty": "El archivo está vacío o no pudimos leerlo.",
+          "tooLarge": "El archivo es demasiado grande: el máximo son 5 MB.",
+          "tooManyRows": "Son demasiadas filas: el máximo son 5000 por importación.",
+          "nameColumnMissing": "El archivo necesita una columna \"name\"."
+        }
       }
     },
     "quotes": {

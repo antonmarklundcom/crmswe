@@ -1,4 +1,5 @@
 import { Package } from "lucide-react";
+import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { requireTenantContext } from "@/modules/tenancy/context";
 import { listProducts } from "@/modules/quotes/products";
@@ -17,14 +18,31 @@ export default async function ProductsPage() {
   const tc = await getTranslations("common");
   // Agents sell from the catalog, so they still read all of it — but creating
   // a product and taking one out of circulation are admin-only (§3.2), so
-  // those controls are not rendered for them.
+  // those controls (and bulk import, which is the same kind of write) are
+  // not rendered for them. Export is read-only, so it stays available to
+  // everyone who can see the catalog.
   const isAdmin = ctx.role === "admin";
   const products = await listProducts(ctx, true);
 
   return (
     <div className="flex flex-col gap-8">
       <section className="flex flex-col gap-4">
-        <PageHeader title={t("title")} description={t("intro")} />
+        <PageHeader
+          title={t("title")}
+          description={t("intro")}
+          action={
+            <div className="flex gap-2">
+              <Button asChild size="sm" variant="outline">
+                <a href="/api/exports/products">{t("exportCsv")}</a>
+              </Button>
+              {isAdmin && (
+                <Button asChild size="sm" variant="outline">
+                  <Link href="/products/import">{t("importAction")}</Link>
+                </Button>
+              )}
+            </div>
+          }
+        />
 
         {products.length === 0 ? (
           <EmptyState

@@ -327,6 +327,38 @@
         "nameRequired": "Ge produkten ett namn.",
         "unitPriceInvalid": "Priset anges i hela guaraní, utan decimaler eller tecken.",
         "unknown": "Vi kunde inte spara produkten. Försök igen."
+      },
+      "exportCsv": "Exportera CSV",
+      "importAction": "Importera CSV",
+      "import": {
+        "title": "Importera produkter",
+        "intro": "Ladda upp en CSV med kolumnerna name, description, unit_price, currency, is_active. Vi letar efter en befintlig produkt med samma namn (skiftlägesokänsligt): finns den uppdateras den, annars skapas en ny.",
+        "matchNote": "Namnet avgör om en rad uppdaterar en befintlig produkt eller skapar en ny — två rader med samma namn (skiftlägesokänsligt) räknas som samma produkt.",
+        "file": "CSV-fil",
+        "paste": "Eller klistra in innehållet",
+        "pastePlaceholder": "name,description,unit_price,currency,is_active",
+        "import": "Importera",
+        "importing": "Importerar…",
+        "reportTitle": "Importresultat",
+        "reportSummary": "{total} rader: {created} skapade, {updated} uppdaterade, {errors} med fel.",
+        "errorRow": "Rad",
+        "errorReason": "Orsak",
+        "errorsTruncated": "Och {count} fel till.",
+        "backToProducts": "Tillbaka till produkter",
+        "errorReasons": {
+          "nameMissing": "Inget namn",
+          "unitPriceInvalid": "Ogiltigt enhetspris",
+          "currencyInvalid": "Ogiltig valuta (3 bokstäver, t.ex. PYG)",
+          "activeInvalid": "Ogiltigt värde för is_active",
+          "duplicateInFile": "Namnet upprepas i filen",
+          "failed": "Kunde inte spara"
+        },
+        "errors": {
+          "empty": "Filen är tom eller kunde inte läsas.",
+          "tooLarge": "Filen är för stor: max är 5 MB.",
+          "tooManyRows": "För många rader: max är 5000 per import.",
+          "nameColumnMissing": "Filen behöver en \"name\"-kolumn."
+        }
       }
     },
     "contacts": {

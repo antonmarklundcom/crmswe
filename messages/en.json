@@ -327,6 +327,38 @@
         "nameRequired": "Give the product a name.",
         "unitPriceInvalid": "The price is in whole guaraníes, no decimals or signs.",
         "unknown": "We couldn't save the product. Try again."
+      },
+      "exportCsv": "Export CSV",
+      "importAction": "Import CSV",
+      "import": {
+        "title": "Import products",
+        "intro": "Upload a CSV with columns name, description, unit_price, currency, is_active. We look for an existing product by name (case-insensitive): if found, it's updated; otherwise, a new one is created.",
+        "matchNote": "The name is the column that decides whether a row updates an existing product or creates a new one — two rows with the same name (case-insensitive) are treated as the same product.",
+        "file": "CSV file",
+        "paste": "Or paste the content",
+        "pastePlaceholder": "name,description,unit_price,currency,is_active",
+        "import": "Import",
+        "importing": "Importing…",
+        "reportTitle": "Import result",
+        "reportSummary": "{total} rows: {created} created, {updated} updated, {errors} with an error.",
+        "errorRow": "Row",
+        "errorReason": "Reason",
+        "errorsTruncated": "And {count} more error(s).",
+        "backToProducts": "Back to products",
+        "errorReasons": {
+          "nameMissing": "No name",
+          "unitPriceInvalid": "Invalid unit price",
+          "currencyInvalid": "Invalid currency (3 letters, e.g. PYG)",
+          "activeInvalid": "Invalid is_active value",
+          "duplicateInFile": "Name repeated in the file",
+          "failed": "Could not save"
+        },
+        "errors": {
+          "empty": "The file is empty or we couldn't read it.",
+          "tooLarge": "The file is too large: the maximum is 5 MB.",
+          "tooManyRows": "Too many rows: the maximum is 5000 per import.",
+          "nameColumnMissing": "The file needs a \"name\" column."
+        }
       }
     },
     "contacts": {

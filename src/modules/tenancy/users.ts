@@ -326,6 +326,43 @@ export async function removeTenantUser(ctx: TenantContext, userId: string) {
   return target;
 }
 
+// --- Superadmin profile edit ---------------------------------------------
+//
+// `users` is a platform table (§4), so changing a member's name/email is a
+// cross-tenant write in the same sense adding/removing a membership is
+// (§3.1) — gated on is_superadmin, never reachable from a tenant admin's own
+// role. Lives here, not in memberships.ts, because it edits the user row
+// itself rather than a membership.
+
+export class UserProfileError extends Error {
+  constructor(readonly code: "notFound" | "emailTaken") {
+    super(code);
+  }
+}
+
+/** Updates a platform user's name/email. Email stays globally unique (users
+ * is the platform's one identity table), so a collision is checked and
+ * reported before it can hit the DB's unique constraint. */
+export async function updateUserProfile(
+  userId: string,
+  input: { name: string; email: string },
+) {
+  const target = await getUserById(userId);
+  if (!target) throw new UserProfileError("notFound");
+
+  if (input.email !== target.email) {
+    const existing = await getUserByEmail(input.email);
+    if (existing && existing.id !== userId) throw new UserProfileError("emailTaken");
+  }
+
+  await db
+    .update(users)
+    .set({ name: input.name, email: input.email })
+    .where(eq(users.id, userId));
+
+  return getUserById(userId);
+}
+
 /** Per-user UI language (PLAN.md §13 H5). Not tenant-scoped on purpose: a
  * user may only ever change their own, and the action passes ctx.userId. */
 export async function setUserLocale(userId: string, locale: string): Promise<void> {

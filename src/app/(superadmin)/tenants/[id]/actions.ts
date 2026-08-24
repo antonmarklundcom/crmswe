@@ -8,13 +8,16 @@ import {
   createTenantAdminUser,
   getUserByEmail,
   getUserById,
-  revokeUserSessions,
-  setUserPassword,
+  updateUserProfile,
+  UserProfileError,
 } from "@/modules/tenancy/users";
 import { addMembership, MembershipError } from "@/modules/tenancy/memberships";
 import { writeAuditLog } from "@/modules/tenancy/audit";
 import { startImpersonation } from "@/modules/auth/impersonation";
 import { redirect } from "next/navigation";
+import { env } from "@/lib/config/env";
+import { auth } from "@/lib/auth/server";
+import { withResetUrlCapture } from "@/lib/auth/reset-capture";
 
 const createSubscriptionSchema = z.object({
   tenantId: z.string().min(1),
@@ -284,43 +287,121 @@ export async function impersonateAction(formData: FormData) {
 }
 
 
-const setPasswordSchema = z.object({
+// --- Member profile edit (PLAN.md §3.1: adding/removing/editing a person on
+// a business's roster is a superadmin action, since `users` is a platform
+// table) ---------------------------------------------------------------
+
+const updateProfileSchema = z.object({
   tenantId: z.string().min(1).max(26),
   userId: z.string().min(1).max(26),
-  password: z.string().min(8).max(200),
+  name: z.string().min(1).max(200),
+  email: z.string().email().max(320),
 });
 
-/**
- * Superadmin escape hatch for a user who can't get in at all — no access to
- * the invited mailbox, a reset mail that never arrives. setUserPassword has
- * existed for the seed script since 1H and had no console caller
- * (PLAN.md §13 H4). Every use is audited, since it is by definition taking
- * over someone's account.
- */
-export async function setTenantUserPasswordAction(formData: FormData) {
+export type UpdateMemberProfileField = "name" | "email";
+
+export type UpdateMemberProfileState = {
+  error: string | null;
+  field: UpdateMemberProfileField | null;
+  success: boolean;
+};
+
+export async function updateTenantMemberProfileAction(
+  _prevState: UpdateMemberProfileState,
+  formData: FormData,
+): Promise<UpdateMemberProfileState> {
   const ctx = await requireSuperadminContext();
 
-  const parsed = setPasswordSchema.safeParse({
+  const parsed = updateProfileSchema.safeParse({
     tenantId: formData.get("tenantId"),
     userId: formData.get("userId"),
-    password: formData.get("password"),
+    name: formData.get("name"),
+    email: formData.get("email"),
   });
-  if (!parsed.success) return;
+  if (!parsed.success) {
+    const field = parsed.error.issues[0]?.path[0];
+    if (field === "name" || field === "email") {
+      return { error: "invalid", field, success: false };
+    }
+    return { error: "invalid", field: null, success: false };
+  }
 
   const target = await getUserById(parsed.data.userId);
-  if (!target || target.tenantId !== parsed.data.tenantId) return;
+  if (!target || target.tenantId !== parsed.data.tenantId) {
+    return { error: "unknown", field: null, success: false };
+  }
 
-  await setUserPassword(target.id, parsed.data.password);
-  await revokeUserSessions(target.id);
+  try {
+    await updateUserProfile(target.id, { name: parsed.data.name, email: parsed.data.email });
+  } catch (err) {
+    if (err instanceof UserProfileError && err.code === "emailTaken") {
+      return { error: "emailTaken", field: "email", success: false };
+    }
+    throw err;
+  }
+
+  await writeAuditLog({
+    tenantId: parsed.data.tenantId,
+    actorUserId: ctx.userId,
+    action: "user.profile_updated",
+    entity: "user",
+    entityId: target.id,
+    payload: { name: parsed.data.name, email: parsed.data.email },
+  });
+
+  revalidatePath(`/tenants/${parsed.data.tenantId}`);
+  return { error: null, field: null, success: true };
+}
+
+// --- Password reset link (feature parity with the tenant admin's own
+// sendPasswordResetAction — same Better Auth request-password-reset flow,
+// with the resulting link also shown on screen, the way invitations already
+// are when Resend isn't configured — DEPLOY.md §4). Superadmin-only, and
+// deliberately not the public /forgot-password flow: the superadmin already
+// knows the target account exists (it's in the tenant's own member list), so
+// there is no timing-attack reason to hide the link the way the public
+// "check your email" response has to.
+const resetPasswordLinkSchema = z.object({
+  tenantId: z.string().min(1).max(26),
+  userId: z.string().min(1).max(26),
+});
+
+export type ResetPasswordLinkState = { error: string | null; resetUrl: string | null };
+
+export async function resetTenantMemberPasswordAction(
+  _prevState: ResetPasswordLinkState,
+  formData: FormData,
+): Promise<ResetPasswordLinkState> {
+  const ctx = await requireSuperadminContext();
+
+  const parsed = resetPasswordLinkSchema.safeParse({
+    tenantId: formData.get("tenantId"),
+    userId: formData.get("userId"),
+  });
+  if (!parsed.success) return { error: "unknown", resetUrl: null };
+
+  const target = await getUserById(parsed.data.userId);
+  if (!target || target.tenantId !== parsed.data.tenantId) {
+    return { error: "unknown", resetUrl: null };
+  }
+
+  const { url } = await withResetUrlCapture(() =>
+    auth.api.requestPasswordReset({
+      body: { email: target.email, redirectTo: `${env.APP_URL}/reset-password` },
+    }),
+  );
+
+  if (!url) return { error: "unknown", resetUrl: null };
 
   await writeAuditLog({
     tenantId: target.tenantId,
     actorUserId: ctx.userId,
-    action: "user.password_set",
+    action: "user.password_reset_link_generated",
     entity: "user",
     entityId: target.id,
     payload: { email: target.email },
   });
 
   revalidatePath(`/tenants/${parsed.data.tenantId}`);
+  return { error: null, resetUrl: url };
 }

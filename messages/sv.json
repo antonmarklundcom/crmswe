@@ -1234,9 +1234,23 @@
         "emailTaken": "Den e-postadressen har redan ett konto.",
         "unknown": "Vi kunde inte skapa användaren. Försök igen."
       },
-      "inactive": "inaktiv",
-      "newPassword": "Nytt lösenord",
-      "setPassword": "Ange lösenord",
+      "inactive": "Inaktiv",
+      "stateColumn": "Status",
+      "stateActive": "Aktiv",
+      "actionsColumn": "Åtgärder",
+      "edit": "Redigera",
+      "editTitle": "Redigera användare",
+      "editErrors": {
+        "invalid": "Kontrollera namn och e-post.",
+        "emailTaken": "Den e-postadressen har redan ett annat konto.",
+        "unknown": "Vi kunde inte spara ändringen. Försök igen."
+      },
+      "resetPassword": "Återställ lösenord",
+      "resetPasswordLinkTitle": "Länk för att återställa lösenordet",
+      "resetPasswordLinkHelp": "Skicka den till personen. När den öppnas väljer de ett nytt lösenord och deras nuvarande sessioner avslutas.",
+      "resetPasswordError": "Vi kunde inte skapa länken. Försök igen.",
+      "copy": "Kopiera",
+      "copied": "Kopierat",
       "addExisting": {
         "title": "Lägg till någon som redan har konto",
         "intro": "Om personen redan använder VenderCRM i ett annat företag: skapa inte ett andra konto, ge dem tillgång till det här i stället. De behåller sina övriga företag och växlar mellan dem.",

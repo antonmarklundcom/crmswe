@@ -1,10 +1,11 @@
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
-import { requireSuperadminContext } from "@/modules/tenancy/context";
+import { buildSystemTenantContext, requireSuperadminContext } from "@/modules/tenancy/context";
 import { getTenant } from "@/modules/tenancy/tenants";
 import { getLatestSubscriptionForTenant } from "@/modules/tenancy/subscriptions";
 import { listPlans, getPlan } from "@/modules/tenancy/plans";
 import { listUsersForTenant } from "@/modules/tenancy/users";
+import { listAccountsForTenant } from "@/modules/whatsapp/accounts";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/page-header";
 import { CreateUserForm, type CreateUserLabels } from "./CreateUserForm";
@@ -13,6 +14,7 @@ import { CreateSubscriptionForm, RecordPaymentForm } from "./SubscriptionForms";
 import { impersonateAction } from "./actions";
 import { MemberEditDialog, type MemberEditLabels } from "./MemberEditDialog";
 import { ResetPasswordButton, type ResetPasswordLabels } from "./ResetPasswordButton";
+import { WhatsappSection } from "./WhatsappSection";
 
 // Defense in depth (§3.3): the (superadmin) layout already redirects a
 // non-superadmin, but a layout is not an authorization boundary — this page
@@ -33,6 +35,12 @@ export default async function TenantDetailPage({
     listUsersForTenant(id),
   ]);
   const plan = subscription ? await getPlan(subscription.planId) : null;
+
+  // System context, not the superadmin's own — the wa_accounts read has to
+  // be scoped to *this* tenant regardless of which businesses the operator
+  // is a member of (§3.3).
+  const tenantCtx = await buildSystemTenantContext(id);
+  const waAccounts = tenantCtx ? await listAccountsForTenant(tenantCtx) : [];
 
   const t = await getTranslations("superadmin.tenants");
   const ts = await getTranslations("superadmin.subscriptions");
@@ -208,6 +216,20 @@ export default async function TenantDetailPage({
         </p>
         <AddExistingUserForm tenantId={tenant.id} labels={addExistingLabels} />
       </section>
+
+      <WhatsappSection
+        tenantId={tenant.id}
+        accounts={waAccounts.map((account) => ({
+          id: account.id,
+          wabaId: account.wabaId,
+          phoneNumberId: account.phoneNumberId,
+          displayNumber: account.displayNumber,
+          verifiedName: account.verifiedName,
+          status: account.status,
+          qualityRating: account.qualityRating,
+          connectedVia: account.connectedVia,
+        }))}
+      />
     </div>
   );
 }

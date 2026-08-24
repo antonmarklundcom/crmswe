@@ -1,6 +1,6 @@
 {
   "common": {
-    "appName": "VenderCRM",
+    "appName": "clientes.com.py",
     "loading": "Laddar…",
     "save": "Spara",
     "saved": "Ändringarna sparades",
@@ -27,7 +27,7 @@
       "invalid": "Inbjudan är ogiltig eller har gått ut",
       "success": "Kontot är skapat. Du kan logga in nu.",
       "joinTitle": "Gå med i företaget",
-      "existingAccount": "{email} har redan ett VenderCRM-konto. Du behöver inte skapa ett till: logga in med den adressen så läggs det här företaget till bland dem du redan arbetar i.",
+      "existingAccount": "{email} har redan ett clientes.com.py-konto. Du behöver inte skapa ett till: logga in med den adressen så läggs det här företaget till bland dem du redan arbetar i.",
       "joinSubmit": "Lägg till företaget på mitt konto",
       "joined": "Klart. Du har nu tillgång till företaget — välj det i växlaren högst upp.",
       "goToApp": "Till CRM:et",
@@ -327,6 +327,38 @@
         "nameRequired": "Ge produkten ett namn.",
         "unitPriceInvalid": "Priset anges i hela guaraní, utan decimaler eller tecken.",
         "unknown": "Vi kunde inte spara produkten. Försök igen."
+      },
+      "exportCsv": "Exportera CSV",
+      "importAction": "Importera CSV",
+      "import": {
+        "title": "Importera produkter",
+        "intro": "Ladda upp en CSV med kolumnerna name, description, unit_price, currency, is_active. Vi letar efter en befintlig produkt med samma namn (skiftlägesokänsligt): finns den uppdateras den, annars skapas en ny.",
+        "matchNote": "Namnet avgör om en rad uppdaterar en befintlig produkt eller skapar en ny — två rader med samma namn (skiftlägesokänsligt) räknas som samma produkt.",
+        "file": "CSV-fil",
+        "paste": "Eller klistra in innehållet",
+        "pastePlaceholder": "name,description,unit_price,currency,is_active",
+        "import": "Importera",
+        "importing": "Importerar…",
+        "reportTitle": "Importresultat",
+        "reportSummary": "{total} rader: {created} skapade, {updated} uppdaterade, {errors} med fel.",
+        "errorRow": "Rad",
+        "errorReason": "Orsak",
+        "errorsTruncated": "Och {count} fel till.",
+        "backToProducts": "Tillbaka till produkter",
+        "errorReasons": {
+          "nameMissing": "Inget namn",
+          "unitPriceInvalid": "Ogiltigt enhetspris",
+          "currencyInvalid": "Ogiltig valuta (3 bokstäver, t.ex. PYG)",
+          "activeInvalid": "Ogiltigt värde för is_active",
+          "duplicateInFile": "Namnet upprepas i filen",
+          "failed": "Kunde inte spara"
+        },
+        "errors": {
+          "empty": "Filen är tom eller kunde inte läsas.",
+          "tooLarge": "Filen är för stor: max är 5 MB.",
+          "tooManyRows": "För många rader: max är 5000 per import.",
+          "nameColumnMissing": "Filen behöver en \"name\"-kolumn."
+        }
       }
     },
     "contacts": {
@@ -939,7 +971,7 @@
           },
           "handler": {
             "title": "Klistra in hanteraren på din server",
-            "body": "Välj din teknik nedan och kopiera koden. Formuläret pekar på din egen endpoint, och det är den som anropar VenderCRM."
+            "body": "Välj din teknik nedan och kopiera koden. Formuläret pekar på din egen endpoint, och det är den som anropar clientes.com.py."
           },
           "verify": {
             "title": "Testa med ett riktigt inskick",
@@ -955,7 +987,7 @@
           "idempotency": "Skicka alltid idempotency_key. Med samma nyckel skapar ett omförsök eller en dubbelklickning ingen dubblettkontakt.",
           "phone": "Telefonnumret är obligatoriskt och är kontaktens identitet. Vi tar emot paraguayanskt lokalformat (0981 123 456) och normaliserar det till +595.",
           "spam": "Lägg in honeypot och gärna Cloudflare Turnstile. Spam stoppas på din webbplats, inte inne i CRM:et.",
-          "nonBlocking": "Svarar inte VenderCRM ska besökaren ändå få tacksidan, och felet loggas hos dig. Förlora aldrig ett lead på en timeout."
+          "nonBlocking": "Svarar inte clientes.com.py ska besökaren ändå få tacksidan, och felet loggas hos dig. Förlora aldrig ett lead på en timeout."
         }
       },
       "turnstile": {
@@ -1253,7 +1285,7 @@
       "copied": "Kopierat",
       "addExisting": {
         "title": "Lägg till någon som redan har konto",
-        "intro": "Om personen redan använder VenderCRM i ett annat företag: skapa inte ett andra konto, ge dem tillgång till det här i stället. De behåller sina övriga företag och växlar mellan dem.",
+        "intro": "Om personen redan använder clientes.com.py i ett annat företag: skapa inte ett andra konto, ge dem tillgång till det här i stället. De behåller sina övriga företag och växlar mellan dem.",
         "submit": "Ge tillgång",
         "added": "Tillgång given till",
         "errors": {
@@ -1265,7 +1297,7 @@
     },
     "tenants": {
       "title": "Företag",
-      "intro": "Alla företag som använder VenderCRM: skapa ett nytt, spärra åtkomsten eller logga in som dem för att ge support.",
+      "intro": "Alla företag som använder clientes.com.py: skapa ett nytt, spärra åtkomsten eller logga in som dem för att ge support.",
       "createTitle": "Nytt företag",
       "name": "Namn",
       "slug": "Slug",
@@ -1416,6 +1448,40 @@
         "contacts": "Kontakter",
         "messages": "Meddelanden",
         "lastMessage": "Senaste meddelande"
+      }
+    },
+    "tenantWhatsapp": {
+      "title": "WhatsApp",
+      "intro": "Hantera det här företagets WhatsApp-anslutning å deras vägnar — samma skärm som de själva skulle använda, med företaget redan valt.",
+      "empty": "Inga nummer anslutna än",
+      "number": "Nummer",
+      "wabaId": "WABA-ID",
+      "status": "Status",
+      "quality": "Kvalitet",
+      "connectedVia": "Anslutet via",
+      "actionsColumn": "Åtgärder",
+      "accountStatus": {
+        "connected": "Ansluten",
+        "disconnected": "Frånkopplad",
+        "error": "Fel"
+      },
+      "connectedViaValues": {
+        "embedded": "inbäddad registrering",
+        "manual": "manuellt"
+      },
+      "disconnect": "Koppla från",
+      "connectTitle": "Anslut ett nummer",
+      "connectHelp": "Ange uppgifterna som genererades i Meta Business Manager för det här företaget.",
+      "wabaIdLabel": "WABA-ID",
+      "phoneNumberId": "Phone Number ID",
+      "displayNumber": "Nummer (visas)",
+      "accessToken": "Åtkomsttoken",
+      "connect": "Anslut",
+      "errors": {
+        "wabaIdRequired": "Ange WABA-ID.",
+        "phoneNumberIdRequired": "Ange Phone Number ID.",
+        "accessTokenRequired": "Ange åtkomsttoken.",
+        "unknown": "Kunde inte ansluta numret. Försök igen."
       }
     }
   },
@@ -1637,7 +1703,7 @@
         "items": [
           {
             "title": "Plattformen",
-            "body": "Plattformen där ditt team ser varje förfrågan och varje uppföljning ingår. Den är vår, heter VenderCRM, och är inget du behöver köpa separat."
+            "body": "Plattformen där ditt team ser varje förfrågan och varje uppföljning ingår. Den är vår, heter clientes.com.py, och är inget du behöver köpa separat."
           },
           {
             "title": "Den skrivna processen",
@@ -1875,19 +1941,19 @@
   },
   "email": {
     "invitation": {
-      "subject": "{inviter} har bjudit in dig till {tenant} i VenderCRM",
+      "subject": "{inviter} har bjudit in dig till {tenant} i clientes.com.py",
       "title": "Du har blivit inbjuden till {tenant}",
-      "body": "{inviter} har bjudit in dig till teamet i VenderCRM. Länken gäller i 7 dagar.",
+      "body": "{inviter} har bjudit in dig till teamet i clientes.com.py. Länken gäller i 7 dagar.",
       "cta": "Acceptera inbjudan"
     },
     "passwordReset": {
-      "subject": "Återställ ditt lösenord — VenderCRM",
+      "subject": "Återställ ditt lösenord — clientes.com.py",
       "title": "Återställ ditt lösenord",
       "body": "Du har begärt att återställa ditt lösenord. Var det inte du kan du bortse från det här mejlet — länken gäller i en timme.",
       "cta": "Välj nytt lösenord"
     },
     "subscriptionExpiry": {
-      "subject": "Din prenumeration på VenderCRM går ut om {days} dagar",
+      "subject": "Din prenumeration på clientes.com.py går ut om {days} dagar",
       "title": "Din prenumeration går snart ut",
       "body": "Prenumerationen för <strong>{tenant}</strong> går ut den <strong>{date}</strong>. Därefter har du {grace} dagars läsbehörighet innan kontot spärras. Kontakta din leverantör för att förnya och undvika avbrott."
     },

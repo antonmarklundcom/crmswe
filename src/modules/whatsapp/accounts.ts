@@ -91,3 +91,20 @@ export async function resolveAccountByPhoneNumberId(phoneNumberId: string) {
 export async function markAccountError(accountId: string) {
   await db.update(waAccounts).set({ status: "error" }).where(eq(waAccounts.id, accountId));
 }
+
+/**
+ * Clears a broken or unwanted connection. Deliberately just a status flip,
+ * not a row delete: the token columns are `notNull` (§4), and the account id
+ * stays valid for whatever already reference it (conversations, messages) —
+ * exactly the "disconnected" state a fresh manual connect already produces
+ * for a never-used row. `getPrimaryAccount` (status === "connected") and the
+ * send path both already treat a non-connected account as unusable, so this
+ * is enough to stop sends/receives without a second status check anywhere.
+ */
+export async function disconnectAccount(ctx: TenantContext, accountId: string) {
+  await tenantDb(ctx)
+    .update(waAccounts)
+    .set({ status: "disconnected" })
+    .where(eq(waAccounts.id, accountId));
+  return getAccount(ctx, accountId);
+}

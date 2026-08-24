@@ -1,6 +1,6 @@
 {
   "common": {
-    "appName": "VenderCRM",
+    "appName": "clientes.com.py",
     "loading": "Loading…",
     "save": "Save",
     "saved": "Changes saved",
@@ -27,7 +27,7 @@
       "invalid": "This invitation is not valid or has expired",
       "success": "Account created. You can sign in now.",
       "joinTitle": "Join this business",
-      "existingAccount": "{email} already has a VenderCRM account. There's no need for a second one: sign in with that email and this business joins the ones you already work in.",
+      "existingAccount": "{email} already has a clientes.com.py account. There's no need for a second one: sign in with that email and this business joins the ones you already work in.",
       "joinSubmit": "Add this business to my account",
       "joined": "Done. You now have access to this business — pick it from the switcher at the top.",
       "goToApp": "Go to the CRM",
@@ -327,6 +327,38 @@
         "nameRequired": "Give the product a name.",
         "unitPriceInvalid": "The price is in whole guaraníes, no decimals or signs.",
         "unknown": "We couldn't save the product. Try again."
+      },
+      "exportCsv": "Export CSV",
+      "importAction": "Import CSV",
+      "import": {
+        "title": "Import products",
+        "intro": "Upload a CSV with columns name, description, unit_price, currency, is_active. We look for an existing product by name (case-insensitive): if found, it's updated; otherwise, a new one is created.",
+        "matchNote": "The name is the column that decides whether a row updates an existing product or creates a new one — two rows with the same name (case-insensitive) are treated as the same product.",
+        "file": "CSV file",
+        "paste": "Or paste the content",
+        "pastePlaceholder": "name,description,unit_price,currency,is_active",
+        "import": "Import",
+        "importing": "Importing…",
+        "reportTitle": "Import result",
+        "reportSummary": "{total} rows: {created} created, {updated} updated, {errors} with an error.",
+        "errorRow": "Row",
+        "errorReason": "Reason",
+        "errorsTruncated": "And {count} more error(s).",
+        "backToProducts": "Back to products",
+        "errorReasons": {
+          "nameMissing": "No name",
+          "unitPriceInvalid": "Invalid unit price",
+          "currencyInvalid": "Invalid currency (3 letters, e.g. PYG)",
+          "activeInvalid": "Invalid is_active value",
+          "duplicateInFile": "Name repeated in the file",
+          "failed": "Could not save"
+        },
+        "errors": {
+          "empty": "The file is empty or we couldn't read it.",
+          "tooLarge": "The file is too large: the maximum is 5 MB.",
+          "tooManyRows": "Too many rows: the maximum is 5000 per import.",
+          "nameColumnMissing": "The file needs a \"name\" column."
+        }
       }
     },
     "contacts": {
@@ -939,7 +971,7 @@
           },
           "handler": {
             "title": "Paste the handler on your server",
-            "body": "Pick your stack below and copy the code. The form points at your own endpoint, and that endpoint is what calls VenderCRM."
+            "body": "Pick your stack below and copy the code. The form points at your own endpoint, and that endpoint is what calls clientes.com.py."
           },
           "verify": {
             "title": "Test it with a real submission",
@@ -955,7 +987,7 @@
           "idempotency": "Always send idempotency_key. With the same key, a retry or a double click doesn't create a duplicate contact.",
           "phone": "The phone number is required and is the contact's identity. We accept the Paraguayan local format (0981 123 456) and normalise it to +595.",
           "spam": "Add the honeypot and, if you can, Cloudflare Turnstile. Spam is stopped at your site, not inside the CRM.",
-          "nonBlocking": "If VenderCRM doesn't answer, still show the visitor the thank-you page and record the error in your log. Never lose a lead to a timeout."
+          "nonBlocking": "If clientes.com.py doesn't answer, still show the visitor the thank-you page and record the error in your log. Never lose a lead to a timeout."
         }
       },
       "turnstile": {
@@ -1253,7 +1285,7 @@
       "copied": "Copied",
       "addExisting": {
         "title": "Add someone who already has an account",
-        "intro": "If this person already uses VenderCRM at another business, don't create a second account — give them access to this one here. They keep the businesses they already have and switch between them.",
+        "intro": "If this person already uses clientes.com.py at another business, don't create a second account — give them access to this one here. They keep the businesses they already have and switch between them.",
         "submit": "Grant access",
         "added": "Access granted to",
         "errors": {
@@ -1265,7 +1297,7 @@
     },
     "tenants": {
       "title": "Companies",
-      "intro": "Every company using VenderCRM: create a new one, suspend access, or sign in as them to give support.",
+      "intro": "Every company using clientes.com.py: create a new one, suspend access, or sign in as them to give support.",
       "createTitle": "New company",
       "name": "Name",
       "slug": "Slug",
@@ -1416,6 +1448,40 @@
         "contacts": "Contacts",
         "messages": "Messages",
         "lastMessage": "Last message"
+      }
+    },
+    "tenantWhatsapp": {
+      "title": "WhatsApp",
+      "intro": "Manage this business's WhatsApp connection on their behalf — the same screen they'd use, with the business already picked.",
+      "empty": "No numbers connected yet",
+      "number": "Number",
+      "wabaId": "WABA ID",
+      "status": "Status",
+      "quality": "Quality",
+      "connectedVia": "Connected via",
+      "actionsColumn": "Actions",
+      "accountStatus": {
+        "connected": "Connected",
+        "disconnected": "Disconnected",
+        "error": "Error"
+      },
+      "connectedViaValues": {
+        "embedded": "embedded signup",
+        "manual": "manual"
+      },
+      "disconnect": "Disconnect",
+      "connectTitle": "Connect a number",
+      "connectHelp": "Enter the details generated in Meta Business Manager for this business.",
+      "wabaIdLabel": "WABA ID",
+      "phoneNumberId": "Phone Number ID",
+      "displayNumber": "Number (display)",
+      "accessToken": "Access token",
+      "connect": "Connect",
+      "errors": {
+        "wabaIdRequired": "Enter the WABA ID.",
+        "phoneNumberIdRequired": "Enter the Phone Number ID.",
+        "accessTokenRequired": "Enter the access token.",
+        "unknown": "Could not connect the number. Try again."
       }
     }
   },
@@ -1637,7 +1703,7 @@
         "items": [
           {
             "title": "The platform",
-            "body": "It includes the platform where your team sees every enquiry and every follow-up. It's ours, it's called VenderCRM, and it isn't software you have to go and buy separately."
+            "body": "It includes the platform where your team sees every enquiry and every follow-up. It's ours, it's called clientes.com.py, and it isn't software you have to go and buy separately."
           },
           {
             "title": "The written process",
@@ -1875,19 +1941,19 @@
   },
   "email": {
     "invitation": {
-      "subject": "{inviter} invited you to {tenant} on VenderCRM",
+      "subject": "{inviter} invited you to {tenant} on clientes.com.py",
       "title": "You've been invited to {tenant}",
-      "body": "{inviter} invited you to join the team on VenderCRM. The link expires in 7 days.",
+      "body": "{inviter} invited you to join the team on clientes.com.py. The link expires in 7 days.",
       "cta": "Accept invitation"
     },
     "passwordReset": {
-      "subject": "Reset your password — VenderCRM",
+      "subject": "Reset your password — clientes.com.py",
       "title": "Reset your password",
       "body": "You asked to reset your password. If it wasn't you, ignore this email — the link expires in an hour.",
       "cta": "Choose a new password"
     },
     "subscriptionExpiry": {
-      "subject": "Your VenderCRM subscription expires in {days} days",
+      "subject": "Your clientes.com.py subscription expires in {days} days",
       "title": "Your subscription expires soon",
       "body": "The subscription for <strong>{tenant}</strong> expires on <strong>{date}</strong>. After that date you have {grace} days of read-only access before the account is suspended. Contact your provider to renew and avoid interruptions."
     },

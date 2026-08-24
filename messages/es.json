@@ -1,6 +1,6 @@
 {
   "common": {
-    "appName": "VenderCRM",
+    "appName": "clientes.com.py",
     "loading": "Cargando…",
     "save": "Guardar",
     "saved": "Cambios guardados",
@@ -27,7 +27,7 @@
       "invalid": "Esta invitación no es válida o ya expiró",
       "success": "Cuenta creada. Ya podés iniciar sesión.",
       "joinTitle": "Unirte a la empresa",
-      "existingAccount": "{email} ya tiene una cuenta en VenderCRM. No hace falta crear otra: iniciá sesión con ese correo y sumás esta empresa a las que ya trabajás.",
+      "existingAccount": "{email} ya tiene una cuenta en clientes.com.py. No hace falta crear otra: iniciá sesión con ese correo y sumás esta empresa a las que ya trabajás.",
       "joinSubmit": "Sumar esta empresa a mi cuenta",
       "joined": "Listo. Ya tenés acceso a esta empresa; elegila en el selector de arriba.",
       "goToApp": "Ir al CRM",
@@ -702,7 +702,7 @@
           },
           "handler": {
             "title": "Pegá el handler en tu servidor",
-            "body": "Elegí tu tecnología abajo y copiá el código. El formulario apunta a tu propio endpoint y ese endpoint es el que llama a VenderCRM."
+            "body": "Elegí tu tecnología abajo y copiá el código. El formulario apunta a tu propio endpoint y ese endpoint es el que llama a clientes.com.py."
           },
           "verify": {
             "title": "Probá con un envío real",
@@ -718,7 +718,7 @@
           "idempotency": "Mandá siempre idempotency_key. Con la misma clave, un reintento o un doble clic no crea un contacto duplicado.",
           "phone": "El teléfono es obligatorio y es la identidad del contacto. Aceptamos formato local paraguayo (0981 123 456) y lo normalizamos a +595.",
           "spam": "Poné el honeypot y, si podés, Cloudflare Turnstile. El spam se frena en tu sitio, no adentro del CRM.",
-          "nonBlocking": "Si VenderCRM no responde, igual mostrale la página de gracias al visitante y registrá el error en tu log. Nunca pierdas el lead por un timeout."
+          "nonBlocking": "Si clientes.com.py no responde, igual mostrale la página de gracias al visitante y registrá el error en tu log. Nunca pierdas el lead por un timeout."
         }
       },
       "turnstile": {
@@ -867,6 +867,38 @@
         "nameRequired": "Poné un nombre para el producto.",
         "unitPriceInvalid": "El precio va en guaraníes enteros, sin decimales ni signos.",
         "unknown": "No se pudo guardar el producto. Intentá de nuevo."
+      },
+      "exportCsv": "Exportar CSV",
+      "importAction": "Importar CSV",
+      "import": {
+        "title": "Importar productos",
+        "intro": "Subí un CSV con columnas name, description, unit_price, currency, is_active. Buscamos un producto existente por nombre (sin importar mayúsculas): si lo encontramos lo actualizamos, si no lo creamos.",
+        "matchNote": "El nombre es la columna que decide si una fila actualiza un producto existente o crea uno nuevo — dos filas con el mismo nombre (sin importar mayúsculas) se tratan como el mismo producto.",
+        "file": "Archivo CSV",
+        "paste": "O pegá el contenido",
+        "pastePlaceholder": "name,description,unit_price,currency,is_active",
+        "import": "Importar",
+        "importing": "Importando…",
+        "reportTitle": "Resultado de la importación",
+        "reportSummary": "{total} filas: {created} creadas, {updated} actualizadas, {errors} con error.",
+        "errorRow": "Fila",
+        "errorReason": "Motivo",
+        "errorsTruncated": "Y {count} error(es) más.",
+        "backToProducts": "Volver a productos",
+        "errorReasons": {
+          "nameMissing": "Sin nombre",
+          "unitPriceInvalid": "Precio unitario inválido",
+          "currencyInvalid": "Moneda inválida (3 letras, ej. PYG)",
+          "activeInvalid": "Valor de is_active inválido",
+          "duplicateInFile": "Nombre repetido en el archivo",
+          "failed": "No se pudo guardar"
+        },
+        "errors": {
+          "empty": "El archivo está vacío o no pudimos leerlo.",
+          "tooLarge": "El archivo es demasiado grande: el máximo son 5 MB.",
+          "tooManyRows": "Son demasiadas filas: el máximo son 5000 por importación.",
+          "nameColumnMissing": "El archivo necesita una columna \"name\"."
+        }
       }
     },
     "quotes": {
@@ -1253,7 +1285,7 @@
       "copied": "Copiado",
       "addExisting": {
         "title": "Sumar a alguien que ya tiene cuenta",
-        "intro": "Si la persona ya usa VenderCRM en otra empresa, no crees otra cuenta: sumale esta empresa acá. Mantiene su acceso a las demás y cambia entre ellas desde el selector.",
+        "intro": "Si la persona ya usa clientes.com.py en otra empresa, no crees otra cuenta: sumale esta empresa acá. Mantiene su acceso a las demás y cambia entre ellas desde el selector.",
         "submit": "Dar acceso",
         "added": "Acceso otorgado a",
         "errors": {
@@ -1265,7 +1297,7 @@
     },
     "tenants": {
       "title": "Empresas",
-      "intro": "Todas las empresas que usan VenderCRM: creá una nueva, suspendé el acceso o entrá como ella para dar soporte.",
+      "intro": "Todas las empresas que usan clientes.com.py: creá una nueva, suspendé el acceso o entrá como ella para dar soporte.",
       "createTitle": "Nueva empresa",
       "name": "Nombre",
       "slug": "Slug",
@@ -1416,6 +1448,40 @@
         "contacts": "Contactos",
         "messages": "Mensajes",
         "lastMessage": "Último mensaje"
+      }
+    },
+    "tenantWhatsapp": {
+      "title": "WhatsApp",
+      "intro": "Gestioná la conexión de WhatsApp de esta empresa en su nombre — misma pantalla que usarían ellos, con la empresa ya elegida.",
+      "empty": "Todavía no hay números conectados",
+      "number": "Número",
+      "wabaId": "WABA ID",
+      "status": "Estado",
+      "quality": "Calidad",
+      "connectedVia": "Conectado vía",
+      "actionsColumn": "Acciones",
+      "accountStatus": {
+        "connected": "Conectado",
+        "disconnected": "Desconectado",
+        "error": "Error"
+      },
+      "connectedViaValues": {
+        "embedded": "registro integrado",
+        "manual": "manual"
+      },
+      "disconnect": "Desconectar",
+      "connectTitle": "Conectar número",
+      "connectHelp": "Ingresá los datos generados en Meta Business Manager para esta empresa.",
+      "wabaIdLabel": "WABA ID",
+      "phoneNumberId": "Phone Number ID",
+      "displayNumber": "Número (para mostrar)",
+      "accessToken": "Token de acceso",
+      "connect": "Conectar",
+      "errors": {
+        "wabaIdRequired": "Ingresá el WABA ID.",
+        "phoneNumberIdRequired": "Ingresá el Phone Number ID.",
+        "accessTokenRequired": "Ingresá el token de acceso.",
+        "unknown": "No se pudo conectar el número. Intentá de nuevo."
       }
     }
   },
@@ -1637,7 +1703,7 @@
         "items": [
           {
             "title": "La plataforma",
-            "body": "Incluye la plataforma donde tu equipo ve cada consulta y cada seguimiento. Es nuestra, se llama VenderCRM, y no es un software que tenés que ir a comprar aparte."
+            "body": "Incluye la plataforma donde tu equipo ve cada consulta y cada seguimiento. Es nuestra, se llama clientes.com.py, y no es un software que tenés que ir a comprar aparte."
           },
           {
             "title": "El proceso escrito",
@@ -1875,19 +1941,19 @@
   },
   "email": {
     "invitation": {
-      "subject": "{inviter} te invitó a {tenant} en VenderCRM",
+      "subject": "{inviter} te invitó a {tenant} en clientes.com.py",
       "title": "Te invitaron a {tenant}",
-      "body": "{inviter} te invitó a sumarte al equipo en VenderCRM. El enlace vence en 7 días.",
+      "body": "{inviter} te invitó a sumarte al equipo en clientes.com.py. El enlace vence en 7 días.",
       "cta": "Aceptar invitación"
     },
     "passwordReset": {
-      "subject": "Restablecer tu contraseña — VenderCRM",
+      "subject": "Restablecer tu contraseña — clientes.com.py",
       "title": "Restablecé tu contraseña",
       "body": "Pediste restablecer tu contraseña. Si no fuiste vos, ignorá este correo — el enlace vence en una hora.",
       "cta": "Elegir nueva contraseña"
     },
     "subscriptionExpiry": {
-      "subject": "Tu suscripción a VenderCRM vence en {days} días",
+      "subject": "Tu suscripción a clientes.com.py vence en {days} días",
       "title": "Tu suscripción vence pronto",
       "body": "La suscripción de <strong>{tenant}</strong> vence el <strong>{date}</strong>. Después de esa fecha tenés {grace} días de acceso de solo lectura antes de que la cuenta se suspenda. Contactá a tu proveedor para renovar y evitar interrupciones."
     },

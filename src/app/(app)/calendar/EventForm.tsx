@@ -5,11 +5,17 @@ import { useTranslations } from "next-intl";
 
 import { Button } from "@/components/ui/button";
 import { Input, Select, Textarea } from "@/components/ui/form-fields";
-import {
-  EMPTY_CALENDAR_FORM,
-  type CalendarField,
-  type CalendarFormState,
-} from "./actions";
+import type { CalendarField, CalendarFormState } from "./actions";
+
+// Lives here, not in actions.ts: a "use server" module may only export async
+// functions, so a shared constant there fails the build (same reason
+// ContactCreateForm keeps its own).
+const EMPTY_CALENDAR_FORM: CalendarFormState = {
+  error: null,
+  field: null,
+  saved: false,
+  values: {},
+};
 
 // One form for booking and for editing — the fields are identical, and the
 // only difference is which action it is handed and what it starts filled

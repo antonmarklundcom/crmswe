@@ -27,13 +27,6 @@ export type CalendarFormState = {
   values: Record<string, string>;
 };
 
-export const EMPTY_CALENDAR_FORM: CalendarFormState = {
-  error: null,
-  field: null,
-  saved: false,
-  values: {},
-};
-
 const eventSchema = z.object({
   title: z.string().min(1).max(300),
   startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),

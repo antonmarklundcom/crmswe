@@ -246,7 +246,11 @@
         "chooseStage": "Elegir etapa",
         "apply": "Aplicar",
         "exportSelection": "Exportar selección",
-        "clearSelection": "Quitar selección"
+        "clearSelection": "Quitar selección",
+        "deleteSelection": "Eliminar",
+        "deleteConfirm": "¿Eliminar {count} contactos? Los que ya tengan presupuestos, negocios o conversación se conservan.",
+        "deleteDone": "{count} contactos eliminados",
+        "deleteBlocked": "{count} se conservaron porque ya tienen historial"
       },
       "saved": "Cambios guardados",
       "errors": {
@@ -320,6 +324,21 @@
         "conversations": "conversaciones de WhatsApp",
         "submissions": "leads recibidos",
         "automationRuns": "automatizaciones ejecutadas"
+      },
+      "pipeline": "Pipeline",
+      "allPipelines": "Todos los pipelines",
+      "stage": "Etapa",
+      "allStages": "Todas las etapas",
+      "views": {
+        "label": "Vistas guardadas",
+        "save": "Guardar vista",
+        "namePlaceholder": "Nombre de la vista",
+        "delete": "Borrar la vista {name}",
+        "errors": {
+          "nameRequired": "Poné un nombre para la vista",
+          "nameTaken": "Ya existe una vista con ese nombre",
+          "unknown": "No se pudo guardar la vista"
+        }
       }
     },
     "pipeline": {

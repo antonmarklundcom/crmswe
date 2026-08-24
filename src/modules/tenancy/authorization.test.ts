@@ -123,6 +123,7 @@ const pipelineActions = await import("@/app/(app)/pipeline/actions");
 const productActions = await import("@/app/(app)/products/actions");
 const documentActions = await import("@/app/(app)/documents/actions");
 const contactActions = await import("@/app/(app)/contacts/actions");
+const contactBulkActions = await import("@/app/(app)/contacts/bulk-actions");
 
 function form(fields: Record<string, string>): FormData {
   const data = new FormData();
@@ -233,6 +234,11 @@ const adminOnlyActions: Array<{
     name: "contacts: deleteContactAction",
     service: () => deletion.deleteContactRecord,
     call: () => contactActions.deleteContactAction(form({ contactId: "contact-1" })),
+  },
+  {
+    name: "contacts: bulkDeleteContactsAction",
+    service: () => deletion.deleteContactRecord,
+    call: () => contactBulkActions.bulkDeleteContactsAction(["contact-1", "contact-2"]),
   },
   {
     name: "pipeline: deleteDealAction",

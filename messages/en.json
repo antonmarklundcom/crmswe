@@ -364,7 +364,11 @@
         "chooseStage": "Choose stage",
         "apply": "Apply",
         "exportSelection": "Export selection",
-        "clearSelection": "Clear selection"
+        "clearSelection": "Clear selection",
+        "deleteSelection": "Delete",
+        "deleteConfirm": "Delete {count} contacts? Any with quotes, deals or a conversation are kept.",
+        "deleteDone": "{count} contacts deleted",
+        "deleteBlocked": "{count} were kept because they already have history"
       },
       "saved": "Changes saved",
       "errors": {
@@ -438,6 +442,21 @@
         "conversations": "WhatsApp conversations",
         "submissions": "captured leads",
         "automationRuns": "automation runs"
+      },
+      "pipeline": "Pipeline",
+      "allPipelines": "All pipelines",
+      "stage": "Stage",
+      "allStages": "All stages",
+      "views": {
+        "label": "Saved views",
+        "save": "Save view",
+        "namePlaceholder": "View name",
+        "delete": "Delete the view {name}",
+        "errors": {
+          "nameRequired": "Give the view a name",
+          "nameTaken": "A view with that name already exists",
+          "unknown": "The view couldn't be saved"
+        }
       }
     },
     "inbox": {

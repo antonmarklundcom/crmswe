@@ -230,3 +230,30 @@ export const tasks = mysqlTable(
     index("tasks_tenant_assigned_idx").on(table.tenantId, table.assignedUserId),
   ],
 );
+
+// A saved contacts view: the filter/sort querystring a rep reaches for often,
+// under a name. Tenant-owned and visible to everyone in the business — the
+// pipeline is shared (§1.2 "in-tenant visibility"), so a view of it is too.
+// `query` holds a canonical, re-serialized querystring of known filter keys
+// only, never whatever the URL happened to contain.
+export const contactViews = mysqlTable(
+  "contact_views",
+  {
+    id: char("id", { length: 26 }).primaryKey(),
+    tenantId: char("tenant_id", { length: 26 }).notNull(),
+    /** Who saved it — an agent may delete their own; an admin may delete any. */
+    createdByUserId: char("created_by_user_id", { length: 26 }).notNull(),
+    name: varchar("name", { length: 100 }).notNull(),
+    query: varchar("query", { length: 1000 }).notNull(),
+    createdAt: datetime("created_at")
+      .notNull()
+      .default(sql`CURRENT_TIMESTAMP`),
+    updatedAt: datetime("updated_at")
+      .notNull()
+      .default(sql`CURRENT_TIMESTAMP`),
+  },
+  (table) => [
+    index("contact_views_tenant_id_idx").on(table.tenantId),
+    uniqueIndex("contact_views_tenant_name_idx").on(table.tenantId, table.name),
+  ],
+);

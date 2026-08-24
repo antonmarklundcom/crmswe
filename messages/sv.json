@@ -364,7 +364,11 @@
         "chooseStage": "Välj steg",
         "apply": "Verkställ",
         "exportSelection": "Exportera urval",
-        "clearSelection": "Rensa urval"
+        "clearSelection": "Rensa urval",
+        "deleteSelection": "Ta bort",
+        "deleteConfirm": "Ta bort {count} kontakter? De som redan har offerter, affärer eller konversation behålls.",
+        "deleteDone": "{count} kontakter borttagna",
+        "deleteBlocked": "{count} behölls eftersom de redan har historik"
       },
       "saved": "Ändringarna sparades",
       "errors": {
@@ -438,6 +442,21 @@
         "conversations": "WhatsApp-konversationer",
         "submissions": "inkomna leads",
         "automationRuns": "körda automationer"
+      },
+      "pipeline": "Pipeline",
+      "allPipelines": "Alla pipelines",
+      "stage": "Steg",
+      "allStages": "Alla steg",
+      "views": {
+        "label": "Sparade vyer",
+        "save": "Spara vy",
+        "namePlaceholder": "Namn på vyn",
+        "delete": "Ta bort vyn {name}",
+        "errors": {
+          "nameRequired": "Ge vyn ett namn",
+          "nameTaken": "Det finns redan en vy med det namnet",
+          "unknown": "Vyn kunde inte sparas"
+        }
       }
     },
     "inbox": {

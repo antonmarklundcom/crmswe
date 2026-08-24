@@ -2,11 +2,16 @@
 
 import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
-import { Download } from "lucide-react";
+import { Download, Trash2 } from "lucide-react";
 
 import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { bulkAddTagAction, bulkAddToPipelineAction, bulkAssignOwnerAction } from "./bulk-actions";
+import {
+  bulkAddTagAction,
+  bulkAddToPipelineAction,
+  bulkAssignOwnerAction,
+  bulkDeleteContactsAction,
+} from "./bulk-actions";
 import { Select } from "@/components/ui/form-fields";
 
 // Row selection + bulk actions (PLAN.md §10 1J #1). Calls the server actions
@@ -47,6 +52,10 @@ export type ContactsTableLabels = {
   apply: string;
   exportSelection: string;
   clearSelection: string;
+  deleteSelection: string;
+  deleteConfirm: string;
+  deleteDone: string;
+  deleteBlocked: string;
 };
 
 export function ContactsTable({
@@ -58,6 +67,7 @@ export function ContactsTable({
   users,
   stages,
   exportBaseHref,
+  canDelete,
   labels,
 }: {
   rows: ContactRow[];
@@ -70,6 +80,9 @@ export function ContactsTable({
   /** The current filter/sort querystring, so "export selection" carries the
    * same view — just narrowed to the checked rows — rather than resetting it. */
   exportBaseHref: string;
+  /** Bulk delete is admin-only (§3.2), so the button is only rendered for
+   * one — the server action re-checks the role regardless. */
+  canDelete: boolean;
   labels: ContactsTableLabels;
 }) {
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -77,6 +90,7 @@ export function ContactsTable({
   const [tagId, setTagId] = useState("");
   const [ownerId, setOwnerId] = useState("");
   const [stageId, setStageId] = useState("");
+  const [deleteReport, setDeleteReport] = useState<string | null>(null);
 
   const allSelected = rows.length > 0 && selected.size === rows.length;
 
@@ -196,6 +210,37 @@ export function ContactsTable({
             </>
           )}
 
+          {canDelete && (
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              disabled={pending}
+              className="border-destructive/40 text-destructive hover:bg-destructive/10"
+              onClick={() => {
+                // A native confirm rather than a dialog component: this is the
+                // one bulk action that destroys rows, and the count is the
+                // whole question being asked.
+                if (!window.confirm(labels.deleteConfirm.replace("{count}", String(selected.size))))
+                  return;
+                startTransition(async () => {
+                  const result = await bulkDeleteContactsAction(selectedIds);
+                  const parts = [labels.deleteDone.replace("{count}", String(result.deleted))];
+                  // Only mentioned when it happened — "0 conservados" reads
+                  // like a warning about nothing.
+                  if (result.blocked > 0) {
+                    parts.push(labels.deleteBlocked.replace("{count}", String(result.blocked)));
+                  }
+                  setDeleteReport(parts.join(" · "));
+                  setSelected(new Set());
+                });
+              }}
+            >
+              <Trash2 className="size-3.5" aria-hidden="true" />
+              {labels.deleteSelection}
+            </Button>
+          )}
+
           {exportSelectionHref && (
             <a
               href={exportSelectionHref}
@@ -214,6 +259,12 @@ export function ContactsTable({
             {labels.clearSelection}
           </button>
         </div>
+      )}
+
+      {deleteReport && (
+        <p role="status" className="text-sm text-muted-foreground">
+          {deleteReport}
+        </p>
       )}
 
       <div className="overflow-x-auto">

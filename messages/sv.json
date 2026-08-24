@@ -1294,7 +1294,12 @@
       "queueStuck": "Fastnade jobb",
       "queueStuckIntro": "Kör fortfarande långt efter att de borde ha blivit klara: nästan alltid en process som dog halvvägs.",
       "noQueueStuck": "Inga fastnade jobb",
-      "retryJob": "Försök igen"
+      "retryJob": "Försök igen",
+      "syncTemplates": "Synka mallar",
+      "clearError": "Markera som löst",
+      "retryTenantJobs": "Försök igen med {count} utskick",
+      "sendFailures": "Misslyckade utskick",
+      "noSendFailures": "Inga utskick har misslyckats nyligen."
     },
     "users": {
       "title": "Användare",

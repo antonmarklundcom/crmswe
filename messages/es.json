@@ -1294,7 +1294,12 @@
       "queueStuck": "Trabajos trabados",
       "queueStuckIntro": "Siguen en ejecución mucho después de lo esperado: casi siempre un proceso que murió a mitad de camino.",
       "noQueueStuck": "Sin trabajos trabados",
-      "retryJob": "Reintentar"
+      "retryJob": "Reintentar",
+      "syncTemplates": "Sincronizar plantillas",
+      "clearError": "Marcar como resuelto",
+      "retryTenantJobs": "Reintentar {count} envío(s)",
+      "sendFailures": "Envíos que fallaron",
+      "noSendFailures": "Ningún envío falló últimamente."
     },
     "users": {
       "title": "Usuarios",

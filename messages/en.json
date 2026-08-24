@@ -1294,7 +1294,12 @@
       "queueStuck": "Stuck jobs",
       "queueStuckIntro": "Still running long after they should have finished: almost always a process that died halfway through.",
       "noQueueStuck": "No stuck jobs",
-      "retryJob": "Retry"
+      "retryJob": "Retry",
+      "syncTemplates": "Sync templates",
+      "clearError": "Mark as resolved",
+      "retryTenantJobs": "Retry {count} send(s)",
+      "sendFailures": "Failed sends",
+      "noSendFailures": "No sends have failed recently."
     },
     "users": {
       "title": "Users",

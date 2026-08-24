@@ -69,8 +69,25 @@ describe.skipIf(!hasDb)("sales report (MySQL integration)", () => {
     await deals.moveDeal(ctx, deal!.id, { toStageId: wonStageId, toPosition: 0 });
   });
 
+  /**
+   * A window that ends a minute out rather than at `now`.
+   *
+   * `closed_at` is a second-precision DATETIME and MySQL *rounds* on insert
+   * (MariaDB truncates — which is why this passed locally and failed in CI):
+   * a deal closed at 12:11:50.7 is stored as 12:11:51, half a second in the
+   * future of the `now` the report window would have used. The production
+   * window is right as it is — a deal drops out of "won this period" for at
+   * most one second — but a test racing that boundary tests the clock, not
+   * the report.
+   */
+  const window = () => ({
+    from: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+    to: new Date(Date.now() + 60 * 1000),
+    days: 30,
+  });
+
   it("counts the deal it created, in the window, once", async () => {
-    const report = await reports.getSalesReport(ctx, reports.reportWindow(30));
+    const report = await reports.getSalesReport(ctx, window());
 
     expect(report.funnel.contactsCreated).toBe(1);
     expect(report.funnel.dealsOpened).toBe(1);
@@ -80,7 +97,7 @@ describe.skipIf(!hasDb)("sales report (MySQL integration)", () => {
   });
 
   it("attributes it to the rep who owns it", async () => {
-    const report = await reports.getSalesReport(ctx, reports.reportWindow(30));
+    const report = await reports.getSalesReport(ctx, window());
     const rep = report.byAgent.find((row) => row.userId === "rep-1");
 
     expect(rep).toBeDefined();
@@ -89,7 +106,7 @@ describe.skipIf(!hasDb)("sales report (MySQL integration)", () => {
   });
 
   it("shows another business none of it", async () => {
-    const report = await reports.getSalesReport(otherCtx, reports.reportWindow(30));
+    const report = await reports.getSalesReport(otherCtx, window());
 
     expect(report.funnel.dealsWon).toBe(0);
     expect(report.funnel.wonValue).toBe(0);

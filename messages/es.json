@@ -90,7 +90,8 @@
         "capture": "Captación",
         "settings": "Configuración"
       },
-      "calendar": "Agenda"
+      "calendar": "Agenda",
+      "reports": "Informes"
     },
     "dashboard": {
       "title": "Panel de {tenant}",
@@ -1167,6 +1168,40 @@
     "business": {
       "switcherTitle": "Empresa",
       "switcherCurrent": "Elegí una empresa"
+    },
+    "reports": {
+      "title": "Informes",
+      "intro": "De dónde vienen los leads y qué pasa con ellos: cuántos se convierten en negocio, cuántos se ganan, quién los trabaja y cuánto tardás en contestar.",
+      "period": "{days} días",
+      "funnel": {
+        "leads": "Leads recibidos",
+        "dealsOpened": "Negocios abiertos",
+        "dealsWon": "Ganados",
+        "dealsLost": "Perdidos"
+      },
+      "conversion": "{rate} de conversión",
+      "wonValue": "Vendido en el período",
+      "responseTitle": "Tiempo de respuesta (mediana)",
+      "minutes": "{count} min",
+      "responseHint": "{answered} conversaciones contestadas, {unanswered} sin contestar",
+      "byMonthTitle": "Ganados y perdidos por mes",
+      "wonLost": "{won} ganados · {lost} perdidos",
+      "bySourceTitle": "Por origen",
+      "bySiteTitle": "Por sitio",
+      "byAgentTitle": "Por vendedor",
+      "table": {
+        "source": "Origen",
+        "site": "Sitio",
+        "agent": "Vendedor",
+        "leads": "Leads",
+        "deals": "Negocios",
+        "won": "Ganados",
+        "wonValue": "Vendido",
+        "open": "Abiertos",
+        "messages": "Mensajes",
+        "tasks": "Tareas",
+        "empty": "Todavía no hay datos en este período."
+      }
     }
   },
   "superadmin": {

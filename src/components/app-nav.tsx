@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   CalendarDays,
+  ChartNoAxesColumn,
   ClipboardList,
   FileText,
   Globe,
@@ -40,6 +41,7 @@ const ICONS = {
   quotes: FileText,
   documents: ScrollText,
   products: Package,
+  reports: ChartNoAxesColumn,
   automations: Workflow,
   forms: ClipboardList,
   sites: Globe,

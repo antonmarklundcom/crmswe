@@ -71,6 +71,75 @@ export function buildRange(
   };
 }
 
+// --- Week view hour rail --------------------------------------------------
+//
+// The week grid draws a Google-Calendar-style left rail of hour labels with
+// timed entries positioned against it, so which day a column is stays
+// legible at a glance instead of resting on a small weekday abbreviation
+// alone. Month view stays the cell-list it already was — a month is read as
+// "which days had something", not "when in the day", so an hourly axis
+// would only add noise there.
+
+/** The window the week grid's hour rail covers — wide enough for a normal
+ * business day without making every row so short a short visit disappears. */
+export const WEEK_GRID_START_HOUR = 7;
+export const WEEK_GRID_END_HOUR = 21;
+
+/** One label per hour the rail draws, e.g. [7, 8, …, 20]. */
+export function weekGridHours(): number[] {
+  return Array.from(
+    { length: WEEK_GRID_END_HOUR - WEEK_GRID_START_HOUR },
+    (_, index) => WEEK_GRID_START_HOUR + index,
+  );
+}
+
+function clampPercent(value: number): number {
+  return Math.min(Math.max(value, 0), 100);
+}
+
+/** A block short enough to become a sliver (a point-in-time task, a
+ * five-minute call) still has to stay readable and clickable. */
+const MIN_ENTRY_HEIGHT_PERCENT = 4;
+
+/**
+ * Where a timed entry sits within one day's column of the week grid, as
+ * percentages of the WEEK_GRID_START_HOUR–WEEK_GRID_END_HOUR window — for
+ * absolutely positioning it with `style={{ top, height }}`.
+ *
+ * An entry that starts before, or a task with no end that would fall after,
+ * the shown window is clamped to the window's edge rather than hidden — the
+ * same "still appears, just pinned" choice bucketByDay already makes for a
+ * multi-day event on a day it only partly touches. A task (endsAt: null) is
+ * drawn as a short block from its due time, long enough to read and click.
+ */
+export function weekGridPosition(
+  entry: Pick<CalendarEntry, "startsAt" | "endsAt">,
+  day: DayKey,
+  timeZone: string,
+): { topPercent: number; heightPercent: number } {
+  const dayStart = startOfDay(day, timeZone).getTime();
+  const dayEnd = startOfDay(addDays(day, 1), timeZone).getTime();
+  const windowStart = dayStart + WEEK_GRID_START_HOUR * 60 * 60 * 1000;
+  const windowEnd = dayStart + WEEK_GRID_END_HOUR * 60 * 60 * 1000;
+  const windowMs = windowEnd - windowStart;
+
+  const rawEnd =
+    entry.endsAt && entry.endsAt.getTime() > entry.startsAt.getTime()
+      ? entry.endsAt.getTime()
+      : entry.startsAt.getTime() + 30 * 60 * 1000;
+
+  const clampedStart = Math.min(Math.max(entry.startsAt.getTime(), dayStart), dayEnd);
+  const clampedEnd = Math.min(Math.max(rawEnd, dayStart), dayEnd);
+
+  const topPercent = clampPercent(((clampedStart - windowStart) / windowMs) * 100);
+  const bottomPercent = clampPercent(((clampedEnd - windowStart) / windowMs) * 100);
+
+  return {
+    topPercent,
+    heightPercent: Math.max(bottomPercent - topPercent, MIN_ENTRY_HEIGHT_PERCENT),
+  };
+}
+
 /** What a grid cell shows: an agenda event, or a task falling due. */
 export type CalendarEntry = {
   id: string;

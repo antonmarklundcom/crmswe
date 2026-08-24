@@ -1234,9 +1234,23 @@
         "emailTaken": "That email already has an account.",
         "unknown": "We couldn't create the user. Try again."
       },
-      "inactive": "inactive",
-      "newPassword": "New password",
-      "setPassword": "Set password",
+      "inactive": "Inactive",
+      "stateColumn": "Status",
+      "stateActive": "Active",
+      "actionsColumn": "Actions",
+      "edit": "Edit",
+      "editTitle": "Edit user",
+      "editErrors": {
+        "invalid": "Check the name and email.",
+        "emailTaken": "That email already has another account.",
+        "unknown": "We couldn't save the change. Try again."
+      },
+      "resetPassword": "Reset password",
+      "resetPasswordLinkTitle": "Password reset link",
+      "resetPasswordLinkHelp": "Send it to the person. Opening it lets them choose a new password, and their current sessions end.",
+      "resetPasswordError": "We couldn't generate the link. Try again.",
+      "copy": "Copy",
+      "copied": "Copied",
       "addExisting": {
         "title": "Add someone who already has an account",
         "intro": "If this person already uses VenderCRM at another business, don't create a second account — give them access to this one here. They keep the businesses they already have and switch between them.",

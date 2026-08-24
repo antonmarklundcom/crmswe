@@ -10,8 +10,9 @@ import { PageHeader } from "@/components/page-header";
 import { CreateUserForm, type CreateUserLabels } from "./CreateUserForm";
 import { AddExistingUserForm, type AddExistingUserLabels } from "./AddExistingUserForm";
 import { CreateSubscriptionForm, RecordPaymentForm } from "./SubscriptionForms";
-import { impersonateAction, setTenantUserPasswordAction } from "./actions";
-import { Input } from "@/components/ui/form-fields";
+import { impersonateAction } from "./actions";
+import { MemberEditDialog, type MemberEditLabels } from "./MemberEditDialog";
+import { ResetPasswordButton, type ResetPasswordLabels } from "./ResetPasswordButton";
 
 // Defense in depth (§3.3): the (superadmin) layout already redirects a
 // non-superadmin, but a layout is not an authorization boundary — this page
@@ -36,6 +37,7 @@ export default async function TenantDetailPage({
   const t = await getTranslations("superadmin.tenants");
   const ts = await getTranslations("superadmin.subscriptions");
   const tu = await getTranslations("superadmin.tenantUsers");
+  const tc = await getTranslations("common");
 
   const userLabels: CreateUserLabels = {
     name: tu("name"),
@@ -51,6 +53,29 @@ export default async function TenantDetailPage({
       emailTaken: tu("errors.emailTaken"),
       unknown: tu("errors.unknown"),
     },
+  };
+
+  const editLabels: MemberEditLabels = {
+    trigger: tu("edit"),
+    title: tu("editTitle"),
+    name: tu("name"),
+    email: tu("email"),
+    save: tc("save"),
+    cancel: tc("cancel"),
+    errors: {
+      invalid: tu("editErrors.invalid"),
+      emailTaken: tu("editErrors.emailTaken"),
+      unknown: tu("editErrors.unknown"),
+    },
+  };
+
+  const resetPasswordLabels: ResetPasswordLabels = {
+    trigger: tu("resetPassword"),
+    linkTitle: tu("resetPasswordLinkTitle"),
+    linkHelp: tu("resetPasswordLinkHelp"),
+    copy: tu("copy"),
+    copied: tu("copied"),
+    error: tu("resetPasswordError"),
   };
 
   const addExistingLabels: AddExistingUserLabels = {
@@ -112,46 +137,64 @@ export default async function TenantDetailPage({
       <section>
         <h2 className="mb-2 text-lg font-semibold">{tu("title")}</h2>
         <p className="mb-3 max-w-2xl text-sm text-muted-foreground">{tu("intro")}</p>
-        <ul className="mb-6 flex flex-col gap-2">
-          {users.map((user) => (
-            <li key={user.id} className="flex flex-wrap items-center gap-3 text-sm">
-              <span>
-                {user.name} ({user.email}) — {user.role}
-                {user.banned && (
-                  <span className="ml-2 text-muted-foreground">({tu("inactive")})</span>
-                )}
-              </span>
-              <form action={impersonateAction}>
-                <input type="hidden" name="userId" value={user.id} />
-                <input type="hidden" name="tenantId" value={tenant.id} />
-                <Button type="submit" size="sm" variant="outline">
-                  {t("impersonate")}
-                </Button>
-              </form>
-              {/* Last resort for a user locked out of their own mailbox —
-                  their sessions are dropped with the change, so whoever was
-                  logged in as them stops being so. */}
-              <form action={setTenantUserPasswordAction} className="flex items-center gap-2">
-                <input type="hidden" name="tenantId" value={tenant.id} />
-                <input type="hidden" name="userId" value={user.id} />
-                <Input
-                  type="password"
-                  name="password"
-                  minLength={8}
-                  required
-                  placeholder={tu("newPassword")}
-                  aria-label={tu("newPassword")}
-                />
-                <Button type="submit" size="sm" variant="outline">
-                  {tu("setPassword")}
-                </Button>
-              </form>
-            </li>
-          ))}
-          {users.length === 0 && (
-            <li className="text-sm text-muted-foreground">{tu("noUsers")}</li>
-          )}
-        </ul>
+        {users.length === 0 ? (
+          <p className="mb-6 text-sm text-muted-foreground">{tu("noUsers")}</p>
+        ) : (
+          <div className="mb-6 overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead>
+                <tr className="border-b">
+                  <th className="py-2 font-medium">{tu("name")}</th>
+                  <th className="py-2 font-medium">{tu("email")}</th>
+                  <th className="py-2 font-medium">{tu("role")}</th>
+                  <th className="py-2 font-medium">{tu("stateColumn")}</th>
+                  <th className="py-2 text-right font-medium">{tu("actionsColumn")}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {users.map((user) => (
+                  <tr key={user.id} className="border-b align-top">
+                    <td className="py-3 pr-4">{user.name}</td>
+                    <td className="py-3 pr-4">{user.email}</td>
+                    <td className="py-3 pr-4">
+                      {user.role === "admin" ? tu("roles.admin") : tu("roles.agent")}
+                    </td>
+                    <td className="py-3 pr-4">
+                      {user.banned ? (
+                        <span className="text-muted-foreground">{tu("inactive")}</span>
+                      ) : (
+                        <span className="text-success">{tu("stateActive")}</span>
+                      )}
+                    </td>
+                    <td className="py-3">
+                      <div className="flex flex-wrap items-start justify-end gap-2">
+                        <MemberEditDialog
+                          tenantId={tenant.id}
+                          userId={user.id}
+                          name={user.name}
+                          email={user.email}
+                          labels={editLabels}
+                        />
+                        <form action={impersonateAction}>
+                          <input type="hidden" name="userId" value={user.id} />
+                          <input type="hidden" name="tenantId" value={tenant.id} />
+                          <Button type="submit" size="sm" variant="outline">
+                            {t("impersonate")}
+                          </Button>
+                        </form>
+                        <ResetPasswordButton
+                          tenantId={tenant.id}
+                          userId={user.id}
+                          labels={resetPasswordLabels}
+                        />
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
 
         <h3 className="mb-3 text-base font-medium">{tu("createTitle")}</h3>
         <CreateUserForm tenantId={tenant.id} labels={userLabels} />

@@ -10,6 +10,7 @@ import { newId } from "@/lib/ids";
 import { hasValidInvitationForEmail } from "@/modules/tenancy/invitations";
 import { sendEmail } from "@/lib/email";
 import { passwordResetEmail } from "@/lib/email/templates";
+import { captureResetUrl } from "./reset-capture";
 
 // Better Auth instance (Drizzle adapter + admin plugin for impersonation —
 // PLAN.md §2.3, §3.2). This file is infra wiring analogous to db/client.ts
@@ -53,6 +54,9 @@ export const auth = betterAuth({
       const locale = (user as { locale?: string | null }).locale ?? null;
       const { subject, html } = await passwordResetEmail({ resetUrl: url, locale });
       await sendEmail({ to: user.email, subject, html });
+      // No-op unless the caller wrapped this request in withResetUrlCapture
+      // (the superadmin reset action) — see reset-capture.ts.
+      captureResetUrl(url);
     },
   },
   user: {

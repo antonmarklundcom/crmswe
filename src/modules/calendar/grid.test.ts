@@ -1,5 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { bucketByDay, buildRange, isCalendarView, type CalendarEntry } from "./grid";
+import {
+  bucketByDay,
+  buildRange,
+  isCalendarView,
+  weekGridHours,
+  weekGridPosition,
+  WEEK_GRID_END_HOUR,
+  WEEK_GRID_START_HOUR,
+  type CalendarEntry,
+} from "./grid";
 
 const ASU = "America/Asuncion";
 const NOW = new Date("2026-08-24T15:00:00Z");
@@ -141,5 +150,66 @@ describe("bucketByDay", () => {
       ASU,
     );
     expect([...buckets.values()].flat()).toEqual([]);
+  });
+});
+
+describe("weekGridHours", () => {
+  it("labels every hour of the window, start inclusive, end exclusive", () => {
+    const hours = weekGridHours();
+    expect(hours[0]).toBe(WEEK_GRID_START_HOUR);
+    expect(hours[hours.length - 1]).toBe(WEEK_GRID_END_HOUR - 1);
+    expect(hours).toHaveLength(WEEK_GRID_END_HOUR - WEEK_GRID_START_HOUR);
+  });
+});
+
+describe("weekGridPosition", () => {
+  const day = "2026-08-26";
+
+  it("places an entry at the middle of the window at its midpoint height", () => {
+    // Asunción is UTC-3, so 14:00 local (17:00Z) is the midpoint of the
+    // 07:00–21:00 window WEEK_GRID_START_HOUR/WEEK_GRID_END_HOUR describe.
+    const { topPercent, heightPercent } = weekGridPosition(
+      entry({
+        id: "mid",
+        startsAt: new Date("2026-08-26T17:00:00Z"),
+        endsAt: new Date("2026-08-26T18:00:00Z"),
+      }),
+      day,
+      ASU,
+    );
+    expect(topPercent).toBeCloseTo(50, 0);
+    expect(heightPercent).toBeGreaterThan(0);
+  });
+
+  it("clamps a start before the window to the top edge", () => {
+    const { topPercent } = weekGridPosition(
+      entry({ id: "early", startsAt: new Date("2026-08-26T03:00:00Z") }),
+      day,
+      ASU,
+    );
+    expect(topPercent).toBe(0);
+  });
+
+  it("clamps an end after the window to the bottom edge", () => {
+    const { topPercent, heightPercent } = weekGridPosition(
+      entry({
+        id: "late",
+        startsAt: new Date("2026-08-26T22:00:00Z"),
+        endsAt: new Date("2026-08-27T02:00:00Z"),
+      }),
+      day,
+      ASU,
+    );
+    expect(topPercent + heightPercent).toBe(100);
+  });
+
+  it("gives a task (no endsAt) a short, still-visible block", () => {
+    const { heightPercent } = weekGridPosition(
+      entry({ id: "task", kind: "task", startsAt: new Date("2026-08-26T16:00:00Z") }),
+      day,
+      ASU,
+    );
+    expect(heightPercent).toBeGreaterThan(0);
+    expect(heightPercent).toBeLessThan(20);
   });
 });

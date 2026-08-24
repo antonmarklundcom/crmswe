@@ -1234,9 +1234,23 @@
         "emailTaken": "Ese correo ya tiene una cuenta.",
         "unknown": "No se pudo crear el usuario. Intentá de nuevo."
       },
-      "inactive": "inactivo",
-      "newPassword": "Contraseña nueva",
-      "setPassword": "Definir contraseña",
+      "inactive": "Inactivo",
+      "stateColumn": "Estado",
+      "stateActive": "Activo",
+      "actionsColumn": "Acciones",
+      "edit": "Editar",
+      "editTitle": "Editar usuario",
+      "editErrors": {
+        "invalid": "Revisá el nombre y el correo.",
+        "emailTaken": "Ese correo ya tiene otra cuenta.",
+        "unknown": "No se pudo guardar el cambio. Intentá de nuevo."
+      },
+      "resetPassword": "Restablecer contraseña",
+      "resetPasswordLinkTitle": "Enlace para restablecer la contraseña",
+      "resetPasswordLinkHelp": "Mandaselo a la persona. Al abrirlo elige una contraseña nueva y sus sesiones actuales se cierran.",
+      "resetPasswordError": "No se pudo generar el enlace. Intentá de nuevo.",
+      "copy": "Copiar",
+      "copied": "Copiado",
       "addExisting": {
         "title": "Sumar a alguien que ya tiene cuenta",
         "intro": "Si la persona ya usa VenderCRM en otra empresa, no crees otra cuenta: sumale esta empresa acá. Mantiene su acceso a las demás y cambia entre ellas desde el selector.",

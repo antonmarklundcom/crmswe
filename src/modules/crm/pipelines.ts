@@ -9,12 +9,18 @@ import { tenantDb } from "@/modules/tenancy/db";
 // superadmin tenant-creation action, not from modules/tenancy — crm stays
 // downstream of tenancy, not the other way around).
 
-const DEFAULT_STAGES: Array<{ name: string; isWon?: boolean; isLost?: boolean }> = [
-  { name: "Nuevo" },
-  { name: "Contactado" },
-  { name: "Propuesta" },
-  { name: "Ganado", isWon: true },
-  { name: "Perdido", isLost: true },
+const DEFAULT_STAGES: Array<{
+  name: string;
+  color: string;
+  isWon?: boolean;
+  isLost?: boolean;
+}> = [
+  { name: "Nuevo contacto", color: "#64748b" },
+  { name: "Contactado", color: "#3b82f6" },
+  { name: "Propuesta enviada", color: "#f59e0b" },
+  { name: "Negociación", color: "#a855f7" },
+  { name: "Ganado", color: "#22c55e", isWon: true },
+  { name: "Perdido", color: "#ef4444", isLost: true },
 ];
 
 export async function seedDefaultPipeline(ctx: TenantContext) {
@@ -40,6 +46,7 @@ export async function createPipelineWithDefaultStages(ctx: TenantContext, name: 
         pipelineId,
         name: stage.name,
         position: index,
+        color: stage.color,
         isWon: stage.isWon ?? false,
         isLost: stage.isLost ?? false,
       });

@@ -5,6 +5,8 @@ import {
   setUserPassword,
 } from "@/modules/tenancy/users";
 import type { SuperadminContext } from "@/modules/tenancy/context";
+import { buildSystemTenantContext } from "@/modules/tenancy/context";
+import { seedDefaultPipeline, listPipelines } from "@/modules/crm/pipelines";
 
 // Owner's real tenant bootstrap (PLAN.md §10 1H #1). Same reasoning as
 // scripts/create-superadmin.ts: there's no admin session yet to create a
@@ -62,6 +64,18 @@ async function main() {
     });
     if (!tenant) throw new Error("Tenant creation failed");
     console.log(`Tenant created: ${tenant.slug} (${tenant.id})`);
+  }
+
+  // Same as the superadmin "crear empresa" action: a tenant with no pipeline
+  // at all can't create a deal, so seed the default "Ventas" pipeline here
+  // too (idempotent — only seeds if the tenant has none yet).
+  const tenantCtx = await buildSystemTenantContext(tenant.id);
+  if (tenantCtx) {
+    const existingPipelines = await listPipelines(tenantCtx);
+    if (existingPipelines.length === 0) {
+      await seedDefaultPipeline(tenantCtx);
+      console.log(`Default pipeline seeded for tenant ${tenant.slug}`);
+    }
   }
 
   const existingUser = await getUserByEmail(adminEmail);

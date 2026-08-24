@@ -7,6 +7,7 @@ import { requireTenantContext } from "@/modules/tenancy/context";
 import { getTenant } from "@/modules/tenancy/tenants";
 import { DEFAULT_TIMEZONE } from "@/lib/i18n/format";
 import { addDays, zonedTimeToUtc } from "@/modules/calendar/zoned-time";
+import { listContacts } from "@/modules/crm/contacts";
 import {
   CalendarEventError,
   createCalendarEvent,
@@ -213,4 +214,26 @@ export async function deleteCalendarEventAction(formData: FormData) {
 
   revalidatePath("/calendar");
   redirect("/calendar");
+}
+
+/**
+ * Type-ahead for the booking form's contact field.
+ *
+ * The form used to render a `<select>` of the first 200 contacts by name,
+ * which is fine for a new tenant and wrong for the one the product is for:
+ * the owner's own base runs to thousands, and a picker that silently stops at
+ * the letter C is worse than no picker. This searches the same way the
+ * contacts list does — name, phone or email — and returns a short list.
+ */
+export async function searchContactsForEventAction(
+  term: string,
+): Promise<Array<{ id: string; name: string; phone: string }>> {
+  const ctx = await requireTenantContext();
+  const parsed = z.string().max(200).safeParse(term);
+  if (!parsed.success || parsed.data.trim().length < 2) return [];
+
+  const rows = await listContacts(ctx, { search: parsed.data.trim() });
+  return rows
+    .slice(0, 20)
+    .map((contact) => ({ id: contact.id, name: contact.name, phone: contact.phone }));
 }

@@ -156,6 +156,11 @@
         "bySource": "Per källa (utm_source)",
         "byCampaign": "Per kampanj (utm_campaign)",
         "empty": "Ingen data ännu"
+      },
+      "todayAgenda": {
+        "title": "Dagens kalender",
+        "viewAll": "Öppna kalendern",
+        "allDay": "Heldag"
       }
     },
     "pipeline": {
@@ -223,7 +228,11 @@
         "assignee": "Ansvarig",
         "noAssignee": "Ingen ansvarig",
         "description": "Anteckningar",
-        "saved": "Ändringar sparade"
+        "saved": "Ändringar sparade",
+        "searchContact": "Sök på namn eller telefon",
+        "searching": "Söker…",
+        "noMatches": "Ingen kontakt matchar",
+        "clearContact": "Ta bort kontakten"
       },
       "errors": {
         "titleRequired": "Ge den en titel",
@@ -1785,7 +1794,10 @@
       "title": "Hej {name}",
       "body": "Du har {count} öppna uppgifter, varav {overdue} är försenade.",
       "overdue": "försenad",
-      "cta": "Öppna CRM:et"
+      "cta": "Öppna CRM:et",
+      "appointmentsSubject": "Du har {count} bokning(ar) idag",
+      "appointmentsBody": "I din kalender de närmaste 24 timmarna: {count} bokning(ar).",
+      "allDay": "Heldag"
     }
   },
   "pdf": {

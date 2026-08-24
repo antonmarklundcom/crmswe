@@ -1176,7 +1176,8 @@
       "whatsappHealth": "WhatsApp",
       "superadmin": "Superadmin",
       "audit": "Audit log",
-      "users": "Users"
+      "users": "Users",
+      "overview": "Overview"
     },
     "tenantUsers": {
       "title": "Company users",
@@ -1322,6 +1323,45 @@
         "alreadyMember": "Already in that business",
         "notFound": "That access no longer exists",
         "lastAdmin": "They are that business’s only active admin"
+      }
+    },
+    "overview": {
+      "title": "Platform overview",
+      "intro": "How the whole business is doing: how many companies there are, how much work goes through them in the last {days} days, which have gone quiet, and whose plan runs out next.",
+      "stats": {
+        "tenants": "Businesses",
+        "users": "People",
+        "contacts": "Contacts",
+        "whatsapp": "WhatsApp numbers"
+      },
+      "activeOf": "{count} active",
+      "multiBusiness": "{count} reach more than one business",
+      "openDeals": "{count} open deals",
+      "inError": "{count} in error",
+      "allHealthy": "All healthy",
+      "flowTitle": "Movement in the last {days} days",
+      "flow": {
+        "leads": "Leads received",
+        "contactsCreated": "New contacts",
+        "dealsCreated": "Deals opened",
+        "dealsWon": "Deals won",
+        "messagesIn": "Messages received",
+        "messagesOut": "Messages sent",
+        "quotesSent": "Quotes"
+      },
+      "attentionTitle": "Worth a look",
+      "quietTitle": "No messages for over {days} days",
+      "lastMessage": "last: {date}",
+      "neverMessaged": "never messaged",
+      "expiringTitle": "Plans running out",
+      "byTenantTitle": "By business, last {days} days",
+      "table": {
+        "tenant": "Business",
+        "status": "Status",
+        "leads": "Leads",
+        "contacts": "Contacts",
+        "messages": "Messages",
+        "lastMessage": "Last message"
       }
     }
   },

@@ -10,14 +10,18 @@ import {
   getTenantBySlug,
 } from "@/modules/tenancy/tenants";
 import { seedDefaultPipeline } from "@/modules/crm/pipelines";
+import { uniqueSlug } from "@/lib/slug";
 
 const createTenantSchema = z.object({
   name: z.string().min(1).max(200),
+  // Optional: the form fills it in as you type the name, and an operator who
+  // clears it means "derive one" rather than "fail". A slug that *is* given
+  // still has to be a slug.
   slug: z
     .string()
-    .min(1)
     .max(100)
-    .regex(/^[a-z0-9-]+$/),
+    .regex(/^[a-z0-9-]*$/)
+    .optional(),
 });
 
 // useActionState-shaped (PLAN.md §10 1R #6): a missing name or a bad/taken
@@ -60,14 +64,28 @@ export async function createTenantAction(
     return { error: "unknown", field: null, values };
   }
 
-  const existing = await getTenantBySlug(parsed.data.slug);
-  if (existing) {
-    return { error: "slugTaken", field: "slug", values };
+  const isTaken = async (candidate: string) => (await getTenantBySlug(candidate)) !== null;
+
+  let slug: string;
+  if (parsed.data.slug) {
+    // A slug typed by hand is taken at face value and refused if it collides
+    // — silently renaming somebody's deliberate choice to "-2" is worse than
+    // telling them.
+    if (await isTaken(parsed.data.slug)) {
+      return { error: "slugTaken", field: "slug", values };
+    }
+    slug = parsed.data.slug;
+  } else {
+    try {
+      slug = await uniqueSlug(parsed.data.name, isTaken);
+    } catch {
+      return { error: "slugTaken", field: "slug", values };
+    }
   }
 
   let tenant;
   try {
-    tenant = await createTenant(ctx, parsed.data);
+    tenant = await createTenant(ctx, { name: parsed.data.name, slug });
   } catch {
     return { error: "slugTaken", field: "slug", values };
   }

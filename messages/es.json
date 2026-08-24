@@ -1175,7 +1175,8 @@
       "plans": "Planes",
       "whatsappHealth": "WhatsApp",
       "superadmin": "Superadministrador",
-      "audit": "Auditoría"
+      "audit": "Auditoría",
+      "users": "Usuarios"
     },
     "tenantUsers": {
       "title": "Usuarios de la empresa",
@@ -1232,7 +1233,8 @@
         "slugInvalid": "El slug va en minúsculas, sin espacios ni acentos (ej: mi-empresa).",
         "slugTaken": "Ya existe una empresa con ese slug.",
         "unknown": "No se pudo crear la empresa. Intentá de nuevo."
-      }
+      },
+      "slugPlaceholder": "Se genera del nombre; podés cambiarlo"
     },
     "subscriptions": {
       "title": "Suscripción",
@@ -1292,6 +1294,35 @@
       "queueStuckIntro": "Siguen en ejecución mucho después de lo esperado: casi siempre un proceso que murió a mitad de camino.",
       "noQueueStuck": "Sin trabajos trabados",
       "retryJob": "Reintentar"
+    },
+    "users": {
+      "title": "Usuarios",
+      "intro": "Todas las personas de la plataforma y a qué empresas entra cada una. Conectá o desconectá accesos desde acá, sin abrir cada empresa.",
+      "searchLabel": "Buscar",
+      "searchPlaceholder": "Nombre o correo",
+      "search": "Buscar",
+      "clear": "Limpiar",
+      "noResults": "Ninguna persona coincide con la búsqueda.",
+      "person": "Persona",
+      "businesses": "Empresas",
+      "created": "Alta",
+      "noBusinesses": "Todavía no entra a ninguna empresa",
+      "chooseBusiness": "Elegir empresa",
+      "connect": "Conectar",
+      "disconnect": "Quitar",
+      "deactivated": "desactivado",
+      "superadminBadge": "Superadmin",
+      "superadminReach": "Entra a todas las empresas con \"ver como\".",
+      "platformBanned": "Bloqueado en la plataforma",
+      "truncated": "Se muestran las primeras {count} personas. Afiná la búsqueda para ver otras.",
+      "errors": {
+        "invalid": "Revisá los datos",
+        "userNotFound": "No existe esa persona",
+        "superadminTarget": "Un superadmin no se suma a una empresa: ya entra con \"ver como\"",
+        "alreadyMember": "Ya entra a esa empresa",
+        "notFound": "Ese acceso ya no existe",
+        "lastAdmin": "Es el único administrador activo de esa empresa"
+      }
     }
   },
   "marketing": {

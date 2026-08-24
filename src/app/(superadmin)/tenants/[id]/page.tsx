@@ -123,6 +123,7 @@ export default async function TenantDetailPage({
               </span>
               <form action={impersonateAction}>
                 <input type="hidden" name="userId" value={user.id} />
+                <input type="hidden" name="tenantId" value={tenant.id} />
                 <Button type="submit" size="sm" variant="outline">
                   {t("impersonate")}
                 </Button>

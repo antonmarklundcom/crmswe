@@ -2,9 +2,11 @@ import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { getTenantContext } from "@/modules/tenancy/context";
 import { getUserById } from "@/modules/tenancy/users";
+import { listMembershipsForUser } from "@/modules/tenancy/memberships";
 import { getTenant } from "@/modules/tenancy/tenants";
 import { AppNav, type NavGroup } from "@/components/app-nav";
 import { UserMenu } from "@/components/user-menu";
+import { BusinessSwitcher, type SwitchableBusiness } from "@/components/business-switcher";
 import { Toaster } from "@/components/ui/sonner";
 import { CommandPalette } from "@/components/command-palette";
 import { Button } from "@/components/ui/button";
@@ -48,12 +50,22 @@ export default async function AppLayout({
   const tc = await getTranslations("common");
   const tSearch = await getTranslations("app.search");
   const tRoles = await getTranslations("app.users.roles");
+  const tBusiness = await getTranslations("app.business");
   const isAdmin = ctx.role === "admin";
 
-  const [user, tenant] = await Promise.all([
+  const [user, tenant, memberships] = await Promise.all([
     getUserById(ctx.userId),
     getTenant(ctx.tenantId),
+    // Every business this person may act in (PLAN.md §3.1). Almost always one
+    // row, in which case the switcher renders nothing.
+    listMembershipsForUser(ctx.userId),
   ]);
+
+  const businesses: SwitchableBusiness[] = memberships.map(({ membership, tenant: t }) => ({
+    id: t.id,
+    name: t.name,
+    role: tRoles(membership.role),
+  }));
 
   // Grouped so the nav reads as a product rather than a list of routes: what
   // you work in daily, what feeds it, and what you configure once.
@@ -128,6 +140,16 @@ export default async function AppLayout({
         <AppNav
           groups={visibleGroups}
           appName={tc("appName")}
+          header={
+            <BusinessSwitcher
+              businesses={businesses}
+              activeId={ctx.tenantId}
+              labels={{
+                title: tBusiness("switcherTitle"),
+                current: tBusiness("switcherCurrent"),
+              }}
+            />
+          }
           footer={<UserMenu {...identity} />}
           mobileHeader={<UserMenu {...identity} variant="bar" />}
         />

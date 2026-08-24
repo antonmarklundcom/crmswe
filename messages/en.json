@@ -90,7 +90,8 @@
         "capture": "Lead capture",
         "settings": "Settings"
       },
-      "calendar": "Calendar"
+      "calendar": "Calendar",
+      "reports": "Reports"
     },
     "dashboard": {
       "title": "{tenant} dashboard",
@@ -1167,6 +1168,40 @@
     "business": {
       "switcherTitle": "Business",
       "switcherCurrent": "Choose a business"
+    },
+    "reports": {
+      "title": "Reports",
+      "intro": "Where leads come from and what happens to them: how many become deals, how many are won, who works them, and how long you take to reply.",
+      "period": "{days} days",
+      "funnel": {
+        "leads": "Leads received",
+        "dealsOpened": "Deals opened",
+        "dealsWon": "Won",
+        "dealsLost": "Lost"
+      },
+      "conversion": "{rate} conversion",
+      "wonValue": "Sold in the period",
+      "responseTitle": "Response time (median)",
+      "minutes": "{count} min",
+      "responseHint": "{answered} conversations answered, {unanswered} unanswered",
+      "byMonthTitle": "Won and lost by month",
+      "wonLost": "{won} won · {lost} lost",
+      "bySourceTitle": "By source",
+      "bySiteTitle": "By site",
+      "byAgentTitle": "By rep",
+      "table": {
+        "source": "Source",
+        "site": "Site",
+        "agent": "Rep",
+        "leads": "Leads",
+        "deals": "Deals",
+        "won": "Won",
+        "wonValue": "Sold",
+        "open": "Open",
+        "messages": "Messages",
+        "tasks": "Tasks",
+        "empty": "No data in this period yet."
+      }
     }
   },
   "superadmin": {

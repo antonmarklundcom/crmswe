@@ -90,7 +90,8 @@
         "capture": "Leadfångst",
         "settings": "Inställningar"
       },
-      "calendar": "Kalender"
+      "calendar": "Kalender",
+      "reports": "Rapporter"
     },
     "dashboard": {
       "title": "Översikt för {tenant}",
@@ -1167,6 +1168,40 @@
     "business": {
       "switcherTitle": "Företag",
       "switcherCurrent": "Välj företag"
+    },
+    "reports": {
+      "title": "Rapporter",
+      "intro": "Var leadsen kommer ifrån och vad som händer med dem: hur många som blir affärer, hur många som vinns, vem som jobbar med dem och hur snabbt ni svarar.",
+      "period": "{days} dagar",
+      "funnel": {
+        "leads": "Inkomna leads",
+        "dealsOpened": "Öppnade affärer",
+        "dealsWon": "Vunna",
+        "dealsLost": "Förlorade"
+      },
+      "conversion": "{rate} konvertering",
+      "wonValue": "Sålt under perioden",
+      "responseTitle": "Svarstid (median)",
+      "minutes": "{count} min",
+      "responseHint": "{answered} besvarade konversationer, {unanswered} obesvarade",
+      "byMonthTitle": "Vunna och förlorade per månad",
+      "wonLost": "{won} vunna · {lost} förlorade",
+      "bySourceTitle": "Per källa",
+      "bySiteTitle": "Per sajt",
+      "byAgentTitle": "Per säljare",
+      "table": {
+        "source": "Källa",
+        "site": "Sajt",
+        "agent": "Säljare",
+        "leads": "Leads",
+        "deals": "Affärer",
+        "won": "Vunna",
+        "wonValue": "Sålt",
+        "open": "Öppna",
+        "messages": "Meddelanden",
+        "tasks": "Uppgifter",
+        "empty": "Ingen data för den här perioden ännu."
+      }
     }
   },
   "superadmin": {

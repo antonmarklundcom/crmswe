@@ -25,7 +25,15 @@
       "password": "Välj ett lösenord",
       "submit": "Skapa konto",
       "invalid": "Inbjudan är ogiltig eller har gått ut",
-      "success": "Kontot är skapat. Du kan logga in nu."
+      "success": "Kontot är skapat. Du kan logga in nu.",
+      "joinTitle": "Gå med i företaget",
+      "existingAccount": "{email} har redan ett VenderCRM-konto. Du behöver inte skapa ett till: logga in med den adressen så läggs det här företaget till bland dem du redan arbetar i.",
+      "joinSubmit": "Lägg till företaget på mitt konto",
+      "joined": "Klart. Du har nu tillgång till företaget — välj det i växlaren högst upp.",
+      "goToApp": "Till CRM:et",
+      "signIn": "Logga in",
+      "signInFirst": "Logga in med den adressen för att acceptera inbjudan.",
+      "wrongAccount": "Du är inloggad som någon annan. Logga ut och logga in som {email} för att acceptera inbjudan."
     },
     "forgotPassword": {
       "title": "Återställ lösenord",
@@ -236,7 +244,8 @@
         "emailTaken": "Den e-postadressen har redan ett konto.",
         "readOnly": "Din prenumeration har gått ut: kontot är i läsläge.",
         "unknown": "Vi kunde inte skapa inbjudan. Försök igen.",
-        "planLimit": "Du har nått planens gräns för användare. Avaktivera någon, eller hör av dig så höjer vi den."
+        "planLimit": "Du har nått planens gräns för användare. Avaktivera någon, eller hör av dig så höjer vi den.",
+        "alreadyMember": "Personen är redan med i det här företaget."
       },
       "stateColumn": "Status",
       "actionsColumn": "Åtgärder",
@@ -1114,7 +1123,18 @@
       },
       "inactive": "inaktiv",
       "newPassword": "Nytt lösenord",
-      "setPassword": "Ange lösenord"
+      "setPassword": "Ange lösenord",
+      "addExisting": {
+        "title": "Lägg till någon som redan har konto",
+        "intro": "Om personen redan använder VenderCRM i ett annat företag: skapa inte ett andra konto, ge dem tillgång till det här i stället. De behåller sina övriga företag och växlar mellan dem.",
+        "submit": "Ge tillgång",
+        "added": "Tillgång given till",
+        "errors": {
+          "userNotFound": "Det finns inget konto med den adressen. Skapa ett ovan, eller skicka en inbjudan.",
+          "alreadyMember": "Personen är redan med i det här företaget.",
+          "superadminTarget": "Superadministratörer når redan alla företag via \\u201dvisa som\\u201d och läggs inte till som medlemmar."
+        }
+      }
     },
     "tenants": {
       "title": "Företag",

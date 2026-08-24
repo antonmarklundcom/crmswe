@@ -43,23 +43,35 @@ export const tenants = mysqlTable(
   (table) => [uniqueIndex("tenants_slug_idx").on(table.slug)],
 );
 
-// Users belong to exactly one tenant (nullable only for superadmins, whose
-// tenant_id is NULL — PLAN.md §3.1/§3.2). Doubles as the Better Auth `user`
-// table (email, name, emailVerified, image are Better Auth core fields).
+// One row per person on the platform, keyed by a globally unique email.
+// Doubles as the Better Auth `user` table (email, name, emailVerified, image
+// are Better Auth core fields).
+//
+// Which businesses a person can work in no longer lives here: that is
+// `tenant_memberships` below (PLAN.md §3.1, reopened — one user may hold a
+// membership in many tenants, with a role per membership). `tenant_id` on
+// this row survives with a narrower meaning: it is the *active* business for
+// this user's session, the one the switcher last put them in. It is a
+// pointer, never a grant — `getTenantContext` re-checks it against a live
+// membership on every request, so a stale value grants nothing.
 export const users = mysqlTable(
   "users",
   {
     id: char("id", { length: 26 }).primaryKey(),
+    /** Active business (see comment above). NULL for superadmins, and for a
+     * member whose last active business was taken away from them. */
     tenantId: char("tenant_id", { length: 26 }),
     email: varchar("email", { length: 320 }).notNull(),
     emailVerified: boolean("email_verified").notNull().default(false),
     name: varchar("name", { length: 200 }).notNull(),
     image: varchar("image", { length: 2000 }),
-    // Tenant role (admin|agent). Superadmins additionally get role="superadmin"
-    // so Better Auth's admin-plugin `adminRoles` gate (§3.2) can key off it as
-    // defense-in-depth for its own /api/auth/admin/* endpoints — the app's own
-    // authorization never trusts this field alone, only `isSuperadmin` below
-    // (resolved via getTenantContext/getSuperadminContext, PLAN.md §3.3).
+    // Better Auth's admin-plugin `adminRoles` gate (§3.2) keys off this field
+    // for its own /api/auth/admin/* endpoints, so superadmins carry
+    // role="superadmin" here as defense-in-depth. The app's own authorization
+    // never trusts it: `isSuperadmin` below decides platform powers, and the
+    // *tenant* role is read from `tenant_memberships.role` for the active
+    // business, never from this column (PLAN.md §3.3). It is kept in sync
+    // with the active membership only so the admin plugin sees a sane value.
     role: varchar("role", { length: 20, enum: ["admin", "agent", "superadmin"] }),
     isSuperadmin: boolean("is_superadmin").notNull().default(false),
     // Better Auth admin plugin ban fields.
@@ -85,6 +97,39 @@ export const users = mysqlTable(
   (table) => [
     uniqueIndex("users_email_idx").on(table.email),
     index("users_tenant_id_idx").on(table.tenantId),
+  ],
+);
+
+// One row per (user, business) pairing — the grant that says this person may
+// act in this tenant, and in what role (PLAN.md §3.1, reopened; §11's
+// "multi-tenant users" is no longer deferred).
+//
+// Role is a property of the *pairing*, not of the person: the same user can be
+// `admin` at one business and `agent` at another. That is also why deactivation
+// lives here rather than on `users` — banning someone at one business must not
+// lock them out of the others. `users.banned` stays what it always was: a
+// platform-wide ban, superadmin's tool, orthogonal to this.
+export const tenantMemberships = mysqlTable(
+  "tenant_memberships",
+  {
+    id: char("id", { length: 26 }).primaryKey(),
+    tenantId: char("tenant_id", { length: 26 }).notNull(),
+    userId: char("user_id", { length: 26 }).notNull(),
+    role: varchar("role", { length: 20, enum: ["admin", "agent"] }).notNull(),
+    // Per-business deactivation (PLAN.md §13 H4, moved off `users`).
+    banned: boolean("banned").notNull().default(false),
+    banReason: varchar("ban_reason", { length: 500 }),
+    createdAt: datetime("created_at")
+      .notNull()
+      .default(sql`CURRENT_TIMESTAMP`),
+    updatedAt: datetime("updated_at")
+      .notNull()
+      .default(sql`CURRENT_TIMESTAMP`),
+  },
+  (table) => [
+    // A person is in a business once, with one role — the pairing is the key.
+    uniqueIndex("tenant_memberships_tenant_user_idx").on(table.tenantId, table.userId),
+    index("tenant_memberships_user_id_idx").on(table.userId),
   ],
 );
 

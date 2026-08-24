@@ -11,6 +11,7 @@ import {
   revokeUserSessions,
   setUserPassword,
 } from "@/modules/tenancy/users";
+import { addMembership, MembershipError } from "@/modules/tenancy/memberships";
 import { writeAuditLog } from "@/modules/tenancy/audit";
 import { startImpersonation } from "@/modules/auth/impersonation";
 import { redirect } from "next/navigation";
@@ -177,6 +178,70 @@ export async function createTenantUserAction(
 
   revalidatePath(`/tenants/${parsed.data.tenantId}`);
   return { error: null, createdEmail: parsed.data.email };
+}
+
+// Granting an existing person access to a second business (PLAN.md §3.1,
+// reopened). Superadmin-only *by design*, not by omission: adding someone to
+// a business is a cross-tenant write, which §3.3 exists to keep out of a
+// tenant admin's hands. What a tenant admin keeps is the role of someone
+// already in their own business, and the power to remove them from it.
+const addExistingUserSchema = z.object({
+  tenantId: z.string().min(1),
+  email: z.string().email().max(320),
+  role: z.enum(["admin", "agent"]),
+});
+
+export type AddExistingUserState = { error: string | null; addedEmail: string | null };
+
+export async function addExistingUserToTenantAction(
+  _prevState: AddExistingUserState,
+  formData: FormData,
+): Promise<AddExistingUserState> {
+  const superadmin = await requireSuperadminContext();
+
+  const parsed = addExistingUserSchema.safeParse({
+    tenantId: formData.get("tenantId"),
+    email: formData.get("email"),
+    role: formData.get("role"),
+  });
+  if (!parsed.success) {
+    return { error: "invalid", addedEmail: null };
+  }
+
+  const user = await getUserByEmail(parsed.data.email);
+  if (!user) {
+    return { error: "userNotFound", addedEmail: null };
+  }
+  // A superadmin already reaches every tenant through impersonation; giving
+  // them a membership as well would put a platform account inside a tenant's
+  // team list, where a tenant admin could deactivate or demote it.
+  if (user.isSuperadmin) {
+    return { error: "superadminTarget", addedEmail: null };
+  }
+
+  try {
+    await addMembership({
+      userId: user.id,
+      tenantId: parsed.data.tenantId,
+      role: parsed.data.role,
+    });
+  } catch (err) {
+    if (err instanceof MembershipError && err.code === "alreadyMember") {
+      return { error: "alreadyMember", addedEmail: null };
+    }
+    throw err;
+  }
+
+  await writeAuditLog({
+    tenantId: parsed.data.tenantId,
+    actorUserId: superadmin.userId,
+    action: "membership.added",
+    entity: "user",
+    entityId: user.id,
+  });
+
+  revalidatePath(`/tenants/${parsed.data.tenantId}`);
+  return { error: null, addedEmail: parsed.data.email };
 }
 
 const impersonateSchema = z.object({

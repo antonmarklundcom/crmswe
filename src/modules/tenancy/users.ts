@@ -1,10 +1,22 @@
-import { and, count, eq, ne } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { hashPassword } from "better-auth/crypto";
 import { db } from "@/db/client";
 import { accounts, sessions, users } from "@/db/schema";
 import { newId } from "@/lib/ids";
 import type { TenantContext } from "./context";
-import { tenantDb } from "./db";
+import {
+  addMembership,
+  getActiveMembership,
+  getMembership,
+  listMembershipsForTenant,
+  MembershipError,
+  removeMembership,
+  repairActiveTenant,
+  setActiveTenant,
+  setMembershipBanned,
+  setMembershipRole,
+  countTenantAdmins as countMembershipAdmins,
+} from "./memberships";
 
 // User-tenant binding (PLAN.md §3.2). Assigning a user to a tenant/role is
 // inherently cross-cutting (it's what *creates* the tenant boundary for that
@@ -12,12 +24,24 @@ import { tenantDb } from "./db";
 // tenantDb — everything else that touches `users` should go through
 // tenantDb(ctx) so it can never read/write another tenant's users.
 
+/**
+ * Binds a user to a business and makes it their active one. Since §3.1 was
+ * reopened this adds a *membership* rather than overwriting a single
+ * `tenant_id`, so a user already working in another business keeps that
+ * access — which is exactly what accepting a second invitation should mean.
+ * Re-binding someone who is already a member is a no-op on the grant; it
+ * still moves their active pointer, because they just asked to go there.
+ */
 export async function assignUserToTenant(
   userId: string,
   tenantId: string,
   role: "admin" | "agent",
 ) {
-  await db.update(users).set({ tenantId, role }).where(eq(users.id, userId));
+  const existing = await getMembership(userId, tenantId);
+  if (!existing) {
+    await addMembership({ userId, tenantId, role });
+  }
+  await setActiveTenant(userId, tenantId);
 }
 
 /**
@@ -91,6 +115,10 @@ export async function createTenantAdminUser(input: {
     password: await hashPassword(input.password),
   });
 
+  // The grant lives in `tenant_memberships`; `users.tenant_id` above is only
+  // the active-business pointer this new user starts on.
+  await addMembership({ userId, tenantId: input.tenantId, role: input.role ?? "admin" });
+
   return getUserById(userId);
 }
 
@@ -120,20 +148,45 @@ export async function getUserById(userId: string) {
   return row ?? null;
 }
 
-/** Tenant-scoped: list users belonging to the caller's own tenant. */
+/**
+ * The people who work in one business, shaped like plain user rows.
+ *
+ * `role` and `banned` are the *membership's*, not the user row's — the same
+ * person may be an admin here and an agent next door, and deactivating them
+ * here must not read as deactivated there. Every existing caller (assignee
+ * pickers, the team page, CSV export) reads exactly those two fields, so
+ * overlaying them keeps this a drop-in while making the values correct.
+ */
+async function membersOf(tenantId: string) {
+  const rows = await listMembershipsForTenant(tenantId);
+  return rows.map(({ user, membership }) => ({
+    ...user,
+    role: membership.role,
+    banned: membership.banned,
+    banReason: membership.banReason,
+  }));
+}
+
+/** Tenant-scoped: the caller's own business, never anyone else's — the id
+ * comes from the context, which is never client-supplied (§3.3). */
 export function listTenantUsers(ctx: TenantContext) {
-  return tenantDb(ctx).select(users);
+  return membersOf(ctx.tenantId);
 }
 
 /**
- * Superadmin-only: list a given tenant's users, for the impersonation
- * ("ver como") picker in the superadmin console. Deliberately bypasses
- * tenantDb (the caller has no TenantContext of their own — that's the
- * point of superadmin) so this stays confined to the tenancy module.
+ * Superadmin-only: list a given tenant's members, for the impersonation
+ * ("ver como") picker in the superadmin console and for the background jobs
+ * that mail a tenant's users. Deliberately bypasses tenantDb (the caller has
+ * no TenantContext of their own — that's the point of superadmin) so this
+ * stays confined to the tenancy module.
  */
 export async function listUsersForTenant(tenantId: string) {
-  return db.select().from(users).where(eq(users.tenantId, tenantId));
+  return membersOf(tenantId);
 }
+
+/** Businesses this user may act in — the switcher's list, and the guard the
+ * superadmin console shows before adding someone to another one. */
+export { listMembershipsForUser } from "./memberships";
 
 
 // --- User lifecycle (PLAN.md §13 H4) ------------------------------------
@@ -150,17 +203,24 @@ export class UserLifecycleError extends Error {
   }
 }
 
-/** The user row behind a session, or null if it can no longer act: deleted,
- * moved to another tenant, or deactivated. getTenantContext calls this on
- * every request, which is what makes a ban take effect immediately. */
+/**
+ * The user row behind a session, or null if it can no longer act in this
+ * business: deleted, banned at platform level, or holding no live membership
+ * here. getTenantContext calls this on every request alongside the membership
+ * read, which is what makes both kinds of ban take effect immediately.
+ *
+ * The returned row carries the *membership's* role and banned flag, for the
+ * same reason `membersOf` does: callers asking "can this person act here"
+ * must not be handed the pointer-row's stale copy.
+ */
 export async function getActiveTenantUser(userId: string, tenantId: string) {
-  const [row] = await db
-    .select()
-    .from(users)
-    .where(and(eq(users.id, userId), eq(users.tenantId, tenantId)));
-
+  const [row] = await db.select().from(users).where(eq(users.id, userId));
   if (!row || row.banned) return null;
-  return row;
+
+  const membership = await getActiveMembership(userId, tenantId);
+  if (!membership) return null;
+
+  return { ...row, role: membership.role, banned: membership.banned };
 }
 
 /** Drops every session row for a user — the ban is worthless if the cookie
@@ -169,18 +229,26 @@ export async function revokeUserSessions(userId: string): Promise<void> {
   await db.delete(sessions).where(eq(sessions.userId, userId));
 }
 
+/** The target of an admin's action on a colleague: a member of the *caller's
+ * own* business, and never the caller themselves. A user id from another
+ * business simply has no membership here, so it fails as "not found" —
+ * which is also the right answer to give a probe. */
 async function requireSameTenantUser(ctx: TenantContext, userId: string) {
-  const [row] = await db
-    .select()
-    .from(users)
-    .where(and(eq(users.id, userId), eq(users.tenantId, ctx.tenantId)));
+  const membership = await getMembership(userId, ctx.tenantId);
+  if (!membership) throw new UserLifecycleError("notFound");
+  if (userId === ctx.userId) throw new UserLifecycleError("self");
 
+  const row = await getUserById(userId);
   if (!row) throw new UserLifecycleError("notFound");
-  if (row.id === ctx.userId) throw new UserLifecycleError("self");
-  return row;
+  return { ...row, role: membership.role, banned: membership.banned };
 }
 
-/** Deactivates or reactivates a member of the caller's own tenant. */
+/**
+ * Deactivates or reactivates a member of the caller's own business — and only
+ * there. Someone shut out of Tasación keeps working at their other businesses
+ * exactly as before, which is the whole point of moving the flag onto the
+ * membership.
+ */
 export async function setTenantUserBanned(
   ctx: TenantContext,
   userId: string,
@@ -191,33 +259,25 @@ export async function setTenantUserBanned(
 
   // An admin deactivating the last other admin is fine; deactivating
   // *themselves* is what the self guard above already refuses.
-  await db
-    .update(users)
-    .set({
-      banned,
-      banReason: banned ? (reason?.slice(0, 500) ?? null) : null,
-      banExpires: null,
-    })
-    .where(eq(users.id, userId));
+  await setMembershipBanned(ctx.tenantId, userId, banned, reason);
 
-  if (banned) await revokeUserSessions(userId);
+  if (banned) {
+    // Their sessions may be sitting in *this* business right now. Sweeping
+    // every session is broader than the ban — it also signs them out of the
+    // businesses they can still work in — but the alternative is a cookie
+    // that keeps this business open until it expires, and re-login is the
+    // cheaper of the two. The active pointer is repaired so that re-login
+    // lands them somewhere they can actually go.
+    await revokeUserSessions(userId);
+    await repairActiveTenant(userId);
+  }
 
   return target;
 }
 
-export async function countTenantAdmins(tenantId: string, excludingUserId?: string) {
-  const [row] = await db
-    .select({ value: count() })
-    .from(users)
-    .where(
-      and(
-        eq(users.tenantId, tenantId),
-        eq(users.role, "admin"),
-        eq(users.banned, false),
-        excludingUserId ? ne(users.id, excludingUserId) : undefined,
-      ),
-    );
-  return row?.value ?? 0;
+/** Active admins of one business (PLAN.md §13 H4, now per-membership). */
+export function countTenantAdmins(tenantId: string, excludingUserId?: string) {
+  return countMembershipAdmins(tenantId, excludingUserId);
 }
 
 /**
@@ -232,12 +292,39 @@ export async function setTenantUserRole(
 ) {
   const target = await requireSameTenantUser(ctx, userId);
 
-  if (target.role === "admin" && role === "agent") {
-    const remaining = await countTenantAdmins(ctx.tenantId, userId);
-    if (remaining === 0) throw new UserLifecycleError("lastAdmin");
+  try {
+    await setMembershipRole(ctx.tenantId, userId, role);
+  } catch (err) {
+    // Same refusal, in this module's own error type — callers catch
+    // UserLifecycleError and render the "último administrador" copy.
+    if (err instanceof MembershipError && err.code === "lastAdmin") {
+      throw new UserLifecycleError("lastAdmin");
+    }
+    throw err;
   }
 
-  await db.update(users).set({ role }).where(eq(users.id, userId));
+  return target;
+}
+
+/**
+ * Revokes a colleague's access to the caller's own business outright. Their
+ * deals, conversations and timeline entries stay where they are — only the
+ * grant goes. Distinct from deactivation: this one takes the business off
+ * their switcher entirely.
+ */
+export async function removeTenantUser(ctx: TenantContext, userId: string) {
+  const target = await requireSameTenantUser(ctx, userId);
+
+  try {
+    await removeMembership(ctx.tenantId, userId);
+  } catch (err) {
+    if (err instanceof MembershipError && err.code === "lastAdmin") {
+      throw new UserLifecycleError("lastAdmin");
+    }
+    throw err;
+  }
+
+  await revokeUserSessions(userId);
   return target;
 }
 

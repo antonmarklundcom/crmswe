@@ -32,7 +32,7 @@ deliberately won't.
 | Billing model | **Prepay only**: quarterly / 6-month / 12-month plans. No monthly. |
 | Billing collection (Phase 1) | **Manual**: tenants pay by transfer/cash outside the app; superadmin records payment and sets plan expiry. No payment gateway in Phase 1. |
 | WhatsApp API | **Direct Meta Cloud API** (no BSP). Tenants connect their own numbers via Meta **embedded signup**; manual connect as bootstrap fallback (§6.2). |
-| Tenancy | Multi-tenant, single app: **superadmin** role manages all tenants; per-tenant logins with fully isolated data. |
+| Tenancy | Multi-tenant, single app: **superadmin** role manages all tenants; per-tenant logins with fully isolated data. *Amended: a user may hold memberships in several tenants (§3.1), with a role per membership and one active business at a time. Isolation is unchanged — a session acts in exactly one tenant, re-checked per request.* |
 | Sites per tenant | **One tenant owns many sites.** The owner's whole lead-gen network is a single tenant with N `sites` rows; leads share one pipeline and carry `site_id` for filtering/attribution. Never one-tenant-per-site (§5.1). |
 | Lead ingest | **Server-to-server only**: the site's own backend POSTs to `/api/v1/leads` with `X-Api-Key`. Never from the browser. Hosted form pages stay available for sites with no backend. *Reopened and extended — not weakened — by §5.2: a second, no-secret lane exists for client sites on Elementor/Wix/Webflow/Zapier. `/api/v1/leads` itself is unchanged: still no CORS, still no browser-side key.* |
 | Traffic analytics | **Not built in this repo.** Self-host Umami as a separate app; the CRM stores lead-level attribution only. PostHog is ruled out — it needs ClickHouse+Redis+Postgres and can't run on Hostinger managed Node. |
@@ -158,8 +158,32 @@ lookups key on — and `audit_log.tenant_id` (nullable, for per-tenant filtering
 §4's schema — `subscriptions` **with** `tenant_id` — is correct; an earlier revision
 of this paragraph contradicted it.)*
 
-Users belong to **exactly one tenant** (`users.tenant_id`, nullable only for
-superadmins). No cross-tenant membership in Phase 1 — simpler and matches the market.
+Users belong to **one or more tenants**, through `tenant_memberships`
+(`tenant_id`, `user_id`, `role`, `banned`) — one row per pairing, unique on
+(tenant, user). `users.tenant_id` survives as the **active business pointer**:
+which tenant the switcher last put that session in, nullable, and never a grant
+on its own. `getTenantContext` re-reads the membership on every request and
+takes the role from it, so a revoked, deactivated or demoted membership takes
+effect on the next click rather than at session expiry, and a forged tenant id
+in a cookie matches no row at all.
+
+Role is a property of the **pairing**, not of the person: the same user may be
+`admin` at one business and `agent` at another. Deactivation (§13 H4) and seat
+limits (§13 H6) live on the membership for the same reason — shutting someone
+out of one business must not touch the others, and one shared login must not
+burn a seat in every plan.
+
+Adding a person to a business is a **superadmin** action: it is a cross-tenant
+write, which is exactly what §3.3 exists to prevent a tenant admin from making.
+What a tenant admin keeps is the role of someone already in their own business,
+and the power to deactivate or remove them from it.
+
+*(Reopened deliberately. This paragraph previously read "exactly one tenant, no
+cross-tenant membership in Phase 1 — simpler and matches the market". The
+market turned out to include the operator's own network: one person running
+several businesses on the platform had no way to reach the second one, because
+`users.email` is globally unique and a second invitation could only fail. See
+§1.2's Tenancy row.)*
 
 ### 3.2 Roles
 
@@ -207,7 +231,8 @@ Drizzle schema, one file per module. All PKs `char(26)` ULID, all tables get
 
 **tenancy/billing** *(platform)*
 - `tenants` — name, slug, status (`active|suspended|trial`), locale (`es`), timezone (`America/Asuncion`), settings JSON
-- `users` — tenant_id (nullable), email, name, role (`admin|agent|superadmin` — the third value exists only for the Better Auth admin-plugin gate, see §3.2), is_superadmin, Better Auth fields
+- `users` — tenant_id (nullable — the *active business* pointer, §3.1), email (globally unique), name, role (`admin|agent|superadmin` — kept in sync with the active membership solely for the Better Auth admin-plugin gate, see §3.2), is_superadmin, Better Auth fields
+- `tenant_memberships` — tenant_id, user_id, role (`admin|agent`), banned, ban_reason; unique (tenant_id, user_id). The grant that lets a person act in a business, and the source of truth for their role there (§3.1)
 - `invitations` — tenant_id, email, role, token, expires_at
 - `plans` — name, duration_months (3|6|12), price (BIGINT PYG), limits JSON (users, WhatsApp numbers, monthly automation runs), is_active, `features` JSON (factura_electronica: "coming_soon")
 - `subscriptions` — tenant_id, plan_id, starts_at, expires_at, status (`active|grace|expired`)
@@ -281,9 +306,11 @@ for invoicing — Phase 2 adds a proper `ruc` column, don't pre-add it.
 
 **Tenancy shape (locked, §1.2)**: **one tenant owns many sites.** Every lead lands in
 that tenant's shared pipeline carrying a `site_id`. This is what makes "one admin panel
-for all Paraguay leads" work *without* cross-tenant membership — §3.1 stays exactly as
-it is. One-tenant-per-site would force the owner through superadmin impersonation to
-see their own leads, which is unusable daily.
+for all Paraguay leads" work in a single pipeline. One-tenant-per-site would force the
+owner through superadmin impersonation to see their own leads, which is unusable daily.
+Multi-tenant membership (§3.1) does not weaken this and is not a substitute for it: a
+network of sites is still **one** tenant, and switching businesses is for genuinely
+separate businesses, not for sites within one.
 
 **A lead is not a new entity.** An inbound submission upserts a `contact` (by phone) and
 optionally opens a `deal`, exactly as the hosted-form path already does. There is no
@@ -1766,11 +1793,15 @@ Estimates assume focused build sessions against this spec; Fable review gates (a
 ## 11. Deferred / explicitly out of Phase 1
 
 Payment gateway (Bancard/Pagopar), monthly billing, client-side quote acceptance,
-websockets/SSE realtime, multi-tenant users (one user in many tenants), Guaraní/English
+websockets/SSE realtime, Guaraní/English
 locales (i18n layer is ready), WhatsApp broadcast/bulk campaigns (compliance-sensitive —
 revisit deliberately), mobile apps, SIFEN anything (Phase 2), all Phase 3 marketing
 features. *(“Public API” is no longer deferred in full: 1E ships a deliberately narrow
 one — lead ingest only, not a general CRUD API.)*
+
+**No longer deferred: multi-tenant users** (one user in many tenants). Shipped as
+`tenant_memberships` — see §3.1 for the shape and §1.2's amended Tenancy row for why the
+decision was reopened.
 
 **URL route segments stay English** (`/sites`, `/contacts`, `/pipeline`, `/inbox`, …)
 while every visible string is Spanish through next-intl — cosmetic inconsistency only,

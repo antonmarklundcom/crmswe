@@ -9,6 +9,11 @@ import { computeAccessStatus, type AccessStatus } from "./subscriptions";
 // tenant IDs (query params, form fields, headers) must never be trusted —
 // every module service takes a TenantContext, never a raw tenantId string
 // from user input.
+//
+// Since §3.1 was reopened for multi-business users, the session carries the
+// *active* business (`users.tenant_id`, moved by the switcher) and the
+// membership carries the role. Both are re-read here per request: the cookie
+// proposes, `tenant_memberships` disposes.
 
 export type TenantRole = "admin" | "agent";
 
@@ -54,17 +59,23 @@ export async function getTenantContext(): Promise<TenantContext | null> {
 
   const user = session.user as unknown as SessionUser;
   if (!user.tenantId) return null;
-  if (user.role !== "admin" && user.role !== "agent") return null;
 
   const tenant = await getTenant(user.tenantId);
   if (!tenant) return null;
 
-  // Read the row, don't trust the session copy: a user deactivated (or moved
-  // out of this tenant) a second ago is still carrying a valid cookie that
-  // says otherwise (PLAN.md §13 H4). Their sessions are revoked at ban time
-  // too — this is the belt to that suspenders.
+  // The session says which business the user was last in; it does not get to
+  // say whether they may be there. Now that one user can hold memberships in
+  // several businesses, that distinction is the whole tenancy wall: re-read
+  // the membership on every request and take the role from it, never from
+  // the session copy (PLAN.md §3.3). A revoked, deactivated or demoted
+  // membership therefore takes effect on the next click, not at session
+  // expiry — and a forged `tenantId` in a cookie matches no row at all.
+  // `getActiveTenantUser` returns null unless all of it holds — the user row
+  // exists, is not platform-banned, and holds a live membership in this
+  // business — and the row it returns carries the *membership's* role
+  // (PLAN.md §13 H4, now per-business).
   const row = await getActiveTenantUser(user.id, user.tenantId);
-  if (!row) return null;
+  if (!row || (row.role !== "admin" && row.role !== "agent")) return null;
 
   const impersonatedBy = (
     session.session as unknown as { impersonatedBy?: string | null }
@@ -73,7 +84,7 @@ export async function getTenantContext(): Promise<TenantContext | null> {
   return {
     tenantId: user.tenantId,
     userId: user.id,
-    role: user.role,
+    role: row.role,
     impersonatorUserId: impersonatedBy ?? null,
     accessStatus: await computeAccessStatus(tenant.id, tenant.status),
   };

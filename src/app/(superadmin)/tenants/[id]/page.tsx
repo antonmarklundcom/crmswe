@@ -8,6 +8,7 @@ import { listUsersForTenant } from "@/modules/tenancy/users";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/page-header";
 import { CreateUserForm, type CreateUserLabels } from "./CreateUserForm";
+import { AddExistingUserForm, type AddExistingUserLabels } from "./AddExistingUserForm";
 import { CreateSubscriptionForm, RecordPaymentForm } from "./SubscriptionForms";
 import { impersonateAction, setTenantUserPasswordAction } from "./actions";
 import { Input } from "@/components/ui/form-fields";
@@ -48,6 +49,22 @@ export default async function TenantDetailPage({
     errors: {
       invalid: tu("errors.invalid"),
       emailTaken: tu("errors.emailTaken"),
+      unknown: tu("errors.unknown"),
+    },
+  };
+
+  const addExistingLabels: AddExistingUserLabels = {
+    email: tu("email"),
+    role: tu("role"),
+    roleAdmin: tu("roles.admin"),
+    roleAgent: tu("roles.agent"),
+    submit: tu("addExisting.submit"),
+    added: tu("addExisting.added"),
+    errors: {
+      invalid: tu("errors.invalid"),
+      userNotFound: tu("addExisting.errors.userNotFound"),
+      alreadyMember: tu("addExisting.errors.alreadyMember"),
+      superadminTarget: tu("addExisting.errors.superadminTarget"),
       unknown: tu("errors.unknown"),
     },
   };
@@ -137,6 +154,15 @@ export default async function TenantDetailPage({
 
         <h3 className="mb-3 text-base font-medium">{tu("createTitle")}</h3>
         <CreateUserForm tenantId={tenant.id} labels={userLabels} />
+
+        {/* The other door: someone who already has an account elsewhere on the
+            platform gets a membership here too, keeping the access they have
+            (PLAN.md §3.1, reopened). */}
+        <h3 className="mt-8 mb-1 text-base font-medium">{tu("addExisting.title")}</h3>
+        <p className="mb-3 max-w-2xl text-sm text-muted-foreground">
+          {tu("addExisting.intro")}
+        </p>
+        <AddExistingUserForm tenantId={tenant.id} labels={addExistingLabels} />
       </section>
     </div>
   );

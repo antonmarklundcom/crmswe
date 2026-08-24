@@ -57,6 +57,7 @@ export default async function UsersPage({
     errors: {
       invalid: t("errors.invalid"),
       emailTaken: t("errors.emailTaken"),
+      alreadyMember: t("errors.alreadyMember"),
       readOnly: t("errors.readOnly"),
       planLimit: t("errors.planLimit"),
       unknown: t("errors.unknown"),

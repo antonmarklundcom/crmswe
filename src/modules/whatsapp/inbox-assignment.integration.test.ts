@@ -85,6 +85,21 @@ describe.skipIf(!hasDb)("assigning a conversation (MySQL integration)", () => {
       },
     ]);
 
+    // Access is the membership, not `users.tenant_id` (PLAN.md §3.1) — and
+    // deactivation rides on the membership too, so the banned rep is banned
+    // *here*, in this business, which is what assignment must refuse.
+    await db.insert(schema.tenantMemberships).values([
+      { id: newId(), tenantId: ctx.tenantId, userId: memberId, role: "agent" },
+      {
+        id: newId(),
+        tenantId: ctx.tenantId,
+        userId: bannedMemberId,
+        role: "agent",
+        banned: true,
+      },
+      { id: newId(), tenantId: otherCtx.tenantId, userId: outsiderId, role: "agent" },
+    ]);
+
     const account = await connectAccountManually(ctx, {
       wabaId: `waba-${newId()}`,
       phoneNumberId: `pn-${newId()}`,

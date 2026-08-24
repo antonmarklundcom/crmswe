@@ -25,7 +25,15 @@
       "password": "Elegí una contraseña",
       "submit": "Crear cuenta",
       "invalid": "Esta invitación no es válida o ya expiró",
-      "success": "Cuenta creada. Ya podés iniciar sesión."
+      "success": "Cuenta creada. Ya podés iniciar sesión.",
+      "joinTitle": "Unirte a la empresa",
+      "existingAccount": "{email} ya tiene una cuenta en VenderCRM. No hace falta crear otra: iniciá sesión con ese correo y sumás esta empresa a las que ya trabajás.",
+      "joinSubmit": "Sumar esta empresa a mi cuenta",
+      "joined": "Listo. Ya tenés acceso a esta empresa; elegila en el selector de arriba.",
+      "goToApp": "Ir al CRM",
+      "signIn": "Iniciar sesión",
+      "signInFirst": "Iniciá sesión con ese correo para aceptar la invitación.",
+      "wrongAccount": "Estás con otra cuenta. Cerrá sesión y entrá con {email} para aceptar esta invitación."
     },
     "forgotPassword": {
       "title": "Recuperar contraseña",
@@ -401,7 +409,8 @@
         "emailTaken": "Ese correo ya tiene una cuenta.",
         "readOnly": "Tu suscripción venció: la cuenta está en modo solo lectura.",
         "unknown": "No se pudo generar la invitación. Intentá de nuevo.",
-        "planLimit": "Llegaste al límite de usuarios de tu plan. Desactivá a alguien o escribinos para ampliarlo."
+        "planLimit": "Llegaste al límite de usuarios de tu plan. Desactivá a alguien o escribinos para ampliarlo.",
+        "alreadyMember": "Esa persona ya forma parte de esta empresa."
       },
       "stateColumn": "Estado",
       "actionsColumn": "Acciones",
@@ -1114,7 +1123,18 @@
       },
       "inactive": "inactivo",
       "newPassword": "Contraseña nueva",
-      "setPassword": "Definir contraseña"
+      "setPassword": "Definir contraseña",
+      "addExisting": {
+        "title": "Sumar a alguien que ya tiene cuenta",
+        "intro": "Si la persona ya usa VenderCRM en otra empresa, no crees otra cuenta: sumale esta empresa acá. Mantiene su acceso a las demás y cambia entre ellas desde el selector.",
+        "submit": "Dar acceso",
+        "added": "Acceso otorgado a",
+        "errors": {
+          "userNotFound": "No hay ninguna cuenta con ese correo. Creala arriba o mandá una invitación.",
+          "alreadyMember": "Esa persona ya forma parte de esta empresa.",
+          "superadminTarget": "Los superadministradores ya llegan a todas las empresas con «ver como»; no se los suma como miembros."
+        }
+      }
     },
     "tenants": {
       "title": "Empresas",

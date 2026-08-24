@@ -107,8 +107,6 @@ describe.skipIf(!hasDb)("contact import (MySQL integration)", () => {
 });
 
 describe.skipIf(!hasDb)("plan limits (MySQL integration)", () => {
-  let db: (typeof import("@/db/client"))["db"];
-  let schema: typeof import("@/db/schema");
   let newId: (typeof import("@/lib/ids"))["newId"];
   let checkPlanLimit: (typeof import("@/modules/tenancy/limits"))["checkPlanLimit"];
   let createTenant: (typeof import("@/modules/tenancy/tenants"))["createTenant"];
@@ -120,8 +118,6 @@ describe.skipIf(!hasDb)("plan limits (MySQL integration)", () => {
   let tenantId: string;
 
   beforeAll(async () => {
-    ({ db } = await import("@/db/client"));
-    schema = await import("@/db/schema");
     ({ newId } = await import("@/lib/ids"));
     ({ checkPlanLimit } = await import("@/modules/tenancy/limits"));
     ({ createTenant } = await import("@/modules/tenancy/tenants"));
@@ -170,8 +166,11 @@ describe.skipIf(!hasDb)("plan limits (MySQL integration)", () => {
 
     // Deactivating someone returns their seat (§13 H4 is what makes this the
     // answer to "we're full"), and the check has to see that immediately.
-    const { eq } = await import("drizzle-orm");
-    await db.update(schema.users).set({ banned: true }).where(eq(schema.users.id, first!.id));
+    // The seat is held by the *membership*, not the user row: since one person
+    // may work in several businesses (§3.1), banning the user row here would
+    // have taken their seat away everywhere at once.
+    const { setMembershipBanned } = await import("@/modules/tenancy/memberships");
+    await setMembershipBanned(tenantId, first!.id, true, "prueba");
     expect((await checkPlanLimit(tenantId, "maxUsers")).allowed).toBe(true);
   });
 

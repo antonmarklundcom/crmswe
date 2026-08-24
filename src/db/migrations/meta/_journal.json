@@ -134,6 +134,13 @@
       "when": 1787120965160,
       "tag": "0018_add_deal_close_reason",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "5",
+      "when": 1787550462939,
+      "tag": "0019_add_tenant_memberships",
+      "breakpoints": true
     }
   ]
 }

@@ -1,9 +1,10 @@
 import { and, count, eq } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/db/client";
-import { contacts, sites, users } from "@/db/schema";
+import { contacts, sites } from "@/db/schema";
 import { getLatestSubscriptionForTenant } from "./subscriptions";
 import { getPlan } from "./plans";
+import { countTenantMembers } from "./memberships";
 import type { TenantContext } from "./context";
 
 // Plan limit enforcement (PLAN.md §13 H6). `plans.limits` has been written
@@ -52,11 +53,11 @@ export async function getTenantLimits(tenantId: string): Promise<PlanLimits> {
 
 async function currentUsage(tenantId: string, key: LimitKey): Promise<number> {
   if (key === "maxUsers") {
-    const [row] = await db
-      .select({ value: count() })
-      .from(users)
-      .where(and(eq(users.tenantId, tenantId), eq(users.banned, false)));
-    return row?.value ?? 0;
+    // Seats are memberships, not user rows. One person working in two
+    // businesses holds a seat in each and burns neither one's ceiling for
+    // the other — counting `users` would have charged both plans for the
+    // same login (PLAN.md §13 H6, revisited with §3.1).
+    return countTenantMembers(tenantId);
   }
 
   if (key === "maxContacts") {

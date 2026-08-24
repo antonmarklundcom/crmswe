@@ -18,6 +18,7 @@ import { env } from "@/lib/config/env";
 import { sendEmail } from "@/lib/email";
 import { invitationEmail } from "@/lib/email/templates";
 import { checkPlanLimit } from "@/modules/tenancy/limits";
+import { getMembership } from "@/modules/tenancy/memberships";
 
 // Tenant team management (PLAN.md §10 1I #2). Route handlers/server actions
 // validate and delegate — the invitation itself is created by the tenancy
@@ -50,12 +51,14 @@ export async function inviteUserAction(
     return { error: "invalid", inviteUrl: null };
   }
 
-  // Better Auth's sign-up gate keys off the invitation, so an email that
-  // already has an account can never accept one — say so here rather than
-  // minting a token that is guaranteed to fail at the end.
+  // An email that already has an account is no longer a dead end (PLAN.md
+  // §3.1, reopened): they accept the invitation while signed in and gain a
+  // membership here alongside the businesses they already work in. The one
+  // case that is still refused is inviting someone who is already in *this*
+  // business — there is nothing to grant.
   const existing = await getUserByEmail(parsed.data.email);
-  if (existing) {
-    return { error: "emailTaken", inviteUrl: null };
+  if (existing && (await getMembership(existing.id, ctx.tenantId))) {
+    return { error: "alreadyMember", inviteUrl: null };
   }
 
   // Seat ceiling from the plan (PLAN.md §13 H6). Counted against active

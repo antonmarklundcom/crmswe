@@ -16,6 +16,11 @@ export type SortDirection = "asc" | "desc";
 export type ContactQuery = ListContactsFilters & {
   /** Only contacts with a deal in a stage that is neither won nor lost. */
   hasOpenDeal?: boolean;
+  /** Only contacts with a deal somewhere in this pipeline. */
+  pipelineId?: string;
+  /** Only contacts with a deal sitting in this stage. Narrower than
+   * `pipelineId`, and wins over it when both are set. */
+  stageId?: string;
   createdFrom?: Date;
   createdTo?: Date;
   /** Restricts to exactly these ids — "export selection" from the bulk
@@ -89,18 +94,38 @@ export async function queryContacts(
     rows = rows.filter((row) => allowed.has(row.id));
   }
 
-  if (query.hasOpenDeal) {
+  // has-open-deal and the pipeline/stage filter both answer "where is this
+  // contact in the funnel", so they read deals and stages once between them
+  // rather than each paying for its own pair of queries.
+  if (query.hasOpenDeal || query.pipelineId || query.stageId) {
     const [dealRows, stageRows] = await Promise.all([
       tenantDb(ctx).select(deals),
       tenantDb(ctx).select(stages),
     ]);
-    const closed = new Set(
-      stageRows.filter((stage) => stage.isWon || stage.isLost).map((stage) => stage.id),
-    );
-    const withOpenDeal = new Set(
-      dealRows.filter((deal) => !closed.has(deal.stageId)).map((deal) => deal.contactId),
-    );
-    rows = rows.filter((row) => withOpenDeal.has(row.id));
+
+    if (query.hasOpenDeal) {
+      const closed = new Set(
+        stageRows.filter((stage) => stage.isWon || stage.isLost).map((stage) => stage.id),
+      );
+      const withOpenDeal = new Set(
+        dealRows.filter((deal) => !closed.has(deal.stageId)).map((deal) => deal.contactId),
+      );
+      rows = rows.filter((row) => withOpenDeal.has(row.id));
+    }
+
+    if (query.stageId || query.pipelineId) {
+      const stageIds = query.stageId
+        ? new Set([query.stageId])
+        : new Set(
+            stageRows
+              .filter((stage) => stage.pipelineId === query.pipelineId)
+              .map((stage) => stage.id),
+          );
+      const inStage = new Set(
+        dealRows.filter((deal) => stageIds.has(deal.stageId)).map((deal) => deal.contactId),
+      );
+      rows = rows.filter((row) => inStage.has(row.id));
+    }
   }
 
   const sort = options.sort ?? "createdAt";

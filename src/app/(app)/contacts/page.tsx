@@ -17,12 +17,15 @@ import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
 import { ContactsTable, type StageOption } from "./ContactsTable";
 import { ContactCreateForm } from "./ContactCreateForm";
+import { SavedViews } from "./SavedViews";
 import { createTagAction } from "./actions";
+import { listContactViews } from "@/modules/crm/contact-views";
 import {
   buildContactHref,
   hasActiveFilters,
   parseContactOptions,
   parseContactQuery,
+  serializeContactView,
   type ContactSearchParams,
 } from "./query";
 import { formatDate } from "@/lib/i18n/format";
@@ -43,30 +46,34 @@ export default async function ContactsPage({
   const query = parseContactQuery(params);
   const options = parseContactOptions(params);
 
-  const [page, tags, sources, users, openDeals, pipelines] = await Promise.all([
+  const [page, tags, sources, users, openDeals, pipelines, views] = await Promise.all([
     queryContacts(ctx, query, options),
     listTags(ctx),
     listContactSources(ctx),
     listTenantUsers(ctx),
     contactsWithOpenDeals(ctx),
     listPipelines(ctx),
+    listContactViews(ctx),
   ]);
 
-  // Bulk "add to pipeline" needs a flat stage list across every pipeline —
-  // same reasoning as /sites's routing picker: a tenant can run more than
-  // one pipeline, so the picker has to span them rather than assume one.
-  const stageOptions: StageOption[] = (
-    await Promise.all(
-      pipelines.map(async (pipeline) => {
-        const stages = await listStagesForPipeline(ctx, pipeline.id);
-        return stages.map((stage) => ({
-          id: stage.id,
-          pipelineId: pipeline.id,
-          label: `${pipeline.name} › ${stage.name}`,
-        }));
-      }),
-    )
-  ).flat();
+  // Stages, kept grouped by pipeline: the filter's <optgroup>s need the
+  // grouping, and the bulk "add to pipeline" picker needs the same list
+  // flattened. A tenant can run more than one pipeline, so both have to span
+  // them rather than assume one — same reasoning as /sites's routing picker.
+  const pipelineStages = await Promise.all(
+    pipelines.map(async (pipeline) => ({
+      pipeline,
+      stages: await listStagesForPipeline(ctx, pipeline.id),
+    })),
+  );
+
+  const stageOptions: StageOption[] = pipelineStages.flatMap(({ pipeline, stages }) =>
+    stages.map((stage) => ({
+      id: stage.id,
+      pipelineId: pipeline.id,
+      label: `${pipeline.name} › ${stage.name}`,
+    })),
+  );
 
   const filtered = hasActiveFilters(params);
   const isFirstTime = page.total === 0 && !filtered;
@@ -107,6 +114,10 @@ export default async function ContactsPage({
 
   const exportHref = `/api/exports/contacts${buildContactHref(params, { page: undefined })}`;
 
+  // What "guardar vista" would store, and what marks the matching chip as the
+  // one you are looking at.
+  const activeQuery = serializeContactView(params);
+
   return (
     <div className="flex flex-col gap-8">
       <section className="flex flex-col gap-4">
@@ -136,6 +147,18 @@ export default async function ContactsPage({
             </div>
           }
         />
+
+        {!isFirstTime && (
+          <SavedViews
+            activeQuery={activeQuery}
+            views={views.map((view) => ({
+              id: view.id,
+              name: view.name,
+              query: view.query,
+              canDelete: ctx.role === "admin" || view.createdByUserId === ctx.userId,
+            }))}
+          />
+        )}
 
         {!isFirstTime && (
           <form className="flex flex-wrap items-end gap-2" method="get">
@@ -189,6 +212,39 @@ export default async function ContactsPage({
                 ))}
               </Select>
             </label>
+            {pipelines.length > 0 && (
+              <label className="flex flex-col gap-1 text-xs text-muted-foreground">
+                {t("pipeline")}
+                <Select name="pipelineId" defaultValue={params.pipelineId ?? ""}>
+                  <option value="">{t("allPipelines")}</option>
+                  {pipelines.map((pipeline) => (
+                    <option key={pipeline.id} value={pipeline.id}>
+                      {pipeline.name}
+                    </option>
+                  ))}
+                </Select>
+              </label>
+            )}
+            {stageOptions.length > 0 && (
+              <label className="flex flex-col gap-1 text-xs text-muted-foreground">
+                {t("stage")}
+                {/* Grouped by pipeline and independent of the pipeline select:
+                    picking a stage is the narrower answer, and queryContacts
+                    lets it win rather than making the two agree. */}
+                <Select name="stageId" defaultValue={params.stageId ?? ""}>
+                  <option value="">{t("allStages")}</option>
+                  {pipelineStages.map(({ pipeline, stages }) => (
+                    <optgroup key={pipeline.id} label={pipeline.name}>
+                      {stages.map((stage) => (
+                        <option key={stage.id} value={stage.id}>
+                          {stage.name}
+                        </option>
+                      ))}
+                    </optgroup>
+                  ))}
+                </Select>
+              </label>
+            )}
             <label className="flex flex-col gap-1 text-xs text-muted-foreground">
               {t("createdFrom")}
               <Input
@@ -271,6 +327,7 @@ export default async function ContactsPage({
               users={users}
               stages={stageOptions}
               exportBaseHref={exportHref}
+              canDelete={ctx.role === "admin"}
               labels={{
                 name: t("name"),
                 phone: t("phone"),
@@ -294,6 +351,12 @@ export default async function ContactsPage({
                 apply: t("bulk.apply"),
                 exportSelection: t("bulk.exportSelection"),
                 clearSelection: t("bulk.clearSelection"),
+                // Raw for the same reason as selectedCount above: the client
+                // substitutes the count itself as the selection changes.
+                deleteSelection: t("bulk.deleteSelection"),
+                deleteConfirm: t.raw("bulk.deleteConfirm"),
+                deleteDone: t.raw("bulk.deleteDone"),
+                deleteBlocked: t.raw("bulk.deleteBlocked"),
               }}
             />
 

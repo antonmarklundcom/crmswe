@@ -14,6 +14,8 @@ export type ContactSearchParams = {
   tagId?: string;
   source?: string;
   ownerUserId?: string;
+  pipelineId?: string;
+  stageId?: string;
   openDeal?: string;
   from?: string;
   to?: string;
@@ -40,6 +42,8 @@ export function parseContactQuery(params: ContactSearchParams): ContactQuery {
     tagId: params.tagId || undefined,
     source: params.source || undefined,
     ownerUserId: params.ownerUserId || undefined,
+    pipelineId: params.pipelineId || undefined,
+    stageId: params.stageId || undefined,
     hasOpenDeal: params.openDeal === "1",
     createdFrom: parseDate(params.from),
     createdTo,
@@ -67,6 +71,8 @@ export function hasActiveFilters(params: ContactSearchParams): boolean {
       params.tagId ||
       params.source ||
       params.ownerUserId ||
+      params.pipelineId ||
+      params.stageId ||
       params.openDeal === "1" ||
       params.from ||
       params.to,
@@ -86,4 +92,45 @@ export function buildContactHref(
   }
   const query = next.toString();
   return query ? `?${query}` : "";
+}
+
+/**
+ * The filter/sort keys a saved view is allowed to carry (§10 1J #1's
+ * "guardar vista"). `page` is deliberately absent — a view is a filter, not a
+ * scroll position — and so is `ids`, which only ever describes one session's
+ * checkbox selection.
+ */
+const VIEW_KEYS = [
+  "search",
+  "tagId",
+  "source",
+  "ownerUserId",
+  "pipelineId",
+  "stageId",
+  "openDeal",
+  "from",
+  "to",
+  "sort",
+  "dir",
+] as const satisfies readonly (keyof ContactSearchParams)[];
+
+/**
+ * Canonical querystring for a saved view: known keys only, always in the same
+ * order. Round-tripping through this is what makes a stored view safe to hand
+ * back to the browser as a link — nothing a user typed into the URL survives
+ * unless it is one of the filters above.
+ */
+export function serializeContactView(params: ContactSearchParams): string {
+  const next = new URLSearchParams();
+  for (const key of VIEW_KEYS) {
+    const value = params[key];
+    if (value) next.set(key, String(value));
+  }
+  return next.toString();
+}
+
+/** The same narrowing applied to a stored string, for rendering a view link. */
+export function parseContactView(query: string): string {
+  const parsed = Object.fromEntries(new URLSearchParams(query)) as ContactSearchParams;
+  return serializeContactView(parsed);
 }

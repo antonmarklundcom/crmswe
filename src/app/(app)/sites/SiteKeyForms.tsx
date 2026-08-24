@@ -28,7 +28,7 @@ const createInitialState: CreateSiteFormState = {
 
 function KeyReveal({ apiKey, labels }: { apiKey: string; labels: KeyLabels }) {
   return (
-    <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+    <div className="rounded-md border border-warning/30 bg-warning-surface p-3 text-sm text-warning">
       <p className="font-medium">{labels.copyNow}</p>
       <code className="mt-2 block break-all rounded bg-white px-2 py-1 font-mono text-xs">
         {apiKey}

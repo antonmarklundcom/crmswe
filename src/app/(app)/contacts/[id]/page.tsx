@@ -8,6 +8,7 @@ import { getContact, listTags, listTagsForContact } from "@/modules/crm/contacts
 import { getContactTimeline, type TimelineEntry } from "@/modules/crm/timeline";
 import { listDealsForContact } from "@/modules/crm/deals";
 import { listTasksForContact } from "@/modules/crm/tasks";
+import { listEventsForContact } from "@/modules/calendar/events";
 import { findContactDeleteBlockers, type ContactBlocker } from "@/modules/crm/deletion";
 import {
   listConversationsForContact,
@@ -74,13 +75,24 @@ export default async function ContactDetailPage({
   const tq = await getTranslations("app.quotes");
   const td = await getTranslations("app.documents");
   const ti = await getTranslations("app.inbox");
+  const tcal = await getTranslations("app.calendar");
 
   const contact = await getContact(ctx, id);
   if (!contact) notFound();
 
   const tab: Tab = TABS.includes(rawTab as Tab) ? (rawTab as Tab) : "conversacion";
 
-  const [timeline, deals, contactTags, allTags, conversations, tasks, users, deleteBlockers] =
+  const [
+    timeline,
+    deals,
+    contactTags,
+    allTags,
+    conversations,
+    tasks,
+    appointments,
+    users,
+    deleteBlockers,
+  ] =
     await Promise.all([
       getContactTimeline(ctx, id),
       listDealsForContact(ctx, id),
@@ -88,6 +100,9 @@ export default async function ContactDetailPage({
       listTags(ctx),
       listConversationsForContact(ctx, id),
       listTasksForContact(ctx, id),
+      // What is booked with this person — the agenda read from the record
+      // rather than from the calendar page (modules/calendar).
+      listEventsForContact(ctx, id),
       // For the conversation tab's owner picker — same decision as the
       // inbox's, offered in the place a rep is actually looking.
       listTenantUsers(ctx),
@@ -244,6 +259,36 @@ export default async function ContactDetailPage({
 
       {tab === "tareas" && (
         <div className="flex flex-col gap-6">
+          <section className="flex flex-col gap-2">
+            <div className="flex items-center justify-between gap-2">
+              <h3 className="text-sm font-medium">{tcal("title")}</h3>
+              <Link href="/calendar#nueva-cita" className="text-sm underline underline-offset-4">
+                {tcal("createTitle")}
+              </Link>
+            </div>
+            {appointments.length === 0 ? (
+              <p className="text-sm text-muted-foreground">{tcal("emptyRange")}</p>
+            ) : (
+              <ul className="flex flex-col gap-1 text-sm">
+                {appointments.map((event) => (
+                  <li key={event.id}>
+                    <Link
+                      href={`/calendar/${event.id}`}
+                      className="underline underline-offset-4"
+                    >
+                      {event.title}
+                    </Link>
+                    <span className="ml-2 text-muted-foreground">
+                      {event.allDay
+                        ? tcal("allDay")
+                        : formatDateTime(event.startsAt, locale)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+
           <form
             action={createTaskAction.bind(null, id)}
             className="flex max-w-lg flex-wrap items-end gap-2"

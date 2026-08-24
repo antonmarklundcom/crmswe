@@ -38,7 +38,7 @@ export function EmptyState({
         className,
       )}
     >
-      <span className="flex size-11 items-center justify-center rounded-full bg-muted text-muted-foreground">
+      <span className="flex size-11 items-center justify-center rounded-full bg-accent text-accent-foreground">
         <Icon className="size-5" aria-hidden="true" />
       </span>
       <h3 className="text-base font-medium">{title}</h3>

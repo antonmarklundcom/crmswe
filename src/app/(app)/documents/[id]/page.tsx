@@ -91,7 +91,7 @@ export default async function DocumentDetailPage({
         )}
       </header>
 
-      <p className="w-fit rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+      <p className="w-fit rounded-md border border-warning/30 bg-warning-surface px-3 py-2 text-xs text-warning">
         {t("nonFiscalNotice")}
       </p>
 

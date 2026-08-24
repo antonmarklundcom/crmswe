@@ -53,7 +53,7 @@ async function SiteHealthBadge({
   }
 
   return (
-    <p className="text-sm text-emerald-700">
+    <p className="text-sm text-success">
       ● {t("ok", { when: health?.lastSuccessAt ? formatDateTime(health.lastSuccessAt, locale) : "" })}
       {health?.errorCount ? ` · ${t("errorCount", { count: health.errorCount })}` : ""}
     </p>

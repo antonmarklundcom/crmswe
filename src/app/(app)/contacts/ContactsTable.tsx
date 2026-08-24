@@ -303,7 +303,7 @@ export function ContactsTable({
                     {row.name}
                   </Link>
                   {row.hasOpenDeal && (
-                    <span className="ml-2 rounded-full bg-muted px-2 py-0.5 text-[10px] whitespace-nowrap">
+                    <span className="ml-2 rounded-full bg-success-surface px-2 py-0.5 text-[10px] whitespace-nowrap text-success">
                       {labels.openDealBadge}
                     </span>
                   )}

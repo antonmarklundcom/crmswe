@@ -89,7 +89,8 @@
         "crm": "CRM",
         "capture": "Lead capture",
         "settings": "Settings"
-      }
+      },
+      "calendar": "Calendar"
     },
     "dashboard": {
       "title": "{tenant} dashboard",
@@ -188,6 +189,49 @@
       "showClosed": "Show {count} closed",
       "hideClosed": "Hide closed",
       "editStages": "Edit stages"
+    },
+    "calendar": {
+      "title": "Calendar",
+      "intro": "The team's visits, calls and meetings, with the tasks due that day beside them. All in your company's time.",
+      "week": "Week",
+      "month": "Month",
+      "previous": "Previous",
+      "next": "Next",
+      "today": "Today",
+      "assignee": "Assignee",
+      "allAssignees": "Whole team",
+      "filter": "Filter",
+      "allDay": "All day",
+      "emptyRange": "Nothing scheduled in this period.",
+      "createTitle": "New appointment",
+      "createAction": "Schedule",
+      "editTitle": "Edit the appointment",
+      "saveAction": "Save changes",
+      "deleteAction": "Delete the appointment",
+      "backToCalendar": "Back to the calendar",
+      "readOnly": "Only whoever created it, whoever it is assigned to, or an admin can edit this appointment.",
+      "form": {
+        "title": "Title",
+        "allDay": "All day",
+        "startDate": "From",
+        "startTime": "Start time",
+        "endDate": "To",
+        "endTime": "End time",
+        "location": "Place",
+        "contact": "Contact",
+        "noContact": "No contact",
+        "assignee": "Assignee",
+        "noAssignee": "Unassigned",
+        "description": "Notes",
+        "saved": "Changes saved"
+      },
+      "errors": {
+        "titleRequired": "Give it a title",
+        "dateInvalid": "Check the date",
+        "endBeforeStart": "The end has to come after the start",
+        "notAllowed": "This appointment is not yours to change",
+        "unknown": "The appointment couldn't be saved"
+      }
     },
     "forms": {
       "title": "Forms",

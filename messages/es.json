@@ -89,7 +89,8 @@
         "crm": "CRM",
         "capture": "Captación",
         "settings": "Configuración"
-      }
+      },
+      "calendar": "Agenda"
     },
     "dashboard": {
       "title": "Panel de {tenant}",
@@ -372,6 +373,49 @@
       "showClosed": "Ver {count} cerrados",
       "hideClosed": "Ocultar cerrados",
       "editStages": "Editar etapas"
+    },
+    "calendar": {
+      "title": "Agenda",
+      "intro": "Las visitas, llamadas y reuniones del equipo, con las tareas que vencen ese día al lado. Todo en la hora de tu empresa.",
+      "week": "Semana",
+      "month": "Mes",
+      "previous": "Anterior",
+      "next": "Siguiente",
+      "today": "Hoy",
+      "assignee": "Responsable",
+      "allAssignees": "Todo el equipo",
+      "filter": "Filtrar",
+      "allDay": "Todo el día",
+      "emptyRange": "No hay nada agendado en este período.",
+      "createTitle": "Nueva cita",
+      "createAction": "Agendar",
+      "editTitle": "Editar la cita",
+      "saveAction": "Guardar cambios",
+      "deleteAction": "Eliminar la cita",
+      "backToCalendar": "Volver a la agenda",
+      "readOnly": "Solo quien la creó, quien la tiene asignada o un administrador puede editar esta cita.",
+      "form": {
+        "title": "Título",
+        "allDay": "Todo el día",
+        "startDate": "Desde",
+        "startTime": "Hora de inicio",
+        "endDate": "Hasta",
+        "endTime": "Hora de fin",
+        "location": "Lugar",
+        "contact": "Contacto",
+        "noContact": "Sin contacto",
+        "assignee": "Responsable",
+        "noAssignee": "Sin responsable",
+        "description": "Notas",
+        "saved": "Cambios guardados"
+      },
+      "errors": {
+        "titleRequired": "Poné un título",
+        "dateInvalid": "Revisá la fecha",
+        "endBeforeStart": "El fin tiene que ser después del inicio",
+        "notAllowed": "Esta cita no es tuya para cambiarla",
+        "unknown": "No se pudo guardar la cita"
+      }
     },
     "forms": {
       "title": "Formularios",

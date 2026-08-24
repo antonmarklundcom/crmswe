@@ -44,7 +44,7 @@ export default async function WhatsappHealthPage() {
                 <tr key={account.id} className="border-b">
                   <td className="py-2">{account.tenantName}</td>
                   <td className="py-2">{account.displayNumber || account.phoneNumberId}</td>
-                  <td className={`py-2 ${account.status === "error" ? "text-red-600" : ""}`}>
+                  <td className={`py-2 ${account.status === "error" ? "text-destructive" : ""}`}>
                     {account.status}
                   </td>
                   <td className="py-2">{account.qualityRating ?? "—"}</td>

@@ -1,4 +1,4 @@
-import { and, eq, isNull, lte } from "drizzle-orm";
+import { and, eq, gte, isNull, lt, lte } from "drizzle-orm";
 import { tasks } from "@/db/schema";
 import { newId } from "@/lib/ids";
 import type { TenantContext } from "@/modules/tenancy/context";
@@ -56,6 +56,19 @@ export async function listOpenTasksDueBy(ctx: TenantContext, asOf: Date = new Da
 
 export async function listOpenTasksForTenant(ctx: TenantContext) {
   const rows = await tenantDb(ctx).select(tasks, isNull(tasks.completedAt));
+  return rows.sort((a, b) => a.dueAt.getTime() - b.dueAt.getTime());
+}
+
+/**
+ * Tasks falling due inside `[from, to)`, done ones included — the calendar
+ * draws them beside the agenda's own events, and a follow-up already made is
+ * still part of what that Tuesday looked like.
+ */
+export async function listTasksDueBetween(ctx: TenantContext, from: Date, to: Date) {
+  const rows = await tenantDb(ctx).select(
+    tasks,
+    and(gte(tasks.dueAt, from), lt(tasks.dueAt, to)),
+  );
   return rows.sort((a, b) => a.dueAt.getTime() - b.dueAt.getTime());
 }
 

@@ -18,10 +18,10 @@ import type { PaymentState } from "@/modules/documents/types";
 
 
 const STATE_CLASS: Record<PaymentState, string> = {
-  unpaid: "bg-amber-100 text-amber-900",
-  partial: "bg-amber-100 text-amber-900",
-  paid: "bg-green-100 text-green-900",
-  void: "bg-red-100 text-red-900",
+  unpaid: "bg-warning-surface text-warning",
+  partial: "bg-warning-surface text-warning",
+  paid: "bg-success-surface text-success",
+  void: "bg-destructive-surface text-destructive",
 };
 
 export default async function PublicDocumentPage({

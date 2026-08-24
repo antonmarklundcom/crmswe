@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  CalendarDays,
   ClipboardList,
   FileText,
   Globe,
@@ -21,6 +22,7 @@ import {
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { Wordmark } from "@/components/wordmark";
 
 // Tenant app navigation. Client-side only because active-route highlighting
 // needs the current pathname; every label arrives pre-translated from the
@@ -33,6 +35,7 @@ const ICONS = {
   dashboard: LayoutDashboard,
   contacts: Users,
   pipeline: SquareKanban,
+  calendar: CalendarDays,
   inbox: MessagesSquare,
   quotes: FileText,
   documents: ScrollText,
@@ -135,8 +138,8 @@ export function AppNav({
   return (
     <>
       {/* Desktop: grouped sidebar. */}
-      <aside className="hidden w-56 shrink-0 flex-col gap-6 border-r px-3 py-4 md:flex">
-        <span className="px-3 text-base font-semibold">{appName}</span>
+      <aside className="hidden w-56 shrink-0 flex-col gap-6 border-r bg-card px-3 py-4 md:flex">
+        <Wordmark name={appName} className="px-3" />
         {header && <div className="-mx-3 -my-2">{header}</div>}
         <nav className="flex flex-col gap-5">
           {groups.map((group, index) => (
@@ -158,7 +161,7 @@ export function AppNav({
       {/* Mobile: identity row, then one scrollable strip — grouping costs
           more than it buys on a phone, but the icons and the active state
           still carry over. */}
-      <div className="flex flex-col md:hidden">
+      <div className="flex flex-col bg-card md:hidden">
         {mobileHeader}
         {header}
         <nav className="flex gap-1 overflow-x-auto border-b px-3 py-2">

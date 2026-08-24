@@ -90,6 +90,11 @@ const deletion = {
   deleteContactRecord: vi.fn(async () => undefined),
   deleteDealRecord: vi.fn(async () => undefined),
 };
+const calendar = {
+  createCalendarEvent: vi.fn(async () => ({ id: "event-1" })),
+  updateCalendarEvent: vi.fn(async () => ({ id: "event-1" })),
+  deleteCalendarEvent: vi.fn(async () => undefined),
+};
 const documents = {
   createDocument: vi.fn(async () => ({ id: "doc-1" })),
   updateDraftDocument: vi.fn(async () => undefined),
@@ -112,6 +117,12 @@ vi.mock("@/modules/crm/deletion", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/modules/crm/deletion")>()),
   ...deletion,
 }));
+vi.mock("@/modules/calendar/events", async (importOriginal) => ({
+  // CalendarEventError stays real for the same reason RecordDeleteError does
+  // — the actions branch on the instance.
+  ...(await importOriginal<typeof import("@/modules/calendar/events")>()),
+  ...calendar,
+}));
 vi.mock("@/modules/tenancy/audit", () => ({ writeAuditLog: vi.fn(async () => undefined) }));
 vi.mock("@/modules/documents/delivery", () => ({
   sendDocumentToContact: vi.fn(async () => undefined),
@@ -123,6 +134,7 @@ const pipelineActions = await import("@/app/(app)/pipeline/actions");
 const productActions = await import("@/app/(app)/products/actions");
 const documentActions = await import("@/app/(app)/documents/actions");
 const contactActions = await import("@/app/(app)/contacts/actions");
+const calendarActions = await import("@/app/(app)/calendar/actions");
 const contactBulkActions = await import("@/app/(app)/contacts/bulk-actions");
 
 function form(fields: Record<string, string>): FormData {
@@ -289,6 +301,17 @@ describe("actions that stay open to an agent", () => {
       toPosition: 0,
     });
     expect(deals.moveDeal).toHaveBeenCalled();
+  });
+
+  it("lets an agent book something on the calendar", async () => {
+    // The agenda is shared work, not tenant configuration (§3.2): an agent
+    // books their own visits. Who may later *change* one is decided per
+    // event, and lives in modules/calendar (events.integration.test.ts).
+    await calendarActions.createCalendarEventAction(
+      { error: null, field: null, saved: false, values: {} },
+      form({ title: "Visita", startDate: "2026-08-24", startTime: "09:00" }),
+    );
+    expect(calendar.createCalendarEvent).toHaveBeenCalled();
   });
 
   it("lets an agent issue a document and record a payment", async () => {

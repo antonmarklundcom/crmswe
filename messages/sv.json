@@ -89,7 +89,8 @@
         "crm": "CRM",
         "capture": "Leadfångst",
         "settings": "Inställningar"
-      }
+      },
+      "calendar": "Kalender"
     },
     "dashboard": {
       "title": "Översikt för {tenant}",
@@ -188,6 +189,49 @@
       "showClosed": "Visa {count} stängda",
       "hideClosed": "Dölj stängda",
       "editStages": "Redigera steg"
+    },
+    "calendar": {
+      "title": "Kalender",
+      "intro": "Teamets besök, samtal och möten, med uppgifterna som förfaller den dagen bredvid. Allt i företagets tid.",
+      "week": "Vecka",
+      "month": "Månad",
+      "previous": "Föregående",
+      "next": "Nästa",
+      "today": "Idag",
+      "assignee": "Ansvarig",
+      "allAssignees": "Hela teamet",
+      "filter": "Filtrera",
+      "allDay": "Heldag",
+      "emptyRange": "Inget inbokat under den här perioden.",
+      "createTitle": "Ny bokning",
+      "createAction": "Boka in",
+      "editTitle": "Redigera bokningen",
+      "saveAction": "Spara ändringar",
+      "deleteAction": "Ta bort bokningen",
+      "backToCalendar": "Tillbaka till kalendern",
+      "readOnly": "Bara den som skapade den, den som är ansvarig eller en administratör kan ändra den här bokningen.",
+      "form": {
+        "title": "Titel",
+        "allDay": "Heldag",
+        "startDate": "Från",
+        "startTime": "Starttid",
+        "endDate": "Till",
+        "endTime": "Sluttid",
+        "location": "Plats",
+        "contact": "Kontakt",
+        "noContact": "Ingen kontakt",
+        "assignee": "Ansvarig",
+        "noAssignee": "Ingen ansvarig",
+        "description": "Anteckningar",
+        "saved": "Ändringar sparade"
+      },
+      "errors": {
+        "titleRequired": "Ge den en titel",
+        "dateInvalid": "Kontrollera datumet",
+        "endBeforeStart": "Slutet måste ligga efter starten",
+        "notAllowed": "Den här bokningen är inte din att ändra",
+        "unknown": "Bokningen kunde inte sparas"
+      }
     },
     "forms": {
       "title": "Formulär",

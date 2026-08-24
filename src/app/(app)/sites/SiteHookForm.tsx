@@ -68,7 +68,7 @@ export function SiteHookForm(props: HookPanelProps) {
       {/* The full URL, with its token, is shown exactly once — same rule as
           an API key (§5.1). Afterwards only the prefix is left. */}
       {tokenState.token && url && (
-        <div className="mt-3 rounded-md border border-amber-300 bg-amber-50 p-3 text-amber-900">
+        <div className="mt-3 rounded-md border border-warning/30 bg-warning-surface p-3 text-warning">
           <p className="font-medium">{t("copyNow")}</p>
           <code className="mt-2 block break-all rounded bg-white px-2 py-1 font-mono text-xs">
             {url}

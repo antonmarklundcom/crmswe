@@ -1175,7 +1175,8 @@
       "plans": "Planer",
       "whatsappHealth": "WhatsApp",
       "superadmin": "Superadministratör",
-      "audit": "Granskningslogg"
+      "audit": "Granskningslogg",
+      "users": "Användare"
     },
     "tenantUsers": {
       "title": "Företagets användare",
@@ -1232,7 +1233,8 @@
         "slugInvalid": "Sluggen skrivs med små bokstäver, utan mellanslag eller accenter (t.ex. mitt-foretag).",
         "slugTaken": "Det finns redan ett företag med den sluggen.",
         "unknown": "Vi kunde inte skapa företaget. Försök igen."
-      }
+      },
+      "slugPlaceholder": "Skapas från namnet; du kan ändra det"
     },
     "subscriptions": {
       "title": "Prenumeration",
@@ -1292,6 +1294,35 @@
       "queueStuckIntro": "Kör fortfarande långt efter att de borde ha blivit klara: nästan alltid en process som dog halvvägs.",
       "noQueueStuck": "Inga fastnade jobb",
       "retryJob": "Försök igen"
+    },
+    "users": {
+      "title": "Användare",
+      "intro": "Alla personer i plattformen och vilka företag var och en når. Koppla på eller av åtkomst härifrån, utan att öppna varje företag.",
+      "searchLabel": "Sök",
+      "searchPlaceholder": "Namn eller e-post",
+      "search": "Sök",
+      "clear": "Rensa",
+      "noResults": "Ingen matchar sökningen.",
+      "person": "Person",
+      "businesses": "Företag",
+      "created": "Skapad",
+      "noBusinesses": "Är inte med i något företag ännu",
+      "chooseBusiness": "Välj företag",
+      "connect": "Koppla på",
+      "disconnect": "Ta bort",
+      "deactivated": "avaktiverad",
+      "superadminBadge": "Superadmin",
+      "superadminReach": "Når alla företag via \"visa som\".",
+      "platformBanned": "Blockerad i hela plattformen",
+      "truncated": "Visar de första {count} personerna. Förfina sökningen för att se fler.",
+      "errors": {
+        "invalid": "Kontrollera uppgifterna",
+        "userNotFound": "Personen finns inte",
+        "superadminTarget": "En superadmin läggs inte till i ett företag — den når det redan via \"visa som\"",
+        "alreadyMember": "Är redan med i det företaget",
+        "notFound": "Den åtkomsten finns inte längre",
+        "lastAdmin": "Personen är företagets enda aktiva administratör"
+      }
     }
   },
   "marketing": {

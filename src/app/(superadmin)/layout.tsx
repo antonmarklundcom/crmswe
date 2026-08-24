@@ -25,6 +25,7 @@ export default async function SuperadminLayout({
       label: null,
       items: [
         { href: "/tenants", label: t("tenants"), icon: "contacts" },
+        { href: "/platform-users", label: t("users"), icon: "users" },
         { href: "/plans", label: t("plans"), icon: "quotes" },
         { href: "/whatsapp-health", label: t("whatsappHealth"), icon: "whatsapp" },
         { href: "/audit", label: t("audit"), icon: "settings" },

@@ -1175,7 +1175,8 @@
       "plans": "Plans",
       "whatsappHealth": "WhatsApp",
       "superadmin": "Superadmin",
-      "audit": "Audit log"
+      "audit": "Audit log",
+      "users": "Users"
     },
     "tenantUsers": {
       "title": "Company users",
@@ -1232,7 +1233,8 @@
         "slugInvalid": "The slug is lowercase, with no spaces or accents (e.g. my-company).",
         "slugTaken": "A company with that slug already exists.",
         "unknown": "We couldn't create the company. Try again."
-      }
+      },
+      "slugPlaceholder": "Generated from the name; you can change it"
     },
     "subscriptions": {
       "title": "Subscription",
@@ -1292,6 +1294,35 @@
       "queueStuckIntro": "Still running long after they should have finished: almost always a process that died halfway through.",
       "noQueueStuck": "No stuck jobs",
       "retryJob": "Retry"
+    },
+    "users": {
+      "title": "Users",
+      "intro": "Everyone on the platform and which businesses each one can reach. Connect or disconnect access from here, without opening each business.",
+      "searchLabel": "Search",
+      "searchPlaceholder": "Name or email",
+      "search": "Search",
+      "clear": "Clear",
+      "noResults": "Nobody matches that search.",
+      "person": "Person",
+      "businesses": "Businesses",
+      "created": "Joined",
+      "noBusinesses": "Not in any business yet",
+      "chooseBusiness": "Choose a business",
+      "connect": "Connect",
+      "disconnect": "Remove",
+      "deactivated": "deactivated",
+      "superadminBadge": "Superadmin",
+      "superadminReach": "Reaches every business through \"view as\".",
+      "platformBanned": "Blocked platform-wide",
+      "truncated": "Showing the first {count} people. Narrow the search to see others.",
+      "errors": {
+        "invalid": "Check the details",
+        "userNotFound": "No such person",
+        "superadminTarget": "A superadmin is not added to a business — they already reach it through \"view as\"",
+        "alreadyMember": "Already in that business",
+        "notFound": "That access no longer exists",
+        "lastAdmin": "They are that business’s only active admin"
+      }
     }
   },
   "marketing": {

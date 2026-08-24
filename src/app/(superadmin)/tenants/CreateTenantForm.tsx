@@ -1,10 +1,11 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { createTenantAction, type TenantField, type CreateTenantFormState } from "./actions";
 import { Input } from "@/components/ui/form-fields";
+import { slugify } from "@/lib/slug";
 
 // Lives here, not in actions.ts: a "use server" module may only export
 // async functions.
@@ -14,6 +15,11 @@ export function CreateTenantForm() {
   const t = useTranslations("superadmin.tenants");
   const tc = useTranslations("common");
   const [state, formAction, pending] = useActionState(createTenantAction, initialState);
+  // The slug follows the name until somebody edits it, and then stops — the
+  // one behaviour that makes an auto-filled field trustworthy rather than
+  // annoying. The server derives it again when the box arrives empty.
+  const [slug, setSlug] = useState(state.values.slug ?? "");
+  const [slugEdited, setSlugEdited] = useState(false);
 
   function FieldError({ field }: { field: TenantField }) {
     if (state.field !== field || !state.error) return null;
@@ -31,6 +37,9 @@ export function CreateTenantForm() {
         <Input
           name="name"
           defaultValue={state.values.name ?? ""}
+          onChange={(event) => {
+            if (!slugEdited) setSlug(slugify(event.target.value));
+          }}
         />
         <FieldError field="name" />
       </label>
@@ -38,7 +47,12 @@ export function CreateTenantForm() {
         {t("slug")}
         <Input
           name="slug"
-          defaultValue={state.values.slug ?? ""}
+          value={slug}
+          onChange={(event) => {
+            setSlugEdited(true);
+            setSlug(event.target.value);
+          }}
+          placeholder={t("slugPlaceholder")}
         />
         <FieldError field="slug" />
       </label>

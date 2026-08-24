@@ -1772,6 +1772,10 @@ revisit deliberately), mobile apps, SIFEN anything (Phase 2), all Phase 3 market
 features. *(“Public API” is no longer deferred in full: 1E ships a deliberately narrow
 one — lead ingest only, not a general CRUD API.)*
 
+**URL route segments stay English** (`/sites`, `/contacts`, `/pipeline`, `/inbox`, …)
+while every visible string is Spanish through next-intl — cosmetic inconsistency only,
+low priority, and not worth the routing risk of renaming for an internal, non-indexed app.
+
 **GHL capabilities this deliberately does not replace in Phase 1.** Listed so the cutover
 is planned, not discovered:
 

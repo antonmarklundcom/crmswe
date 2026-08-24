@@ -35,6 +35,12 @@ export const flows = mysqlTable(
         "deal_stage_changed",
         "contact_created",
         "tag_added",
+        // Booking (docs/SPEC-BOOKING.md §7). The column is a varchar with a
+        // drizzle-level enum, so widening it is a type change with no
+        // migration and nothing to backfill.
+        "booking_created",
+        "booking_cancelled",
+        "booking_no_show",
       ],
     }).notNull(),
     triggerConfig: json("trigger_config").notNull().default({}),

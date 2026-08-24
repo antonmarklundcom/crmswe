@@ -73,6 +73,13 @@ const eslintConfig = defineConfig([
       // everything else are read back through tenantDb once the tenant is
       // known.
       "src/modules/documents/**/*.{ts,tsx}",
+      // Same rationale as quotes and documents: the public booking surface
+      // resolves a tenant *slug* (/b/[tenantSlug]/[typeSlug]) and an
+      // unguessable manage token (/b/g/[token]) to their tenant before any
+      // TenantContext exists (docs/SPEC-BOOKING.md §5). Those two lookups
+      // are the only raw-db use here; slots, reservations and cancellations
+      // all go through tenantDb once the tenant is known.
+      "src/modules/booking/**/*.{ts,tsx}",
       // JUDGMENT CALL (flagged for Fable review, not explicit in PLAN.md
       // §3.3's exemption list): the Better Auth instance (src/lib/auth/server.ts)
       // is infra wiring handed the raw `db` client by the Drizzle adapter,

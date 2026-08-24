@@ -11,6 +11,11 @@ export const TRIGGER_TYPES = [
   "deal_stage_changed",
   "contact_created",
   "tag_added",
+  // Booking (docs/SPEC-BOOKING.md §7). Three enum entries and an emit call —
+  // the execution engine itself does not change.
+  "booking_created",
+  "booking_cancelled",
+  "booking_no_show",
 ] as const;
 export type TriggerType = (typeof TRIGGER_TYPES)[number];
 

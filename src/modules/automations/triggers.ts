@@ -2,6 +2,7 @@ import { enqueue } from "@/lib/queue";
 import { buildSystemTenantContext, type TenantContext } from "@/modules/tenancy/context";
 import { crmEvents } from "@/modules/crm/events";
 import { leadEvents } from "@/modules/leads/events";
+import { bookingEvents } from "@/modules/booking/events";
 import { whatsappEvents } from "@/modules/whatsapp/events";
 import { listActiveFlowsForTrigger } from "./flows";
 import { startRun } from "./engine";
@@ -55,6 +56,7 @@ function matchesTriggerConfig(
   if (config.siteId && config.siteId !== payload.data.siteId) return false;
   if (config.stageId && config.stageId !== payload.data.toStageId) return false;
   if (config.tagId && config.tagId !== payload.data.tagId) return false;
+  if (config.bookingTypeId && config.bookingTypeId !== payload.data.bookingTypeId) return false;
 
   if (config.keyword) {
     const body = String(payload.data.body ?? "").toLowerCase();
@@ -114,6 +116,37 @@ export function registerAutomationTriggers() {
         data: { formId },
       });
     }
+  });
+
+  // Booking (docs/SPEC-BOOKING.md §7). `booking.created` also reaches
+  // `lead_received` through the shared ingest engine, since a booking *is* a
+  // lead — a flow that wants only bookings narrows on bookingTypeId, and one
+  // that wants every inbound stranger keeps working unchanged.
+  bookingEvents.on("booking.created", async ({ tenantId, contactId, bookingId, bookingTypeId, startsAt }) => {
+    await fireTrigger({
+      tenantId,
+      triggerType: "booking_created",
+      contactId,
+      data: { bookingId, bookingTypeId, startsAt: startsAt.toISOString() },
+    });
+  });
+
+  bookingEvents.on("booking.cancelled", async ({ tenantId, contactId, bookingId, bookingTypeId, cancelledBy }) => {
+    await fireTrigger({
+      tenantId,
+      triggerType: "booking_cancelled",
+      contactId,
+      data: { bookingId, bookingTypeId, cancelledBy },
+    });
+  });
+
+  bookingEvents.on("booking.no_show", async ({ tenantId, contactId, bookingId, bookingTypeId }) => {
+    await fireTrigger({
+      tenantId,
+      triggerType: "booking_no_show",
+      contactId,
+      data: { bookingId, bookingTypeId },
+    });
   });
 
   whatsappEvents.on("wa.message_received", async ({ tenantId, contactId, messageId }) => {

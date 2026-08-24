@@ -14,6 +14,8 @@ export type ActivityType =
   | "stage_change"
   | "form_submission"
   | "quote_sent"
+  /** A public booking reserved, cancelled or marked no-show. */
+  | "booking"
   | "system";
 
 export type CreateActivityInput = {

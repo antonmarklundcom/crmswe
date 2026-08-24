@@ -211,6 +211,12 @@ export const leadSubmissions = mysqlTable(
     tenantId: char("tenant_id", { length: 26 }).notNull(),
     siteId: char("site_id", { length: 26 }),
     formId: char("form_id", { length: 26 }),
+    // The third entry path (docs/SPEC-BOOKING.md): a public booking. Exactly
+    // one of the three is set. A booking *is* a lead — it arrives from a page
+    // with UTMs and a referrer — so it belongs in the one attribution table
+    // §5.1 exists to keep, rather than in a fourth place every dashboard
+    // query would have to UNION.
+    bookingTypeId: char("booking_type_id", { length: 26 }),
     contactId: char("contact_id", { length: 26 }).notNull(),
     dealId: char("deal_id", { length: 26 }),
     payload: json("payload").notNull().default({}),
@@ -236,6 +242,7 @@ export const leadSubmissions = mysqlTable(
     index("lead_submissions_tenant_id_idx").on(table.tenantId),
     index("lead_submissions_site_id_idx").on(table.siteId),
     index("lead_submissions_form_id_idx").on(table.formId),
+    index("lead_submissions_booking_type_id_idx").on(table.bookingTypeId),
     index("lead_submissions_contact_id_idx").on(table.contactId),
     // The idempotency guard (§5.1) — a retried POST is a no-op rather than a
     // duplicate contact, same discipline as wa_message_id in §6.3.

@@ -28,9 +28,10 @@ export type LeadUtm = {
 };
 
 export type RecordLeadInput = {
-  /** Exactly one of siteId / formId identifies the entry path. */
+  /** Exactly one of siteId / formId / bookingTypeId identifies the entry path. */
   siteId?: string;
   formId?: string;
+  bookingTypeId?: string;
   name?: string;
   phone: string;
   email?: string;
@@ -133,6 +134,7 @@ export async function recordLeadSubmission(
       id: submissionId,
       siteId: input.siteId,
       formId: input.formId,
+      bookingTypeId: input.bookingTypeId,
       contactId: contact.id,
       dealId,
       payload: (input.payload ?? {}) as object,
@@ -152,6 +154,7 @@ export async function recordLeadSubmission(
     payload: {
       siteId: input.siteId,
       formId: input.formId,
+      bookingTypeId: input.bookingTypeId,
       message: input.message,
       utm,
       pageUrl: input.pageUrl,

@@ -123,7 +123,7 @@ export default async function SettingsPage() {
         <p className="mb-4 max-w-2xl text-sm text-muted-foreground">{t("aiIntro")}</p>
 
         {!aiDriverConfigured && (
-          <p className="mb-4 max-w-2xl rounded-md border bg-amber-100 px-3 py-2 text-sm text-amber-900">
+          <p className="mb-4 max-w-2xl rounded-md border bg-warning-surface px-3 py-2 text-sm text-warning">
             {t("aiNotConfigured")}
           </p>
         )}

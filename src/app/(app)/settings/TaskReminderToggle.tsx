@@ -13,7 +13,7 @@ export function TaskReminderToggle({
 }) {
   return (
     <form action={setTaskRemindersAction} className="flex flex-wrap items-center gap-3">
-      <span className={`text-sm ${enabled ? "text-green-700" : "text-muted-foreground"}`}>
+      <span className={`text-sm ${enabled ? "text-success" : "text-muted-foreground"}`}>
         {enabled ? labels.on : labels.off}
       </span>
       <input type="hidden" name="enabled" value={enabled ? "false" : "true"} />

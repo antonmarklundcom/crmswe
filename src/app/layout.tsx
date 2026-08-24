@@ -32,7 +32,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#18181b",
+  themeColor: "#0c1a20",
   // The app is used one-handed on a phone; letting the browser chrome
   // resize with the keyboard is what keeps a reply box visible.
   width: "device-width",

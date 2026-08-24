@@ -243,11 +243,11 @@ export function FlowEditor({
         <Button type="button" onClick={publish} disabled={pending}>
           {t("publish")}
         </Button>
-        {message && <span className="text-sm text-green-700">{message}</span>}
+        {message && <span className="text-sm text-success">{message}</span>}
       </div>
 
       {errors.length > 0 && (
-        <ul className="rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-800">
+        <ul className="rounded-md border border-destructive/30 bg-destructive-surface p-3 text-sm text-destructive">
           {errors.map((error) => (
             <li key={error}>{error}</li>
           ))}

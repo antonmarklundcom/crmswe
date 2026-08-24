@@ -8,7 +8,7 @@ import { listTenantUsers } from "@/modules/tenancy/users";
 import { queryContacts } from "@/modules/crm/contact-list";
 import { listCalendarEntries } from "@/modules/calendar/agenda";
 import { bucketByDay, buildRange, isCalendarView, type CalendarView } from "@/modules/calendar/grid";
-import { isDayKey, startOfDay, todayIn } from "@/modules/calendar/zoned-time";
+import { isDayKey, startOfDay, todayIn, weekdayOf } from "@/modules/calendar/zoned-time";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Select } from "@/components/ui/form-fields";
 import { PageHeader } from "@/components/page-header";
@@ -20,6 +20,12 @@ import { createCalendarEventAction } from "./actions";
 // The agenda (PLAN.md §10 — calendar module). Server-rendered: the whole view
 // is "which window am I looking at", which the URL already answers, so
 // navigating a week is a link rather than a client-side date library.
+
+/** Saturday or Sunday, for the columns that should recede. */
+function isWeekend(day: string): boolean {
+  const weekday = weekdayOf(day);
+  return weekday === 0 || weekday === 6;
+}
 
 export type CalendarSearchParams = {
   view?: string;
@@ -124,7 +130,7 @@ export default async function CalendarPage({
             >
               {t("next")}
             </Link>
-            <span className="ml-2 text-sm font-medium capitalize">{monthLabel}</span>
+            <span className="ml-2 text-sm font-medium first-letter:uppercase">{monthLabel}</span>
           </div>
 
           <form method="get" className="flex items-end gap-2">
@@ -150,7 +156,13 @@ export default async function CalendarPage({
         <div className="overflow-x-auto">
           <div className="grid min-w-[46rem] grid-cols-7 gap-px rounded-md border bg-border">
             {range.days.slice(0, 7).map((day) => (
-              <div key={`head-${day}`} className="bg-background px-2 py-1 text-xs font-medium">
+              <div
+                key={`head-${day}`}
+                className={cn(
+                  "bg-card px-2 py-1 text-xs font-medium first-letter:uppercase",
+                  isWeekend(day) && "text-muted-foreground",
+                )}
+              >
                 {formatDate(startOfDay(day, timeZone), locale, { weekday: "short" }, timeZone)}
               </div>
             ))}
@@ -164,9 +176,13 @@ export default async function CalendarPage({
                 <div
                   key={day}
                   className={cn(
-                    "flex flex-col gap-1 bg-background p-2",
+                    "flex flex-col gap-1 bg-card p-2",
                     isMonth ? "min-h-24" : "min-h-56",
-                    outsideMonth && "bg-muted/40",
+                    // Weekends and days from the neighbouring month recede,
+                    // so the week you asked for is the one you read first.
+                    isWeekend(day) && "bg-muted/40",
+                    outsideMonth && "bg-muted/60 text-muted-foreground",
+                    isToday && "bg-accent/60",
                   )}
                 >
                   <span

@@ -36,9 +36,5 @@ export default async function AcceptInvitePage({
     );
   }
 
-  return (
-    <main className="flex flex-1 flex-col items-center justify-center p-6">
-      {body}
-    </main>
-  );
+  return body;
 }

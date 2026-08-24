@@ -182,7 +182,7 @@ export default async function AppLayout({
 async function ImpersonationBanner() {
   const t = await getTranslations("tenancy.impersonation");
   return (
-    <div className="flex w-full flex-wrap items-center justify-center gap-3 bg-blue-100 px-4 py-2 text-center text-sm text-blue-900">
+    <div className="flex w-full flex-wrap items-center justify-center gap-3 bg-info-surface px-4 py-2 text-center text-sm text-info">
       <span>{t("banner")}</span>
       <form action={stopImpersonationAction}>
         <Button type="submit" size="sm" variant="outline">
@@ -196,7 +196,7 @@ async function ImpersonationBanner() {
 async function GraceBanner() {
   const t = await getTranslations("tenancy.status.grace");
   return (
-    <div className="w-full bg-amber-100 px-4 py-2 text-center text-sm text-amber-900">
+    <div className="w-full bg-warning-surface px-4 py-2 text-center text-sm text-warning">
       {t("banner")}
     </div>
   );

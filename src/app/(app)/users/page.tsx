@@ -69,7 +69,7 @@ export default async function UsersPage({
       <PageHeader title={t("title")} description={t("intro")} />
 
       {aviso === "reset" && (
-        <p className="rounded-md border border-green-300 bg-green-50 px-3 py-2 text-sm text-green-900">
+        <p className="rounded-md border border-success/30 bg-success-surface px-3 py-2 text-sm text-success">
           {t("resetSent")}
         </p>
       )}
@@ -130,7 +130,7 @@ export default async function UsersPage({
                       {user.banned ? (
                         <span className="text-muted-foreground">{t("stateInactive")}</span>
                       ) : (
-                        <span className="text-green-700">{t("stateActive")}</span>
+                        <span className="text-success">{t("stateActive")}</span>
                       )}
                     </td>
                     <td className="py-2">

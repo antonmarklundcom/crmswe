@@ -84,7 +84,7 @@ export default async function FlowPage({ params }: { params: Promise<{ id: strin
                   <td className="py-2">
                     {t(`runStatusValues.${run.status}` as "runStatusValues.running")}
                     {run.lastError && (
-                      <span className="ml-2 text-xs text-red-600">{run.lastError}</span>
+                      <span className="ml-2 text-xs text-destructive">{run.lastError}</span>
                     )}
                   </td>
                   <td className="py-2">{run.currentNodeId ?? "—"}</td>

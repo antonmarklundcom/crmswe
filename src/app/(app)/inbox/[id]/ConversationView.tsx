@@ -174,7 +174,7 @@ export function ConversationView({
       />
 
       <div className="flex items-center gap-2 text-sm">
-        <span className={aiDisabled ? "text-muted-foreground" : "text-green-700"}>
+        <span className={aiDisabled ? "text-muted-foreground" : "text-success"}>
           {aiDisabled ? t("aiOff") : t("aiOn")}
         </span>
         <Button type="button" size="sm" variant="outline" disabled={busy} onClick={handleToggleAi}>
@@ -183,8 +183,8 @@ export function ConversationView({
       </div>
 
       {d.aiDrafts.length > 0 && (
-        <section className="flex flex-col gap-2 rounded-md border border-blue-300 bg-blue-50 p-3">
-          <h2 className="text-sm font-medium text-blue-900">{t("aiDraftsTitle")}</h2>
+        <section className="flex flex-col gap-2 rounded-md border border-info/30 bg-info-surface p-3">
+          <h2 className="text-sm font-medium text-info">{t("aiDraftsTitle")}</h2>
           {d.aiDrafts.map((draft) => (
             <AiDraftCard
               key={draft.id}
@@ -249,7 +249,7 @@ export function ConversationView({
         </div>
       ) : (
         <div className="mt-4 flex flex-col gap-2">
-          <p className="rounded-md border bg-amber-100 px-3 py-2 text-sm text-amber-900">
+          <p className="rounded-md border bg-warning-surface px-3 py-2 text-sm text-warning">
             {t("windowClosed")}
           </p>
           {d.templates.length > 0 ? (
@@ -329,7 +329,7 @@ function AiDraftCard({
             </Button>
           </form>
         ) : (
-          <span className="text-xs text-amber-800">{t("aiDraftWindowClosed")}</span>
+          <span className="text-xs text-warning">{t("aiDraftWindowClosed")}</span>
         )}
         <Button
           type="button"

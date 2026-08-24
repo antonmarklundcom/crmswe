@@ -21,7 +21,7 @@ function layout(bodyHtml: string, locale: string): string {
   <body style="margin:0;padding:24px;background:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#18181b;">
     <div style="max-width:480px;margin:0 auto;background:#ffffff;border-radius:12px;padding:32px;">
       ${bodyHtml}
-      <p style="margin-top:32px;font-size:12px;color:#71717a;">VenderCRM</p>
+      <p style="margin-top:32px;font-size:12px;color:#71717a;">clientes.com.py</p>
     </div>
   </body>
 </html>`;

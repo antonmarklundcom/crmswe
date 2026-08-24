@@ -78,7 +78,7 @@ export function SiteGuide({
       id: "html",
       label: "HTML",
       language: "html",
-      code: `<!-- The form posts to YOUR server, never to VenderCRM directly. -->
+      code: `<!-- The form posts to YOUR server, never to clientes.com.py directly. -->
 <form action="/contacto.php" method="POST">
   <input name="nombre" required>
   <input name="telefono" type="tel" required placeholder="0981 123 456">
@@ -217,7 +217,7 @@ app.post("/api/contacto", async (req, res) => {
       language: "html",
       code: `<!-- No server to run code on? Point the form straight at the hosted
      page instead — same result, no API key to manage. -->
-<a href="${formEndpointExample}">Formulario alojado en VenderCRM</a>
+<a href="${formEndpointExample}">Formulario alojado en clientes.com.py</a>
 
 <!-- Or embed it: -->
 <iframe src="${formEndpointExample}" style="width:100%;height:600px;border:0"></iframe>`,

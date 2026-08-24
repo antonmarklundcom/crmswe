@@ -15,13 +15,13 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "VenderCRM",
+  title: "clientes.com.py",
   description: "CRM de ventas con automatización por WhatsApp",
   // Installable on a phone's home screen (PLAN.md §13 H7). manifest.ts
   // describes the app; these are what iOS reads, which ignores the manifest
   // for the icon and the status bar.
   manifest: "/manifest.webmanifest",
-  appleWebApp: { capable: true, title: "VenderCRM", statusBarStyle: "default" },
+  appleWebApp: { capable: true, title: "clientes.com.py", statusBarStyle: "default" },
   icons: {
     icon: [
       { url: "/icon.svg", type: "image/svg+xml" },

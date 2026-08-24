@@ -6,8 +6,8 @@ import type { MetadataRoute } from "next";
 // something a rep opens like an app.
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "VenderCRM",
-    short_name: "VenderCRM",
+    name: "clientes.com.py",
+    short_name: "clientes.com.py",
     description: "CRM de ventas con automatización por WhatsApp",
     start_url: "/dashboard",
     scope: "/",

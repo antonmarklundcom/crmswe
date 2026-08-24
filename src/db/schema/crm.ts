@@ -180,7 +180,19 @@ export const activities = mysqlTable(
     dealId: char("deal_id", { length: 26 }),
     type: varchar("type", {
       length: 30,
-      enum: ["note", "call", "stage_change", "form_submission", "quote_sent", "system"],
+      // "booking" added by docs/SPEC-BOOKING.md — an enum widening, additive
+      // with nothing to backfill, and what puts "reservó una cita para el
+      // jueves" on the unified timeline §5 promises.
+      enum: [
+        "note",
+        "call",
+        "stage_change",
+        "form_submission",
+        "quote_sent",
+        "booking",
+        "chat",
+        "system",
+      ],
     }).notNull(),
     payload: json("payload").notNull().default({}),
     userId: char("user_id", { length: 26 }),

@@ -223,6 +223,14 @@ export async function deliverReply(
     return { status: "sent", replyId: reply.id, messageId: reply.messageId ?? "" };
   }
   if (!reply.body) return { status: "failed", reason: "La respuesta no tiene texto", replyId };
+  // `ai_replies` is shared with the website chat widget since
+  // docs/SPEC-CHAT-WIDGET.md §1.3 (one table so the per-tenant spend cap
+  // stays one number). This path delivers over WhatsApp and nothing else: a
+  // chat row has no conversation to send into, and must be refused here
+  // rather than reaching sendText with a null.
+  if (reply.channel !== "whatsapp" || !reply.conversationId) {
+    return { status: "failed", reason: "La respuesta no es de WhatsApp", replyId };
+  }
 
   const conversation = await getConversation(ctx, reply.conversationId);
   if (!conversation) return { status: "skipped", reason: "no_conversation" };
@@ -234,7 +242,7 @@ export async function deliverReply(
   }
 
   const { hasOptedOut } = await import("@/modules/automations/actions");
-  if (await hasOptedOut(ctx, reply.contactId)) {
+  if (reply.contactId && (await hasOptedOut(ctx, reply.contactId))) {
     return { status: "skipped", reason: "contact_opted_out" };
   }
 

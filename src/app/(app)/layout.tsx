@@ -80,6 +80,10 @@ export default async function AppLayout({
         { href: "/contacts", label: t("contacts"), icon: "contacts" },
         { href: "/pipeline", label: t("pipeline"), icon: "pipeline" },
         { href: "/inbox", label: t("inbox"), icon: "inbox" },
+        // A surface of its own rather than a tab inside /inbox: the WhatsApp
+        // inbox has its own assignment and 24h-window rules, and a unified
+        // inbox is a decision that deserves to be made on purpose.
+        { href: "/chat", label: t("chat"), icon: "chat" },
         { href: "/calendar", label: t("calendar"), icon: "calendar" },
         { href: "/quotes", label: t("quotes"), icon: "quotes" },
         { href: "/documents", label: t("documents"), icon: "documents" },
@@ -99,6 +103,7 @@ export default async function AppLayout({
             { href: "/automations", label: t("automations"), icon: "automations" as const },
             { href: "/forms", label: t("forms"), icon: "forms" as const },
             { href: "/sites", label: t("sites"), icon: "sites" as const },
+            { href: "/booking", label: t("booking"), icon: "booking" as const },
           ]
         : [],
     },

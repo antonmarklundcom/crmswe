@@ -10,3 +10,5 @@ export * from "./documents";
 export * from "./automations";
 export * from "./whatsapp";
 export * from "./ai";
+export * from "./booking";
+export * from "./chatwidget";

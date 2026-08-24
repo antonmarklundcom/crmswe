@@ -4,12 +4,14 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   CalendarDays,
+  CalendarClock,
   ChartNoAxesColumn,
   ClipboardList,
   FileText,
   Globe,
   LayoutDashboard,
   MessagesSquare,
+  MessageCircle,
   Package,
   Receipt,
   ScrollText,
@@ -45,6 +47,8 @@ const ICONS = {
   automations: Workflow,
   forms: ClipboardList,
   sites: Globe,
+  booking: CalendarClock,
+  chat: MessageCircle,
   whatsapp: Smartphone,
   users: UserCog,
   settings: Settings,

@@ -202,6 +202,30 @@ Nothing is ever sent outside the WhatsApp 24-hour window — outside it the only
 legal message is a Meta-approved template, which an LLM cannot author, so
 generation is refused rather than drafted.
 
+### The website chat widget shares this budget
+
+The embeddable chat widget (Chat web) uses **the same driver and the same env
+vars** — there is no second AI configuration to set. Two things follow, and
+both matter on the bill:
+
+- **The per-tenant daily cap is one number across both channels.** A WhatsApp
+  reply and a chat reply spend from the same 200/day. That is why `ai_replies`
+  carries a `channel` column rather than the widget having its own table.
+- **The per-conversation cap is separate**, because a website chat is chattier
+  than a WhatsApp thread: 12 per conversation per day by default, ceiling 60,
+  set per widget.
+
+The same draft-first rule applies and is enforced the same way: while the
+tenant is on draft, a widget set to autonomous still drafts. A visitor is never
+shown a draft, a tripped cap, or a provider error — all four cases read as "a
+person will reply shortly", so the tenant's billing state never reaches their
+customer.
+
+The widget's own key (`data-widget="wgt_…"` in the embed snippet) is **public
+by design**, like a Turnstile site key. It is not a secret and nothing is
+authorised by holding it; the widget is served in an iframe from this app's own
+origin, so no CORS header is added anywhere and `/api/v1/leads` is untouched.
+
 ## 6. Process restart
 
 hPanel → the app → **Restart**. Required after any environment variable

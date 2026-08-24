@@ -1176,7 +1176,8 @@
       "whatsappHealth": "WhatsApp",
       "superadmin": "Superadministratör",
       "audit": "Granskningslogg",
-      "users": "Användare"
+      "users": "Användare",
+      "overview": "Översikt"
     },
     "tenantUsers": {
       "title": "Företagets användare",
@@ -1322,6 +1323,45 @@
         "alreadyMember": "Är redan med i det företaget",
         "notFound": "Den åtkomsten finns inte längre",
         "lastAdmin": "Personen är företagets enda aktiva administratör"
+      }
+    },
+    "overview": {
+      "title": "Plattformsöversikt",
+      "intro": "Hur hela verksamheten går: hur många företag som finns, hur mycket arbete som passerar dem de senaste {days} dagarna, vilka som tystnat och vems plan som löper ut härnäst.",
+      "stats": {
+        "tenants": "Företag",
+        "users": "Personer",
+        "contacts": "Kontakter",
+        "whatsapp": "WhatsApp-nummer"
+      },
+      "activeOf": "{count} aktiva",
+      "multiBusiness": "{count} når fler än ett företag",
+      "openDeals": "{count} öppna affärer",
+      "inError": "{count} med fel",
+      "allHealthy": "Alla i ordning",
+      "flowTitle": "Rörelse de senaste {days} dagarna",
+      "flow": {
+        "leads": "Inkomna leads",
+        "contactsCreated": "Nya kontakter",
+        "dealsCreated": "Öppnade affärer",
+        "dealsWon": "Vunna affärer",
+        "messagesIn": "Mottagna meddelanden",
+        "messagesOut": "Skickade meddelanden",
+        "quotesSent": "Offerter"
+      },
+      "attentionTitle": "Värt att titta på",
+      "quietTitle": "Inga meddelanden på över {days} dagar",
+      "lastMessage": "senast: {date}",
+      "neverMessaged": "har aldrig skrivit",
+      "expiringTitle": "Planer som löper ut",
+      "byTenantTitle": "Per företag, senaste {days} dagarna",
+      "table": {
+        "tenant": "Företag",
+        "status": "Status",
+        "leads": "Leads",
+        "contacts": "Kontakter",
+        "messages": "Meddelanden",
+        "lastMessage": "Senaste meddelande"
       }
     }
   },

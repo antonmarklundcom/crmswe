@@ -1176,7 +1176,8 @@
       "whatsappHealth": "WhatsApp",
       "superadmin": "Superadministrador",
       "audit": "Auditoría",
-      "users": "Usuarios"
+      "users": "Usuarios",
+      "overview": "Panel"
     },
     "tenantUsers": {
       "title": "Usuarios de la empresa",
@@ -1322,6 +1323,45 @@
         "alreadyMember": "Ya entra a esa empresa",
         "notFound": "Ese acceso ya no existe",
         "lastAdmin": "Es el único administrador activo de esa empresa"
+      }
+    },
+    "overview": {
+      "title": "Panel de la plataforma",
+      "intro": "Cómo va el negocio entero: cuántas empresas hay, cuánto trabajo pasa por ellas en los últimos {days} días, cuáles se apagaron y a quién se le vence el plan.",
+      "stats": {
+        "tenants": "Empresas",
+        "users": "Personas",
+        "contacts": "Contactos",
+        "whatsapp": "Números de WhatsApp"
+      },
+      "activeOf": "{count} activas",
+      "multiBusiness": "{count} entran a más de una empresa",
+      "openDeals": "{count} negocios abiertos",
+      "inError": "{count} con error",
+      "allHealthy": "Todos en orden",
+      "flowTitle": "Movimiento de los últimos {days} días",
+      "flow": {
+        "leads": "Leads recibidos",
+        "contactsCreated": "Contactos nuevos",
+        "dealsCreated": "Negocios abiertos",
+        "dealsWon": "Negocios ganados",
+        "messagesIn": "Mensajes recibidos",
+        "messagesOut": "Mensajes enviados",
+        "quotesSent": "Presupuestos"
+      },
+      "attentionTitle": "Para mirar",
+      "quietTitle": "Sin mensajes hace más de {days} días",
+      "lastMessage": "último: {date}",
+      "neverMessaged": "nunca escribieron",
+      "expiringTitle": "Planes que vencen",
+      "byTenantTitle": "Por empresa, últimos {days} días",
+      "table": {
+        "tenant": "Empresa",
+        "status": "Estado",
+        "leads": "Leads",
+        "contacts": "Contactos",
+        "messages": "Mensajes",
+        "lastMessage": "Último mensaje"
       }
     }
   },

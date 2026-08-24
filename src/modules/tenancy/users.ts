@@ -11,7 +11,6 @@ import {
   listMembershipsForTenant,
   MembershipError,
   removeMembership,
-  repairActiveTenant,
   setActiveTenant,
   setMembershipBanned,
   setMembershipRole,
@@ -266,10 +265,9 @@ export async function setTenantUserBanned(
     // every session is broader than the ban — it also signs them out of the
     // businesses they can still work in — but the alternative is a cookie
     // that keeps this business open until it expires, and re-login is the
-    // cheaper of the two. The active pointer is repaired so that re-login
-    // lands them somewhere they can actually go.
+    // cheaper of the two. (setMembershipBanned has already moved their active
+    // pointer somewhere they can still go.)
     await revokeUserSessions(userId);
-    await repairActiveTenant(userId);
   }
 
   return target;

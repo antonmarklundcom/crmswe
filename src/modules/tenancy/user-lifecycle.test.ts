@@ -11,6 +11,7 @@ describe.skipIf(!hasDb)("tenant user lifecycle", () => {
   let schema: typeof import("@/db/schema");
   let newId: (typeof import("@/lib/ids"))["newId"];
   let users: typeof import("./users");
+  let memberships: typeof import("./memberships");
   let createTenant: (typeof import("./tenants"))["createTenant"];
 
   type TenantContext = import("./context").TenantContext;
@@ -29,6 +30,7 @@ describe.skipIf(!hasDb)("tenant user lifecycle", () => {
     schema = await import("@/db/schema");
     ({ newId } = await import("@/lib/ids"));
     users = await import("./users");
+    memberships = await import("./memberships");
     ({ createTenant } = await import("./tenants"));
 
     const tenant = await createTenant(superadmin, { name: `Lifecycle ${newId()}`, slug: `lc-${newId()}` });
@@ -94,9 +96,19 @@ describe.skipIf(!hasDb)("tenant user lifecycle", () => {
     expect(await users.getActiveTenantUser(agentId, tenantId)).toBeNull();
   });
 
-  it("reactivates a user", async () => {
+  it("reactivates a user, and puts their active business back", async () => {
     await users.setTenantUserBanned(adminCtx, agentId, false);
     expect(await users.getActiveTenantUser(agentId, tenantId)).not.toBeNull();
+
+    // Deactivating moved their active-business pointer off a business they
+    // could no longer enter (PLAN.md §3.1). Reactivating has to move it back:
+    // a user with a live membership and a null pointer logs in to "no tenant
+    // context", which looks exactly like still being deactivated.
+    const [row] = await db
+      .select()
+      .from(schema.users)
+      .where(eq(schema.users.id, agentId));
+    expect(row.tenantId).toBe(tenantId);
   });
 
   it("refuses to act on a user from another tenant, or on yourself", async () => {
@@ -122,6 +134,11 @@ describe.skipIf(!hasDb)("tenant user lifecycle", () => {
       .select()
       .from(schema.users)
       .where(eq(schema.users.id, agentId));
+    // The membership is the source of truth for the role...
+    const membership = await memberships.getActiveMembership(agentId, tenantId);
+    expect(membership!.role).toBe("admin");
+    // ...and `users.role` is kept in step with it, purely so Better Auth's
+    // admin-plugin gate keeps seeing a sane value (§3.2).
     expect(promoted.role).toBe("admin");
 
     // Three admins now; demoting two of them is fine, and the guard only

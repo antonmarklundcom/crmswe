@@ -216,6 +216,13 @@ export async function setMembershipBanned(
     })
     .where(eq(tenantMemberships.id, membership.id));
 
+  // Both directions need the pointer looked at, not just the ban. Deactivating
+  // moves them off a business they can no longer enter; *re*activating has to
+  // put them back, because the deactivation may have left them pointing at
+  // nothing — and a user with a null pointer and a perfectly good membership
+  // lands on "no tenant context" at their next login.
+  await repairActiveTenant(userId);
+
   return { ...membership, banned };
 }
 

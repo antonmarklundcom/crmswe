@@ -153,13 +153,17 @@ export async function publicReserve(
   tenantSlug: string,
   typeSlug: string,
   rawBody: unknown,
-  meta: { ipAddress?: string; userAgent?: string } = {},
+  // `ipAddress` is what gets *recorded* (undefined when unknown, because
+  // "unknown" is not an address); `ipKey` is what the limiter buckets on,
+  // where an undeterminable address must land in one shared bucket rather
+  // than becoming a free pass. See lib/http/client-ip.
+  meta: { ipAddress?: string; ipKey?: string; userAgent?: string } = {},
   now: Date = new Date(),
 ): Promise<PublicOutcome<PublicReserveResult>> {
   const resolved = await getPublicBookingType(tenantSlug, typeSlug);
   if (!resolved) return { ok: false, status: 404, error: "not_found" };
 
-  const ip = meta.ipAddress ?? "unknown";
+  const ip = meta.ipKey ?? meta.ipAddress ?? "unknown";
   if (checkRateLimit(`booking-reserve:${resolved.type.id}:${ip}`, RESERVE_RATE_LIMIT, RATE_WINDOW_MS).limited) {
     return { ok: false, status: 429, error: "rate_limited" };
   }

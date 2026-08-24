@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   CalendarDays,
+  CalendarClock,
   ChartNoAxesColumn,
   ClipboardList,
   FileText,
@@ -45,6 +46,7 @@ const ICONS = {
   automations: Workflow,
   forms: ClipboardList,
   sites: Globe,
+  booking: CalendarClock,
   whatsapp: Smartphone,
   users: UserCog,
   settings: Settings,

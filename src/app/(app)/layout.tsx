@@ -99,6 +99,7 @@ export default async function AppLayout({
             { href: "/automations", label: t("automations"), icon: "automations" as const },
             { href: "/forms", label: t("forms"), icon: "forms" as const },
             { href: "/sites", label: t("sites"), icon: "sites" as const },
+            { href: "/booking", label: t("booking"), icon: "booking" as const },
           ]
         : [],
     },

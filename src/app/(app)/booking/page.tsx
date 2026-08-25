@@ -117,6 +117,9 @@ export default async function BookingPage() {
                 >
                   {`${env.APP_URL}/b/${tenant?.slug}/${type.slug}`}
                 </a>
+                <a className="text-sm underline" href={`/booking/${type.id}`}>
+                  {t("configure")}
+                </a>
                 <TypeResourcesPicker
                   bookingTypeId={type.id}
                   resources={resources.map((resource) => ({

@@ -1,6 +1,7 @@
 # Spec — Embeddable AI chat widget (`modules/chatwidget/`)
 
-> **Status: signed off and built.** Folds into PLAN.md as `§10 1X`.
+> **Status: signed off, built, and folded into PLAN.md as `§10 1X`** — that
+> section is the summary of record; this document is the long form behind it.
 > Differences between this spec and what shipped are recorded in
 > **§9 As built** at the end. Written against §1.2 (locked), §2.2, §3.3,
 > §5.1 (public surface + "the only client-side code this project ships"),

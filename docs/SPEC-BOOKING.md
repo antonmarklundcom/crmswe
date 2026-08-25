@@ -1,8 +1,9 @@
 # Spec — Booking system (`modules/booking/`)
 
-> **Status: signed off and built.** Folds into PLAN.md as `§10 1W` in the same
-> shape as `1O`/`1Q`. Written against PLAN.md §1.2 (locked), §2.2 (module
-> rule), §3.3 (isolation), §5.1–5.2 (public-surface pattern) and the existing
+> **Status: signed off, built, and folded into PLAN.md as `§10 1W`** — that
+> section is the summary of record; this document is the long form behind it.
+> Written against PLAN.md §1.2 (locked), §2.2 (module rule), §3.3
+> (isolation), §5.1–5.2 (public-surface pattern) and the existing
 > `modules/calendar/`. Differences between this spec and what shipped are
 > recorded in **§10 As built** at the end.
 

@@ -1745,6 +1745,224 @@ re-appliable by design, so the guard belongs in the transition itself —
 `advancesMessageStatus` (`modules/whatsapp/message-status.ts`), with `failed`
 terminal in both directions.
 
+### 1W — Public booking: a stranger picks a time *(owner request)* — ✅ done
+
+The lead-gen sites (§5.1) capture "quiero información". Half the verticals in
+that network sell an *appointment* — dentista, taller, abogado, consultorio —
+and today that appointment is agreed over WhatsApp by hand and typed into the
+agenda twice. This is the public page that closes the loop. Full spec:
+`docs/SPEC-BOOKING.md`. Sketch:
+
+- **A booking is not a new kind of person and not a new kind of calendar
+  entry.** §5.1's test ("a lead is not a new entity") applied again gives a
+  split answer: the person is a `contacts` upsert through
+  `recordLeadSubmission()`, the appointment is a `calendar_events` row so the
+  rep's agenda sees it with no sync job, the commercial interest is an
+  optional `deal` — and only the *reservation lifecycle* is new. `bookings`
+  is to `calendar_events` what `lead_submissions` is to `contacts`.
+- **Availability is read from the whole agenda**, not from a booking-only
+  calendar. A rep with a 15:00 site visit already booked must not be offered
+  at 15:00 by a stranger; that is only sound because bookings live in
+  `calendar_events` too.
+- New tables: `booking_resources` (a rep *or* a room — a room must not burn a
+  plan seat, §13 H6), `booking_types` (one row = one public page),
+  `booking_type_resources`, `booking_availability_rules` (weekly wall-clock
+  `"HH:MM"`, several rows per weekday so a siesta break is expressible),
+  `booking_blackouts`, `bookings`.
+- **Slot generation is pure** — data in, slots out, no db and no clock — the
+  shape `calendar/grid.ts` and `sites/alerts.ts` already established. Buffers,
+  increment, min-notice, advance horizon, business-hours intersection,
+  blackouts, busy time, round-robin.
+- **Double-booking gets two guards**, because one is not enough: a
+  transactional overlap check with `SELECT … FOR UPDATE`, and a unique index
+  on `active_slot` (`"<resourceId>:<epochSeconds>"`, NULL once cancelled) as
+  the backstop against a double-click. The transaction catches partial
+  overlap; the index catches the identical retry.
+- Public surface in §5.1's style, **no CORS anywhere**:
+  `/b/[tenantSlug]/[typeSlug]`, a same-origin slots endpoint, and
+  `/b/g/[token]` where the token is the secret, exactly as `/q/[token]`.
+  `409` joins the vocabulary — "someone beat you to it" is a real outcome a
+  visitor must see.
+- Reschedule is **cancel + create linked by `rescheduled_from_id`**, so the
+  audit trail is a chain rather than a mutated row. A visitor's cancel is
+  bounded by a hard cutoff (default 120 minutes); staff never are.
+- Hooks and nothing more: three automation triggers, a `booking.reminder`
+  job over the existing `whatsapp/send.ts`, and `recordLeadSubmission()` for
+  the contact. The automation engine does not change.
+
+**Exit**: a visitor books from the public page, the appointment appears on the
+rep's agenda and the contact's timeline, the same slot cannot be taken twice,
+and the visitor can cancel or move it from their own link. Met.
+
+**As built** (differences from the sketch above, and the decisions worth
+keeping):
+
+- **`activities.type` needed no migration.** The column is a `varchar(30)`
+  with a *drizzle-level* enum, not a MySQL `ENUM`, so widening it to carry
+  `'booking'` was a type change only. Recorded so nobody goes looking for the
+  ALTER.
+- **`lead_submissions` gained `booking_type_id`**, a third entry path beside
+  `site_id` and `form_id`. The alternative — a bespoke contact upsert inside
+  `modules/booking` — was rejected for §5.1's own reason: a booking arrives
+  from a page with UTMs and a referrer, so it *is* a lead and belongs in the
+  one attribution table rather than a fourth place every dashboard query
+  would have to UNION.
+- **A booking fires `lead_received` as well as `booking_created`**, because
+  it goes through the shared ingest engine — which is why
+  `matchesTriggerConfig` learned `bookingTypeId`. A flow that wants only
+  bookings narrows on it; a flow that wants every inbound stranger keeps
+  working. Wire both without narrowing and you get two runs: stated here
+  rather than discovered later.
+- **Reminders are bounded by the 24h window, and it matters more than
+  expected.** Someone who booked on a website has usually never messaged the
+  business, so there is no open window and the reminder is *skipped*, not
+  sent. Reaching that person needs a Meta-approved template (§6.4) with a
+  review cycle attached — real work, deliberately not in this cut. Today the
+  reminder serves the case that already works and never fails a booking when
+  it can't.
+- **The advance horizon counts from today in the tenant's timezone**, not
+  from the window the visitor asked for, so paging to next month cannot drag
+  `maxAdvanceDays` along with it.
+- **The recorded IP and the limiter's bucket key are different values.** An
+  address the app cannot determine is `undefined` in the column (NULL is the
+  honest answer) and `"unknown"` in the limiter (one shared bucket, never a
+  free pass) — the distinction `lib/http/client-ip` already draws.
+- **The booking type's settings page came after the public page, not with
+  it.** The create form asks for name, slug and duration — what it takes to
+  publish — and everything else the schema and the slot generator already
+  read (buffers, increment, notice, horizon, per-day cap, assignment,
+  location, routing defaults, custom questions, borrowed Turnstile, reminder
+  minutes, cancellation cutoff) was stuck on its default with no way to
+  change it. `/booking/[id]` is that form, useActionState-shaped per §10
+  1R #6. Custom questions post as index-aligned parallel arrays, which is why
+  "required" is a select and not a checkbox: an unchecked box posts nothing
+  and would silently shift every later row's answer onto the wrong question.
+- **Reschedule now checks the offer before it cancels.** `publicReschedule`
+  existed and was tested from the start but nothing called it; wiring it to
+  `/b/g/[token]` made cancel-first reachable by strangers, and cancel-first
+  on its own means a visitor whose chosen time went while their page was open
+  loses the booking they had and gets nothing. The new start is verified
+  against `availableSlots` first — skipped only when it overlaps the booking
+  being moved, where the booking blocks itself. The manage page redirects to
+  the new token, because a reschedule is a new row.
+- **The visitor's slot picker is one component**, shared by the booking page
+  and the manage page's reschedule: moving a booking asks the same question
+  of the same endpoint as making one, and a second, subtly different picker
+  is exactly the drift worth not having.
+
+**Verified**: `slots.test.ts` — 21 pure cases, no database and no clock.
+`bookings.integration.test.ts` — 17 cases against MySQL: the whole
+transaction, concurrent identical reserves where exactly one wins, cancel
+freeing the slot and clearing the agenda, the reschedule chain, a refused
+reschedule leaving the original booking untouched, the visitor's own manage
+link moving a booking, and cross-tenant isolation on every service and both
+public routes.
+
+**Not done, deliberately**: no public API-key lane (§5.1's lanes exist for
+*lead* ingest; a third credential surface before anyone asks is scope we
+don't need) · no template-based reminders to a contact with no open window ·
+no group bookings, no paid bookings, no calendar sync outward to Google.
+
+### 1X — Embeddable AI chat widget *(owner request; 1O on the website)* — ✅ done
+
+1O put an LLM on WhatsApp. The same visitors arrive on the lead-gen sites
+first, where the only thing to do is fill a form and wait. This is the chat
+bubble those sites embed. Full spec: `docs/SPEC-CHAT-WIDGET.md`. Sketch:
+
+- **New tables, not `conversations`/`messages`.** A website visitor has no
+  WhatsApp account, no phone and therefore no `contacts` row — and
+  `conversations` is `NOT NULL` on both `wa_account_id` and `contact_id`
+  while `messages` carries Meta delivery statuses. Fitting a visitor in
+  means nulling out three columns the WhatsApp pipeline relies on. So
+  `chat_conversations` + `chat_messages`, reusing the *vocabulary*
+  (`direction`, `status`, `error`, `sent_by_user_id`) and nothing else. The
+  WhatsApp pipeline is not touched.
+- **A visitor becomes a contact the moment they give a phone**, by exactly
+  one route: `recordLeadSubmission()`. Chat is a third lead entry path, not a
+  third lead model. Before that, `contact_id` is NULL — the honest
+  representation of "someone is asking and we don't know who they are".
+- **iframe, so §5.1's no-CORS lock survives intact.** `w.js` draws a bubble
+  and injects `<iframe src="/w/<widgetKey>">`; every request the chat makes
+  is same-origin, from our page to our API. No `Access-Control-Allow-Origin`
+  is added anywhere. The alternative — a CORS API plus a shadow-DOM widget —
+  reopens a locked decision and puts the tenant's system prompt one fetch
+  away from any page that cares to ask.
+- **`widgetKey` is a public identifier, not a credential** — the same
+  category as a Turnstile *site* key. What defends the endpoint is a
+  per-widget origin allowlist (belt, documented as not an auth boundary),
+  per-IP and per-visitor rate limits, and the spend caps below.
+- **One per-tenant daily budget, shared with WhatsApp.** Independent counters
+  would silently double a tenant's ceiling the day this shipped, which
+  defeats the reason the per-tenant cap exists. `ai_replies` is generalised
+  rather than duplicated: `channel`, `chat_conversation_id`, and
+  `conversation_id`/`contact_id` relaxed to nullable. The cap belongs in one
+  place because the bill does.
+- **Draft-first, restated for a website**: `off` shows a contact form and
+  spends nothing, `draft` (the default) captures the message and shows the
+  rep a suggested reply, `send` answers live. The tenant mode stays a
+  *ceiling* over the widget mode via `resolveMode`, unchanged from 1O — going
+  autonomous is still a two-key operation.
+- Polling, not websockets: §2.1 locks a single Node process with no Redis, so
+  a fan-out has nowhere to live. A 25-second long-poll fits the platform we
+  actually deploy on.
+
+**Exit**: a tenant embeds one line of script on a site, a visitor's question
+is answered (or captured), the reply obeys the same guards and the same daily
+budget as WhatsApp, and a captured visitor lands in the pipeline with the
+site's attribution. Met.
+
+**As built** (differences from the sketch above):
+
+- **`ai_replies` was generalised exactly as proposed**, and
+  `countRepliesTodayForTenant` needed no change at all — it already counted
+  every row a tenant has, which is the whole argument for one table made
+  concrete.
+- **One consequence the spec did not name**: `deliverReply` (the WhatsApp
+  approve-and-send path) now refuses a chat row explicitly rather than
+  reaching `sendText` with a null. There is a test for it.
+- **Chat drafts stay out of the WhatsApp inbox for free**: `listPendingDrafts`
+  filters on `conversation_id`, which a chat row does not have. One shared
+  table, two inboxes, no filtering the caller has to remember.
+- **The origin allowlist rejects lookalike hosts.** A naïve suffix match
+  would accept `evil-example.com` for `example.com`; a bare host now matches
+  only itself, and a leading dot is the explicit "and its subdomains" form.
+- **The visitor id is minted in the iframe's own `localStorage`**, not by the
+  server: a conversation handle, not a credential, and a blocked storage jar
+  degrades to a fresh thread per load instead of no chat at all.
+- **`w.js` forwards the host page's URL, referrer and `vc_attr` cookie** by
+  `postMessage` and query string — the cookie sits on the *client's* origin
+  and is unreadable from our iframe. It is also why the iframe's `message`
+  listener checks `event.origin`: an arbitrary page must not be able to drive
+  someone's chat.
+- **A tripped cap, a draft, a provider error and a handoff all look identical
+  to the visitor**: "a person is coming", one `pendingHuman` flag rather than
+  distinct statuses, so no future branch can leak the tenant's billing state
+  to their customer.
+- **`business_hours_mode` is checked before the driver is called**, not
+  after, so an out-of-hours message costs nothing.
+- **`chat_conversations.unread_count` is now written.** It shipped as a
+  column nobody incremented — a badge that would have read zero forever.
+  Every inbound visitor message raises it; opening the thread clears it, and
+  on `/chat` opening the thread *is* loading the page, because that page
+  renders every open conversation's transcript in full (the same clear-on-
+  open `/inbox/[id]` does for WhatsApp). A rep's own reply does not clear it,
+  and the badge shown is the value read before the clear.
+
+**Verified**: `widgets.test.ts` — 11 pure cases (origin matching including
+the lookalike and subdomain edges, the pinned WhatsApp-only guards, both
+caps, the draft ceiling in all four mode pairs). `chat.integration.test.ts` —
+12 cases against MySQL: all three modes; a WhatsApp reply spending the chat's
+tenant budget; the handoff keyword; capture creating a contact and one
+timeline entry even when repeated; the unread counter rising on inbound and
+clearing on read; the origin refusal and the unknown/inactive key both
+spending zero tokens; cross-tenant isolation; and `deliverReply` refusing a
+chat row.
+
+**Not in v1, deliberately**: file uploads · websockets · a unified
+WhatsApp+chat inbox (a real feature that deserves its own decision, not a
+side effect of this one) · RAG over tenant documents · proactive/exit-intent
+triggers · chat in `site_ingest_health` · typing indicators.
+
 ### 1P — Google Business Profile *(idea; not scheduled)*
 
 GBP is where the owner's local-SEO work and this CRM meet: reviews, questions,

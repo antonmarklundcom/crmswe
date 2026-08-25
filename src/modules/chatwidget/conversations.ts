@@ -134,18 +134,40 @@ export async function appendMessage(
   });
 
   // An inbound message is what the rep's unread badge counts, and what the
-  // "is anyone waiting" list sorts on.
+  // "is anyone waiting" list sorts on. The counter is read-modify-written
+  // rather than incremented in SQL, which is what the WhatsApp side does for
+  // the same column and keeps the write inside tenantDb's typed `set`.
+  const conversation = await getConversation(ctx, input.chatConversationId);
   await tenantDb(ctx)
     .update(chatConversations)
     .set(
       input.direction === "in"
-        ? { lastMessageAt: now, lastVisitorMessageAt: now, updatedAt: now }
+        ? {
+            lastMessageAt: now,
+            lastVisitorMessageAt: now,
+            unreadCount: (conversation?.unreadCount ?? 0) + 1,
+            updatedAt: now,
+          }
         : { lastMessageAt: now, updatedAt: now },
     )
     .where(eq(chatConversations.id, input.chatConversationId));
 
   const [row] = await tenantDb(ctx).select(chatMessages, eq(chatMessages.id, id)).limit(1);
   return row ?? null;
+}
+
+/**
+ * Clears the unread badge, the way the WhatsApp inbox clears it when a rep
+ * opens a thread. /chat renders every open conversation's transcript in
+ * full, so opening the page *is* opening the thread — the badge is read
+ * before it is cleared, so the rep still sees what was new on the load that
+ * showed it to them.
+ */
+export async function markConversationRead(ctx: TenantContext, id: string): Promise<void> {
+  await tenantDb(ctx)
+    .update(chatConversations)
+    .set({ unreadCount: 0, updatedAt: new Date() })
+    .where(eq(chatConversations.id, id));
 }
 
 export async function countVisitorMessages(

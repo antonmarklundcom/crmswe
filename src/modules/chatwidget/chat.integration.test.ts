@@ -150,6 +150,37 @@ describe.skipIf(!hasDb)("chat widget (MySQL integration)", () => {
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 
+  it("counts what the rep has not read, and stops counting once they have", async () => {
+    // The column exists to answer "is anyone waiting". Written on every
+    // inbound message and cleared when the rep opens the thread — /chat
+    // renders the whole transcript, so opening the page is opening it.
+    await setTenantAi("send");
+    const widget = await makeWidget({ mode: "off" });
+    const visitorId = newId();
+
+    await publicModule.postVisitorMessage(widget!.widgetKey, { visitorId, body: "Hola" });
+    await publicModule.postVisitorMessage(widget!.widgetKey, { visitorId, body: "¿Están?" });
+
+    const conversation = await conversationsModule.findOpenConversation(
+      ctx,
+      widget!.id,
+      visitorId,
+    );
+    expect(conversation!.unreadCount).toBe(2);
+
+    // A rep answering is not something the rep has to read back.
+    await conversationsModule.appendMessage(ctx, {
+      chatConversationId: conversation!.id,
+      direction: "out",
+      author: "agent",
+      body: "Sí, contamos.",
+    });
+    expect((await conversationsModule.getConversation(ctx, conversation!.id))!.unreadCount).toBe(2);
+
+    await conversationsModule.markConversationRead(ctx, conversation!.id);
+    expect((await conversationsModule.getConversation(ctx, conversation!.id))!.unreadCount).toBe(0);
+  });
+
   it("counts a WhatsApp reply against the chat's own tenant budget", async () => {
     // The reason ai_replies carries a channel instead of the widget getting
     // its own table: one tenant, one daily budget.

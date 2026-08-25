@@ -7,7 +7,11 @@ import { getTenant } from "@/modules/tenancy/tenants";
 import type { TenantSettings } from "@/modules/tenancy/settings";
 import { listSites } from "@/modules/sites/sites";
 import { listChatWidgets } from "@/modules/chatwidget/widgets";
-import { listConversations, listMessages } from "@/modules/chatwidget/conversations";
+import {
+  listConversations,
+  listMessages,
+  markConversationRead,
+} from "@/modules/chatwidget/conversations";
 import { getContact } from "@/modules/crm/contacts";
 import { listPendingChatDrafts } from "@/modules/chatwidget/drafts";
 import { EmptyState } from "@/components/empty-state";
@@ -97,6 +101,15 @@ export default async function ChatPage() {
                     : Promise.resolve(null),
                 ]);
 
+                // This page *is* the thread view — it renders the whole
+                // transcript — so showing it is what "the rep opened it"
+                // means here, exactly as /inbox/[id] does for WhatsApp. The
+                // badge below still shows what was unread on this load,
+                // because the row was read before it was cleared.
+                if (conversation.unreadCount > 0) {
+                  await markConversationRead(ctx, conversation.id);
+                }
+
                 return (
                   <li key={conversation.id} className="flex flex-col gap-3 rounded-lg border p-4">
                     <div className="flex flex-wrap items-center justify-between gap-2">
@@ -110,6 +123,11 @@ export default async function ChatPage() {
                         )}
                       </p>
                       <span className="flex items-center gap-3 text-xs">
+                        {conversation.unreadCount > 0 ? (
+                          <span className="rounded-full bg-primary px-2 py-0.5 text-primary-foreground">
+                            {t("unread", { count: conversation.unreadCount })}
+                          </span>
+                        ) : null}
                         <span className="text-muted-foreground">
                           {conversation.lastMessageAt
                             ? formatDateTime(conversation.lastMessageAt, locale, tenant?.timezone)

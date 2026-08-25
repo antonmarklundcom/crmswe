@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useState } from "react";
 import Script from "next/script";
 import { TURNSTILE_RESPONSE_FIELD } from "@/lib/turnstile";
 import type { BookingQuestion } from "@/modules/booking/types";
+import { SlotPicker } from "../../slot-picker";
 
 // The visitor's half of the booking page (docs/SPEC-BOOKING.md §5).
 //
@@ -41,15 +42,6 @@ type Props = {
   labels: Labels;
 };
 
-function dayKeyOf(iso: string, timeZone: string): string {
-  return new Intl.DateTimeFormat("en-CA", {
-    timeZone,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(new Date(iso));
-}
-
 export function BookingPicker({
   tenantSlug,
   typeSlug,
@@ -60,74 +52,13 @@ export function BookingPicker({
   accent,
   labels,
 }: Props) {
-  const [slots, setSlots] = useState<string[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [monthOffset, setMonthOffset] = useState(0);
-  const [day, setDay] = useState<string | null>(null);
   const [chosen, setChosen] = useState<string | null>(null);
+  // Slots this visitor has learned are gone: the 409 case, where somebody
+  // else took the time while the form was open.
+  const [taken, setTaken] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [confirmed, setConfirmed] = useState<{ startsAt: string; manageUrl: string } | null>(null);
-
-  const window = useMemo(() => {
-    const base = new Date();
-    base.setUTCDate(1);
-    base.setUTCMonth(base.getUTCMonth() + monthOffset);
-    const from = base.toISOString().slice(0, 10);
-    const end = new Date(base);
-    end.setUTCMonth(end.getUTCMonth() + 1);
-    return { from, to: end.toISOString().slice(0, 10) };
-  }, [monthOffset]);
-
-  useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
-    setError(null);
-
-    fetch(
-      `/api/v1/booking/${encodeURIComponent(tenantSlug)}/${encodeURIComponent(typeSlug)}/slots?from=${window.from}&to=${window.to}`,
-    )
-      .then(async (response) => {
-        if (!response.ok) {
-          throw new Error(response.status === 429 ? labels.rateLimited : labels.errorGeneric);
-        }
-        return response.json() as Promise<{ slots: Array<{ startsAt: string }> }>;
-      })
-      .then((body) => {
-        if (cancelled) return;
-        setSlots(body.slots.map((slot) => slot.startsAt));
-      })
-      .catch((cause: Error) => {
-        if (!cancelled) setError(cause.message);
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [tenantSlug, typeSlug, window, labels.errorGeneric, labels.rateLimited]);
-
-  const byDay = useMemo(() => {
-    const grouped = new Map<string, string[]>();
-    for (const slot of slots) {
-      const key = dayKeyOf(slot, timeZone);
-      grouped.set(key, [...(grouped.get(key) ?? []), slot]);
-    }
-    return grouped;
-  }, [slots, timeZone]);
-
-  const days = useMemo(() => [...byDay.keys()].sort(), [byDay]);
-
-  useEffect(() => {
-    // Keep a chosen day only while it still has slots — a month change or a
-    // slot taken elsewhere must not leave a stale selection armed.
-    if (day && !byDay.has(day)) {
-      setDay(null);
-      setChosen(null);
-    }
-  }, [day, byDay]);
 
   if (confirmed) {
     return (
@@ -183,12 +114,12 @@ export function BookingPicker({
       );
 
       if (response.status === 409) {
-        // Someone took it while the form was open. Re-fetch so the visitor
-        // picks from what is actually free rather than retrying a dead slot.
+        // Someone took it while the form was open. Drop that start from the
+        // picker so the visitor chooses from what is actually free rather
+        // than retrying a dead slot.
         setError(labels.errorSlotTaken);
+        setTaken((current) => [...current, chosen]);
         setChosen(null);
-        setMonthOffset((current) => current);
-        setSlots((current) => current.filter((slot) => slot !== chosen));
         return;
       }
       if (!response.ok) {
@@ -210,78 +141,16 @@ export function BookingPicker({
 
   return (
     <div className="flex flex-col gap-6">
-      <section className="flex flex-col gap-3">
-        <div className="flex items-center justify-between">
-          <h2 className="text-sm font-medium">{labels.chooseDay}</h2>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              className="rounded-md border px-2 py-1 text-xs"
-              onClick={() => setMonthOffset((current) => Math.max(0, current - 1))}
-              disabled={monthOffset === 0}
-            >
-              {labels.previousMonth}
-            </button>
-            <button
-              type="button"
-              className="rounded-md border px-2 py-1 text-xs"
-              onClick={() => setMonthOffset((current) => current + 1)}
-            >
-              {labels.nextMonth}
-            </button>
-          </div>
-        </div>
-
-        {loading ? (
-          <p className="text-sm text-muted-foreground">…</p>
-        ) : days.length === 0 ? (
-          <p className="text-sm text-muted-foreground">{labels.noSlots}</p>
-        ) : (
-          <div className="flex flex-wrap gap-2">
-            {days.map((key) => (
-              <button
-                key={key}
-                type="button"
-                onClick={() => {
-                  setDay(key);
-                  setChosen(null);
-                }}
-                className={`rounded-md border px-3 py-2 text-sm ${day === key ? "border-primary bg-accent" : ""}`}
-              >
-                {new Intl.DateTimeFormat(locale, {
-                  timeZone,
-                  weekday: "short",
-                  day: "numeric",
-                  month: "short",
-                }).format(new Date(`${key}T12:00:00Z`))}
-              </button>
-            ))}
-          </div>
-        )}
-      </section>
-
-      {day ? (
-        <section className="flex flex-col gap-3">
-          <h2 className="text-sm font-medium">{labels.chooseTime}</h2>
-          <div className="flex flex-wrap gap-2">
-            {(byDay.get(day) ?? []).map((slot) => (
-              <button
-                key={slot}
-                type="button"
-                onClick={() => setChosen(slot)}
-                className={`rounded-md border px-3 py-2 text-sm ${chosen === slot ? "border-primary bg-accent" : ""}`}
-              >
-                {new Intl.DateTimeFormat(locale, {
-                  timeZone,
-                  hour: "2-digit",
-                  minute: "2-digit",
-                  hour12: false,
-                }).format(new Date(slot))}
-              </button>
-            ))}
-          </div>
-        </section>
-      ) : null}
+      <SlotPicker
+        tenantSlug={tenantSlug}
+        typeSlug={typeSlug}
+        timeZone={timeZone}
+        locale={locale}
+        labels={labels}
+        selected={chosen}
+        onSelect={setChosen}
+        excluded={taken}
+      />
 
       {chosen ? (
         <form action={submit} className="flex flex-col gap-3 rounded-lg border p-4">

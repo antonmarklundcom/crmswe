@@ -269,6 +269,61 @@ describe.skipIf(!hasDb)("bookings (MySQL integration)", () => {
     expect(original!.status).toBe("cancelled");
   });
 
+  it("keeps the original booking when the new slot is not on offer", async () => {
+    // Cancel-first is what makes the reschedule chain honest, but on its own
+    // it would let a visitor whose chosen time went while their page was
+    // open end up with nothing. The offer is checked before anything is
+    // cancelled — which is only safe to expose publicly because of this.
+    const type = await makeType();
+    const booked = await bookingsModule.reserveBooking(
+      ctx,
+      { ...reserveInput(at("2026-11-02T11:00:00.000Z")), bookingTypeId: type.id },
+      NOW,
+    );
+
+    await expect(
+      bookingsModule.rescheduleBooking(
+        ctx,
+        booked.booking.id,
+        // A Sunday: outside the resource's Monday-only availability, so no
+        // slot was ever offered there.
+        at("2026-11-01T14:00:00.000Z"),
+        "contact",
+        NOW,
+      ),
+    ).rejects.toMatchObject({ code: "slotUnavailable" });
+
+    const untouched = await bookingsModule.getBooking(ctx, booked.booking.id);
+    expect(untouched!.status).toBe("confirmed");
+    expect(untouched!.startsAt.toISOString()).toBe("2026-11-02T11:00:00.000Z");
+  });
+
+  it("moves a booking from the visitor's own manage link", async () => {
+    const type = await makeType();
+    const booked = await bookingsModule.reserveBooking(
+      ctx,
+      { ...reserveInput(at("2026-11-09T11:00:00.000Z")), bookingTypeId: type.id },
+      NOW,
+    );
+
+    const moved = await publicModule.publicReschedule(
+      booked.booking.publicToken,
+      "2026-11-09T12:00:00.000Z",
+      "203.0.113.9",
+      NOW,
+    );
+
+    expect(moved.ok).toBe(true);
+    if (!moved.ok) return;
+    // A reschedule is cancel + create, so the visitor lands on a new token —
+    // the manage page redirects there rather than showing the cancelled row.
+    expect(moved.data.manageToken).not.toBe(booked.booking.publicToken);
+    expect(moved.data.startsAt).toBe("2026-11-09T12:00:00.000Z");
+
+    const resolved = await publicModule.getPublicBooking(moved.data.manageToken, NOW);
+    expect(resolved!.booking.rescheduledFromId).toBe(booked.booking.id);
+  });
+
   it("marks a no-show only when a human says so", async () => {
     const type = await makeType();
     const result = await bookingsModule.reserveBooking(

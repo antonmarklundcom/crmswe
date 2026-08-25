@@ -7,6 +7,7 @@ import { checkRateLimit } from "@/lib/rate-limit";
 import { getTranslator } from "@/lib/i18n/translator";
 import { formatDateTime } from "@/lib/i18n/format";
 import { cancelBookingAction } from "./actions";
+import { RescheduleSection } from "./reschedule";
 
 // The visitor's manage link (docs/SPEC-BOOKING.md §5). The token *is* the
 // secret — the same model as the public quote view /q/[token] — which is why
@@ -37,6 +38,7 @@ export default async function ManageBookingPage({
   const accent = branding.primaryColor || undefined;
   const locale = tenant.locale ?? "es";
   const t = await getTranslator(locale, "public.booking");
+  const tShared = await getTranslator(locale, "public.shared");
 
   const statusLabel = {
     confirmed: t("statusConfirmed"),
@@ -66,14 +68,50 @@ export default async function ManageBookingPage({
       {booking.status === "cancelled" ? (
         <p className="text-sm text-muted-foreground">{t("cancelledBody")}</p>
       ) : canCancel ? (
-        <form action={cancelBookingAction.bind(null, token)}>
-          <button
-            type="submit"
-            className="rounded-md border border-destructive px-4 py-2 text-sm text-destructive"
-          >
-            {t("cancelAction")}
-          </button>
-        </form>
+        <div className="flex flex-col gap-3">
+          {/* Moving the appointment is bounded by the same cutoff as
+              cancelling it — `canCancel` is that cutoff — and refused again
+              server-side, so a stale page cannot walk around it. A paused
+              booking type has no public page to pick slots from, so the
+              option is simply not offered. */}
+          {type.isActive ? (
+            <RescheduleSection
+              token={token}
+              tenantSlug={tenant.slug}
+              typeSlug={type.slug}
+              timeZone={tenant.timezone}
+              locale={locale}
+              accent={accent}
+              labels={{
+                chooseDay: t("chooseDay"),
+                chooseTime: t("chooseTime"),
+                noSlots: t("noSlots"),
+                previousMonth: t("previousMonth"),
+                nextMonth: t("nextMonth"),
+                errorGeneric: t("errorGeneric"),
+                rateLimited: tShared("rateLimited"),
+                rescheduleAction: t("rescheduleAction"),
+                rescheduleTitle: t("rescheduleTitle"),
+                rescheduleConfirm: t("rescheduleConfirm"),
+                rescheduleClose: t("rescheduleClose"),
+                errors: {
+                  slotTaken: t("errorSlotTaken"),
+                  cutoff: t("cancelCutoff"),
+                  rateLimited: tShared("rateLimited"),
+                  generic: t("errorGeneric"),
+                },
+              }}
+            />
+          ) : null}
+          <form action={cancelBookingAction.bind(null, token)}>
+            <button
+              type="submit"
+              className="rounded-md border border-destructive px-4 py-2 text-sm text-destructive"
+            >
+              {t("cancelAction")}
+            </button>
+          </form>
+        </div>
       ) : booking.status === "confirmed" ? (
         // The hard cutoff is what stops an 08:55 cancellation for a 09:00
         // slot; past it the page says to get in touch rather than pretending

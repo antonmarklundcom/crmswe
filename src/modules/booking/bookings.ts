@@ -504,7 +504,27 @@ export async function rescheduleBooking(
   const original = await getBooking(ctx, id);
   if (!original) throw new BookingError("notFound");
 
+  const type = await getBookingType(ctx, original.bookingTypeId);
+  if (!type) throw new BookingError("notFound");
+
   const contact = await contactOf(ctx, original.contactId);
+
+  // Check the new slot is actually on offer *before* cancelling the old one.
+  // Cancel-first is what makes the chain honest, but on its own it means a
+  // visitor whose chosen time went while their page was open loses the
+  // booking they had and gets nothing — the one outcome a reschedule must
+  // never produce. Skipped when the new slot overlaps the booking being
+  // moved (a fifteen-minute nudge), since there the booking blocks itself.
+  const endsAt = new Date(startsAt.getTime() + type.durationMinutes * 60_000);
+  const overlapsItself = startsAt < original.endsAt && endsAt > original.startsAt;
+  if (!overlapsItself) {
+    const tenant = await getTenant(ctx.tenantId);
+    const day = dayKeyOf(startsAt, tenant?.timezone ?? "UTC");
+    const offered = await availableSlots(ctx, type, day, day, now);
+    if (!offered.some((slot) => slot.startsAt.getTime() === startsAt.getTime())) {
+      throw new BookingError("slotUnavailable");
+    }
+  }
 
   await cancelBooking(ctx, id, by, "rescheduled", now);
 

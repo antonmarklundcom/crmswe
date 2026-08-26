@@ -4,8 +4,12 @@ import { db } from "@/db/client";
 import { chatWidgets } from "@/db/schema";
 import { env } from "@/lib/config/env";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { verifyTurnstileToken } from "@/lib/turnstile";
 import { buildSystemTenantContext, type TenantContext } from "@/modules/tenancy/context";
 import { getTenant } from "@/modules/tenancy/tenants";
+import { getSite } from "@/modules/sites/sites";
+import { siteTurnstileSecret, siteTurnstileSiteKey } from "@/modules/sites/settings";
+import { hasRepliesForChatConversation } from "@/modules/ai/replies";
 import {
   appendMessage,
   countVisitorMessages,
@@ -89,6 +93,49 @@ export function sameOriginRequest(origin: string | null | undefined): boolean {
   }
 }
 
+/**
+ * The Turnstile *site* key for a widget, or null when its site has none.
+ *
+ * Public by design — it renders into the iframe, the same category as the
+ * widget key itself. The secret half is read only inside `postVisitorMessage`
+ * and never leaves the server (§3.4).
+ */
+export async function widgetTurnstileSiteKey(
+  resolved: ResolvedWidget,
+): Promise<string | null> {
+  const site = await getSite(resolved.ctx, resolved.widget.siteId);
+  return site ? siteTurnstileSiteKey(site) : null;
+}
+
+/**
+ * Whether this message still owes a verification, and whether it paid.
+ *
+ * The challenge is required before the **first provider call** of a
+ * conversation, not before every message: a visitor solves it once and then
+ * talks. "First" is read off `ai_replies`, which gets a row before each
+ * provider request — so a call a guard refused leaves the challenge still
+ * owed rather than spending it.
+ *
+ * Same ladder as §5.2.1: a site with no secret configured skips this
+ * entirely, which is the state every existing site is in.
+ */
+async function turnstileSatisfied(
+  ctx: TenantContext,
+  widget: ChatWidget,
+  conversationId: string,
+  token: string | undefined,
+  remoteIp: string | undefined,
+): Promise<boolean> {
+  if (await hasRepliesForChatConversation(ctx, conversationId)) return true;
+
+  const site = await getSite(ctx, widget.siteId);
+  const secret = site ? siteTurnstileSecret(site) : null;
+  if (!secret) return true;
+
+  const verdict = await verifyTurnstileToken({ secret, token, remoteIp });
+  return verdict.ok;
+}
+
 export type ChatOutcome<T> =
   | { ok: true; data: T }
   | { ok: false; status: 403 | 404 | 422 | 429; error: string };
@@ -96,6 +143,9 @@ export type ChatOutcome<T> =
 const MESSAGE_IP_LIMIT = 20;
 const MESSAGE_VISITOR_LIMIT = 10;
 const CAPTURE_VISITOR_LIMIT = 5;
+/** The poll runs every 8s per open widget, so 15/min is generous for an
+ * honest client and still bounds a scripted one — it was unlimited. */
+const POLL_VISITOR_LIMIT = 15;
 const WINDOW_MS = 60_000;
 
 export const postMessageSchema = z.object({
@@ -105,6 +155,9 @@ export const postMessageSchema = z.object({
   referrer: z.string().max(2000).optional(),
   utm: z.record(z.string(), z.string().max(200)).optional(),
   locale: z.string().max(10).optional(),
+  /** Cloudflare's token, sent with the first message of a conversation when
+   * the widget's site has Turnstile configured (§1.2). */
+  turnstileToken: z.string().max(4000).optional(),
 });
 
 export type PublicChatMessage = {
@@ -206,9 +259,23 @@ export async function postVisitorMessage(
     });
   }
 
+  // The visitor's message is already captured above. A missing or rejected
+  // token costs them the AI reply and nothing else — they get the same "a
+  // person is coming" shape a tripped cap gives, never an error and never a
+  // hint that they were treated as a bot.
+  const verified = await turnstileSatisfied(
+    ctx,
+    widget,
+    conversation.id,
+    body.turnstileToken,
+    meta.ipAddress,
+  );
+
   const outcome = handedOff
     ? ({ status: "skipped", reason: "conversation_ai_disabled" } as const)
-    : await generateChatReply(
+    : !verified
+      ? ({ status: "skipped", reason: "turnstile_unverified" } as const)
+      : await generateChatReply(
         ctx,
         { widget, chatConversationId: conversation.id, visitorMessage: body.body },
         now,
@@ -289,6 +356,13 @@ export async function pollMessages(
 
   if (!sameOriginRequest(meta.origin)) {
     return { ok: false, status: 403, error: "origin_not_allowed" };
+  }
+
+  const pollIp = meta.ipKey ?? meta.ipAddress ?? "unknown";
+  if (
+    checkRateLimit(`chat:poll:${visitorId}:${pollIp}`, POLL_VISITOR_LIMIT, WINDOW_MS).limited
+  ) {
+    return { ok: false, status: 429, error: "rate_limited" };
   }
 
   const conversation = await findConversation(ctx, widget, visitorId);

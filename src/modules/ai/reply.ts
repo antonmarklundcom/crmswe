@@ -50,6 +50,7 @@ export type AiSkipReason =
   | "window_closed"
   | "conversation_daily_cap"
   | "tenant_daily_cap"
+  | "channel_daily_cap"
   | "no_conversation_history";
 
 export type GuardInput = {
@@ -62,6 +63,10 @@ export type GuardInput = {
   repliesTodayForTenant: number;
   maxPerConversationPerDay: number;
   maxPerTenantPerDay: number;
+  /** One channel's share of the tenant budget, when that channel has one.
+   * Absent means "no sub-cap", which is what WhatsApp has. */
+  repliesTodayForChannel?: number;
+  maxPerChannelPerDay?: number;
 };
 
 export type GuardVerdict = { allowed: true } | { allowed: false; reason: AiSkipReason };
@@ -84,6 +89,15 @@ export function evaluateGuards(input: GuardInput): GuardVerdict {
   }
   if (input.repliesTodayForTenant >= input.maxPerTenantPerDay) {
     return { allowed: false, reason: "tenant_daily_cap" };
+  }
+  // Checked after the shared ceiling, because the shared ceiling is the one
+  // that bounds the bill. A channel sub-cap bounds something else: which
+  // channel gets to spend it.
+  if (
+    input.maxPerChannelPerDay !== undefined &&
+    (input.repliesTodayForChannel ?? 0) >= input.maxPerChannelPerDay
+  ) {
+    return { allowed: false, reason: "channel_daily_cap" };
   }
   return { allowed: true };
 }

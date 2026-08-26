@@ -1,6 +1,10 @@
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
-import { embedRefererAllowed, resolveWidget } from "@/modules/chatwidget/public";
+import {
+  embedRefererAllowed,
+  resolveWidget,
+  widgetTurnstileSiteKey,
+} from "@/modules/chatwidget/public";
 import { getTranslator } from "@/lib/i18n/translator";
 import { ChatWindow } from "./window";
 
@@ -46,6 +50,7 @@ export default async function ChatWidgetFrame({
       greeting={widget.greeting || t("greetingFallback")}
       askForPhone={widget.askForPhone}
       parentOrigin={parentOriginOf(referer)}
+      turnstileSiteKey={await widgetTurnstileSiteKey(resolved)}
       labels={{
         placeholder: t("placeholder"),
         send: t("send"),

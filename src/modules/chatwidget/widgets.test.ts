@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { evaluateGuards, resolveMode } from "@/modules/ai/reply";
-import { chatGuardInput } from "./reply";
+import { chatChannelCap, chatGuardInput } from "./reply";
 import { originAllowed } from "./widgets";
 
 // The pure decisions behind the widget (docs/SPEC-CHAT-WIDGET.md §8), with no
@@ -45,6 +45,7 @@ describe("chatGuardInput", () => {
     conversationAiDisabled: false,
     repliesTodayForConversation: 0,
     repliesTodayForTenant: 0,
+    repliesTodayForChat: 0,
     maxPerConversationPerDay: 12,
     maxPerTenantPerDay: 200,
   };
@@ -87,6 +88,34 @@ describe("chatGuardInput", () => {
       allowed: false,
       reason: "tenant_daily_cap",
     });
+  });
+
+  it("stops chat at half the budget while WhatsApp still has the rest", () => {
+    // The shared ceiling bounds the bill; this bounds which channel spends
+    // it. A public, unauthenticated widget must not be able to starve the
+    // customers already talking to the business on WhatsApp.
+    expect(chatChannelCap(200)).toBe(100);
+
+    expect(
+      evaluateGuards(
+        chatGuardInput({ ...base, repliesTodayForTenant: 100, repliesTodayForChat: 100 }),
+      ),
+    ).toEqual({ allowed: false, reason: "channel_daily_cap" });
+
+    // Same tenant spend, but WhatsApp is what spent it: chat still has its
+    // own half untouched.
+    expect(
+      evaluateGuards(
+        chatGuardInput({ ...base, repliesTodayForTenant: 100, repliesTodayForChat: 0 }),
+      ),
+    ).toEqual({ allowed: true });
+  });
+
+  it("never floors a tenant's chat share to nothing", () => {
+    // A tenant whose whole daily budget is a single call should still be
+    // able to answer one visitor; the shared ceiling stops it going further.
+    expect(chatChannelCap(1)).toBe(1);
+    expect(chatChannelCap(0)).toBe(1);
   });
 });
 

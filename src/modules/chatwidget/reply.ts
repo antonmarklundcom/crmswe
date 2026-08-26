@@ -8,6 +8,7 @@ import {
   type GuardInput,
 } from "@/modules/ai/reply";
 import {
+  countRepliesTodayForChannel,
   countRepliesTodayForChatConversation,
   countRepliesTodayForTenant,
   markReplyFailed,
@@ -40,7 +41,31 @@ export type ChatReplyOutcome =
   | { status: "skipped"; reason: ChatSkipReason }
   | { status: "failed"; reason: string };
 
-export type ChatSkipReason = AiSkipReason | "widget_off" | "outside_business_hours";
+export type ChatSkipReason =
+  | AiSkipReason
+  | "widget_off"
+  | "outside_business_hours"
+  /** Decided in ./public.ts, before this file is reached: the first provider
+   * call of a conversation needs a Turnstile token and did not get a valid
+   * one. The message is captured either way. */
+  | "turnstile_unverified";
+
+/**
+ * Chat's share of the tenant's daily AI budget.
+ *
+ * The ceiling stays shared — one tenant, one bill (§1.3). This bounds
+ * something the shared ceiling cannot: *which* channel spends it. Chat is
+ * the public, unauthenticated surface, reachable by anyone who can load the
+ * tenant's website, so left alone it can burn the whole allowance before a
+ * customer already mid-conversation on WhatsApp gets an answer. Half is the
+ * split, floored — never to zero, because a tenant whose entire budget is a
+ * single call should still be able to answer one visitor.
+ */
+export const CHAT_CHANNEL_BUDGET_SHARE = 0.5;
+
+export function chatChannelCap(maxPerTenantPerDay: number): number {
+  return Math.max(1, Math.floor(maxPerTenantPerDay * CHAT_CHANNEL_BUDGET_SHARE));
+}
 
 /**
  * The WhatsApp-only guard inputs, pinned to values a website chat cannot
@@ -53,16 +78,20 @@ export function chatGuardInput(input: {
   conversationAiDisabled: boolean;
   repliesTodayForConversation: number;
   repliesTodayForTenant: number;
+  repliesTodayForChat: number;
   maxPerConversationPerDay: number;
   maxPerTenantPerDay: number;
 }): GuardInput {
+  const { repliesTodayForChat, ...rest } = input;
   return {
-    ...input,
+    ...rest,
     // BAJA/STOP is a WhatsApp opt-out and there is usually no contact yet.
     optedOut: false,
     // The 24h window is Meta policy about WhatsApp. It does not exist on a
     // website, and a visitor typing right now is by definition available.
     withinWindow: true,
+    repliesTodayForChannel: repliesTodayForChat,
+    maxPerChannelPerDay: chatChannelCap(input.maxPerTenantPerDay),
   };
 }
 
@@ -100,12 +129,14 @@ export async function generateChatReply(
   const maxPerConversation =
     widget.maxRepliesPerConversationPerDay ?? DEFAULT_MAX_REPLIES_PER_CONVERSATION_PER_DAY;
 
-  const [repliesForConversation, repliesForTenant] = await Promise.all([
+  const [repliesForConversation, repliesForTenant, repliesForChat] = await Promise.all([
     countRepliesTodayForChatConversation(ctx, conversation.id, now),
     // Not a chat-only count: the tenant's daily budget is shared with
     // WhatsApp, which is the whole reason `ai_replies` carries a channel
     // instead of the widget getting its own table.
     countRepliesTodayForTenant(ctx, now),
+    // And the chat channel's own half of it — see chatChannelCap.
+    countRepliesTodayForChannel(ctx, "chat", now),
   ]);
 
   const verdict = evaluateGuards(
@@ -115,6 +146,7 @@ export async function generateChatReply(
       conversationAiDisabled: conversation.aiDisabledAt !== null,
       repliesTodayForConversation: repliesForConversation,
       repliesTodayForTenant: repliesForTenant,
+      repliesTodayForChat: repliesForChat,
       maxPerConversationPerDay: maxPerConversation,
       maxPerTenantPerDay: config.maxRepliesPerTenantPerDay,
     }),

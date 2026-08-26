@@ -96,6 +96,7 @@ export default async function ManageBookingPage({
                 rescheduleClose: t("rescheduleClose"),
                 errors: {
                   slotTaken: t("errorSlotTaken"),
+                  sameSlot: t("errorSameSlot"),
                   cutoff: t("cancelCutoff"),
                   rateLimited: tShared("rateLimited"),
                   generic: t("errorGeneric"),

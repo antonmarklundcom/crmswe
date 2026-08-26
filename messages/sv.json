@@ -2339,6 +2339,7 @@
       "rescheduleConfirm": "Bekräfta ändringen",
       "rescheduleClose": "Låt den vara",
       "errorSlotTaken": "Tiden bokades av någon annan medan du fyllde i formuläret. Välj en annan tid.",
+      "errorSameSlot": "Det är redan tiden för din bokning. Välj en annan om du vill flytta den.",
       "errorGeneric": "Vi kunde inte spara bokningen. Försök igen.",
       "with": "Hos {business}",
       "locationInPerson": "På plats",

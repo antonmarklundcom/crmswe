@@ -133,14 +133,22 @@ export function registerAutomationTriggers() {
     });
   });
 
-  bookingEvents.on("booking.cancelled", async ({ tenantId, contactId, bookingId, bookingTypeId, cancelledBy }) => {
-    await fireTrigger({
-      tenantId,
-      triggerType: "booking_cancelled",
-      contactId,
-      data: { bookingId, bookingTypeId, cancelledBy },
-    });
-  });
+  bookingEvents.on(
+    "booking.cancelled",
+    async ({ tenantId, contactId, bookingId, bookingTypeId, cancelledBy, cancelReason }) => {
+      // The cancel half of a reschedule is bookkeeping, not a cancellation.
+      // Firing `booking_cancelled` here would send "sentimos que cancelaste"
+      // to someone who moved their appointment by fifteen minutes — and the
+      // `booking_created` for the new row is already on its way.
+      if (cancelledBy === "system" && cancelReason === "rescheduled") return;
+      await fireTrigger({
+        tenantId,
+        triggerType: "booking_cancelled",
+        contactId,
+        data: { bookingId, bookingTypeId, cancelledBy },
+      });
+    },
+  );
 
   bookingEvents.on("booking.no_show", async ({ tenantId, contactId, bookingId, bookingTypeId }) => {
     await fireTrigger({

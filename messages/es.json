@@ -2339,6 +2339,7 @@
       "rescheduleConfirm": "Confirmar el cambio",
       "rescheduleClose": "Dejarlo como está",
       "errorSlotTaken": "Ese horario se ocupó mientras completabas los datos. Elegí otro, por favor.",
+      "errorSameSlot": "Ese ya es el horario de tu cita. Elegí otro si querés cambiarlo.",
       "errorGeneric": "No pudimos guardar la reserva. Probá de nuevo.",
       "with": "Con {business}",
       "locationInPerson": "Presencial",

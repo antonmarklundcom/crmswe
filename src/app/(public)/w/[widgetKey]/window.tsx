@@ -1,6 +1,8 @@
 "use client";
 
+import Script from "next/script";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { TURNSTILE_RESPONSE_FIELD } from "@/lib/turnstile";
 
 // The chat itself, inside the iframe (docs/SPEC-CHAT-WIDGET.md §1.2).
 //
@@ -54,6 +56,8 @@ export function ChatWindow({
   primaryColor,
   greeting,
   askForPhone,
+  parentOrigin,
+  turnstileSiteKey,
   labels,
 }: {
   widgetKey: string;
@@ -62,6 +66,13 @@ export function ChatWindow({
   primaryColor: string | null;
   greeting: string;
   askForPhone: boolean;
+  /** Origin of the page that embedded this iframe, from the document
+   * request's `Referer`. Null when the host page suppressed it. */
+  parentOrigin: string | null;
+  /** Rendered before the first message only, and only when the widget's site
+   * has Turnstile configured — the server requires a token before the first
+   * provider call of a conversation and skips the check otherwise. */
+  turnstileSiteKey: string | null;
   labels: Labels;
 }) {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -82,14 +93,24 @@ export function ChatWindow({
   useEffect(() => {
     // w.js forwards the *host* page's URL and referrer: the iframe cannot see
     // them itself, and they are what attribution is built from.
+    //
+    // Only the page that actually embedded us may say so. `parentOrigin` is
+    // the server's reading of this document's own `Referer`, which is that
+    // page by definition; with no `Referer` we trust nothing but our own
+    // origin. The `source` check is the second half — a same-origin popup or
+    // a nested frame is not our parent either. Without both, any page that
+    // framed us could rewrite the attribution on someone's lead.
+    const expected = parentOrigin ?? window.location.origin;
     function onMessage(event: MessageEvent) {
+      if (event.origin !== expected) return;
+      if (event.source !== window.parent) return;
       if (event.data?.type === "vc-chat:page") {
         setPage({ url: event.data.url, referrer: event.data.referrer });
       }
     }
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);
-  }, []);
+  }, [parentOrigin]);
 
   useEffect(() => {
     scroller.current?.scrollTo({ top: scroller.current.scrollHeight });
@@ -115,10 +136,16 @@ export function ChatWindow({
     return () => clearInterval(timer);
   }, [poll]);
 
-  async function send(event: React.FormEvent) {
+  async function send(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const body = draft.trim();
     if (!body || sending) return;
+
+    // Turnstile's implicit rendering injects its hidden input into the
+    // containing form, so the token comes out with the rest of it.
+    const token = String(
+      new FormData(event.currentTarget).get(TURNSTILE_RESPONSE_FIELD) ?? "",
+    );
 
     setSending(true);
     setError(null);
@@ -134,6 +161,7 @@ export function ChatWindow({
           pageUrl: page.url,
           referrer: page.referrer,
           locale: navigator.language,
+          turnstileToken: token || undefined,
         }),
       });
 
@@ -197,7 +225,12 @@ export function ChatWindow({
           type="button"
           aria-label={labels.close}
           className="cursor-pointer text-lg leading-none"
-          onClick={() => window.parent.postMessage({ type: "vc-chat:close" }, "*")}
+          onClick={() =>
+            window.parent.postMessage(
+              { type: "vc-chat:close" },
+              parentOrigin ?? window.location.origin,
+            )
+          }
         >
           ×
         </button>
@@ -260,21 +293,37 @@ export function ChatWindow({
         {error ? <p className="self-start text-xs text-red-600">{error}</p> : null}
       </div>
 
-      <form onSubmit={send} className="flex gap-2 border-t p-3">
-        <input
-          value={draft}
-          onChange={(event) => setDraft(event.target.value)}
-          placeholder={labels.placeholder}
-          className="flex-1 rounded-md border px-3 py-2"
-        />
-        <button
-          type="submit"
-          disabled={sending}
-          className="rounded-md px-3 py-2 text-white disabled:opacity-50"
-          style={{ backgroundColor: accent }}
-        >
-          {labels.send}
-        </button>
+      <form onSubmit={send} className="flex flex-col gap-2 border-t p-3">
+        {/* Only before the first message: the server asks for a token once
+            per conversation, and a visitor mid-chat has already paid it. */}
+        {turnstileSiteKey && messages.length === 0 ? (
+          <>
+            <div className="cf-turnstile" data-sitekey={turnstileSiteKey} />
+            <Script
+              src="https://challenges.cloudflare.com/turnstile/v0/api.js"
+              async
+              defer
+              strategy="afterInteractive"
+            />
+          </>
+        ) : null}
+
+        <div className="flex gap-2">
+          <input
+            value={draft}
+            onChange={(event) => setDraft(event.target.value)}
+            placeholder={labels.placeholder}
+            className="flex-1 rounded-md border px-3 py-2"
+          />
+          <button
+            type="submit"
+            disabled={sending}
+            className="rounded-md px-3 py-2 text-white disabled:opacity-50"
+            style={{ backgroundColor: accent }}
+          >
+            {labels.send}
+          </button>
+        </div>
       </form>
     </div>
   );

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { clientIp, clientIpOrNull } from "@/lib/http/client-ip";
 import { pollMessages } from "@/modules/chatwidget/public";
 
 // New agent/AI messages since a timestamp (docs/SPEC-CHAT-WIDGET.md §3).
@@ -20,6 +21,8 @@ export async function GET(
 
   const outcome = await pollMessages(widgetKey, visitorId, url.searchParams.get("since"), {
     origin: request.headers.get("origin"),
+    ipAddress: clientIpOrNull(request.headers),
+    ipKey: clientIp(request.headers),
   });
 
   if (!outcome.ok) {

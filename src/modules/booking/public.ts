@@ -249,6 +249,10 @@ function publicErrorFor(error: unknown): { status: 404 | 403 | 409 | 422; error:
         return { status: 404, error: "not_found" };
       case "alreadyCancelled":
         return { status: 409, error: "already_cancelled" };
+      case "sameSlot":
+        // Not a failure the visitor caused, and not one worth a scary
+        // message: they picked the time they already have.
+        return { status: 422, error: "same_slot" };
     }
   }
   return { status: 422, error: "invalid_body" };

@@ -143,6 +143,46 @@ export async function countRepliesTodayForTenant(
   return rows.length;
 }
 
+/**
+ * The same count, narrowed to one surface.
+ *
+ * The tenant's daily budget stays one shared number — that is the whole
+ * reason `ai_replies` carries a channel instead of the widget getting its
+ * own table (docs/SPEC-CHAT-WIDGET.md §1.3). This is a *sub*-cap on top of
+ * it: the public, unauthenticated channel must not be able to eat the
+ * allowance WhatsApp needs to answer customers who are already talking to
+ * the business.
+ */
+export async function countRepliesTodayForChannel(
+  ctx: TenantContext,
+  channel: "whatsapp" | "chat",
+  now: Date = new Date(),
+): Promise<number> {
+  const rows = await tenantDb(ctx).select(
+    aiReplies,
+    and(eq(aiReplies.channel, channel), gte(aiReplies.createdAt, startOfDay(now))),
+  );
+  return rows.length;
+}
+
+/**
+ * Whether a provider call has *ever* been made for this website conversation.
+ *
+ * Not a daily count: it decides whether the visitor still owes a Turnstile
+ * verification (§1.2). Every provider call writes a row before the request
+ * goes out, so "no rows" means no call has been made — including one a guard
+ * refused, which correctly leaves the challenge still owed.
+ */
+export async function hasRepliesForChatConversation(
+  ctx: TenantContext,
+  chatConversationId: string,
+): Promise<boolean> {
+  const rows = await tenantDb(ctx)
+    .select(aiReplies, eq(aiReplies.chatConversationId, chatConversationId))
+    .limit(1);
+  return rows.length > 0;
+}
+
 export type TokenUsage = { promptTokens: number; completionTokens: number; replies: number };
 
 /** Monthly token total for the settings meter (§10 1O "expose a monthly total"). */

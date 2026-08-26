@@ -49,7 +49,9 @@ export async function rescheduleBookingAction(
             ? "cutoff"
             : outcome.status === 429
               ? "rateLimited"
-              : "generic",
+              : outcome.error === "same_slot"
+                ? "sameSlot"
+                : "generic",
     };
   }
 

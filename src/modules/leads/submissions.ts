@@ -5,6 +5,7 @@ import type { TenantContext } from "@/modules/tenancy/context";
 import { tenantDb } from "@/modules/tenancy/db";
 import {
   createContact,
+  getContact,
   getContactByPhone,
   addTagToContact,
 } from "@/modules/crm/contacts";
@@ -43,6 +44,18 @@ export type RecordLeadInput = {
   ipAddress?: string;
   userAgent?: string;
   idempotencyKey?: string;
+  /**
+   * Hold back the *outcome* half — the deal, the timeline entry and the
+   * `lead.received` emit — for the caller to release once the thing the lead
+   * is about actually exists.
+   *
+   * The booking path needs this: a visitor who loses the race for a slot
+   * keeps their contact row (deliberately — they tried to book, and the
+   * owner wants to know) but must not end up with a deal in the pipeline and
+   * a welcome automation for an appointment they do not have. The caller
+   * releases it with `finalizeLeadSubmission` after the booking commits.
+   */
+  deferOutcome?: boolean;
   /** Raw submitted fields, kept verbatim for the timeline. */
   payload?: Record<string, unknown>;
   /** Per-site/form routing defaults, resolved by the caller (never by the client). */
@@ -116,7 +129,7 @@ export async function recordLeadSubmission(
   }
 
   let dealId: string | null = null;
-  if (defaults.pipelineId && defaults.stageId) {
+  if (!input.deferOutcome && defaults.pipelineId && defaults.stageId) {
     const deal = await createDeal(ctx, {
       contactId: contact.id,
       pipelineId: defaults.pipelineId,
@@ -147,6 +160,12 @@ export async function recordLeadSubmission(
       notes: input.message,
     });
 
+  if (input.deferOutcome) {
+    // The row and the contact exist; the deal, the timeline entry and the
+    // event wait for `finalizeLeadSubmission`.
+    return { contactId: contact.id, dealId: null, submissionId, duplicate: false };
+  }
+
   await createActivity(ctx, {
     contactId: contact.id,
     dealId: dealId ?? undefined,
@@ -172,4 +191,74 @@ export async function recordLeadSubmission(
   });
 
   return { contactId: contact.id, dealId, submissionId, duplicate: false };
+}
+
+/**
+ * Releases what `deferOutcome` held back: opens the deal, puts the
+ * submission on the timeline, and emits `lead.received` — once, and only
+ * once, whatever the caller does.
+ *
+ * Idempotent by the submission's own `deal_id`, so a retry cannot open a
+ * second deal or re-fire a welcome flow. A submission that never reaches
+ * here stays exactly what it is: a record that someone tried.
+ */
+export async function finalizeLeadSubmission(
+  ctx: TenantContext,
+  submissionId: string,
+  defaults: NonNullable<RecordLeadInput["defaults"]> = {},
+): Promise<string | null> {
+  const [row] = await tenantDb(ctx).select(
+    leadSubmissions,
+    eq(leadSubmissions.id, submissionId),
+  );
+  if (!row) return null;
+  if (row.dealId) return row.dealId;
+
+  const contact = await getContact(ctx, row.contactId);
+  if (!contact) return null;
+
+  let dealId: string | null = null;
+  if (defaults.pipelineId && defaults.stageId) {
+    const deal = await createDeal(ctx, {
+      contactId: row.contactId,
+      pipelineId: defaults.pipelineId,
+      stageId: defaults.stageId,
+      title: defaults.dealTitle || `Lead — ${contact.name}`,
+      assignedUserId: defaults.ownerUserId ?? undefined,
+    });
+    dealId = deal?.id ?? null;
+  }
+
+  if (dealId) {
+    await tenantDb(ctx)
+      .update(leadSubmissions)
+      .set({ dealId })
+      .where(eq(leadSubmissions.id, submissionId));
+  }
+
+  await createActivity(ctx, {
+    contactId: row.contactId,
+    dealId: dealId ?? undefined,
+    type: "form_submission",
+    payload: {
+      siteId: row.siteId,
+      formId: row.formId,
+      bookingTypeId: row.bookingTypeId,
+      message: row.notes,
+      utm: row.utm ?? {},
+      pageUrl: row.pageUrl,
+      data: row.payload ?? {},
+    },
+  });
+
+  await leadEvents.emit("lead.received", {
+    tenantId: ctx.tenantId,
+    contactId: row.contactId,
+    dealId,
+    submissionId,
+    siteId: row.siteId ?? null,
+    formId: row.formId ?? null,
+  });
+
+  return dealId;
 }

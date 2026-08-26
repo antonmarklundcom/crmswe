@@ -1773,19 +1773,22 @@ agenda twice. This is the public page that closes the loop. Full spec:
   shape `calendar/grid.ts` and `sites/alerts.ts` already established. Buffers,
   increment, min-notice, advance horizon, business-hours intersection,
   blackouts, busy time, round-robin.
-- **Double-booking gets two guards**, because one is not enough: a
-  transactional overlap check with `SELECT … FOR UPDATE`, and a unique index
-  on `active_slot` (`"<resourceId>:<epochSeconds>"`, NULL once cancelled) as
-  the backstop against a double-click. The transaction catches partial
-  overlap; the index catches the identical retry.
+- **Double-booking gets three guards**, because two were not enough: a row
+  lock on the resource so every reserve for it serialises, a transactional
+  overlap check with `SELECT … FOR UPDATE`, and a unique index on
+  `active_slot` (`"<resourceId>:<epochSeconds>"`, NULL once cancelled) as the
+  backstop against a double-click. The lock is what makes the overlap check
+  atomic; the index catches the identical retry.
 - Public surface in §5.1's style, **no CORS anywhere**:
   `/b/[tenantSlug]/[typeSlug]`, a same-origin slots endpoint, and
   `/b/g/[token]` where the token is the secret, exactly as `/q/[token]`.
   `409` joins the vocabulary — "someone beat you to it" is a real outcome a
   visitor must see.
-- Reschedule is **cancel + create linked by `rescheduled_from_id`**, so the
-  audit trail is a chain rather than a mutated row. A visitor's cancel is
-  bounded by a hard cutoff (default 120 minutes); staff never are.
+- Reschedule is **create + cancel linked by `rescheduled_from_id`**, in that
+  order, so the audit trail is a chain rather than a mutated row and a move
+  that cannot be satisfied leaves the visitor with the booking they had. A
+  visitor's cancel is bounded by a hard cutoff (default 120 minutes); staff
+  never are.
 - Hooks and nothing more: three automation triggers, a `booking.reminder`
   job over the existing `whatsapp/send.ts`, and `recordLeadSubmission()` for
   the contact. The automation engine does not change.
@@ -1837,14 +1840,50 @@ keeping):
   1R #6. Custom questions post as index-aligned parallel arrays, which is why
   "required" is a select and not a checkbox: an unchecked box posts nothing
   and would silently shift every later row's answer onto the wrong question.
-- **Reschedule now checks the offer before it cancels.** `publicReschedule`
-  existed and was tested from the start but nothing called it; wiring it to
-  `/b/g/[token]` made cancel-first reachable by strangers, and cancel-first
-  on its own means a visitor whose chosen time went while their page was open
-  loses the booking they had and gets nothing. The new start is verified
-  against `availableSlots` first — skipped only when it overlaps the booking
-  being moved, where the booking blocks itself. The manage page redirects to
-  the new token, because a reschedule is a new row.
+- **Reschedule reserves before it cancels.** `publicReschedule` existed and
+  was tested from the start but nothing called it; wiring it to `/b/g/[token]`
+  made cancel-first reachable by strangers. A pre-check against
+  `availableSlots` was the first fix and was not enough — the check can go
+  stale in the race, and it was skipped entirely when the new start overlapped
+  the booking being moved, so the residual failure cancelled the visitor's
+  appointment and created nothing. The order is now inverted: the new row is
+  reserved first, with the original threaded through `busyFor`, the load count
+  and the transaction's clash check as an exclusion so it cannot block its own
+  replacement, and the cancel runs only once that commits. The cost is a brief
+  double-hold on the agenda, accepted because a duplicate for a few
+  milliseconds is recoverable and a lost appointment is not. An identical-start
+  reschedule is refused up front (`sameSlot`) rather than retiring a booking
+  for its own duplicate. The manage page redirects to the new token, because a
+  reschedule is a new row.
+- **A reschedule is not a new lead, and it was being recorded as one.** Every
+  reserve called `recordLeadSubmission`, so moving an appointment opened a
+  second deal, wrote a second `lead_submissions` row and re-fired the
+  `lead_received` welcome flow at a customer of a month's standing — while
+  the cancel half fired `booking_cancelled` ("sentimos que cancelaste") for
+  what was only a change of time. Reserve now takes an optional identity
+  (contact, deal, submission) and skips lead recording entirely when it has
+  one; the reschedule carries the original's utm, page URL, referrer, answers
+  and message across. The cancel half emits `cancelledBy: "system"` with
+  `cancelReason: "rescheduled"`, and `automations/triggers.ts` filters exactly
+  that pair — which is why `booking.cancelled` now carries the reason.
+- **The deal moved to after the booking commits.** A visitor who loses the
+  race for a slot keeps their contact row — deliberate, they tried to book and
+  the owner wants to know — but was also getting a deal in the pipeline and a
+  `lead_received` welcome flow for an appointment that does not exist. The
+  contact and the submission are still written first; the deal, the timeline
+  entry and the emit are held back by `recordLeadSubmission`'s `deferOutcome`
+  and released by `finalizeLeadSubmission` once the row is in. The submission
+  stays on the losing path: a record that someone tried is worth keeping.
+- **The `FOR UPDATE` over `bookings` did not serialise what it looked like it
+  serialised.** It matches only committed rows, so on a day with nothing in
+  range InnoDB takes gap locks — which are compatible — and two
+  partially-overlapping reserves both read an empty set, both pass the clash
+  check, and deadlock on the inserts. `ER_LOCK_DEADLOCK` came out of the
+  service as a 500 where the visitor was promised a 409. The transaction now
+  locks the `booking_resources` row first: a real record lock on a row that
+  always exists, so every reserve for one resource serialises.
+  `ER_LOCK_DEADLOCK` and `ER_LOCK_WAIT_TIMEOUT` join `ER_DUP_ENTRY` as
+  "someone got there first" for whatever the lock does not cover.
 - **The visitor's slot picker is one component**, shared by the booking page
   and the manage page's reschedule: moving a booking asks the same question
   of the same endpoint as making one, and a second, subtly different picker
@@ -1877,13 +1916,20 @@ keeping):
   one linked resource, and `pickResource` with one candidate returns it.
 
 **Verified**: `slots.test.ts` — 21 pure cases, no database and no clock.
-`bookings.integration.test.ts` — 18 cases against MySQL: the whole
-transaction, concurrent identical reserves where exactly one wins, cancel
-freeing the slot and clearing the agenda, the reschedule chain, a refused
-reschedule leaving the original booking untouched, the visitor's own manage
-link moving a booking, the date arithmetic the blackout form posts (a whole
-day closed, an afternoon leaving the morning alone), and cross-tenant
-isolation on every service and both public routes.
+`bookings.integration.test.ts` — 24 cases against MySQL: the whole
+transaction; two *genuinely* concurrent reserves over overlapping starts
+where exactly one wins and the loser gets `slotTaken` rather than a raw MySQL
+error (the earlier "concurrent" case was sequential — the first reserve had
+committed before the second began — and is kept as the double-click case it
+actually is); cancel freeing the slot and clearing the agenda; the reschedule
+chain; a reschedule leaving the original untouched both when the new time was
+never on offer and when it loses the race for it; a reschedule opening no
+second deal, writing no second submission and firing neither `lead_received`
+nor `booking_cancelled`; a reserve that loses the slot leaving a contact but
+no deal; the reminder following the new row while the old row's handler still
+skips; the visitor's own manage link moving a booking; the date arithmetic
+the blackout form posts (a whole day closed, an afternoon leaving the morning
+alone); and cross-tenant isolation on every service and both public routes.
 
 **Not done, deliberately**: no public API-key lane (§5.1's lanes exist for
 *lead* ingest; a third credential surface before anyone asks is scope we
@@ -1916,14 +1962,16 @@ bubble those sites embed. Full spec: `docs/SPEC-CHAT-WIDGET.md`. Sketch:
   away from any page that cares to ask.
 - **`widgetKey` is a public identifier, not a credential** — the same
   category as a Turnstile *site* key. What defends the endpoint is a
-  per-widget origin allowlist (belt, documented as not an auth boundary),
-  per-IP and per-visitor rate limits, and the spend caps below.
-- **One per-tenant daily budget, shared with WhatsApp.** Independent counters
-  would silently double a tenant's ceiling the day this shipped, which
-  defeats the reason the per-tenant cap exists. `ai_replies` is generalised
-  rather than duplicated: `channel`, `chat_conversation_id`, and
-  `conversation_id`/`contact_id` relaxed to nullable. The cap belongs in one
-  place because the bill does.
+  per-widget allowlist on the *embedding page* (belt, documented as not an
+  auth boundary), per-IP and per-visitor rate limits, a Turnstile challenge
+  before the first AI call of a conversation, and the spend caps below.
+- **One per-tenant daily budget, shared with WhatsApp**, plus a chat
+  sub-cap of half it. Independent counters would silently double a tenant's
+  ceiling the day this shipped, which defeats the reason the per-tenant cap
+  exists. `ai_replies` is generalised rather than duplicated: `channel`,
+  `chat_conversation_id`, and `conversation_id`/`contact_id` relaxed to
+  nullable. The cap belongs in one place because the bill does — and the
+  sub-cap bounds the other thing, which is *which* channel gets to spend it.
 - **Draft-first, restated for a website**: `off` shows a contact form and
   spends nothing, `draft` (the default) captures the message and shows the
   rep a suggested reply, `send` answers live. The tenant mode stays a
@@ -1958,9 +2006,39 @@ site's attribution. Met.
   degrades to a fresh thread per load instead of no chat at all.
 - **`w.js` forwards the host page's URL, referrer and `vc_attr` cookie** by
   `postMessage` and query string — the cookie sits on the *client's* origin
-  and is unreadable from our iframe. It is also why the iframe's `message`
-  listener checks `event.origin`: an arbitrary page must not be able to drive
-  someone's chat.
+  and is unreadable from our iframe.
+- **The allowlist was being checked against the wrong origin, and the
+  `message` listener was not checking one at all.** Both are fixed, and the
+  claim that used to stand here — that the iframe's listener checks
+  `event.origin` — was false: `window.tsx` accepted `vc-chat:page` from any
+  page that framed it, so one could rewrite the attribution on someone's
+  lead. The allowlist was enforced on the chat's own API calls, where
+  `Origin` is either this CRM's own (a same-origin POST from our iframe) or
+  absent entirely (the GET poll) — neither says anything about the page the
+  visitor is on, so a tenant who filled `allowed_origins` in got 403 on every
+  legitimate request and nothing in exchange. Enforcement moved to the iframe
+  document at `/w/[widgetKey]`, whose `Referer` *is* the embedding page; a
+  page outside the list, or an absent `Referer` once a list exists, is a 404.
+  The API paths keep a same-origin assertion instead. The listener now checks
+  `event.origin` against that same server-read origin and that the sender is
+  actually `window.parent`. It stops casual re-embedding; it is still not an
+  auth boundary, and the rate limits, the Turnstile challenge and the spend
+  caps are still what bound the damage.
+- **The Turnstile challenge the spec called for was never built.** It is now,
+  on the ladder §5.2.1 established: the widget's site has no secret, the
+  check is skipped — the state every existing site is in. Where one is
+  configured, the first provider call of a conversation needs a valid token,
+  and "first" is read off `ai_replies`, so a call another guard refused
+  leaves the challenge still owed rather than spending it. A missing or
+  rejected token costs the visitor the AI reply and nothing else: the message
+  is captured and they see the same `pendingHuman` shape a tripped cap gives.
+- **Chat gets half the tenant's daily budget, not all of it.** The shared
+  ceiling stays shared and unchanged; the sub-cap stops the public,
+  unauthenticated surface burning the allowance a customer already mid-thread
+  on WhatsApp needs. Floored, never to zero.
+- **The poll route had no rate limit at all** — the one public chat route
+  without one. 15/min per visitor and IP: generous for the 8-second client
+  poll, bounded for a scripted one.
 - **A tripped cap, a draft, a provider error and a handoff all look identical
   to the visitor**: "a person is coming", one `pendingHuman` flag rather than
   distinct statuses, so no future branch can leak the tenant's billing state
@@ -2014,17 +2092,32 @@ site's attribution. Met.
   now arrives from a browser, and an unchecked one would park a customer's
   conversation on somebody who cannot open this business at all.
 
-**Verified**: `widgets.test.ts` — 11 pure cases (origin matching including
-the lookalike and subdomain edges, the pinned WhatsApp-only guards, both
-caps, the draft ceiling in all four mode pairs). `chat.integration.test.ts` —
-14 cases against MySQL: all three modes; a WhatsApp reply spending the chat's
-tenant budget; the handoff keyword; capture creating a contact and one
-timeline entry even when repeated; the unread counter rising on inbound and
-clearing on read; the origin refusal and the unknown/inactive key both
-spending zero tokens; closing then reopening a thread, with the returning
+**Verified**: `widgets.test.ts` — 13 pure cases (host matching including the
+lookalike and subdomain edges, the pinned WhatsApp-only guards, all three
+caps including chat's half-share and its floor, the draft ceiling in all four
+mode pairs). `chat.integration.test.ts` — 19 cases against MySQL: all three
+modes; a WhatsApp reply spending the chat's tenant budget; the chat sub-cap
+biting while the tenant still has budget WhatsApp can use; the Turnstile gate,
+including that an absent and a rejected token both capture the message,
+spend nothing and leave the challenge owed, and that a passed one is asked
+for once per conversation rather than once per message; the poll limiter; a
+configured allowlist serving its own legitimate traffic — a POST carrying our
+origin, a poll carrying none, a capture — which is the case that was never
+tested and was broken outright; the allowlist refusing a wrong `Referer` on
+the iframe document; a cross-origin API call refused; the handoff keyword;
+capture creating a contact and one timeline entry even when repeated; the
+unread counter rising on inbound and clearing on read; the unknown/inactive
+key spending zero tokens; closing then reopening a thread, with the returning
 visitor landing back on the same row; assignment accepting an active member
 and refusing another tenant's user without disturbing the current owner;
 cross-tenant isolation; and `deliverReply` refusing a chat row.
+
+Two harness bugs surfaced while writing that coverage and are worth
+recording, because both were making cases pass for the wrong reason:
+`mergeTenantSettings` deep-merges `ai`, so a cap one case lowered stayed
+lowered for every case after it (the handoff case was passing because nothing
+was ever generated), and re-stubbing `fetch` hands back the *same* spy with
+its call history intact.
 
 **Still not in, deliberately**: file uploads · websockets · a unified
 WhatsApp+chat inbox (a real feature that deserves its own decision, not a

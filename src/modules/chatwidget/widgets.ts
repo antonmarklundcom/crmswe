@@ -153,16 +153,26 @@ function clampCap(value: number | null | undefined): number | null {
 }
 
 /**
- * Origin allowlist matching.
+ * Allowlist matching for the **embedding page**.
  *
- * Documented plainly as **not an auth boundary**: `Origin` is a browser
- * courtesy that any non-browser client omits or forges freely. It stops
- * honest misconfiguration and casual reuse of someone else's widget key,
- * which is worth having; what actually bounds the damage is the rate limits
- * and the spend caps.
+ * Enforced at exactly one place: the iframe document request at
+ * `/w/[widgetKey]`, whose `Referer` *is* the host page that embedded us
+ * (docs/SPEC-CHAT-WIDGET.md §1.2). It is deliberately **not** applied to the
+ * chat's own API calls — those are same-origin fetches from our iframe, so
+ * their `Origin` is the CRM's own and carries nothing about the site the
+ * visitor is actually on. Checking it there did not bound anything; it only
+ * 403'd every tenant who filled the field in.
  *
- * An empty list means "any origin", which is what a tenant who hasn't
+ * Documented plainly as **not an auth boundary**: `Referer` is a browser
+ * courtesy that any non-browser client omits or forges freely, and a
+ * referrer policy on the host page can suppress it. It stops casual
+ * re-embedding of a key that is public anyway; what actually bounds the
+ * damage is the rate limits, the Turnstile challenge and the spend caps.
+ *
+ * An empty list means "any page", which is what a tenant who hasn't
  * configured one has — and the UI says so rather than pretending otherwise.
+ * A non-empty list with no `Referer` at all is a refusal: once a tenant has
+ * named their sites, an unattributable embed is not one of them.
  */
 export function originAllowed(allowed: string[], origin: string | null): boolean {
   if (allowed.length === 0) return true;

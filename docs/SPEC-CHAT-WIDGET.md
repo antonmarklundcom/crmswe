@@ -68,11 +68,32 @@ back the entire lock.
 **`widgetKey` is a public identifier, not a credential** — the same category as
 a Turnstile *site* key (§5.2.1), which already renders into page source by
 design. It is enumerable, so nothing is authorised by holding it. What defends
-the endpoint is: an **origin/referer allowlist** per widget (belt, not braces —
-it stops honest misconfiguration and casual reuse, and is documented as not
-being an auth boundary), per-IP and per-visitor rate limits, a required
-Turnstile challenge before the *first* AI call on a conversation, and the spend
-caps in §1.3 which bound the worst case in money rather than in politeness.
+the endpoint is: a **referer allowlist on the embedding page** (belt, not
+braces — it stops casual re-embedding, and is documented as not being an auth
+boundary), per-IP and per-visitor rate limits, a required Turnstile challenge
+before the *first* AI call on a conversation, and the spend caps in §1.3 which
+bound the worst case in money rather than in politeness.
+
+**Where the allowlist is enforced, and where it is not.** The only request
+that knows which page is embedding the widget is **the iframe document** —
+`GET /w/[widgetKey]`, whose `Referer` *is* the host page. That is where the
+tenant's `allowed_origins` is checked, and a page outside the list gets a
+**404**: a widget that may not be embedded here does not exist here. An
+absent `Referer` once a list exists is the same refusal — a tenant who has
+named their sites did not name an unattributable one.
+
+It is deliberately **not** checked on the chat's own API calls. Those are
+same-origin fetches from our iframe: a POST carries this CRM's `Origin` and
+the GET poll carries none at all, so neither says anything about the site the
+visitor is on. Checking there bounds nothing and 403s every tenant who fills
+the field in. Those routes assert **same-origin** instead — absent `Origin`
+or our own passes, anything else is 403 — which is a different and smaller
+claim, stated as such.
+
+The same reasoning applies inside the iframe: its `message` listener accepts
+`vc-chat:page` only from `window.parent`, and only from the origin the server
+read off this document's own `Referer`. Without both checks any page that
+framed the widget could rewrite the attribution on someone else's lead.
 
 ### 1.3 Spend control: **one per-tenant daily budget shared with WhatsApp**
 
@@ -104,6 +125,18 @@ Per-conversation cap applies unchanged (its own default: **12** provider calls
 per chat conversation per day — a website chat is chattier than a WhatsApp
 thread, but 12 still ends a loop). Both caps keep hard ceilings the settings
 form cannot exceed, per 1O.
+
+**Plus one sub-cap the shared ceiling cannot express: chat may consume at most
+half the tenant's daily budget.** The shared ceiling bounds the *bill*; this
+bounds *which channel spends it*. Chat is the public, unauthenticated surface
+— reachable by anyone who can load the tenant's website — so left alone it can
+burn the whole allowance before a customer already mid-thread on WhatsApp gets
+an answer. `countRepliesTodayForChannel()` is the channel-filtered sibling of
+the shared counter, and `evaluateGuards` gained an optional
+`maxPerChannelPerDay` (absent for WhatsApp, which has no sub-cap) checked
+*after* the shared ceiling, because the shared ceiling is the one about money.
+Floored, never to zero: a tenant whose entire budget is one call can still
+answer one visitor.
 
 ### 1.4 Draft-mode-first, honestly restated
 
@@ -193,15 +226,26 @@ All same-origin, all under our own domain; no CORS headers introduced.
 | Surface | Purpose | Guard |
 |---|---|---|
 | `GET /w.js` | The embed snippet. Static, cacheable, no per-tenant content. | CDN-cacheable |
-| `GET /w/[widgetKey]` | The iframe document: branded chat UI, tenant locale. 404 on unknown/inactive. Sets the visitor cookie. | 60/min per IP |
-| `POST /api/v1/chat/[widgetKey]/messages` | Post a visitor message, get the reply (or the "un asesor te responde" acknowledgement in draft mode). | 20/min per IP, 10/min per visitor, plus the AI caps |
-| `POST /api/v1/chat/[widgetKey]/capture` | Name + phone → `recordLeadSubmission()`. | 5/min per visitor |
-| `GET /api/v1/chat/[widgetKey]/poll?since=` | New agent/AI messages. Long-poll, 25s. | 1 in flight per visitor |
+| `GET /w/[widgetKey]` | The iframe document: branded chat UI, tenant locale. 404 on unknown/inactive. **The one place the tenant's origin allowlist is enforced**, against this request's `Referer` (§1.2). | referer allowlist |
+| `POST /api/v1/chat/[widgetKey]/messages` | Post a visitor message, get the reply (or the "un asesor te responde" acknowledgement in draft mode). Carries the Turnstile token on the first message of a conversation. | same-origin; 20/min per IP, 10/min per visitor; Turnstile before the first provider call; plus the AI caps |
+| `POST /api/v1/chat/[widgetKey]/capture` | Name + phone → `recordLeadSubmission()`. | same-origin; 5/min per visitor |
+| `GET /api/v1/chat/[widgetKey]/poll?since=` | New agent/AI messages. | same-origin; 15/min per visitor + IP |
 
 **Polling, not websockets**: §2.1 locks a single Node process on Hostinger
 managed hosting with no Redis and no separate worker — a websocket fan-out has
-nowhere to live. A 25-second long-poll is unglamorous and it fits the platform
-we actually deploy on.
+nowhere to live. Polling is unglamorous and it fits the platform we actually
+deploy on. As built it is a plain interval poll every 8 seconds rather than a
+25-second long-poll (see §9), which is why the route carries a per-visitor
+rate limit of its own.
+
+**The Turnstile gate** (§1.2) sits on the messages route, on the same ladder
+§5.2.1 established: the widget's site has no secret configured → skipped
+entirely; configured → the **first provider call of a conversation** needs a
+valid token. "First" is read off `ai_replies`, which gets a row before every
+provider request, so a call some other guard refused leaves the challenge
+still owed rather than spending it. A missing or rejected token is **never an
+error to the visitor**: the message is captured and the response is the same
+`pendingHuman` shape a tripped cap gives.
 
 Errors follow §5.1's vocabulary: `404` unknown widget (all a caller can tell
 from a path segment), `403` inactive widget or non-writable tenant (grace /
@@ -232,6 +276,7 @@ WhatsApp-only guard inputs pinned to constants a chat can't violate:
 | `optedOut` | n/a → `false` (no contact yet, and BAJA is a WhatsApp opt-out) |
 | `withinWindow` | **`true` always** — the 24h window is Meta policy about WhatsApp, and does not exist on a website. Pinned in one place, with the comment saying so, rather than deleted from the shared function. |
 | conversation / tenant daily caps | shared counters per §1.3 |
+| *(chat only)* channel daily cap | `countRepliesTodayForChannel("chat")` against half the tenant budget — §1.3's sub-cap. WhatsApp passes no `maxPerChannelPerDay` and is unaffected. |
 
 The handoff keyword works the same way it does on WhatsApp (`humano` by
 default) and for the same reason 1O gives: a customer asking for a human must
@@ -306,6 +351,16 @@ RAG over tenant documents · proactive/exit-intent triggers · chat in
   answering 404/403 and spending no tokens.
 - A regression assert that no `Access-Control-Allow-Origin` header is emitted
   by any route under `api/v1/`.
+- The allowlist, on both sides of the line it actually draws: a widget with
+  `allowed_origins` configured serving its own legitimate traffic end to end
+  (a POST carrying our origin, a poll carrying none, a capture), and the
+  iframe document refusing a `Referer` outside the list — and an absent one.
+- The Turnstile gate: an absent and a rejected token each capturing the
+  message, spending nothing and leaving the challenge owed; a valid one
+  asked for once per conversation, not once per message.
+- The chat sub-cap biting while the tenant's shared budget still has room
+  that WhatsApp can use.
+- The poll route's per-visitor rate limit.
 
 ---
 
@@ -328,15 +383,29 @@ RAG over tenant documents · proactive/exit-intent triggers · chat in
   accept `evil-example.com` for `example.com`; a bare host now matches only
   itself, and a leading dot (`.example.com`) is the explicit
   "and its subdomains" form. Still documented as not an auth boundary.
+- **The allowlist shipped on the wrong request, and it bricked the feature
+  for anyone who used it.** It was checked in the API paths against
+  `request.headers.get("origin")` — which for a same-origin POST from our own
+  iframe is *this CRM's* origin, and for the same-origin GET poll is nothing
+  at all. So a tenant who filled `allowed_origins` in got 403 on every
+  legitimate request, and the check bounded nothing in exchange. Enforcement
+  moved to the iframe document per §1.2; the API paths assert same-origin
+  instead. No test covered the configured-allowlist happy path, which is how
+  it shipped; there is one now.
+- **The iframe's `message` listener really does check `event.origin` now.**
+  It did not, though this section previously said so: `window.tsx` accepted
+  `vc-chat:page` from any page that framed it, which let one rewrite the
+  attribution on someone else's lead. It now requires both the sender to be
+  `window.parent` and the origin to match the one the server read off this
+  document's `Referer`, and posts `vc-chat:close` back to that origin rather
+  than `"*"`.
 - **The visitor id is minted in the iframe's own `localStorage`**, not by the
   server. It is a conversation handle rather than a credential — it grants
   nothing the public widget key doesn't — and a blocked storage jar degrades
   to a fresh thread per load instead of no chat at all.
 - **`w.js` forwards the host page's URL, referrer and `vc_attr` cookie** by
   `postMessage` and query string. The spec noted the cookie is unreadable
-  from our iframe; this is the mechanism. It is also why the iframe's
-  `message` listener checks `event.origin` — an arbitrary page must not be
-  able to drive someone's chat.
+  from our iframe; this is the mechanism.
 - **A tripped cap, a draft, a provider error and a handoff all look identical
   to the visitor**: "a person is coming". Implemented as one `pendingHuman`
   flag rather than distinct statuses, so no future branch can leak the
@@ -344,12 +413,28 @@ RAG over tenant documents · proactive/exit-intent triggers · chat in
 - **`business_hours_mode` is checked before the driver is called**, not after,
   so an out-of-hours message costs nothing.
 
-**Verified**: `widgets.test.ts` — 11 pure cases (origin matching including
-the lookalike and subdomain edges, the pinned WhatsApp-only guards, both caps,
-the draft ceiling in all four mode pairs). `chat.integration.test.ts` — 11
-cases against MySQL: all three modes; a WhatsApp reply spending the chat's
-tenant budget; the handoff keyword; capture creating a contact and one
-timeline entry even when repeated; the origin refusal and the unknown/inactive
-key both spending zero tokens; cross-tenant isolation; chat drafts absent from
-the WhatsApp inbox; and `deliverReply` refusing a chat row. Lint, typecheck,
-build and the full 620-test suite green.
+- **The poll is an 8-second interval, not a 25-second long-poll.** §3 proposed
+  long-polling; holding a request open for 25 seconds ties up a connection in
+  the single Node process §2.1 locks us to, which is the same constraint that
+  ruled websockets out. A short interval poll costs a request every 8 seconds
+  per *open* widget and holds nothing. It is also why the route needed a rate
+  limit of its own — 15/min per visitor and IP — which it shipped without.
+- **Chat's spend has a sub-cap as well as the shared ceiling** (§1.3): half
+  the tenant's daily budget, floored but never to zero. The ceiling is about
+  the bill and stays one number; the sub-cap is about which channel spends it,
+  and exists because the widget is the surface anyone on the internet can
+  reach.
+
+**Verified**: `widgets.test.ts` — 13 pure cases (host matching including the
+lookalike and subdomain edges, the pinned WhatsApp-only guards, all three caps
+including chat's half-share and its floor, the draft ceiling in all four mode
+pairs). `chat.integration.test.ts` — 19 cases against MySQL: all three modes;
+a WhatsApp reply spending the chat's tenant budget; the chat sub-cap biting
+while the tenant still has budget WhatsApp can use; the Turnstile gate on all
+three of its states; the poll limiter; a configured allowlist serving its own
+legitimate traffic; the iframe document refusing a wrong and an absent
+`Referer`; a cross-origin API call refused; the handoff keyword; capture
+creating a contact and one timeline entry even when repeated; the unknown or
+inactive key spending zero tokens; cross-tenant isolation; chat drafts absent
+from the WhatsApp inbox; and `deliverReply` refusing a chat row. Lint,
+typecheck and the full suite green against MySQL.

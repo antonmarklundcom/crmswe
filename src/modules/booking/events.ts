@@ -15,6 +15,11 @@ export type BookingEventPayload = {
 
 export const bookingEvents = createEventBus<{
   "booking.created": BookingEventPayload;
-  "booking.cancelled": BookingEventPayload & { cancelledBy: "contact" | "staff" | "system" };
+  "booking.cancelled": BookingEventPayload & {
+    cancelledBy: "contact" | "staff" | "system";
+    /** Free text, except for one pair the automation layer reads: `system` +
+     * `"rescheduled"` is a move, and fires no cancellation flow. */
+    cancelReason: string | null;
+  };
   "booking.no_show": BookingEventPayload;
 }>();

@@ -1,6 +1,6 @@
 import { randomBytes } from "node:crypto";
 import { and, eq, gt, lt, inArray } from "drizzle-orm";
-import { bookings, calendarEvents } from "@/db/schema";
+import { bookingResources, bookings, calendarEvents } from "@/db/schema";
 import { newId } from "@/lib/ids";
 import { enqueue } from "@/lib/queue";
 import type { TenantContext } from "@/modules/tenancy/context";
@@ -264,6 +264,18 @@ export async function reserveBooking(
   const token = newToken();
 
   await tenantTransaction(ctx, async (tx) => {
+    // Serialise every reserve for this resource against every other one, by
+    // locking a row that always exists: the resource itself.
+    //
+    // The FOR UPDATE over `bookings` below cannot do that on its own. On a
+    // day with no committed bookings in range it matches nothing, so InnoDB
+    // takes only gap locks — which are *compatible* with each other. Two
+    // partially-overlapping reserves both read an empty set, both pass the
+    // clash check, and then deadlock on the inserts: a 500 where a 409 was
+    // designed. A real record lock on `booking_resources` is what makes the
+    // read-then-write actually atomic per resource.
+    await tx.selectForUpdate(bookingResources, eq(bookingResources.id, resourceId));
+
     // Lock the resource's live bookings for the day, then re-check overlap.
     // The unique index on active_slot is the backstop for the identical-start
     // double-click; this is what catches genuine partial overlap.
@@ -370,9 +382,22 @@ export async function reserveBooking(
   return { booking, contactId: lead.contactId, dealId: lead.dealId };
 }
 
+/**
+ * The three ways MySQL says "someone else got there first" on this path.
+ *
+ * `ER_DUP_ENTRY` is the unique index on `active_slot` firing for an
+ * identical start. The other two are the lock above doing its job under
+ * contention: a loser rolled back by the deadlock detector, or one that
+ * waited out `innodb_lock_wait_timeout`. All three mean the same thing to
+ * the visitor — the slot went — and all three are a 409, never a 500.
+ */
 function isDuplicateSlot(error: unknown): boolean {
   const code = (error as { code?: string })?.code;
-  return code === "ER_DUP_ENTRY";
+  return (
+    code === "ER_DUP_ENTRY" ||
+    code === "ER_LOCK_DEADLOCK" ||
+    code === "ER_LOCK_WAIT_TIMEOUT"
+  );
 }
 
 async function bookingsPerResourceOn(

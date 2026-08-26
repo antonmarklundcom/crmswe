@@ -203,6 +203,43 @@ describe.skipIf(!hasDb)("bookings (MySQL integration)", () => {
     ).rejects.toMatchObject({ code: expect.stringMatching(/slot(Taken|Unavailable)/) });
   });
 
+  it("lets exactly one of two genuinely concurrent overlapping reserves win", async () => {
+    // The sequential case above never exercised the race it is named for: by
+    // the time the second reserve runs, the first is committed and the plain
+    // clash check catches it. This one fires both at once on two connections,
+    // over *overlapping but not identical* starts, so the unique index on
+    // `active_slot` cannot help either. Before the resource row lock the two
+    // transactions took compatible gap locks on an empty day, both passed the
+    // clash check, and the inserts deadlocked — ER_LOCK_DEADLOCK out of the
+    // service as a 500 where the visitor was promised a 409.
+    const type = await makeType({ durationMinutes: 30, slotIncrementMinutes: 15 });
+    const first = at("2026-11-16T11:00:00.000Z"); // a Monday, 08:00 local
+    const second = at("2026-11-16T11:15:00.000Z");
+
+    const settled = await Promise.allSettled([
+      bookingsModule.reserveBooking(ctx, { ...reserveInput(first), bookingTypeId: type.id }, NOW),
+      bookingsModule.reserveBooking(ctx, { ...reserveInput(second), bookingTypeId: type.id }, NOW),
+    ]);
+
+    const won = settled.filter((outcome) => outcome.status === "fulfilled");
+    const lost = settled.filter((outcome) => outcome.status === "rejected");
+    expect(won).toHaveLength(1);
+    expect(lost).toHaveLength(1);
+
+    // The loser's failure must be the designed one, not whatever MySQL said.
+    const reason = (lost[0] as PromiseRejectedResult).reason;
+    expect(reason).toBeInstanceOf(bookingsModule.BookingError);
+    expect(reason).toMatchObject({ code: "slotTaken" });
+
+    // And the winner is really the only booking standing on that resource.
+    const live = (await bookingsModule.listBookings(ctx, {
+      from: at("2026-11-16T00:00:00.000Z"),
+      to: at("2026-11-17T00:00:00.000Z"),
+      status: "confirmed",
+    })).filter((row) => row.resourceId === resourceId);
+    expect(live).toHaveLength(1);
+  });
+
   it("refuses a start time that was never on offer", async () => {
     const type = await makeType();
     // 03:00 local — outside the availability window, and posted by hand.

@@ -4,6 +4,7 @@ import { useActionState, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input, Select } from "@/components/ui/form-fields";
 import {
+  createBlackoutAction,
   createBookingTypeAction,
   createResourceAction,
   saveAvailabilityAction,
@@ -244,5 +245,84 @@ export function TypeResourcesPicker({
         </button>
       ))}
     </div>
+  );
+}
+
+export type BlackoutLabels = {
+  resource: string;
+  wholeTenant: string;
+  startDate: string;
+  endDate: string;
+  startTime: string;
+  endTime: string;
+  timeHelp: string;
+  reason: string;
+  create: string;
+  errors: Record<string, string>;
+};
+
+/**
+ * Closing for a holiday, a vacation or an afternoon. The slot generator has
+ * dropped slots inside a blackout since it shipped; this is what creates one.
+ *
+ * Dates and times, not a `datetime-local`: the closure is in the tenant's
+ * timezone and the action resolves it there, so an admin travelling does not
+ * close a different day than the one they picked.
+ */
+export function NewBlackoutForm({
+  labels,
+  resources,
+}: {
+  labels: BlackoutLabels;
+  resources: Array<{ id: string; name: string }>;
+}) {
+  const [state, action, pending] = useActionState<FormState, FormData>(
+    createBlackoutAction,
+    emptyFormState,
+  );
+
+  return (
+    <form action={action} className="flex flex-wrap items-end gap-3">
+      <label className="flex flex-col gap-1 text-sm">
+        {labels.resource}
+        <Select name="resourceId" defaultValue={state.values.resourceId ?? ""}>
+          {/* Empty is the whole tenant — the column is nullable for exactly
+              this, and a holiday closes everyone. */}
+          <option value="">{labels.wholeTenant}</option>
+          {resources.map((resource) => (
+            <option key={resource.id} value={resource.id}>
+              {resource.name}
+            </option>
+          ))}
+        </Select>
+      </label>
+      <label className="flex flex-col gap-1 text-sm">
+        {labels.startDate}
+        <Input type="date" name="startDate" defaultValue={state.values.startDate} />
+      </label>
+      <label className="flex flex-col gap-1 text-sm">
+        {labels.endDate}
+        <Input type="date" name="endDate" defaultValue={state.values.endDate} />
+      </label>
+      <label className="flex flex-col gap-1 text-sm">
+        {labels.startTime}
+        <Input type="time" name="startTime" defaultValue={state.values.startTime} />
+      </label>
+      <label className="flex flex-col gap-1 text-sm">
+        {labels.endTime}
+        <Input type="time" name="endTime" defaultValue={state.values.endTime} />
+      </label>
+      <label className="flex flex-col gap-1 text-sm">
+        {labels.reason}
+        <Input name="reason" defaultValue={state.values.reason} />
+      </label>
+      <Button type="submit" disabled={pending}>
+        {labels.create}
+      </Button>
+      <p className="w-full text-xs text-muted-foreground">{labels.timeHelp}</p>
+      {state.error ? (
+        <p className="w-full text-sm text-destructive">{labels.errors[state.error]}</p>
+      ) : null}
+    </form>
   );
 }

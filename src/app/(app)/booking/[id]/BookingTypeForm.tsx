@@ -34,7 +34,7 @@ export type BookingTypeValues = {
   minNoticeMinutes: number;
   maxAdvanceDays: number;
   maxPerDay: number | null;
-  assignment: "fixed" | "any" | "round_robin";
+  assignment: "any" | "round_robin";
   locationMode: "in_person" | "phone" | "video" | "whatsapp";
   locationDetail: string;
   createDeal: boolean;
@@ -152,7 +152,6 @@ export function BookingTypeForm({
           <Select name="assignment" defaultValue={values.assignment}>
             <option value="any">{t("assignmentAny")}</option>
             <option value="round_robin">{t("assignmentRoundRobin")}</option>
-            <option value="fixed">{t("assignmentFixed")}</option>
           </Select>
         </Field>
         <Field label={t("locationMode")}>

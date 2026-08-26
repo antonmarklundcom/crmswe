@@ -1,0 +1,12 @@
+-- `booking_types.assignment` had three values and two behaviours: `fixed` and
+-- `any` both fell through to the same branch of pickResource, which returns
+-- the first candidate by sorted id. Implementing `fixed` properly would need a
+-- designated resource of its own — a second place to say something the type
+-- already says by linking exactly one row in `booking_type_resources`, and one
+-- that can contradict it (a fixed resource the type does not draw on, or one
+-- since deactivated). So the value is dropped rather than implemented.
+--
+-- The column is a varchar with a drizzle-level enum, not a MySQL ENUM, so
+-- there is no ALTER here — only the rows that carried the dropped value,
+-- rewritten to the behaviour they already had.
+UPDATE `booking_types` SET `assignment` = 'any' WHERE `assignment` = 'fixed';

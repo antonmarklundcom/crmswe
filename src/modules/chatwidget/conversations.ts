@@ -3,6 +3,7 @@ import { chatConversations, chatMessages } from "@/db/schema";
 import { newId } from "@/lib/ids";
 import type { TenantContext } from "@/modules/tenancy/context";
 import { tenantDb } from "@/modules/tenancy/db";
+import { getActiveTenantUser } from "@/modules/tenancy/users";
 
 // Chat conversation + message persistence (docs/SPEC-CHAT-WIDGET.md §2).
 // The `messages` status/audit vocabulary, reused rather than reinvented.
@@ -208,11 +209,28 @@ export async function attachContact(
     .where(eq(chatConversations.id, id));
 }
 
+export class ChatAssignError extends Error {
+  constructor(readonly code: "userNotFound") {
+    super(`chat_assign_${code}`);
+  }
+}
+
+/**
+ * Who owns the thread. The chosen user is checked for active membership of
+ * *this* tenant before the write — the guard `whatsapp/inbox.ts` already
+ * carries, and it matters here for the same reason: the id arrives from a
+ * form, and an unchecked one would park a conversation on a stranger.
+ */
 export async function assignConversation(
   ctx: TenantContext,
   id: string,
   userId: string | null,
 ): Promise<void> {
+  if (userId) {
+    const user = await getActiveTenantUser(userId, ctx.tenantId);
+    if (!user) throw new ChatAssignError("userNotFound");
+  }
+
   await tenantDb(ctx)
     .update(chatConversations)
     .set({ assignedUserId: userId, updatedAt: new Date() })
@@ -223,5 +241,18 @@ export async function closeConversation(ctx: TenantContext, id: string): Promise
   await tenantDb(ctx)
     .update(chatConversations)
     .set({ status: "closed", updatedAt: new Date() })
+    .where(eq(chatConversations.id, id));
+}
+
+/**
+ * Closing was one-way: nothing reopened a thread, so a conversation closed by
+ * mistake was reachable only from the database. Reopening it also makes the
+ * visitor's own returning thread land here again — `findOpenConversation` is
+ * what the widget resolves to, and it looks for exactly this status.
+ */
+export async function reopenConversation(ctx: TenantContext, id: string): Promise<void> {
+  await tenantDb(ctx)
+    .update(chatConversations)
+    .set({ status: "open", updatedAt: new Date() })
     .where(eq(chatConversations.id, id));
 }

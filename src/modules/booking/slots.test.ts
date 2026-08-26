@@ -282,9 +282,11 @@ describe("generateSlots", () => {
 });
 
 describe("pickResource", () => {
-  it("is deterministic for fixed and any", () => {
+  it("is deterministic for any, and one candidate is how a type says 'always this person'", () => {
     expect(pickResource("any", ["z", "a"], new Map())).toBe("a");
-    expect(pickResource("fixed", ["z", "a"], new Map())).toBe("a");
+    // The dropped `fixed` value's whole job: a type linked to one resource
+    // gets that resource, no second column required.
+    expect(pickResource("any", ["a"], new Map())).toBe("a");
   });
 
   it("gives round robin to the least loaded, breaking ties on id", () => {

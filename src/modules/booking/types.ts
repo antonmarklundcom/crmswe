@@ -85,7 +85,7 @@ export type BookingTypeInput = {
   minNoticeMinutes?: number;
   maxAdvanceDays?: number;
   maxPerDay?: number | null;
-  assignment?: "fixed" | "any" | "round_robin";
+  assignment?: "any" | "round_robin";
   locationMode?: "in_person" | "phone" | "video" | "whatsapp";
   locationDetail?: string | null;
   createDeal?: boolean;

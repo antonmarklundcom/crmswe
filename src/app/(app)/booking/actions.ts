@@ -3,6 +3,8 @@
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { requireTenantAdmin } from "@/modules/tenancy/context";
+import { getTenant } from "@/modules/tenancy/tenants";
+import { addDays, zonedTimeToUtc } from "@/modules/calendar/zoned-time";
 import { slugify } from "@/lib/slug";
 import {
   createBookingType,
@@ -11,7 +13,9 @@ import {
   updateBookingType,
 } from "@/modules/booking/types";
 import {
+  createBlackout,
   createResource,
+  deleteBlackout,
   replaceAvailabilityRules,
   setResourcesForType,
   updateResource,
@@ -188,6 +192,82 @@ export async function setTypeResourcesAction(
 ): Promise<void> {
   const ctx = await requireTenantAdmin();
   await setResourcesForType(ctx, bookingTypeId, resourceIds);
+  revalidatePath("/booking");
+}
+
+const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+const TIME_PATTERN = /^([01]\d|2[0-3]):[0-5]\d$/;
+
+const blackoutSchema = z.object({
+  resourceId: z.string().max(26),
+  startDate: z.string().regex(DATE_PATTERN),
+  endDate: z.string().regex(DATE_PATTERN),
+  // Blank on both is how the form says "the whole of those days" — a holiday
+  // or a vacation, which is the case this exists for. A pair of times narrows
+  // it to an afternoon off without needing a second kind of closure.
+  startTime: z.string().regex(TIME_PATTERN).or(z.literal("")),
+  endTime: z.string().regex(TIME_PATTERN).or(z.literal("")),
+  reason: z.string().max(300),
+});
+
+/**
+ * A closure — a holiday, a vacation, an afternoon off. `slots.ts` has dropped
+ * slots inside these since the engine shipped; this is the form that lets a
+ * tenant create one.
+ *
+ * The dates are wall-clock dates in the *tenant's* timezone, not the
+ * browser's, which is why they are two date fields resolved server-side
+ * rather than a `datetime-local`: an admin in another timezone closing
+ * "Friday" must close the tenant's Friday.
+ */
+export async function createBlackoutAction(
+  _state: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  const ctx = await requireTenantAdmin();
+  const values = {
+    resourceId: String(formData.get("resourceId") ?? ""),
+    startDate: String(formData.get("startDate") ?? ""),
+    endDate: String(formData.get("endDate") ?? ""),
+    startTime: String(formData.get("startTime") ?? ""),
+    endTime: String(formData.get("endTime") ?? ""),
+    reason: String(formData.get("reason") ?? ""),
+  };
+
+  const parsed = blackoutSchema.safeParse(values);
+  if (!parsed.success) return { error: "invalidDate", values };
+  const data = parsed.data;
+
+  const tenant = await getTenant(ctx.tenantId);
+  const timeZone = tenant?.timezone ?? "America/Asuncion";
+
+  const startsAt = zonedTimeToUtc(data.startDate, data.startTime || "00:00", timeZone);
+  // An all-day closure ends at midnight *after* the last day, so the end date
+  // the admin typed is itself closed. Typing 24:00 is not a thing a date
+  // field can express, so the day is rolled instead.
+  const endsAt = data.endTime
+    ? zonedTimeToUtc(data.endDate, data.endTime, timeZone)
+    : zonedTimeToUtc(addDays(data.endDate, 1), "00:00", timeZone);
+
+  try {
+    await createBlackout(ctx, {
+      resourceId: data.resourceId || null,
+      startsAt,
+      endsAt,
+      reason: data.reason || undefined,
+    });
+  } catch (error) {
+    if (error instanceof BookingConfigError) return { error: "invalidRange", values };
+    throw error;
+  }
+
+  revalidatePath("/booking");
+  return emptyFormState;
+}
+
+export async function deleteBlackoutAction(id: string): Promise<void> {
+  const ctx = await requireTenantAdmin();
+  await deleteBlackout(ctx, id);
   revalidatePath("/booking");
 }
 

@@ -319,6 +319,109 @@ describe.skipIf(!hasDb)("chat widget (MySQL integration)", () => {
     expect(await widgetsModule.getChatWidget(elsewhere, widget!.id)).toBeNull();
   });
 
+  it("reopens a closed thread, and the visitor comes back to it", async () => {
+    // Closing was one-way until the list learned to filter: the transcript of
+    // a thread closed by mistake was reachable only from the database, and
+    // `findOpenConversation` would have started the returning visitor a
+    // second, empty one.
+    await setTenantAi("send");
+    const widget = await makeWidget({ mode: "send" });
+    stubProvider();
+
+    const visitorId = newId();
+    const outcome = await publicModule.postVisitorMessage(widget!.widgetKey, {
+      visitorId,
+      body: "Hola",
+    });
+    expect(outcome.ok).toBe(true);
+    if (!outcome.ok) return;
+    const conversationId = outcome.data.conversationId;
+
+    await conversationsModule.closeConversation(ctx, conversationId);
+    expect(
+      (await conversationsModule.listConversations(ctx, { status: "open" })).map((row) => row.id),
+    ).not.toContain(conversationId);
+    expect(
+      (await conversationsModule.listConversations(ctx, { status: "closed" })).map((row) => row.id),
+    ).toContain(conversationId);
+    // No filter at all is the "all" tab, and it must still show it.
+    expect((await conversationsModule.listConversations(ctx)).map((row) => row.id)).toContain(
+      conversationId,
+    );
+
+    await conversationsModule.reopenConversation(ctx, conversationId);
+    expect(
+      (await conversationsModule.listConversations(ctx, { status: "open" })).map((row) => row.id),
+    ).toContain(conversationId);
+
+    const again = await publicModule.postVisitorMessage(widget!.widgetKey, {
+      visitorId,
+      body: "Sigo acá",
+    });
+    expect(again.ok).toBe(true);
+    if (!again.ok) return;
+    expect(again.data.conversationId).toBe(conversationId);
+  });
+
+  it("gives a thread only to an active member of its own business", async () => {
+    await setTenantAi("draft");
+    const widget = await makeWidget({ mode: "draft" });
+    stubProvider();
+
+    const outcome = await publicModule.postVisitorMessage(widget!.widgetKey, {
+      visitorId: newId(),
+      body: "¿Atienden hoy?",
+    });
+    expect(outcome.ok).toBe(true);
+    if (!outcome.ok) return;
+    const conversationId = outcome.data.conversationId;
+
+    const { db } = await import("@/db/client");
+    const schema = await import("@/db/schema");
+    const memberId = newId();
+    const outsiderId = newId();
+    await db.insert(schema.users).values([
+      {
+        id: memberId,
+        tenantId: ctx.tenantId,
+        email: `chat-member-${memberId}@example.com`,
+        name: "Rep Activa",
+        role: "agent",
+      },
+      {
+        id: outsiderId,
+        tenantId: elsewhere.tenantId,
+        email: `chat-outsider-${outsiderId}@example.com`,
+        name: "Otro Tenant",
+        role: "agent",
+      },
+    ]);
+    // Access is the membership, not `users.tenant_id` (PLAN.md §3.1).
+    await db.insert(schema.tenantMemberships).values([
+      { id: newId(), tenantId: ctx.tenantId, userId: memberId, role: "agent" },
+      { id: newId(), tenantId: elsewhere.tenantId, userId: outsiderId, role: "agent" },
+    ]);
+
+    await conversationsModule.assignConversation(ctx, conversationId, memberId);
+    expect((await conversationsModule.getConversation(ctx, conversationId))?.assignedUserId).toBe(
+      memberId,
+    );
+
+    // The id arrives from a form, so an unchecked one would park a customer's
+    // conversation on somebody who cannot open this business at all.
+    await expect(
+      conversationsModule.assignConversation(ctx, conversationId, outsiderId),
+    ).rejects.toThrow("chat_assign_userNotFound");
+    expect((await conversationsModule.getConversation(ctx, conversationId))?.assignedUserId).toBe(
+      memberId,
+    );
+
+    await conversationsModule.assignConversation(ctx, conversationId, null);
+    expect(
+      (await conversationsModule.getConversation(ctx, conversationId))?.assignedUserId,
+    ).toBeNull();
+  });
+
   it("keeps chat drafts out of the WhatsApp inbox", async () => {
     // The table is shared; the two inboxes are not. listPendingDrafts filters
     // on the WhatsApp conversation id, which a chat row does not have.

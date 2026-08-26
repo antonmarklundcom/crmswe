@@ -1850,13 +1850,40 @@ keeping):
   of the same endpoint as making one, and a second, subtly different picker
   is exactly the drift worth not having.
 
+- **Blackouts got the form the engine had been waiting for.** `slots.ts` has
+  dropped slots inside a closure since the reservation engine shipped, and
+  `createBlackout`/`listBlackouts`/`deleteBlackout` were all there — but
+  nothing in `(app)/booking/` could make one, so no tenant could close for a
+  holiday. The section on `/booking` posts **two dates and two optional times,
+  not a `datetime-local`**: the closure is wall-clock in the *tenant's*
+  timezone and the action resolves it with `zonedTimeToUtc`, so an admin
+  travelling closes the business's Friday rather than their own. Blank times
+  mean whole days, and the end is midnight *after* the last day, so the day
+  that was typed is itself closed — a blackout ending at 00:00 of the same
+  day would close nothing. An empty resource is the whole tenant, which is
+  what the nullable column was always for.
+- **`assignment` lost its third value rather than gaining a column.** `fixed`
+  and `any` ran the same code — `pickResource` returns the first candidate by
+  sorted id for anything that is not `round_robin` — so the settings form
+  offered a choice that changed nothing. Implementing it needed a designated
+  resource, and that is a second place to say what the type already says by
+  linking exactly one row in `booking_type_resources`: a `fixed_resource_id`
+  can name a resource the type does not draw on, or one since deactivated,
+  and then two columns disagree about who takes the appointment. So the value
+  is gone from the schema enum, the zod schema, the select and the copy, and
+  migration 0024 rewrites the rows that carried it. No ALTER: the column is a
+  `varchar(15)` with a drizzle-level enum, the same thing already recorded
+  above about `activities.type`. Nothing is lost — "always this person" is
+  one linked resource, and `pickResource` with one candidate returns it.
+
 **Verified**: `slots.test.ts` — 21 pure cases, no database and no clock.
-`bookings.integration.test.ts` — 17 cases against MySQL: the whole
+`bookings.integration.test.ts` — 18 cases against MySQL: the whole
 transaction, concurrent identical reserves where exactly one wins, cancel
 freeing the slot and clearing the agenda, the reschedule chain, a refused
 reschedule leaving the original booking untouched, the visitor's own manage
-link moving a booking, and cross-tenant isolation on every service and both
-public routes.
+link moving a booking, the date arithmetic the blackout form posts (a whole
+day closed, an afternoon leaving the morning alone), and cross-tenant
+isolation on every service and both public routes.
 
 **Not done, deliberately**: no public API-key lane (§5.1's lanes exist for
 *lead* ingest; a third credential surface before anyone asks is scope we
@@ -1948,17 +1975,58 @@ site's attribution. Met.
   open `/inbox/[id]` does for WhatsApp). A rep's own reply does not clear it,
   and the badge shown is the value read before the clear.
 
+- **The widget form reached 12 of ~19 configurable columns; now it reaches
+  all of them.** `business_hours_mode`, `position`, `launcher_label`,
+  `offline_message`, `avatar_url` and `is_active` were written by
+  `createChatWidget` and readable by the public path, but no form posted them
+  — and the routing defaults were the worst of it: `create_deal` was a live
+  toggle with no way to say *which* pipeline, stage, owner or tags the deal
+  gets, so a captured visitor landed wherever the ingest defaults put them.
+  The form is now sectioned the way `BookingTypeForm` is, with copy read from
+  next-intl on the client rather than threaded through the server page one
+  prop at a time, which is the only thing that made a form this size
+  tractable.
+- **Two of those columns had to reach `w.js`, not the iframe.** `position`
+  and `launcher_label` describe the *bubble*, which `w.js` draws before the
+  iframe exists and reads off its own `data-` attributes. Saving them into the
+  row without changing what the tenant pastes would have left two settings
+  that visibly did nothing, so the embed snippet on `/chat` now carries
+  `data-position`, `data-color` and `data-label` from the row. Changing them
+  means re-pasting the snippet, which is stated where the snippet is.
+- **`/chat` listed `status:"open"` only and `closeChatAction` was one-way.**
+  A closed thread left the page and there was no route back to its
+  transcript — a rep who mis-clicked lost the conversation from the UI
+  entirely. The list now has an open/closed/all filter and closed threads
+  offer *reopen*; `reopenConversation` also puts the returning visitor back on
+  the same row, because `findOpenConversation` is what the widget resolves to
+  and a closed thread would have silently started them a second, empty one. A
+  closed thread shows its transcript without a reply box: it is history until
+  someone reopens it.
+- **Assignment was in the service layer with nothing calling it.**
+  `assignConversation` existed from the start and only `replyInChatAction`
+  ever used it. There is now a picker per thread, mirroring the WhatsApp
+  inbox's — submits on change, keyed on the stored value so a revalidation
+  cannot snap an open dropdown shut. Two things followed from surfacing it.
+  The reply path claimed the thread *unconditionally*, which with a visible
+  owner means quietly taking a colleague's conversation every time anyone
+  typed; it now claims only an unclaimed one. And `assignConversation` gained
+  the active-membership check `whatsapp/inbox.ts` already carried — the id
+  now arrives from a browser, and an unchecked one would park a customer's
+  conversation on somebody who cannot open this business at all.
+
 **Verified**: `widgets.test.ts` — 11 pure cases (origin matching including
 the lookalike and subdomain edges, the pinned WhatsApp-only guards, both
 caps, the draft ceiling in all four mode pairs). `chat.integration.test.ts` —
-12 cases against MySQL: all three modes; a WhatsApp reply spending the chat's
+14 cases against MySQL: all three modes; a WhatsApp reply spending the chat's
 tenant budget; the handoff keyword; capture creating a contact and one
 timeline entry even when repeated; the unread counter rising on inbound and
 clearing on read; the origin refusal and the unknown/inactive key both
-spending zero tokens; cross-tenant isolation; and `deliverReply` refusing a
-chat row.
+spending zero tokens; closing then reopening a thread, with the returning
+visitor landing back on the same row; assignment accepting an active member
+and refusing another tenant's user without disturbing the current owner;
+cross-tenant isolation; and `deliverReply` refusing a chat row.
 
-**Not in v1, deliberately**: file uploads · websockets · a unified
+**Still not in, deliberately**: file uploads · websockets · a unified
 WhatsApp+chat inbox (a real feature that deserves its own decision, not a
 side effect of this one) · RAG over tenant documents · proactive/exit-intent
 triggers · chat in `site_ingest_health` · typing indicators.

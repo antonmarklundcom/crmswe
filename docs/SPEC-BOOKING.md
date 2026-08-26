@@ -98,7 +98,10 @@ What can be booked. The public page is one of these.
   `slot_increment_minutes` (default = duration).
 - `min_notice_minutes` (default 120 — nobody wants a booking for 20 minutes
   from now), `max_advance_days` (default 60), `max_per_day?`.
-- `assignment` — `fixed | any | round_robin`.
+- `assignment` — `any | round_robin`. A third value, `fixed`, shipped and was
+  dropped: it ran the same code as `any`, and giving it a designated resource
+  would duplicate — and could contradict — what `booking_type_resources`
+  already says. "Always this person" is one linked resource.
 - `location_mode` — `in_person | phone | video | whatsapp`, plus
   `location_detail` (address or link).
 - Routing defaults, **configured in the CRM and never sent by the caller**,

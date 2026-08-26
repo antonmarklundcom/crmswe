@@ -41,7 +41,7 @@ const settingsSchema = z.object({
   maxAdvanceDays: z.coerce.number().int().min(1).max(730),
   maxPerDay: z.coerce.number().int().min(1).max(500).nullable(),
 
-  assignment: z.enum(["fixed", "any", "round_robin"]),
+  assignment: z.enum(["any", "round_robin"]),
   locationMode: z.enum(["in_person", "phone", "video", "whatsapp"]),
   locationDetail: z.string().max(500),
 

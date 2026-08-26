@@ -54,6 +54,7 @@ export function ChatWindow({
   primaryColor,
   greeting,
   askForPhone,
+  parentOrigin,
   labels,
 }: {
   widgetKey: string;
@@ -62,6 +63,9 @@ export function ChatWindow({
   primaryColor: string | null;
   greeting: string;
   askForPhone: boolean;
+  /** Origin of the page that embedded this iframe, from the document
+   * request's `Referer`. Null when the host page suppressed it. */
+  parentOrigin: string | null;
   labels: Labels;
 }) {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -82,14 +86,24 @@ export function ChatWindow({
   useEffect(() => {
     // w.js forwards the *host* page's URL and referrer: the iframe cannot see
     // them itself, and they are what attribution is built from.
+    //
+    // Only the page that actually embedded us may say so. `parentOrigin` is
+    // the server's reading of this document's own `Referer`, which is that
+    // page by definition; with no `Referer` we trust nothing but our own
+    // origin. The `source` check is the second half — a same-origin popup or
+    // a nested frame is not our parent either. Without both, any page that
+    // framed us could rewrite the attribution on someone's lead.
+    const expected = parentOrigin ?? window.location.origin;
     function onMessage(event: MessageEvent) {
+      if (event.origin !== expected) return;
+      if (event.source !== window.parent) return;
       if (event.data?.type === "vc-chat:page") {
         setPage({ url: event.data.url, referrer: event.data.referrer });
       }
     }
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);
-  }, []);
+  }, [parentOrigin]);
 
   useEffect(() => {
     scroller.current?.scrollTo({ top: scroller.current.scrollHeight });
@@ -197,7 +211,12 @@ export function ChatWindow({
           type="button"
           aria-label={labels.close}
           className="cursor-pointer text-lg leading-none"
-          onClick={() => window.parent.postMessage({ type: "vc-chat:close" }, "*")}
+          onClick={() =>
+            window.parent.postMessage(
+              { type: "vc-chat:close" },
+              parentOrigin ?? window.location.origin,
+            )
+          }
         >
           ×
         </button>

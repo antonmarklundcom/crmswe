@@ -2,6 +2,7 @@ import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/db/client";
 import { chatWidgets } from "@/db/schema";
+import { env } from "@/lib/config/env";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { buildSystemTenantContext, type TenantContext } from "@/modules/tenancy/context";
 import { getTenant } from "@/modules/tenancy/tenants";
@@ -29,7 +30,11 @@ import { originAllowed, type ChatWidget } from "./widgets";
 //
 // **No CORS headers anywhere.** The widget is served from our own origin
 // inside an iframe, so every request below is same-origin — which is what
-// lets this feature exist without reopening §5.1's lock.
+// lets this feature exist without reopening §5.1's lock, and which is why
+// the checks below are a *same-origin assertion* rather than the tenant's
+// origin allowlist. The allowlist is about which page may embed the widget,
+// and the only request that knows the answer is the iframe document itself
+// (`/w/[widgetKey]`, see `embedRefererAllowed`).
 
 export type ResolvedWidget = {
   widget: ChatWidget;
@@ -52,6 +57,36 @@ export async function resolveWidget(widgetKey: string): Promise<ResolvedWidget |
   if (!tenant) return null;
 
   return { widget, ctx, tenant };
+}
+
+/**
+ * The tenant's allowlist, checked where the answer is actually knowable: the
+ * iframe document request, whose `Referer` is the embedding page. Called
+ * from `/w/[widgetKey]/page.tsx`, which 404s on a miss — a widget that may
+ * not be embedded here simply does not exist here.
+ */
+export function embedRefererAllowed(widget: ChatWidget, referer: string | null): boolean {
+  return originAllowed((widget.allowedOrigins as string[] | null) ?? [], referer);
+}
+
+/**
+ * Same-origin assertion for the chat's own API calls.
+ *
+ * Every one of them is a fetch from our iframe to our API: a POST carries
+ * this CRM's own `Origin`, and the GET poll carries none at all. So the only
+ * honest thing to check here is that it did not come from somewhere else —
+ * an absent `Origin` (same-origin GET, or a non-browser client, which the
+ * rate limits and spend caps are what actually bound) or our own is
+ * accepted; a foreign one is refused. This is not the tenant's allowlist and
+ * is not a substitute for it.
+ */
+export function sameOriginRequest(origin: string | null | undefined): boolean {
+  if (!origin) return true;
+  try {
+    return new URL(origin).origin === new URL(env.APP_URL).origin;
+  } catch {
+    return false;
+  }
 }
 
 export type ChatOutcome<T> =
@@ -105,9 +140,7 @@ export async function postVisitorMessage(
   if (!resolved) return { ok: false, status: 404, error: "not_found" };
   const { widget, ctx } = resolved;
 
-  // Not an auth boundary and documented as such (see widgets.ts): it stops
-  // honest misconfiguration and casual reuse of a key that is public anyway.
-  if (!originAllowed((widget.allowedOrigins as string[] | null) ?? [], meta.origin ?? null)) {
+  if (!sameOriginRequest(meta.origin)) {
     return { ok: false, status: 403, error: "origin_not_allowed" };
   }
   // A tenant in grace or locked is read-only at the write path (§10 1C
@@ -217,7 +250,7 @@ export async function postCapture(
   if (!resolved) return { ok: false, status: 404, error: "not_found" };
   const { widget, ctx } = resolved;
 
-  if (!originAllowed((widget.allowedOrigins as string[] | null) ?? [], meta.origin ?? null)) {
+  if (!sameOriginRequest(meta.origin)) {
     return { ok: false, status: 403, error: "origin_not_allowed" };
   }
   if (ctx.accessStatus !== "active") return { ok: false, status: 403, error: "inactive" };
@@ -254,7 +287,7 @@ export async function pollMessages(
   if (!resolved) return { ok: false, status: 404, error: "not_found" };
   const { widget, ctx } = resolved;
 
-  if (!originAllowed((widget.allowedOrigins as string[] | null) ?? [], meta.origin ?? null)) {
+  if (!sameOriginRequest(meta.origin)) {
     return { ok: false, status: 403, error: "origin_not_allowed" };
   }
 

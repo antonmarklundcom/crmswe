@@ -1,4 +1,5 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+import { env } from "@/lib/config/env";
 
 // What the widget promises end to end (docs/SPEC-CHAT-WIDGET.md §8): the
 // three modes behave differently, the caps bite and answer 200 anyway, a
@@ -31,7 +32,7 @@ describe.skipIf(!hasDb)("chat widget (MySQL integration)", () => {
   /** Stands in for the provider's HTTP endpoint — a fresh Response per call,
    * since a body can only be read once. */
   function stubProvider(text = "Claro, te cuento.") {
-    return vi.spyOn(globalThis, "fetch").mockImplementation(
+    const spy = vi.spyOn(globalThis, "fetch").mockImplementation(
       async () =>
         new Response(
           JSON.stringify({
@@ -42,11 +43,19 @@ describe.skipIf(!hasDb)("chat widget (MySQL integration)", () => {
           { status: 200 },
         ),
     );
+    // Re-stubbing an already-stubbed `fetch` hands back the *same* spy, call
+    // history included. A case that stubs again mid-test to watch what
+    // happens next means "from here on", so start its ledger empty.
+    spy.mockClear();
+    return spy;
   }
 
-  async function setTenantAi(mode: "draft" | "send", enabled = true) {
+  /** `mergeTenantSettings` deep-merges `ai`, so a cap one case lowered stays
+   * lowered for every case after it. Every caller therefore states the cap it
+   * means rather than inheriting whoever ran last. */
+  async function setTenantAi(mode: "draft" | "send", enabled = true, cap = 200) {
     const { updateTenantAiSettings } = await import("@/modules/tenancy/settings");
-    await updateTenantAiSettings(ctx, { enabled, mode });
+    await updateTenantAiSettings(ctx, { enabled, mode, maxRepliesPerTenantPerDay: cap });
   }
 
   async function makeWidget(
@@ -213,7 +222,7 @@ describe.skipIf(!hasDb)("chat widget (MySQL integration)", () => {
     expect(outcome.data.pendingHuman).toBe(true);
     expect(fetchSpy).not.toHaveBeenCalled();
 
-    await updateTenantAiSettings(ctx, { enabled: true, mode: "send" });
+    await setTenantAi("send");
   });
 
   it("silences the AI on the handoff keyword and stays silent after", async () => {
@@ -273,7 +282,42 @@ describe.skipIf(!hasDb)("chat widget (MySQL integration)", () => {
     expect(timeline.filter((row) => row.type === "chat")).toHaveLength(1);
   });
 
-  it("refuses an origin outside the allowlist, and spends nothing", async () => {
+  it("serves a configured allowlist its own legitimate traffic", async () => {
+    // The case the allowlist used to break outright: a tenant fills in
+    // `allowed_origins`, and every real request — which comes from OUR iframe
+    // and therefore carries OUR origin, or none at all on the GET poll — was
+    // answered 403. The check now lives on the iframe document (below), so
+    // the whole flow works with a list configured.
+    await setTenantAi("send");
+    const widget = await makeWidget({ mode: "send", allowedOrigins: ["example.com"] });
+    const fetchSpy = stubProvider("Con gusto.");
+    const visitorId = newId();
+
+    const posted = await publicModule.postVisitorMessage(
+      widget!.widgetKey,
+      { visitorId, body: "Hola" },
+      // Same-origin POST from the iframe: the browser sends the CRM's origin.
+      { origin: env.APP_URL },
+    );
+    expect(posted.ok).toBe(true);
+    expect(fetchSpy).toHaveBeenCalled();
+
+    // Same-origin GET: the browser sends no Origin at all.
+    const polled = await publicModule.pollMessages(widget!.widgetKey, visitorId, null, {});
+    expect(polled).toMatchObject({ ok: true });
+    expect(polled.ok && polled.data.messages.length).toBeGreaterThan(0);
+
+    const captured = await publicModule.postCapture(
+      widget!.widgetKey,
+      { visitorId, name: "Ana", phone: `+59598${Math.floor(Math.random() * 1e7)}` },
+      { origin: env.APP_URL },
+    );
+    expect(captured.ok).toBe(true);
+  });
+
+  it("refuses a cross-origin API call, and spends nothing", async () => {
+    // Not the tenant's allowlist — a same-origin assertion. Nothing but our
+    // own iframe has any business calling these routes.
     const widget = await makeWidget({ mode: "send", allowedOrigins: ["example.com"] });
     const fetchSpy = stubProvider();
 
@@ -285,6 +329,19 @@ describe.skipIf(!hasDb)("chat widget (MySQL integration)", () => {
 
     expect(outcome).toMatchObject({ ok: false, status: 403 });
     expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  it("blocks the iframe document when the embedding page is not on the list", async () => {
+    const widget = await makeWidget({ mode: "send", allowedOrigins: ["example.com"] });
+
+    expect(publicModule.embedRefererAllowed(widget!, "https://example.com/precios")).toBe(true);
+    expect(publicModule.embedRefererAllowed(widget!, "https://somewhere-else.test/")).toBe(false);
+    // A referrer the host page suppressed is not an embed the tenant named.
+    expect(publicModule.embedRefererAllowed(widget!, null)).toBe(false);
+
+    const open = await makeWidget({ mode: "send" });
+    expect(publicModule.embedRefererAllowed(open!, null)).toBe(true);
+    expect(publicModule.embedRefererAllowed(open!, "https://anywhere.test/")).toBe(true);
   });
 
   it("answers 404 for an unknown or inactive widget key, spending nothing", async () => {

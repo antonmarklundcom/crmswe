@@ -102,6 +102,41 @@ describe.skipIf(!hasDb)("bookings (MySQL integration)", () => {
     expect(slots[0].startsAt.toISOString()).toBe("2026-09-07T11:00:00.000Z");
   });
 
+  it("closes the whole day the /booking form's date range describes", async () => {
+    // The form posts two dates in the tenant's own time; the action resolves
+    // the end as midnight *after* the last day, so the day an admin typed is
+    // itself closed. That arithmetic is what this pins — a blackout ending at
+    // 00:00 of the same day would close nothing at all.
+    const { zonedTimeToUtc, addDays } = await import("@/modules/calendar/zoned-time");
+    const timeZone = "America/Asuncion";
+    const type = await makeType();
+
+    const blackout = await resourcesModule.createBlackout(ctx, {
+      resourceId: null, // the whole business, the way a holiday works
+      startsAt: zonedTimeToUtc(MONDAY, "00:00", timeZone),
+      endsAt: zonedTimeToUtc(addDays(MONDAY, 1), "00:00", timeZone),
+      reason: "Feriado",
+    });
+
+    expect(await bookingsModule.availableSlots(ctx, type, MONDAY, MONDAY, NOW)).toEqual([]);
+
+    // An afternoon off, not a whole day: the morning survives it.
+    await resourcesModule.deleteBlackout(ctx, blackout!.id);
+    const afternoon = await resourcesModule.createBlackout(ctx, {
+      resourceId,
+      startsAt: zonedTimeToUtc(MONDAY, "10:00", timeZone),
+      endsAt: zonedTimeToUtc(MONDAY, "12:00", timeZone),
+    });
+
+    const remaining = await bookingsModule.availableSlots(ctx, type, MONDAY, MONDAY, NOW);
+    expect(remaining).toHaveLength(4); // 08:00–10:00 in 30-minute steps
+    expect(remaining.at(-1)!.startsAt.toISOString()).toBe("2026-09-07T12:30:00.000Z");
+
+    // Every other case in this file books the same Monday, so the closure
+    // does not outlive the test that made it.
+    await resourcesModule.deleteBlackout(ctx, afternoon!.id);
+  });
+
   it("writes a contact, an agenda entry and a booking in one reservation", async () => {
     const type = await makeType();
     const result = await bookingsModule.reserveBooking(

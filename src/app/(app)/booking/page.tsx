@@ -8,6 +8,7 @@ import { listUsersForTenant } from "@/modules/tenancy/users";
 import { listBookingTypes } from "@/modules/booking/types";
 import {
   listAvailabilityRules,
+  listBlackouts,
   listResources,
   listResourcesForType,
 } from "@/modules/booking/resources";
@@ -17,12 +18,14 @@ import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
 import {
   AvailabilityForm,
+  NewBlackoutForm,
   NewBookingTypeForm,
   NewResourceForm,
   TypeResourcesPicker,
 } from "./BookingForms";
 import {
   cancelBookingByStaffAction,
+  deleteBlackoutAction,
   markNoShowAction,
   toggleBookingTypeAction,
   toggleResourceAction,
@@ -50,6 +53,13 @@ export default async function BookingPage() {
   ]);
 
   const rules = await listAvailabilityRules(ctx);
+  // Only closures that have not already finished: a holiday from two years
+  // ago is history the slot generator no longer consults, and a list that
+  // grows forever is not a list anyone reads.
+  const now = new Date();
+  const blackouts = (await listBlackouts(ctx))
+    .filter((blackout) => blackout.endsAt > now)
+    .sort((a, b) => a.startsAt.getTime() - b.startsAt.getTime());
   const typeResources = await Promise.all(
     types.map(async (type) => [type.id, await listResourcesForType(ctx, type.id)] as const),
   );
@@ -70,6 +80,7 @@ export default async function BookingPage() {
     durationInvalid: t("errors.durationInvalid"),
     invalidTime: t("errors.invalidTime"),
     invalidRange: t("errors.invalidRange"),
+    invalidDate: t("errors.invalidDate"),
   };
 
   return (
@@ -198,6 +209,62 @@ export default async function BookingPage() {
                       errors: errorLabels,
                     }}
                   />
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </section>
+
+      <section className="flex flex-col gap-4">
+        <div>
+          <h2 className="text-sm font-medium">{t("blackoutsTitle")}</h2>
+          <p className="text-sm text-muted-foreground">{t("blackoutsIntro")}</p>
+        </div>
+        <NewBlackoutForm
+          labels={{
+            resource: t("blackoutResource"),
+            wholeTenant: t("blackoutWholeTenant"),
+            startDate: t("blackoutFrom"),
+            endDate: t("blackoutTo"),
+            startTime: t("blackoutFromTime"),
+            endTime: t("blackoutToTime"),
+            timeHelp: t("blackoutTimeHelp"),
+            reason: t("blackoutReason"),
+            create: t("blackoutCreate"),
+            errors: errorLabels,
+          }}
+          resources={resources.map((resource) => ({
+            id: resource.id,
+            name: resource.name,
+          }))}
+        />
+
+        {blackouts.length === 0 ? (
+          <p className="text-sm text-muted-foreground">{t("blackoutsEmpty")}</p>
+        ) : (
+          <ul className="flex flex-col gap-2">
+            {blackouts.map((blackout) => {
+              const who = blackout.resourceId
+                ? (resources.find((resource) => resource.id === blackout.resourceId)?.name ??
+                  t("blackoutWholeTenant"))
+                : t("blackoutWholeTenant");
+
+              return (
+                <li
+                  key={blackout.id}
+                  className="flex flex-wrap items-center justify-between gap-3 rounded-md border p-3 text-sm"
+                >
+                  <span>
+                    {who} · {formatDateTime(blackout.startsAt, locale, tenant?.timezone)} –{" "}
+                    {formatDateTime(blackout.endsAt, locale, tenant?.timezone)}
+                    {blackout.reason ? ` · ${blackout.reason}` : ""}
+                  </span>
+                  <form action={deleteBlackoutAction.bind(null, blackout.id)}>
+                    <button type="submit" className="text-xs underline text-destructive">
+                      {t("blackoutDelete")}
+                    </button>
+                  </form>
                 </li>
               );
             })}

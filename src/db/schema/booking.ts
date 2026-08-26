@@ -87,9 +87,16 @@ export const bookingTypes = mysqlTable(
     maxAdvanceDays: int("max_advance_days").notNull().default(60),
     maxPerDay: int("max_per_day"),
 
+    /**
+     * How the resource is chosen when several are free. `fixed` was a third
+     * value until it was dropped: a type that always wants one person says so
+     * by linking exactly that one resource in `booking_type_resources`, and a
+     * second way to say it (a `fixed_resource_id`) could contradict the first.
+     * Migration 0024 rewrote the rows that carried it.
+     */
     assignment: varchar("assignment", {
       length: 15,
-      enum: ["fixed", "any", "round_robin"],
+      enum: ["any", "round_robin"],
     })
       .notNull()
       .default("any"),

@@ -238,9 +238,12 @@ function localDayOf(instant: Date, timeZone: string): DayKey {
  * Which resource takes a slot. Deterministic on purpose — `round_robin` ties
  * break on the resource id, so the same state always produces the same answer
  * and the choice is directly testable.
+ *
+ * There is no `fixed`: "always this person" is expressed by giving the type
+ * exactly one resource, and `any` then has one candidate to return.
  */
 export function pickResource(
-  assignment: "fixed" | "any" | "round_robin",
+  assignment: "any" | "round_robin",
   resourceIds: string[],
   bookingsPerResource: Map<string, number>,
 ): string | null {

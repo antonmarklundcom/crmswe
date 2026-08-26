@@ -1438,7 +1438,7 @@
       "captureAfter": "Fråga efter N meddelanden",
       "createDeal": "Öppna en affär vid registrering",
       "allowedOrigins": "Tillåtna domäner",
-      "allowedOriginsHelp": "En per rad. Tomt betyder vilken domän som helst. Det är inget lösenord: det stoppar slarv, inte attacker.",
+      "allowedOriginsHelp": "En per rad: sidorna som får visa chatten. På andra sidor laddas den helt enkelt inte. Tomt betyder vilken domän som helst. Det är inget lösenord: det stoppar slarv, inte attacker.",
       "maxPerConversation": "Max antal AI-svar per konversation och dag",
       "capsShared": "Företagets dagliga tak delas med WhatsApp: det är en budget.",
       "save": "Spara",

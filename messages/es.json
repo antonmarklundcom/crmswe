@@ -1438,7 +1438,7 @@
       "captureAfter": "Pedirlo después de N mensajes",
       "createDeal": "Abrir una oportunidad al capturar",
       "allowedOrigins": "Dominios permitidos",
-      "allowedOriginsHelp": "Uno por línea. Vacío significa cualquier dominio. No es una contraseña: sirve para evitar copias por descuido, no ataques.",
+      "allowedOriginsHelp": "Uno por línea: las páginas que pueden mostrar el chat. En otra página el chat no carga. Vacío significa cualquier dominio. No es una contraseña: sirve para evitar copias por descuido, no ataques.",
       "maxPerConversation": "Máximo de respuestas de IA por conversación por día",
       "capsShared": "El tope diario de la empresa se comparte con WhatsApp: es un solo presupuesto.",
       "save": "Guardar",

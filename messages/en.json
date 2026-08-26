@@ -1438,7 +1438,7 @@
       "captureAfter": "Ask after N messages",
       "createDeal": "Open a deal on capture",
       "allowedOrigins": "Allowed domains",
-      "allowedOriginsHelp": "One per line. Empty means any domain. This is not a password: it stops careless copies, not attacks.",
+      "allowedOriginsHelp": "One per line: the pages allowed to show the chat. Anywhere else it simply does not load. Empty means any domain. This is not a password: it stops careless copies, not attacks.",
       "maxPerConversation": "Maximum AI replies per conversation per day",
       "capsShared": "The business's daily ceiling is shared with WhatsApp: it is one budget.",
       "save": "Save",

@@ -62,8 +62,12 @@ only sound if bookings live there too.
 Cancelling sets `bookings.status = 'cancelled'` and **deletes the
 `calendar_events` row** (the agenda should not show cancelled things, and
 `1S`'s delete path already exists). The `bookings` row is the history: who
-cancelled, when, why. Rescheduling is *cancel + create*, linked by
-`rescheduled_from_id`, so the audit trail is a chain rather than a mutated row.
+cancelled, when, why. Rescheduling is *create + cancel* — in that order —
+linked by `rescheduled_from_id`, so the audit trail is a chain rather than a
+mutated row **and** a move that cannot be satisfied leaves the visitor with
+the booking they already had. See §10 for why the order is not the other way
+round, and for what the cancel half emits so no cancellation flow fires on a
+move.
 
 ---
 
@@ -134,12 +138,16 @@ tenant settings already stores `"HH:MM"` for the same reason
 
 **Relationship to `tenants.settings.businessHours`:** business hours are the
 tenant-wide **ceiling**, availability rules are the per-resource *offer*. A
-slot must satisfy both. A resource with no rules at all falls back to business
-hours; a tenant with neither is treated as **closed for booking** — the
-opposite of `isWithinBusinessHours`'s "no hours means always open", and
-deliberately so: an unconfigured automation condition should not stop
-automations, but an unconfigured public booking page must not offer a stranger
-3 a.m. on Sunday.
+slot must satisfy both, and **a resource with no rules offers nothing** — it
+does not fall back to business hours. An earlier draft of this section said it
+did; the code never has, and the code is right. A ceiling is not an offer: a
+tenant who has said when the business is open has not thereby said that every
+rep is bookable at all of it, and falling back would put a stranger in
+somebody's diary on the strength of a setting made for automation conditions.
+A tenant with neither is closed for booking — the opposite of
+`isWithinBusinessHours`'s "no hours means always open", and deliberately so:
+an unconfigured automation condition should not stop automations, but an
+unconfigured public booking page must not offer a stranger 3 a.m. on Sunday.
 
 ### `booking_blackouts`
 Holidays, vacations, one-off closures.
@@ -176,26 +184,37 @@ unified.
 
 ---
 
-## 3. Double-booking: two guards, because one is not enough
+## 3. Double-booking: three guards, because two were not enough
 
 The race is real and cheap to hit: two visitors on the same slot, or one
 visitor double-clicking.
 
-1. **Transactional overlap check.** Reserve inside a transaction that takes
-   `SELECT ... FOR UPDATE` over the resource's `calendar_events` in the day
-   window, re-derives availability, and only then inserts. Same MySQL locking
+1. **A row lock on the resource.** The transaction's first statement is
+   `SELECT ... FOR UPDATE` on the `booking_resources` row, so every reserve
+   for one resource serialises against every other. It exists because guard 2
+   *cannot serialise on its own*: a `FOR UPDATE` over `bookings` matches only
+   committed rows, so on a day with nothing in range InnoDB takes gap locks —
+   which are compatible with each other. Two partially-overlapping reserves
+   both read an empty set, both pass the overlap check, and then deadlock on
+   the inserts, surfacing `ER_LOCK_DEADLOCK` as a 500 where the visitor was
+   promised a 409. A record lock on a row that always exists is what makes
+   the read-then-write actually atomic.
+2. **Transactional overlap check.** Inside the same transaction,
+   `SELECT ... FOR UPDATE` over the resource's live bookings in the day
+   window, re-check overlap, and only then insert. Same MySQL locking
    discipline §2.1 already relies on for the job queue.
-2. **A unique index as the backstop.** `active_slot` holds
+3. **A unique index as the backstop.** `active_slot` holds
    `"<resourceId>:<startsAtEpochSeconds>"` while the booking is live and is set
    to **NULL** on cancel. MySQL's unique indexes permit unlimited NULLs, so
    this enforces "one live booking per resource per exact start" without a
    partial index, and a cancelled slot becomes bookable again with no cleanup.
 
-Guard 2 only catches *identical* starts, which is the common double-submit;
+Guard 3 only catches *identical* starts, which is the common double-submit;
 genuine partial overlap (a 30-minute booking starting inside a 60-minute one)
-is guard 1's job. Both, stated plainly, because relying on the index alone
-would be wrong and relying on the transaction alone leaves the double-click
-window open under a retry.
+is guard 2's job, and guard 1 is what stops guard 2 from being a read of stale
+emptiness. `ER_DUP_ENTRY`, `ER_LOCK_DEADLOCK` and `ER_LOCK_WAIT_TIMEOUT` all
+map to the same thing for the visitor — the slot went — and all three are a
+409, never a 500.
 
 ---
 
@@ -325,10 +344,17 @@ appears there because it *is* a calendar event.
   blackout, busy non-booking calendar event blocking a slot, empty-rules =
   closed, round-robin determinism.
 - `bookings.integration.test.ts` — against MySQL: reserve → contact + event +
-  booking + optional deal + activity in one transaction; concurrent identical
-  reserve where exactly one wins with `409`; cancel frees the slot and deletes
-  the event; reschedule chains; cross-tenant isolation on every service and on
-  both public routes; token guessing gets 404.
+  booking + optional deal + activity in one transaction; a repeated identical
+  reserve refused; **two genuinely concurrent reserves** over overlapping,
+  non-identical starts where exactly one wins and the loser gets a mapped
+  `slotTaken` rather than a raw MySQL error; a reserve that loses the slot
+  leaving a contact but no deal; cancel frees the slot and deletes the event;
+  reschedule chains, opens no second deal or submission, fires neither
+  `lead_received` nor `booking_cancelled`, and leaves the original standing
+  when it cannot be satisfied — whether the new time was never on offer or was
+  lost in the race; the reminder following the moved row while the old row's
+  handler still skips; cross-tenant isolation on every service and on both
+  public routes; token guessing gets 404.
 
 ---
 
@@ -351,7 +377,37 @@ appears there because it *is* a calendar event.
   reason `matchesTriggerConfig` learned `bookingTypeId`: a flow that wants
   only bookings narrows on it, while a flow that wants every inbound stranger
   keeps working unchanged. A tenant who wires both without narrowing will get
-  two runs — stated here rather than discovered later.
+  two runs — stated here rather than discovered later. **A reschedule fires
+  neither**: see below.
+- **A reschedule reserves first and cancels second, and is not a new lead.**
+  §1 originally said cancel + create. Cancel-first loses the visitor's
+  appointment whenever the second half fails — the slot goes in the race, or
+  the new start overlaps the booking being moved and so was never checked —
+  which is the one outcome a reschedule must never produce. The new row is now
+  reserved first, with the original excluded from `busyFor`, the per-resource
+  load count and the transaction's clash check so it cannot block its own
+  replacement; the cancel runs only once that commits. A brief double-hold on
+  the agenda is the cost, and it is accepted.
+  And because a move is not a new lead, the reserve takes the original's
+  identity — contact, deal, `lead_submission_id` — and skips
+  `recordLeadSubmission` entirely, carrying the utm, page URL, referrer,
+  answers and message across. Before this, moving an appointment opened a
+  second deal, wrote a second submission row and re-fired the `lead_received`
+  welcome flow at an existing customer. The cancel half emits
+  `cancelledBy: "system"` with `cancelReason: "rescheduled"` — a pair
+  `automations/triggers.ts` filters — so nobody is sent "sentimos que
+  cancelaste" for changing the time. A reschedule to the start the booking
+  already has is refused up front (`sameSlot`) rather than retiring a booking
+  for its own duplicate.
+- **The deal is opened after the booking commits, not before it.** The contact
+  is still upserted first, deliberately: a visitor who loses the race for a
+  slot should still exist in the CRM as someone who tried. But a *deal* in the
+  pipeline and a `lead_received` welcome flow are promises about an
+  appointment, and on the losing path there is no appointment.
+  `recordLeadSubmission` grew a `deferOutcome` flag that holds back the deal,
+  the timeline entry and the emit; `finalizeLeadSubmission` releases them once
+  the row is in. The submission row stays either way — a record that someone
+  tried is worth keeping.
 - **Reminders are limited by the 24h window, and it matters more than the
   spec implied.** A visitor who booked on the website has usually never
   messaged the business, so there is no open window and the reminder is
@@ -374,5 +430,5 @@ appears there because it *is* a calendar event.
   distinction `lib/http/client-ip` already draws.
 
 **Verified**: `slots.test.ts` — 21 pure cases, no database and no clock.
-`bookings.integration.test.ts` — 15 cases against MySQL covering the whole
-list in §9. Lint, typecheck, build and the full 620-test suite green.
+`bookings.integration.test.ts` — 24 cases against MySQL covering the whole
+list in §9. Lint, typecheck and the full suite green against MySQL.

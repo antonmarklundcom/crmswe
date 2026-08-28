@@ -61,11 +61,11 @@ describe("sendLead", () => {
   afterEach(() => {
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
-    delete process.env.VENDERCRM_API_KEY;
+    delete process.env.CRMSWE_API_KEY;
   });
 
   it("does not call the endpoint at all when no key is configured", async () => {
-    delete process.env.VENDERCRM_API_KEY;
+    delete process.env.CRMSWE_API_KEY;
 
     await expect(sendLead({ phone: "0981123456", idempotency_key: "k".repeat(16) })).resolves.toEqual({
       ok: false,
@@ -75,7 +75,7 @@ describe("sendLead", () => {
   });
 
   it("sends the key in the header and omits empty optional fields", async () => {
-    process.env.VENDERCRM_API_KEY = "site_key";
+    process.env.CRMSWE_API_KEY = "site_key";
     fetchMock.mockResolvedValue(new Response(null, { status: 201 }));
 
     await sendLead({
@@ -100,7 +100,7 @@ describe("sendLead", () => {
   it("never throws when the CRM is unreachable", async () => {
     // A visitor who filled in the form and got an error page is a lost
     // customer; the failure belongs in the log, not on their screen.
-    process.env.VENDERCRM_API_KEY = "site_key";
+    process.env.CRMSWE_API_KEY = "site_key";
     fetchMock.mockRejectedValue(new Error("ECONNREFUSED"));
 
     await expect(
@@ -109,7 +109,7 @@ describe("sendLead", () => {
   });
 
   it("reports a rejected submission without throwing", async () => {
-    process.env.VENDERCRM_API_KEY = "site_key";
+    process.env.CRMSWE_API_KEY = "site_key";
     fetchMock.mockResolvedValue(
       new Response(JSON.stringify({ error: "Invalid API key" }), { status: 401 }),
     );

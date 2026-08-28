@@ -1,7 +1,7 @@
 # Deploy runbook — Hostinger
 
 VenderCRM runs as a single Next.js app on Hostinger's managed Node.js hosting
-(PLAN.md §2.1: one process, no Redis, no separate worker dyno — the job
+(VENDERCRM-PLAN.md §2.1: one process, no Redis, no separate worker dyno — the job
 queue worker starts in-process from `instrumentation.ts`). This doc covers a
 first deploy and every routine redeploy after it.
 
@@ -24,7 +24,7 @@ first deploy and every routine redeploy after it.
      `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`
    - `APP_URL` — the final deployed URL (Hostinger subdomain or custom domain)
    - `STORAGE_DRIVER` — `local` works to launch with no Cloudflare account
-     needed, but treat Hostinger disk as non-durable (PLAN.md §2.1): quote
+     needed, but treat Hostinger disk as non-durable (VENDERCRM-PLAN.md §2.1): quote
      PDFs re-render on demand so those are recoverable, but inbound
      WhatsApp media is downloaded once from Meta's expiring URL and is gone
      for good if the disk is. Switch to `s3` before onboarding any tenant
@@ -48,14 +48,14 @@ first deploy and every routine redeploy after it.
    - `BETTER_AUTH_SECRET` — >=32 chars, generate the same way as the
      encryption key
    - `WHATSAPP_APP_SECRET`, `WHATSAPP_WEBHOOK_VERIFY_TOKEN` — from the Meta
-     developer app (PLAN.md §6.1)
+     developer app (VENDERCRM-PLAN.md §6.1)
    - `NEXT_PUBLIC_SENTRY_DSN`, `SENTRY_DSN`, `SENTRY_ENVIRONMENT=production` —
      optional; leave unset to run without error tracking
    - `SENTRY_ORG`, `SENTRY_PROJECT`, `SENTRY_AUTH_TOKEN` — optional, only
      needed to upload source maps at build time
    - `RESEND_API_KEY`, `RESEND_FROM_EMAIL` — optional; leave unset to run
      with invites/password-reset shown as an on-screen link instead of
-     emailed (PLAN.md §10 1M). Get a key from resend.com, verify the sending
+     emailed (VENDERCRM-PLAN.md §10 1M). Get a key from resend.com, verify the sending
      domain there, then set `RESEND_FROM_EMAIL` to an address on it (e.g.
      `no-reply@tudominio.com`) — an unverified domain's sends are rejected.
 5. **Deploy** once so the app and its build exist, then map the custom
@@ -73,7 +73,7 @@ Run migrations from a **local machine**, not Hostinger SSH — see §3 for why.
    ```
    npx drizzle-kit migrate
    ```
-4. First deploy only — seed the owner's real tenant (PLAN.md §10 1H #1):
+4. First deploy only — seed the owner's real tenant (VENDERCRM-PLAN.md §10 1H #1):
    ```
    TENANT_NAME="..." TENANT_SLUG=... TENANT_ADMIN_EMAIL=... \
    TENANT_ADMIN_PASSWORD=... TENANT_ADMIN_NAME="..." \
@@ -103,7 +103,7 @@ installed Node version under `/opt/alt/`).
 Required before inbound WhatsApp works at all — outbound sending needs only
 the per-tenant token, but nothing arrives in the Inbox until this is set.
 One endpoint serves every tenant; Meta routes by `phone_number_id`
-(PLAN.md §6.3), so this is configured once per Meta app, not per tenant.
+(VENDERCRM-PLAN.md §6.3), so this is configured once per Meta app, not per tenant.
 
 1. Meta developer app → **WhatsApp → Configuration → Webhook → Edit**.
 2. Callback URL: `https://<app-domain>/api/webhooks/whatsapp`
@@ -133,7 +133,7 @@ Header: x-cron-secret: <CRON_SECRET>
 
 Every 1–5 minutes is plenty — it just processes one due job per call as a
 backstop if the in-process loop ever stalls. It also indirectly keeps the
-`webhook_events` pruning chain (PLAN.md §10 1H #3) alive if the worker loop
+`webhook_events` pruning chain (VENDERCRM-PLAN.md §10 1H #3) alive if the worker loop
 itself isn't running for some reason, since a stalled worker means both the
 regular loop and the pruning chain are stuck at the same time.
 

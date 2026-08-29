@@ -778,7 +778,8 @@
         "amountInvalid": "Beloppet anges som ett belopp större än noll.",
         "creditFailed": "Kreditfakturan kunde inte skapas. Kontrollera att fakturan är utfärdad och inte redan krediterad.",
         "unknown": "Vi kunde inte spara. Försök igen."
-      }
+      },
+      "exclVat": "exkl. moms"
     },
     "settings": {
       "title": "Inställningar",

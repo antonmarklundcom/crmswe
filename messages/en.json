@@ -778,7 +778,8 @@
         "amountInvalid": "The amount must be greater than zero.",
         "creditFailed": "The credit note could not be created. Check that the invoice is issued and not already credited.",
         "unknown": "We couldn't save that. Try again."
-      }
+      },
+      "exclVat": "excl. VAT"
     },
     "settings": {
       "title": "Settings",

@@ -173,15 +173,19 @@ export default async function ContactDetailPage({
               : t("timelineMessageOut"),
           detail: entry.body ?? (entry.hasMedia ? t("timelineMedia") : undefined),
         };
+      // Amounts on the timeline are netto, like every other list in the app
+      // (plan.md §5.2 exit criterion). A bare figure next to an invoice
+      // number reads as "what the customer owes", which is the brutto — so
+      // the row says which one it is rather than leaving it to be guessed.
       case "quote":
         return {
           title: t("timelineQuote", { number: entry.number }),
-          detail: `${tq(`statusValues.${entry.status}` as "statusValues.draft")} · ${formatMoney(entry.total, entry.currency, locale)}`,
+          detail: `${tq(`statusValues.${entry.status}` as "statusValues.draft")} · ${formatMoney(entry.total, entry.currency, locale)} ${td("exclVat")}`,
         };
       case "document":
         return {
           title: t("timelineDocument", { number: entry.number }),
-          detail: `${td(`statusValues.${entry.status}` as "statusValues.draft")} · ${formatMoney(entry.total, entry.currency, locale)}`,
+          detail: `${td(`statusValues.${entry.status}` as "statusValues.draft")} · ${formatMoney(entry.total, entry.currency, locale)} ${td("exclVat")}`,
         };
       case "lead":
         return {

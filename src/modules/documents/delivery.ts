@@ -164,7 +164,12 @@ export async function sendDocumentToContact(
       kind: "document_sent",
       documentId: document.id,
       number: document.number,
+      // Both figures, named — same shape as `document_issued`. An activity
+      // payload carrying a bare "total" is read later by code that has no
+      // way to know whether it meant netto or brutto.
       total: document.total,
+      vatTotal: document.vatTotal,
+      gross: grossOf(document),
       currency: document.currency,
       publicUrl,
       viaWhatsapp: messageId !== null,

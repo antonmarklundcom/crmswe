@@ -1063,7 +1063,8 @@
         "amountInvalid": "El importe debe ser mayor que cero.",
         "creditFailed": "No se pudo crear la nota de crédito. Verificá que la factura esté emitida y no acreditada ya.",
         "unknown": "No pudimos guardar. Probá de nuevo."
-      }
+      },
+      "exclVat": "sin IVA"
     },
     "automations": {
       "title": "Automatizaciones",

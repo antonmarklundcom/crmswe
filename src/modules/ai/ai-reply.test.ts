@@ -174,6 +174,15 @@ describe.skipIf(!canRunEndToEnd)("ai_reply end to end", () => {
     ctxA = (await buildSystemTenantContext(tenantA!.id))!;
     ctxB = (await buildSystemTenantContext(tenantB!.id))!;
 
+    // Auto-reply answers WhatsApp, so these tenants run that channel. It is
+    // off by default in this edition (plan.md §5.3.1) and the outbound guard
+    // in modules/whatsapp/send.ts enforces that — which is the point: an
+    // approved AI draft must not reach a customer of a tenant that has
+    // switched WhatsApp off.
+    const { updateTenantWhatsappEnabled } = await import("@/modules/tenancy/settings");
+    await updateTenantWhatsappEnabled(ctxA, true);
+    await updateTenantWhatsappEnabled(ctxB, true);
+
     const accountA = await connectAccountManually(ctxA, {
       wabaId: `waba-ai-a-${newId()}`,
       phoneNumberId: `pn-ai-a-${newId()}`,

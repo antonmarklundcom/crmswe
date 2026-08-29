@@ -158,6 +158,37 @@ describe.skipIf(!hasDb)("the WhatsApp channel switch (MySQL integration)", () =>
     expect(conversations).toHaveLength(1);
   });
 
+  it("refuses to send outbound while the channel is off", async () => {
+    // The half that matters *after* a tenant switches WhatsApp off. Nothing
+    // in the UI can reach the channel any more, but an automation node, a
+    // booking reminder or an AI auto-reply still holds a conversation id
+    // from before, and `sendTemplate` needs no open 24-hour window to use it.
+    await updateTenantWhatsappEnabled(ctx, true);
+    const eventId = await persistRawEvent(inbound("Får jag en offert?"), phoneNumberId);
+    await processWebhookEvent(eventId);
+    const [conversation] = await listConversations(ctx);
+    expect(conversation).toBeDefined();
+
+    const { sendText, sendTemplate } = await import("./send");
+    // On: both work — the window is open, inbound just arrived.
+    await expect(
+      sendText(ctx, { conversationId: conversation.id, body: "Javisst!" }),
+    ).resolves.toBeTruthy();
+
+    await updateTenantWhatsappEnabled(ctx, false);
+
+    await expect(
+      sendText(ctx, { conversationId: conversation.id, body: "Hallå?" }),
+    ).rejects.toThrow("whatsapp_disabled");
+    await expect(
+      sendTemplate(ctx, {
+        conversationId: conversation.id,
+        templateName: "paminnelse",
+        language: "sv",
+      }),
+    ).rejects.toThrow("whatsapp_disabled");
+  });
+
   it("stops ingesting again when it is switched back off", async () => {
     // `mergeTenantSettings` deep-merges, and `false ?? current` would keep a
     // stored `true` — so turning the channel off has to actually turn it off.

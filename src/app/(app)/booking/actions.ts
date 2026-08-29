@@ -22,6 +22,7 @@ import {
   BookingConfigError,
 } from "@/modules/booking/resources";
 import { cancelBooking, markNoShow } from "@/modules/booking/bookings";
+import { DEFAULT_TIMEZONE } from "@/lib/i18n/format";
 
 // useActionState-shaped (PLAN.md §10 1R #6): a missing name or a bad time
 // comes back inline instead of throwing to Next's error page. Every action
@@ -239,7 +240,7 @@ export async function createBlackoutAction(
   const data = parsed.data;
 
   const tenant = await getTenant(ctx.tenantId);
-  const timeZone = tenant?.timezone ?? "America/Asuncion";
+  const timeZone = tenant?.timezone ?? DEFAULT_TIMEZONE;
 
   const startsAt = zonedTimeToUtc(data.startDate, data.startTime || "00:00", timeZone);
   // An all-day closure ends at midnight *after* the last day, so the end date

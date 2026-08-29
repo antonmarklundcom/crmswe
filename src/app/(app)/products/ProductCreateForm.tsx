@@ -10,7 +10,7 @@ import { Input, Textarea } from "@/components/ui/form-fields";
 // async functions.
 const initialState: ProductFormState = { error: null, field: null, values: {} };
 
-export function ProductCreateForm() {
+export function ProductCreateForm({ currency }: { currency: string }) {
   const t = useTranslations("app.products");
   const tc = useTranslations("common");
   const [state, formAction, pending] = useActionState(createProductAction, initialState);
@@ -42,13 +42,13 @@ export function ProductCreateForm() {
         />
       </label>
       <label className="flex flex-col gap-1 text-sm">
-        {t("unitPrice")}
+        {t("unitPrice", { currency })}
         {/* Not type="number": it defaults to step="1", silently blocking a
             decimal like "1.5" with a browser bubble in the browser's own
             language before the Spanish message can run (§1.2). */}
         <Input
           name="unitPrice"
-          inputMode="numeric"
+          inputMode="decimal"
           defaultValue={state.values.unitPrice ?? ""}
         />
         <FieldError field="unitPrice" />

@@ -22,6 +22,7 @@ import {
   ReviewLinkForm,
   AiSettingsForm,
 } from "./SettingsForms";
+import { DEFAULT_TIMEZONE } from "@/lib/i18n/format";
 
 export default async function SettingsPage() {
   const ctx = await requireTenantContext();
@@ -89,7 +90,7 @@ export default async function SettingsPage() {
 
       <section>
         <h2 className="mb-4 text-lg font-semibold">{t("timezoneTitle")}</h2>
-        <TimezoneForm timezone={tenant?.timezone ?? "America/Asuncion"} />
+        <TimezoneForm timezone={tenant?.timezone ?? DEFAULT_TIMEZONE} />
       </section>
 
       <section>

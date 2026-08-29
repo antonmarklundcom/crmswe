@@ -1,4 +1,5 @@
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
+import { formatDateTime } from "@/lib/i18n/format";
 
 // Shared by the superadmin (cross-tenant) and tenant-settings (own tenant)
 // viewers — listAuditLogForTenant had been written and never rendered
@@ -23,6 +24,9 @@ export async function AuditTable({
   showTenant?: boolean;
 }) {
   const t = await getTranslations("audit");
+  // Through the shared formatter, like every other date on screen — this row
+  // used to hardcode a locale of its own.
+  const locale = await getLocale();
 
   if (entries.length === 0) {
     return <p className="text-sm text-muted-foreground">{t("empty")}</p>;
@@ -44,7 +48,7 @@ export async function AuditTable({
           {entries.map((entry) => (
             <tr key={entry.id} className="border-b">
               <td className="py-2 whitespace-nowrap">
-                {entry.createdAt.toLocaleString("es-PY")}
+                {formatDateTime(entry.createdAt, locale)}
               </td>
               <td className="py-2">{entry.action}</td>
               <td className="py-2 font-mono text-xs">

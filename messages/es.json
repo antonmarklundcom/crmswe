@@ -100,7 +100,7 @@
       "subtitle": "Tu operación de hoy: negocios abiertos, mensajes sin responder y presupuestos en curso.",
       "stats": {
         "openDeals": "Negocios abiertos",
-        "openDealsHint": "{value} PYG en juego",
+        "openDealsHint": "{value} en juego",
         "unread": "Mensajes sin leer",
         "unreadHint": "{count, plural, =0 {Sin conversaciones pendientes} one {en # conversación} other {en # conversaciones}}",
         "pendingQuotes": "Presupuestos pendientes",
@@ -363,7 +363,7 @@
       "dealTitle": "Título",
       "contact": "Contacto",
       "stage": "Etapa",
-      "value": "Valor (PYG)",
+      "value": "Valor ({currency})",
       "createDeal": "Crear negocio",
       "switcherLabel": "Elegir pipeline",
       "newPipelineTitle": "Nueva pipeline",
@@ -861,7 +861,7 @@
       "createTitle": "Nuevo producto",
       "name": "Nombre",
       "description": "Descripción",
-      "unitPrice": "Precio unitario (PYG)",
+      "unitPrice": "Precio unitario ({currency})",
       "inactive": "inactivo",
       "activate": "Activar",
       "deactivate": "Desactivar",
@@ -890,7 +890,7 @@
         "errorReasons": {
           "nameMissing": "Sin nombre",
           "unitPriceInvalid": "Precio unitario inválido",
-          "currencyInvalid": "Moneda inválida (3 letras, ej. PYG)",
+          "currencyInvalid": "Moneda inválida (3 letras, ej. SEK)",
           "activeInvalid": "Valor de is_active inválido",
           "duplicateInFile": "Nombre repetido en el archivo",
           "failed": "No se pudo guardar"
@@ -1563,7 +1563,7 @@
       "accessStatus": "Acceso",
       "createTitle": "Nueva suscripción",
       "recordPaymentTitle": "Registrar pago",
-      "amount": "Monto (PYG)",
+      "amount": "Monto ({currency})",
       "method": "Método",
       "methodValues": {
         "transfer": "Transferencia",
@@ -1587,7 +1587,7 @@
       "createTitle": "Nuevo plan",
       "name": "Nombre",
       "durationMonths": "Duración (meses)",
-      "price": "Precio (PYG)",
+      "price": "Precio ({currency})",
       "active": "Activo",
       "errors": {
         "nameRequired": "Poné un nombre para el plan.",

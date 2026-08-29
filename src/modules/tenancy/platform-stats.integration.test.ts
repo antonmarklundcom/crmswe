@@ -43,13 +43,14 @@ describe.skipIf(!hasDb)("platform stats (MySQL integration)", () => {
       role: "admin",
       impersonatorUserId: null,
       accessStatus: "active",
+      currency: "SEK",
     };
 
     const contact = await contacts.createContact(ctx, {
       name: "Cliente de prueba",
       phone: `0984${Math.floor(Math.random() * 900000) + 100000}`,
     });
-    const pipeline = await pipelines.createPipelineWithDefaultStages(ctx, "Ventas");
+    const pipeline = await pipelines.createPipelineWithDefaultStages(ctx, "Försäljning");
     const stageRows = await pipelines.listStagesForPipeline(ctx, pipeline!.id);
     const open = stageRows.find((stage) => !stage.isWon && !stage.isLost)!;
     await deals.createDeal(ctx, {

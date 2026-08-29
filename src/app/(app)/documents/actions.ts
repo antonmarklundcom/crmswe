@@ -13,13 +13,18 @@ import {
   deletePayment,
 } from "@/modules/documents/documents";
 import { sendDocumentToContact } from "@/modules/documents/delivery";
+import { moneyAmountSchema } from "@/lib/money-schema";
 
-const lineSchema = z.object({
-  description: z.string().min(1).max(500),
-  qty: z.coerce.number().int().min(1),
-  unitPrice: z.coerce.number().int().min(0),
-  productId: z.string().optional(),
-});
+// Amounts arrive as the user typed them — "1 495,50" — and become öre here
+// (plan.md §1.2). Built per request because how many decimals an amount may
+// carry is a property of the tenant's currency.
+const lineSchema = (currency: string) =>
+  z.object({
+    description: z.string().min(1).max(500),
+    qty: z.coerce.number().int().min(1),
+    unitPrice: moneyAmountSchema(currency),
+    productId: z.string().optional(),
+  });
 
 function parseLines(formData: FormData) {
   const descriptions = formData.getAll("description").map(String);
@@ -38,13 +43,14 @@ function parseLines(formData: FormData) {
     .filter((line) => line.description.trim().length > 0);
 }
 
-const createDocumentSchema = z.object({
-  contactId: z.string().min(1),
-  discount: z.coerce.number().int().min(0).optional(),
-  dueAt: z.string().optional(),
-  notes: z.string().max(5000).optional(),
-  items: z.array(lineSchema).min(1),
-});
+const createDocumentSchema = (currency: string) =>
+  z.object({
+    contactId: z.string().min(1),
+    discount: moneyAmountSchema(currency),
+    dueAt: z.string().optional(),
+    notes: z.string().max(5000).optional(),
+    items: z.array(lineSchema(currency)).min(1),
+  });
 
 // useActionState-shaped (PLAN.md §10 1R #6): the builder keeps its own line
 // items client-side, so the only field worth pointing an inline error at is
@@ -78,9 +84,10 @@ export async function createDocumentAction(
   const ctx = await requireTenantContext();
   const contactId = String(formData.get("contactId") ?? "");
 
-  const parsed = createDocumentSchema.safeParse({
+  const parsed = createDocumentSchema(ctx.currency).safeParse({
     contactId,
-    discount: formData.get("discount") || 0,
+    // A cleared discount box means no discount, not a rejected form.
+    discount: String(formData.get("discount") ?? "").trim() || "0",
     dueAt: formData.get("dueAt") || undefined,
     notes: formData.get("notes") || undefined,
     items: parseLines(formData),
@@ -110,13 +117,14 @@ export async function createDocumentAction(
   redirect(`/documents/${document!.id}`);
 }
 
-const updateDocumentSchema = z.object({
-  documentId: z.string().min(1),
-  discount: z.coerce.number().int().min(0).optional(),
-  dueAt: z.string().optional(),
-  notes: z.string().max(5000).optional(),
-  items: z.array(lineSchema).min(1),
-});
+const updateDocumentSchema = (currency: string) =>
+  z.object({
+    documentId: z.string().min(1),
+    discount: moneyAmountSchema(currency),
+    dueAt: z.string().optional(),
+    notes: z.string().max(5000).optional(),
+    items: z.array(lineSchema(currency)).min(1),
+  });
 
 export type UpdateDocumentFormState = {
   error: string | null;
@@ -130,9 +138,10 @@ export async function updateDraftDocumentAction(
   const ctx = await requireTenantContext();
   const documentId = String(formData.get("documentId") ?? "");
 
-  const parsed = updateDocumentSchema.safeParse({
+  const parsed = updateDocumentSchema(ctx.currency).safeParse({
     documentId,
-    discount: formData.get("discount") || 0,
+    // A cleared discount box means no discount, not a rejected form.
+    discount: String(formData.get("discount") ?? "").trim() || "0",
     dueAt: formData.get("dueAt") || undefined,
     notes: formData.get("notes") || undefined,
     items: parseLines(formData),
@@ -213,14 +222,16 @@ export async function sendDocumentAction(formData: FormData) {
   revalidatePath(`/documents/${parsed.data}`);
 }
 
-const recordPaymentSchema = z.object({
-  documentId: z.string().min(1),
-  amount: z.coerce.number().int().min(1),
-  method: z.enum(["transfer", "cash", "card", "check", "other"]).optional(),
-  reference: z.string().max(200).optional(),
-  paidAt: z.string().optional(),
-  notes: z.string().max(500).optional(),
-});
+const recordPaymentSchema = (currency: string) =>
+  z.object({
+    documentId: z.string().min(1),
+    // At least one minor unit: a zero-kronor payment is not a payment.
+    amount: moneyAmountSchema(currency, { min: 1 }),
+    method: z.enum(["transfer", "cash", "card", "check", "other"]).optional(),
+    reference: z.string().max(200).optional(),
+    paidAt: z.string().optional(),
+    notes: z.string().max(500).optional(),
+  });
 
 export type RecordPaymentField = "amount";
 
@@ -241,7 +252,7 @@ export async function recordPaymentAction(
     ),
   );
 
-  const parsed = recordPaymentSchema.safeParse({
+  const parsed = recordPaymentSchema(ctx.currency).safeParse({
     documentId: formData.get("documentId"),
     amount: formData.get("amount"),
     method: formData.get("method") || undefined,

@@ -50,10 +50,11 @@ describe.skipIf(!hasDb)("closing deals and configuring stages (MySQL integration
       role: "admin",
       impersonatorUserId: null,
       accessStatus: "active",
+      currency: "SEK",
     };
     otherCtx = { ...ctx, tenantId: other!.id };
 
-    const pipeline = await pipelines.createPipelineWithDefaultStages(ctx, "Ventas");
+    const pipeline = await pipelines.createPipelineWithDefaultStages(ctx, "Försäljning");
     pipelineId = pipeline!.id;
 
     const contact = await contacts.createContact(ctx, {

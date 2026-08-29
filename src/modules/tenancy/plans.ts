@@ -4,7 +4,8 @@ import { plans } from "@/db/schema";
 import { newId } from "@/lib/ids";
 import type { SuperadminContext } from "./context";
 
-// Plan catalog (PLAN.md §4: name, duration_months 3|6|12, price BIGINT PYG,
+// Plan catalog (PLAN.md §4: name, duration_months 3|6|12, price in minor
+// units of the platform currency — öre for SEK (plan.md §1.2),
 // limits/features JSON). Superadmin-managed, platform-level table.
 
 export type PlanDurationMonths = 3 | 6 | 12;

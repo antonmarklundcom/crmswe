@@ -29,6 +29,14 @@ export type TenantContext = {
    * tenant-owned mutation goes through, so grace/locked tenants are
    * read-only at the write path, not just the UI banner. */
   accessStatus: AccessStatus;
+  /**
+   * The tenant's currency (plan.md §1.3). Carried on the context because it
+   * is read on every priced write and every priced screen, and the tenant row
+   * is already loaded here — a service reaching back into `tenants` for it
+   * would be a query per created row. Every amount in this tenant's data is
+   * minor units of this currency.
+   */
+  currency: string;
 };
 
 export type SuperadminContext = {
@@ -87,6 +95,7 @@ export async function getTenantContext(): Promise<TenantContext | null> {
     role: row.role,
     impersonatorUserId: impersonatedBy ?? null,
     accessStatus: await computeAccessStatus(tenant.id, tenant.status),
+    currency: tenant.currency,
   };
 }
 
@@ -111,6 +120,7 @@ export async function buildSystemTenantContext(
     role: "agent",
     impersonatorUserId: null,
     accessStatus: await computeAccessStatus(tenant.id, tenant.status),
+    currency: tenant.currency,
   };
 }
 

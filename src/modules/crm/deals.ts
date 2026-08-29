@@ -32,7 +32,7 @@ export async function createDeal(ctx: TenantContext, input: CreateDealInput) {
       stageId: input.stageId,
       title: input.title,
       value: input.value ?? 0,
-      currency: input.currency ?? "PYG",
+      currency: input.currency ?? ctx.currency,
       assignedUserId: input.assignedUserId,
       position: input.position ?? 0,
     });

@@ -54,10 +54,11 @@ describe.skipIf(!hasDb)("deleting contacts and deals (MySQL integration)", () =>
       role: "admin",
       impersonatorUserId: null,
       accessStatus: "active",
+      currency: "SEK",
     };
     otherCtx = { ...ctx, tenantId: other!.id };
 
-    const pipeline = await pipelines.createPipelineWithDefaultStages(ctx, "Ventas");
+    const pipeline = await pipelines.createPipelineWithDefaultStages(ctx, "Försäljning");
     pipelineId = pipeline!.id;
     const stages = await pipelines.listStagesForPipeline(ctx, pipelineId);
     stageId = stages.find((stage) => !stage.isWon && !stage.isLost)!.id;

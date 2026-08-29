@@ -115,7 +115,10 @@ export default async function DealPage({
       />
 
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Fact label={t("value")} value={formatMoney(deal.value, deal.currency, locale)} />
+        <Fact
+          label={t("value", { currency: deal.currency })}
+          value={formatMoney(deal.value, deal.currency, locale)}
+        />
         <Fact label={t("stage")} value={stage?.name ?? "—"} />
         <Fact
           label={t("contact")}

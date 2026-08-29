@@ -64,6 +64,7 @@ describe.skipIf(!hasDb)("tenant user lifecycle", () => {
       role: "admin",
       impersonatorUserId: null,
       accessStatus: "active",
+      currency: "SEK",
     };
   });
 

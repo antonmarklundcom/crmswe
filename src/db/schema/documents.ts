@@ -6,28 +6,28 @@ import {
   bigint,
   datetime,
   index,
+  json,
   uniqueIndex,
   text,
 } from "drizzle-orm/mysql-core";
 import { sql } from "drizzle-orm";
 
-// Non-fiscal commercial documents — "notas de venta" (PLAN.md §10 1Q).
+// Fakturor och kreditfakturor (plan.md §1.5). This table began life as the
+// Paraguayan "notas de venta" module and keeps its bones — draft→issued→void,
+// per-tenant unbroken sequences, an immutability line at `issued`, a separate
+// payment ledger — because those are exactly what a Swedish faktura needs.
 //
-// ⚠️ BOUNDARY RULE, load-bearing for Phase 2. These are **not** facturas and
-// must never become them. In Paraguay a factura is a fiscal document
-// requiring timbrado and SIFEN clearance; a PDF that looks like one but
-// isn't is not a valid tax document. Phase 2's fiscal invoices get their own
-// tables per §4/§9 and are NOT a status or a type on this table. A
-// `nota_venta` may later be *referenced by* a fiscal invoice
-// (`invoices.document_id`), exactly as §4 already allows for quotes.
+// ⚠️ BOUNDARY RULE, load-bearing. Past `issued` a document is a record under
+// bokföringslagen: its lines, totals, number and moms summary are frozen, it
+// is kept for seven years, and there is no destructive delete path. A wrong
+// issued faktura is corrected by a kreditfaktura that references it
+// (`creditsDocumentId`), never by an edit. Anything that would mutate an
+// issued row belongs in a new document, not here.
 //
-// Never add `timbrado`, `cdc`, `de_xml`, establishment/point-of-sale codes,
-// or fiscal numbering ranges to these tables. If a field only makes sense
-// for a SIFEN document, it belongs in Phase 2's tables, not here.
-//
-// Separate from `quotes` for the same reason quotes are separate from
-// invoices: a quote is an offer that may change, a nota de venta is a record
-// of an agreed sale that must not (see `status`).
+// The columns O2 fills in (moms per line, per-rate summary, OCR, delivery
+// date) are declared here in O1 even though the engine that writes them comes
+// later: schema is not retrofitted, and a faktura that is missing a legally
+// required field is not a faktura.
 
 export const documents = mysqlTable(
   "documents",
@@ -35,13 +35,15 @@ export const documents = mysqlTable(
     id: char("id", { length: 26 }).primaryKey(),
     tenantId: char("tenant_id", { length: 26 }).notNull(),
     /**
-     * Varchar rather than a MySQL ENUM so new non-fiscal document kinds can
-     * be added without a migration. Only `nota_venta` ships in 1Q.
+     * Varchar rather than a MySQL ENUM so a document kind can be added
+     * without a migration (plan.md §1.6: kreditfaktura is a type, not a
+     * status). The inherited `nota_venta` rows were migrated to `faktura`.
      */
-    type: varchar("type", { length: 20, enum: ["nota_venta"] })
+    type: varchar("type", { length: 20, enum: ["faktura", "kreditfaktura"] })
       .notNull()
-      .default("nota_venta"),
-    // Per-tenant, per-type sequence — e.g. NV-000001 (see document_sequences).
+      .default("faktura"),
+    // Per-tenant, per-type sequence — FA-000001 / KF-000001 (see
+    // document_sequences). Each type has its own unbroken series.
     number: varchar("number", { length: 30 }).notNull(),
     contactId: char("contact_id", { length: 26 }).notNull(),
     dealId: char("deal_id", { length: 26 }),
@@ -60,13 +62,39 @@ export const documents = mysqlTable(
     status: varchar("status", { length: 20, enum: ["draft", "issued", "void"] })
       .notNull()
       .default("draft"),
-    currency: char("currency", { length: 3 }).notNull().default("PYG"),
-    // Integer minor units; PYG has 0 decimals so this is guaraníes as-is (§2.3).
+    currency: char("currency", { length: 3 }).notNull().default("SEK"),
+    // Integer minor units — öre for SEK (plan.md §1.2). `subtotal` and
+    // `total` are exklusive moms; `vatTotal` carries the moms on top.
     subtotal: bigint("subtotal", { mode: "number" }).notNull().default(0),
     discount: bigint("discount", { mode: "number" }).notNull().default(0),
     total: bigint("total", { mode: "number" }).notNull().default(0),
+    /** Summed momsbelopp, minor units. Null until O2 computes it. */
+    vatTotal: bigint("vat_total", { mode: "number" }),
+    /**
+     * Beskattningsunderlag och momsbelopp per momssats, frozen onto the row
+     * when the document is issued — `[{ rateBps, base, vat }]`. Persisted
+     * rather than recomputed so a PDF reprinted years later cannot be changed
+     * by a later edit to `vat_rates` (plan.md §2, §5.2.3).
+     */
+    vatSummary: json("vat_summary"),
     issuedAt: datetime("issued_at"),
+    /** Förfallodatum: issue date + the tenant's betalvillkor. */
     dueAt: datetime("due_at"),
+    /** Leverans-/utförandedatum, a required field on a Swedish faktura when
+     * it differs from the invoice date. */
+    deliveryDate: datetime("delivery_date"),
+    /**
+     * OCR reference for bank reconciliation (lib/se/identity), stamped when
+     * the document is issued. Unique per tenant: two invoices sharing one OCR
+     * would reconcile a payment against the wrong invoice.
+     */
+    ocrNumber: varchar("ocr_number", { length: 30 }),
+    /**
+     * For a kreditfaktura: the faktura it credits (plan.md §1.6). Always null
+     * on a faktura. Not a foreign key, matching every other reference in this
+     * schema, but the service layer refuses a kreditfaktura without it.
+     */
+    creditsDocumentId: char("credits_document_id", { length: 26 }),
     notes: text("notes"),
     // Unguessable token for the public read-only view /d/[token], same model
     // as the quote link (§8).
@@ -87,6 +115,8 @@ export const documents = mysqlTable(
     index("documents_tenant_status_idx").on(table.tenantId, table.status),
     uniqueIndex("documents_tenant_number_idx").on(table.tenantId, table.number),
     uniqueIndex("documents_public_token_idx").on(table.publicToken),
+    uniqueIndex("documents_tenant_ocr_idx").on(table.tenantId, table.ocrNumber),
+    index("documents_credits_document_idx").on(table.creditsDocumentId),
   ],
 );
 
@@ -100,8 +130,15 @@ export const documentItems = mysqlTable(
     productId: char("product_id", { length: 26 }),
     description: varchar("description", { length: 500 }).notNull(),
     qty: int("qty").notNull().default(1),
+    // Exklusive moms, minor units. A kreditfaktura's lines are negative.
     unitPrice: bigint("unit_price", { mode: "number" }).notNull().default(0),
     lineTotal: bigint("line_total", { mode: "number" }).notNull().default(0),
+    /** Momssats in basis points; null until O2 activates the moms engine. */
+    vatRateBps: int("vat_rate_bps"),
+    /** Momsbelopp for this line, minor units — rounded per line, because the
+     * document total is the sum of the lines and not the other way round
+     * (plan.md §5.2.1). */
+    vatAmount: bigint("vat_amount", { mode: "number" }),
     position: int("position").notNull().default(0),
     createdAt: datetime("created_at")
       .notNull()
@@ -128,7 +165,7 @@ export const documentPayments = mysqlTable(
     tenantId: char("tenant_id", { length: 26 }).notNull(),
     documentId: char("document_id", { length: 26 }).notNull(),
     amount: bigint("amount", { mode: "number" }).notNull().default(0),
-    currency: char("currency", { length: 3 }).notNull().default("PYG"),
+    currency: char("currency", { length: 3 }).notNull().default("SEK"),
     method: varchar("method", {
       length: 20,
       enum: ["transfer", "cash", "card", "check", "other"],
@@ -167,7 +204,10 @@ export const documentSequences = mysqlTable(
     id: char("id", { length: 26 }).primaryKey(),
     tenantId: char("tenant_id", { length: 26 }).notNull(),
     docType: varchar("doc_type", { length: 20 }).notNull(),
-    prefix: varchar("prefix", { length: 10 }).notNull().default("NV"),
+    // Per-tenant prefix (plan.md §1.13): FA- for faktura, KF- for
+    // kreditfaktura. A row is created per type on first use, so a tenant that
+    // never credits an invoice never has a KF series.
+    prefix: varchar("prefix", { length: 10 }).notNull().default("FA"),
     nextNumber: int("next_number").notNull().default(1),
     createdAt: datetime("created_at")
       .notNull()

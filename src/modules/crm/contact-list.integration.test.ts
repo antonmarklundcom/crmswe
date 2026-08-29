@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 // The pipeline/stage filter on the contacts list: "who is sitting in
-// Negociación right now" is the question a rep asks before a follow-up round,
+// "Förhandling" right now" is the question a rep asks before a follow-up round,
 // and it has to answer from deals rather than from the contact row.
 const hasDb = !!process.env.DATABASE_URL;
 
@@ -21,7 +21,7 @@ describe.skipIf(!hasDb)("filtering contacts by pipeline and stage (MySQL integra
   type TenantContext = import("@/modules/tenancy/context").TenantContext;
 
   let ctx: TenantContext;
-  let ventasId: string;
+  let salesPipelineId: string;
   let obrasId: string;
   let openStageId: string;
   let laterStageId: string;
@@ -53,15 +53,16 @@ describe.skipIf(!hasDb)("filtering contacts by pipeline and stage (MySQL integra
       role: "admin",
       impersonatorUserId: null,
       accessStatus: "active",
+      currency: "SEK",
     };
 
-    const ventas = await pipelines.createPipelineWithDefaultStages(ctx, "Ventas");
-    ventasId = ventas!.id;
-    const ventasStages = (await pipelines.listStagesForPipeline(ctx, ventasId)).filter(
+    const forsaljning = await pipelines.createPipelineWithDefaultStages(ctx, "Försäljning");
+    salesPipelineId = forsaljning!.id;
+    const salesStages = (await pipelines.listStagesForPipeline(ctx, salesPipelineId)).filter(
       (stage) => !stage.isWon && !stage.isLost,
     );
-    openStageId = ventasStages[0].id;
-    laterStageId = ventasStages[1].id;
+    openStageId = salesStages[0].id;
+    laterStageId = salesStages[1].id;
 
     const obras = await pipelines.createPipelineWithDefaultStages(ctx, "Obras");
     obrasId = obras!.id;
@@ -78,8 +79,8 @@ describe.skipIf(!hasDb)("filtering contacts by pipeline and stage (MySQL integra
       return contact!.id;
     }
 
-    inFirstStage = await contactWithDeal(`Primera ${newId()}`, ventasId, openStageId);
-    inLaterStage = await contactWithDeal(`Segunda ${newId()}`, ventasId, laterStageId);
+    inFirstStage = await contactWithDeal(`Primera ${newId()}`, salesPipelineId, openStageId);
+    inLaterStage = await contactWithDeal(`Segunda ${newId()}`, salesPipelineId, laterStageId);
     inOtherPipeline = await contactWithDeal(`Obra ${newId()}`, obrasId, obrasStageId);
     withNoDeal = (await contacts.createContact(ctx, {
       name: `Sin negocio ${newId()}`,
@@ -93,7 +94,7 @@ describe.skipIf(!hasDb)("filtering contacts by pipeline and stage (MySQL integra
   }
 
   it("returns only contacts with a deal in the chosen pipeline", async () => {
-    const ids = await idsMatching({ pipelineId: ventasId });
+    const ids = await idsMatching({ pipelineId: salesPipelineId });
     expect(ids).toContain(inFirstStage);
     expect(ids).toContain(inLaterStage);
     expect(ids).not.toContain(inOtherPipeline);
@@ -114,7 +115,7 @@ describe.skipIf(!hasDb)("filtering contacts by pipeline and stage (MySQL integra
 
   it("composes with the other filters rather than replacing them", async () => {
     const [contact] = await contacts.listContacts(ctx, { search: "Primera" });
-    const ids = await idsMatching({ pipelineId: ventasId, search: contact.name });
+    const ids = await idsMatching({ pipelineId: salesPipelineId, search: contact.name });
     expect(ids).toEqual([inFirstStage]);
   });
 });

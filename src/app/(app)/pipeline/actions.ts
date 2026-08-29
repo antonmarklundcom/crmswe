@@ -1,6 +1,7 @@
 "use server";
 
 import { z } from "zod";
+import { moneyAmountSchema } from "@/lib/money-schema";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireTenantContext, requireTenantAdmin } from "@/modules/tenancy/context";
@@ -57,27 +58,30 @@ const DEAL_FIELD_ERRORS: Record<DealField, string> = {
   value: "valueInvalid",
 };
 
-const createDealSchema = z.object({
-  contactId: z.string().min(1),
-  pipelineId: z.string().min(1),
-  stageId: z.string().min(1),
-  title: z.string().min(1).max(200),
-  // Guaraníes are integer minor units (§2.3) — a "1.5" typed into the value
-  // box is a user mistake with a message, not a server crash.
-  value: z.coerce.number().int().min(0).optional(),
-});
+// The value box takes a major-unit amount — "150 000" or "1 495,50" — and
+// stores minor units (plan.md §1.2). Anything that is not an amount comes
+// back under the field rather than as a server crash.
+const createDealSchema = (currency: string) =>
+  z.object({
+    contactId: z.string().min(1),
+    pipelineId: z.string().min(1),
+    stageId: z.string().min(1),
+    title: z.string().min(1).max(200),
+    value: moneyAmountSchema(currency),
+  });
 
 export async function createDealAction(
   _prevState: DealFormState,
   formData: FormData,
 ): Promise<DealFormState> {
   const ctx = await requireTenantContext();
-  const parsed = createDealSchema.safeParse({
+  const parsed = createDealSchema(ctx.currency).safeParse({
     contactId: formData.get("contactId"),
     pipelineId: formData.get("pipelineId"),
     stageId: formData.get("stageId"),
     title: formData.get("title"),
-    value: formData.get("value") || undefined,
+    // An empty value box means a deal with no amount yet, not a rejected form.
+    value: String(formData.get("value") ?? "").trim() || "0",
   });
 
   const values = Object.fromEntries(

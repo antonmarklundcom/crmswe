@@ -37,7 +37,10 @@ export type DashboardStats = {
   /** Deals sitting in a stage that is neither won nor lost. */
   openDeals: number;
   /** Summed value of those deals, guaraníes only (§4: no FX conversion). */
-  openDealsValuePyg: number;
+  /** Summed value of open deals, minor units of `currency` (plan.md §1.2). */
+  openDealsValue: number;
+  /** The currency those amounts are in — the tenant's own. */
+  currency: string;
   /** Unread inbound WhatsApp messages across every conversation. */
   unreadMessages: number;
   unreadConversations: number;
@@ -172,9 +175,14 @@ export async function getDashboardSummary(
   return {
     stats: {
       openDeals: openDeals.length,
-      openDealsValuePyg: openDeals
-        .filter((deal) => deal.currency === "PYG")
+      // Only the tenant's own currency is summed. Adding two currencies
+      // together would produce a number that means nothing; multi-currency
+      // per tenant is out of scope (plan.md §1.3), so a stray foreign-currency
+      // deal is left out of the headline rather than silently distorting it.
+      openDealsValue: openDeals
+        .filter((deal) => deal.currency === ctx.currency)
         .reduce((sum, deal) => sum + deal.value, 0),
+      currency: ctx.currency,
       unreadMessages: conversationRows.reduce(
         (sum, conversation) => sum + conversation.unreadCount,
         0,

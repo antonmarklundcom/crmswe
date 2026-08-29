@@ -42,6 +42,7 @@ describe.skipIf(!hasDb)("saved contact views (MySQL integration)", () => {
       role: "admin",
       impersonatorUserId: null,
       accessStatus: "active",
+      currency: "SEK",
     };
     agentCtx = { ...adminCtx, userId: "agent-user", role: "agent" };
     otherCtx = { ...adminCtx, tenantId: other!.id };

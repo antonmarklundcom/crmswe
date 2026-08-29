@@ -109,6 +109,7 @@ describe.skipIf(!hasDb)("tenancy isolation", () => {
       role: "admin",
       impersonatorUserId: null,
       accessStatus: "active",
+      currency: "SEK",
     };
     ctxB = {
       tenantId: tenantBId,
@@ -116,6 +117,7 @@ describe.skipIf(!hasDb)("tenancy isolation", () => {
       role: "admin",
       impersonatorUserId: null,
       accessStatus: "active",
+      currency: "SEK",
     };
   });
 
@@ -269,6 +271,7 @@ describe.skipIf(!hasDb)("tenancy isolation", () => {
       role: "admin",
       impersonatorUserId: null,
       accessStatus: "active",
+      currency: "SEK",
     };
 
     // Something to find, owned by B.

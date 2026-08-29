@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { createPlanAction, type PlanField, type PlanFormState } from "./actions";
 import { Input, Select } from "@/components/ui/form-fields";
+import { DEFAULT_CURRENCY } from "@/lib/money";
 
 // Lives here, not in actions.ts: a "use server" module may only export
 // async functions.
@@ -46,13 +47,13 @@ export function CreatePlanForm() {
         </Select>
       </label>
       <label className="flex flex-col gap-1 text-sm">
-        {t("price")}
+        {t("price", { currency: DEFAULT_CURRENCY })}
         {/* Not type="number": it defaults to step="1" and blocks a decimal
             with a browser bubble in the browser's language before the
             Spanish message can run (§1.2). */}
         <Input
           name="price"
-          inputMode="numeric"
+          inputMode="decimal"
           defaultValue={state.values.price ?? ""}
         />
         <FieldError field="price" />

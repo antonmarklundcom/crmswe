@@ -58,7 +58,7 @@ export default async function ProductsPage() {
               <thead>
                 <tr className="border-b">
                   <th className="py-2">{t("name")}</th>
-                  <th className="py-2 text-right">{t("unitPrice")}</th>
+                  <th className="py-2 text-right">{t("unitPrice", { currency: ctx.currency })}</th>
                   <th className="py-2" />
                 </tr>
               </thead>
@@ -100,7 +100,7 @@ export default async function ProductsPage() {
       {isAdmin && (
         <section id="nuevo-producto" className="scroll-mt-6">
           <h2 className="mb-4 text-lg font-semibold">{t("createTitle")}</h2>
-          <ProductCreateForm />
+          <ProductCreateForm currency={ctx.currency} />
         </section>
       )}
     </div>

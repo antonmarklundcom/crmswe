@@ -34,6 +34,7 @@ describe.skipIf(!hasDb)("product CSV import/export (MySQL integration)", () => {
       role: "admin",
       impersonatorUserId: null,
       accessStatus: "active",
+      currency: "SEK",
     };
   }
 
@@ -47,8 +48,9 @@ describe.skipIf(!hasDb)("product CSV import/export (MySQL integration)", () => {
 
   it("exports the catalog, including inactive products, as CSV", async () => {
     const ctx = await makeCtx("Export");
-    await createProduct(ctx, { name: "Consultoría", unitPrice: 500000, currency: "PYG" });
-    const inactive = await createProduct(ctx, { name: "Viejo", unitPrice: 1000 });
+    // 500 000 öre — 5 000,00 kr — which the export must write in kronor.
+    await createProduct(ctx, { name: "Konsultation", unitPrice: 500000 });
+    const inactive = await createProduct(ctx, { name: "Gammal", unitPrice: 1000 });
     await (await import("./products")).updateProduct(ctx, inactive!.id, { isActive: false });
 
     const csv = await exportProductsCsv(ctx);
@@ -56,25 +58,52 @@ describe.skipIf(!hasDb)("product CSV import/export (MySQL integration)", () => {
 
     expect(headers).toEqual(["name", "description", "unit_price", "currency", "is_active"]);
     expect(rows).toHaveLength(2);
-    const consultoria = rows.find((r) => r.name === "Consultoría");
-    expect(consultoria).toMatchObject({ unit_price: "500000", currency: "PYG", is_active: "true" });
-    const viejo = rows.find((r) => r.name === "Viejo");
-    expect(viejo).toMatchObject({ is_active: "false" });
+    const konsultation = rows.find((r) => r.name === "Konsultation");
+    expect(konsultation).toMatchObject({
+      unit_price: "5000.00",
+      currency: "SEK",
+      is_active: "true",
+    });
+    const gammal = rows.find((r) => r.name === "Gammal");
+    expect(gammal).toMatchObject({ unit_price: "10.00", is_active: "false" });
+  });
+
+  it("round-trips an exported file without moving the decimal point", async () => {
+    // The failure this exists for: an export that wrote öre and an import that
+    // read kronor would multiply every price by 100 on the first round trip.
+    const source = await makeCtx("RoundTripSource");
+    await createProduct(source, { name: "Servicebesök", unitPrice: 149550 });
+    await createProduct(source, { name: "Reservdel", unitPrice: 5 });
+    const csv = await exportProductsCsv(source);
+
+    const target = await makeCtx("RoundTripTarget");
+    const { rows } = parseCsv(csv);
+    const report = await importProducts(target, rows);
+    expect(report.errors).toEqual([]);
+
+    const imported = await listProducts(target, true);
+    expect(imported.map((r) => [r.name, r.unitPrice])).toEqual([
+      ["Reservdel", 5],
+      ["Servicebesök", 149550],
+    ]);
   });
 
   it("creates new products and updates existing ones matched by name (case-insensitive)", async () => {
     const ctx = await makeCtx("Import");
-    const existing = await createProduct(ctx, {
-      name: "Instalación",
-      unitPrice: 100,
-      currency: "PYG",
-    });
+    const existing = await createProduct(ctx, { name: "Installation", unitPrice: 100 });
 
     const report = await importProducts(ctx, [
       // Matches the existing product by a case-insensitive name — updates it.
-      { name: "instalación", description: "Actualizado", unit_price: "150000", currency: "pyg", is_active: "true" },
-      // Brand new product.
-      { name: "Mantenimiento", description: "", unit_price: "80000", currency: "PYG", is_active: "false" },
+      // The price is written the Swedish way, as a person would type it.
+      {
+        name: "installation",
+        description: "Uppdaterad",
+        unit_price: "1 500,50",
+        currency: "sek",
+        is_active: "true",
+      },
+      // Brand new product, machine form.
+      { name: "Underhåll", description: "", unit_price: "800.00", currency: "SEK", is_active: "false" },
     ]);
 
     expect(report.total).toBe(2);
@@ -84,9 +113,14 @@ describe.skipIf(!hasDb)("product CSV import/export (MySQL integration)", () => {
 
     const rows = await listProducts(ctx, true);
     const updated = rows.find((r) => r.id === existing!.id);
-    expect(updated).toMatchObject({ unitPrice: 150000, currency: "PYG", description: "Actualizado" });
+    // 1 500,50 kr is 150 050 öre — not 1 500.
+    expect(updated).toMatchObject({
+      unitPrice: 150050,
+      currency: "SEK",
+      description: "Uppdaterad",
+    });
 
-    const created = rows.find((r) => r.name === "Mantenimiento");
+    const created = rows.find((r) => r.name === "Underhåll");
     expect(created).toMatchObject({ unitPrice: 80000, isActive: false });
   });
 
@@ -94,16 +128,16 @@ describe.skipIf(!hasDb)("product CSV import/export (MySQL integration)", () => {
     const ctx = await makeCtx("PartialFail");
 
     const report = await importProducts(ctx, [
-      { name: "Bueno", unit_price: "1000", currency: "PYG", is_active: "true" },
-      { name: "", unit_price: "1000", currency: "PYG" },
-      { name: "Precio malo", unit_price: "no-es-numero", currency: "PYG" },
-      { name: "Moneda mala", unit_price: "1000", currency: "GS" },
-      { name: "Repetido", unit_price: "1000", currency: "PYG" },
-      { name: "Repetido", unit_price: "2000", currency: "PYG" },
+      { name: "Bra", unit_price: "1000", currency: "SEK", is_active: "true" },
+      { name: "", unit_price: "1000", currency: "SEK" },
+      { name: "Dåligt pris", unit_price: "inte-ett-tal", currency: "SEK" },
+      { name: "Dålig valuta", unit_price: "1000", currency: "KR" },
+      { name: "Upprepad", unit_price: "1000", currency: "SEK" },
+      { name: "Upprepad", unit_price: "2000", currency: "SEK" },
     ]);
 
     expect(report.total).toBe(6);
-    expect(report.created).toBe(2); // "Bueno" and the first "Repetido"
+    expect(report.created).toBe(2); // "Bra" and the first "Upprepad"
     expect(report.updated).toBe(0);
 
     const reasons = report.errors.map((e) => e.reason).sort();
@@ -118,13 +152,13 @@ describe.skipIf(!hasDb)("product CSV import/export (MySQL integration)", () => {
     const ctxA = await makeCtx("TenantA");
     const ctxB = await makeCtx("TenantB");
 
-    await importProducts(ctxA, [{ name: "Solo A", unit_price: "1000", currency: "PYG" }]);
-    await importProducts(ctxB, [{ name: "Solo B", unit_price: "2000", currency: "PYG" }]);
+    await importProducts(ctxA, [{ name: "Bara A", unit_price: "1000", currency: "SEK" }]);
+    await importProducts(ctxB, [{ name: "Bara B", unit_price: "2000", currency: "SEK" }]);
 
     const rowsA = await listProducts(ctxA, true);
     const rowsB = await listProducts(ctxB, true);
 
-    expect(rowsA.map((r) => r.name)).toEqual(["Solo A"]);
-    expect(rowsB.map((r) => r.name)).toEqual(["Solo B"]);
+    expect(rowsA.map((r) => r.name)).toEqual(["Bara A"]);
+    expect(rowsB.map((r) => r.name)).toEqual(["Bara B"]);
   });
 });

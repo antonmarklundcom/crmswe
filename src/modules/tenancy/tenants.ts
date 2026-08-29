@@ -1,7 +1,11 @@
 import { eq } from "drizzle-orm";
 import { db } from "@/db/client";
-import { tenants } from "@/db/schema";
+import { tenants, vatRates } from "@/db/schema";
 import { newId } from "@/lib/ids";
+import { DEFAULT_CURRENCY } from "@/lib/money";
+import { DEFAULT_LOCALE } from "@/lib/i18n/locales";
+import { DEFAULT_TIMEZONE } from "@/lib/i18n/format";
+import { SEEDED_VAT_RATES, SEEDED_VAT_RATE_VALID_FROM } from "./vat-rates";
 import type { SuperadminContext } from "./context";
 import { writeAuditLog } from "./audit";
 
@@ -17,6 +21,7 @@ export type CreateTenantInput = {
   slug: string;
   locale?: string;
   timezone?: string;
+  currency?: string;
 };
 
 export async function createTenant(
@@ -30,10 +35,27 @@ export async function createTenant(
     name: input.name,
     slug: input.slug,
     status: "trial",
-    locale: input.locale ?? "es",
-    timezone: input.timezone ?? "America/Asuncion",
+    locale: input.locale ?? DEFAULT_LOCALE,
+    timezone: input.timezone ?? DEFAULT_TIMEZONE,
+    currency: input.currency ?? DEFAULT_CURRENCY,
     settings: {},
   });
+
+  // Momssatserna are per-tenant configuration (plan.md §1.4), so a tenant
+  // without them cannot price a line at all. Seeding here rather than reading
+  // a global table is what lets a momsbefriad tenant, or one on reduced
+  // rates, correct its own configuration without touching anyone else's.
+  await db.insert(vatRates).values(
+    SEEDED_VAT_RATES.map((rate) => ({
+      id: newId(),
+      tenantId: id,
+      rateBps: rate.rateBps,
+      label: rate.label,
+      validFrom: SEEDED_VAT_RATE_VALID_FROM,
+      source: rate.source,
+      isDefault: rate.isDefault,
+    })),
+  );
 
   await writeAuditLog({
     tenantId: id,

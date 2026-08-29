@@ -96,6 +96,7 @@ export default async function QuotesPage() {
           </p>
         ) : (
           <QuoteBuilder
+            currency={ctx.currency}
             contacts={contacts.map((c) => ({ id: c.id, label: `${c.name} — ${c.phone}` }))}
             products={products.map((p) => ({ id: p.id, name: p.name, unitPrice: p.unitPrice }))}
             labels={labels}

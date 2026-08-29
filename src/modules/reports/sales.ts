@@ -253,9 +253,9 @@ export async function getSalesReport(
       dealsWon: wonInWindow.length,
       dealsLost: lostInWindow.length,
       wonValue: wonInWindow.reduce((sum, deal) => sum + deal.value, 0),
-      // Phase 1 is single-currency per tenant in practice; the first won deal
-      // names it, and PYG is the default everywhere else (§2.3).
-      currency: wonInWindow[0]?.currency ?? "PYG",
+      // Single-currency per tenant (plan.md §1.3): the first won deal names
+      // it, and the tenant's own currency answers when there is no deal yet.
+      currency: wonInWindow[0]?.currency ?? ctx.currency,
     },
     bySource: group((lead) => ((lead.utm ?? {}) as Utm).source),
     bySite: group((lead) => lead.siteId),

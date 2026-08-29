@@ -3,6 +3,7 @@
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { requireTenantAdmin } from "@/modules/tenancy/context";
+import { moneyAmountSchema } from "@/lib/money-schema";
 import { createProduct, updateProduct } from "@/modules/quotes/products";
 
 // The catalog is tenant configuration (§3.2): agents sell from it — and so
@@ -24,12 +25,15 @@ const PRODUCT_FIELD_ERRORS: Record<ProductField, string> = {
   unitPrice: "unitPriceInvalid",
 };
 
-const createProductSchema = z.object({
-  name: z.string().min(1).max(200),
-  description: z.string().max(2000).optional().or(z.literal("")),
-  // Guaraníes are whole units (§2.3) — no decimals to parse.
-  unitPrice: z.coerce.number().int().min(0),
-});
+// Built per request: the price is typed in major units and stored in minor
+// units, and how many decimals it may carry is a property of the tenant's
+// currency (plan.md §1.2).
+const createProductSchema = (currency: string) =>
+  z.object({
+    name: z.string().min(1).max(200),
+    description: z.string().max(2000).optional().or(z.literal("")),
+    unitPrice: moneyAmountSchema(currency),
+  });
 
 export async function createProductAction(
   _prevState: ProductFormState,
@@ -42,7 +46,7 @@ export async function createProductAction(
     ),
   );
 
-  const parsed = createProductSchema.safeParse({
+  const parsed = createProductSchema(ctx.currency).safeParse({
     name: formData.get("name"),
     description: formData.get("description") || undefined,
     unitPrice: formData.get("unitPrice"),

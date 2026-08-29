@@ -1,6 +1,8 @@
 "use server";
 
 import { z } from "zod";
+import { DEFAULT_CURRENCY } from "@/lib/money";
+import { moneyAmountSchema } from "@/lib/money-schema";
 import { revalidatePath } from "next/cache";
 import { buildSystemTenantContext, requireSuperadminContext } from "@/modules/tenancy/context";
 import { createSubscription, recordPayment } from "@/modules/tenancy/subscriptions";
@@ -77,7 +79,7 @@ export async function createSubscriptionAction(
 const recordPaymentSchema = z.object({
   tenantId: z.string().min(1),
   subscriptionId: z.string().min(1),
-  amount: z.coerce.number().int().positive(),
+  amount: moneyAmountSchema(DEFAULT_CURRENCY, { min: 1 }),
   method: z.enum(["transfer", "cash", "other"]),
   reference: z.string().max(200).optional(),
   notes: z.string().max(2000).optional(),

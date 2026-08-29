@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, it } from "vitest";
 
-// Default "Ventas" pipeline seeded at tenant creation (PLAN.md §5: "a default
+// Default "Försäljning" pipeline seeded at tenant creation (PLAN.md §5: "a default
 // pipeline seeded at tenant creation"). Without this a brand-new tenant has
 // an empty board and can't create a deal until someone manually adds stages.
 // Runs only against a real MySQL, same skip pattern as isolation.test.ts.
@@ -33,18 +33,18 @@ describe.skipIf(!hasDb)("default pipeline seeding", () => {
     ctx = built;
   });
 
-  it("gives a new tenant a Ventas pipeline with a full, colored, won/lost-marked stage set", async () => {
+  it("gives a new tenant a Försäljning pipeline with a full, colored, won/lost-marked stage set", async () => {
     const pipeline = await seedDefaultPipeline(ctx);
-    expect(pipeline?.name).toBe("Ventas");
+    expect(pipeline?.name).toBe("Försäljning");
 
     const stages = await listStagesForPipeline(ctx, pipeline!.id);
     expect(stages.map((s) => s.name)).toEqual([
-      "Nuevo contacto",
-      "Contactado",
-      "Propuesta enviada",
-      "Negociación",
-      "Ganado",
-      "Perdido",
+      "Ny kontakt",
+      "Kontaktad",
+      "Offert skickad",
+      "Förhandling",
+      "Vunnen",
+      "Förlorad",
     ]);
 
     // Every stage gets a distinct color so the board isn't monochrome.
@@ -52,8 +52,8 @@ describe.skipIf(!hasDb)("default pipeline seeding", () => {
     expect(colors.every((c) => !!c)).toBe(true);
     expect(new Set(colors).size).toBe(colors.length);
 
-    const won = stages.find((s) => s.name === "Ganado");
-    const lost = stages.find((s) => s.name === "Perdido");
+    const won = stages.find((s) => s.name === "Vunnen");
+    const lost = stages.find((s) => s.name === "Förlorad");
     expect(won?.isWon).toBe(true);
     expect(won?.isLost).toBe(false);
     expect(lost?.isLost).toBe(true);

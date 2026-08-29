@@ -100,7 +100,7 @@
       "subtitle": "Your day at a glance: open deals, unanswered messages and quotes in flight.",
       "stats": {
         "openDeals": "Open deals",
-        "openDealsHint": "{value} PYG at stake",
+        "openDealsHint": "{value} at stake",
         "unread": "Unread messages",
         "unreadHint": "{count, plural, =0 {No conversations waiting} one {in # conversation} other {in # conversations}}",
         "pendingQuotes": "Pending quotes",
@@ -179,7 +179,7 @@
       "dealTitle": "Title",
       "contact": "Contact",
       "stage": "Stage",
-      "value": "Value (PYG)",
+      "value": "Value ({currency})",
       "createDeal": "Create deal",
       "switcherLabel": "Choose pipeline",
       "newPipelineTitle": "New pipeline",
@@ -321,7 +321,7 @@
       "createTitle": "New product",
       "name": "Name",
       "description": "Description",
-      "unitPrice": "Unit price (PYG)",
+      "unitPrice": "Unit price ({currency})",
       "inactive": "inactive",
       "activate": "Activate",
       "deactivate": "Deactivate",
@@ -350,7 +350,7 @@
         "errorReasons": {
           "nameMissing": "No name",
           "unitPriceInvalid": "Invalid unit price",
-          "currencyInvalid": "Invalid currency (3 letters, e.g. PYG)",
+          "currencyInvalid": "Invalid currency (3 letters, e.g. SEK)",
           "activeInvalid": "Invalid is_active value",
           "duplicateInFile": "Name repeated in the file",
           "failed": "Could not save"
@@ -1563,7 +1563,7 @@
       "accessStatus": "Access",
       "createTitle": "New subscription",
       "recordPaymentTitle": "Record payment",
-      "amount": "Amount (PYG)",
+      "amount": "Amount ({currency})",
       "method": "Method",
       "methodValues": {
         "transfer": "Bank transfer",
@@ -1587,7 +1587,7 @@
       "createTitle": "New plan",
       "name": "Name",
       "durationMonths": "Duration (months)",
-      "price": "Price (PYG)",
+      "price": "Price ({currency})",
       "active": "Active",
       "errors": {
         "nameRequired": "Give the plan a name.",

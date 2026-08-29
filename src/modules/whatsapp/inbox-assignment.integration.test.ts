@@ -54,6 +54,7 @@ describe.skipIf(!hasDb)("assigning a conversation (MySQL integration)", () => {
       role: "admin",
       impersonatorUserId: null,
       accessStatus: "active",
+      currency: "SEK",
     };
     otherCtx = { ...ctx, tenantId: other!.id };
 

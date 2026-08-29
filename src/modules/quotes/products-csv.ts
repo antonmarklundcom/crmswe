@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { eq } from "drizzle-orm";
+import { formatMoneyInput, parseMoneyInput } from "@/lib/money";
 import { products } from "@/db/schema";
 import { newId } from "@/lib/ids";
 import type { TenantContext } from "@/modules/tenancy/context";
@@ -7,7 +8,15 @@ import { tenantDb } from "@/modules/tenancy/db";
 import { toCsv } from "@/modules/crm/export";
 import { listProducts } from "./products";
 
-// Product CSV import/export — VenderCRM-internal only. This is a bulk-edit
+// ⚠️ `unit_price` is a **major-unit** amount in this file — "1495.00", not
+// "149500" — on both the export and the import side (plan.md §1.2). A
+// spreadsheet is edited by a person who thinks in kronor, and an export that
+// wrote öre would come back through the importer as a hundredfold price the
+// first time anyone round-tripped a file. Export writes the machine form
+// (dot decimal, no grouping); import also accepts what a Swedish user types
+// ("1 495,50").
+//
+// Product CSV import/export — internal only. This is a bulk-edit
 // tool for a tenant's own catalog, not a cross-project/shared format with
 // the owner's other apps (ecom, negocio.com.py, …) — that's an explicit
 // separate decision, deferred (PLAN.md doesn't cover it yet). The row shape
@@ -36,7 +45,9 @@ export async function exportProductsCsv(ctx: TenantContext): Promise<string> {
   const csvRows = rows.map((product) => [
     product.name,
     product.description ?? "",
-    product.unitPrice,
+    // Machine form, not the tenant's locale: a decimal comma inside an
+    // unquoted CSV cell is a column break waiting to happen.
+    formatMoneyInput(product.unitPrice, product.currency).replace(",", "."),
     product.currency,
     product.isActive ? "true" : "false",
   ]);
@@ -77,8 +88,6 @@ function parseBoolean(raw: string): boolean | undefined {
 const rowSchema = z.object({
   name: z.string().trim().min(1).max(200),
   description: z.string().trim().max(2000).optional(),
-  // Guaraníes are whole units (§2.3) — no decimals to parse.
-  unitPrice: z.coerce.number().int().min(0),
   currency: z
     .string()
     .trim()
@@ -124,25 +133,29 @@ export async function importProducts(
     }
     seen.add(key);
 
-    const rawCurrency = (row.currency ?? "").trim() || "PYG";
+    // A row that names no currency is priced in the tenant's own.
+    const rawCurrency = (row.currency ?? "").trim() || ctx.currency;
     if (rawCurrency.length !== 3) {
       report.errors.push({ row: rowNumber, reason: "currencyInvalid" });
       continue;
     }
 
-    const rawUnitPrice = (row.unit_price ?? "").trim() || "0";
     const parsed = rowSchema.safeParse({
       name,
       description: (row.description ?? "").trim() || undefined,
-      unitPrice: rawUnitPrice,
       currency: rawCurrency,
     });
     if (!parsed.success) {
-      const field = parsed.error.issues[0]?.path[0];
-      report.errors.push({
-        row: rowNumber,
-        reason: field === "currency" ? "currencyInvalid" : "unitPriceInvalid",
-      });
+      report.errors.push({ row: rowNumber, reason: "currencyInvalid" });
+      continue;
+    }
+
+    // Parsed against the row's own currency, since that is what decides how
+    // many decimals the amount may carry.
+    const rawUnitPrice = (row.unit_price ?? "").trim() || "0";
+    const unitPrice = parseMoneyInput(rawUnitPrice, parsed.data.currency);
+    if (unitPrice === null || unitPrice < 0) {
+      report.errors.push({ row: rowNumber, reason: "unitPriceInvalid" });
       continue;
     }
 
@@ -159,7 +172,7 @@ export async function importProducts(
           .update(products)
           .set({
             description: parsed.data.description ?? null,
-            unitPrice: parsed.data.unitPrice,
+            unitPrice,
             currency: parsed.data.currency,
             isActive,
           })
@@ -173,7 +186,7 @@ export async function importProducts(
             id,
             name,
             description: parsed.data.description,
-            unitPrice: parsed.data.unitPrice,
+            unitPrice,
             currency: parsed.data.currency,
             isActive,
           });

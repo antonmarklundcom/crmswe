@@ -137,6 +137,7 @@ export default async function PipelinePage({
           </p>
         ) : (
           <CreateDealForm
+            currency={ctx.currency}
             pipelineId={pipeline.id}
             contacts={contacts.map((contact) => ({ id: contact.id, name: contact.name }))}
             stages={stages.map((stage) => ({ id: stage.id, name: stage.name }))}

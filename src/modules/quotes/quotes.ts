@@ -42,7 +42,7 @@ export async function createQuote(ctx: TenantContext, input: CreateQuoteInput) {
       dealId: input.dealId,
       number,
       status: "draft",
-      currency: input.currency ?? "PYG",
+      currency: input.currency ?? ctx.currency,
       subtotal,
       discount,
       total,

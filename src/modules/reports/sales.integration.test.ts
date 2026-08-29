@@ -44,10 +44,11 @@ describe.skipIf(!hasDb)("sales report (MySQL integration)", () => {
       role: "admin",
       impersonatorUserId: null,
       accessStatus: "active",
+      currency: "SEK",
     };
     otherCtx = { ...ctx, tenantId: other!.id };
 
-    const pipeline = await pipelines.createPipelineWithDefaultStages(ctx, "Ventas");
+    const pipeline = await pipelines.createPipelineWithDefaultStages(ctx, "Försäljning");
     const stageRows = await pipelines.listStagesForPipeline(ctx, pipeline!.id);
     const open = stageRows.find((stage) => !stage.isWon && !stage.isLost)!;
     wonStageId = stageRows.find((stage) => stage.isWon)!.id;

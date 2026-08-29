@@ -67,6 +67,13 @@ export const contacts = mysqlTable(
     name: varchar("name", { length: 200 }).notNull(),
     phone: varchar("phone", { length: 20 }).notNull(),
     email: varchar("email", { length: 320 }),
+    /**
+     * Organisationsnummer, canonical 10 digits without the hyphen (plan.md
+     * §1.9). Nullable because most contacts are people at a company rather
+     * than the company, and a lead captured from a form has never supplied
+     * one. Validated and formatted through lib/se/identity — never here.
+     */
+    orgNr: varchar("org_nr", { length: 12 }),
     notes: text("notes"),
     source: varchar("source", { length: 100 }),
     ownerUserId: char("owner_user_id", { length: 26 }),
@@ -88,6 +95,9 @@ export const contacts = mysqlTable(
     index("contacts_tenant_id_idx").on(table.tenantId),
     uniqueIndex("contacts_tenant_phone_idx").on(table.tenantId, table.phone),
     index("contacts_tenant_owner_idx").on(table.tenantId, table.ownerUserId),
+    // B2B dedupe and lookup by org.nr. Deliberately not unique: two contacts
+    // at the same company legitimately share one.
+    index("contacts_tenant_org_nr_idx").on(table.tenantId, table.orgNr),
   ],
 );
 
@@ -141,8 +151,9 @@ export const deals = mysqlTable(
     pipelineId: char("pipeline_id", { length: 26 }).notNull(),
     stageId: char("stage_id", { length: 26 }).notNull(),
     title: varchar("title", { length: 200 }).notNull(),
+    // Minor units of `currency` — öre for SEK (plan.md §1.2).
     value: bigint("value", { mode: "number" }).notNull().default(0),
-    currency: char("currency", { length: 3 }).notNull().default("PYG"),
+    currency: char("currency", { length: 3 }).notNull().default("SEK"),
     assignedUserId: char("assigned_user_id", { length: 26 }),
     // Kanban order within its stage — dragged deals get renumbered on drop.
     position: int("position").notNull().default(0),

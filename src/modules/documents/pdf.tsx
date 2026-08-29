@@ -47,8 +47,6 @@ export type DocumentPdfData = {
   locale?: string | null;
 };
 
-// PYG has no decimal places (§2.3), so amounts are whole guaraníes and the
-// thousands separator is the only formatting needed.
 /** Resolved by renderDocumentPdf: the react-pdf tree renders synchronously
  * and can't await a translator itself. The disclaimer is not decoration —
  * this document is not a factura and must say so on its face, in whatever

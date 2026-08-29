@@ -2,24 +2,27 @@
 // the db client so it can be imported — and unit-tested — without a
 // configured environment, same as lib/money.ts.
 //
-// Originally hardcoded to Paraguay (a leading "0" always became "+595"),
-// which silently corrupts any other country's local-format input — a
-// Swedish "070-123 45 67" became a Paraguayan number. `country` makes the
+// The default is Sweden: a leading "0" becomes "+46", so "070-123 45 67"
+// normalizes to "+46701234567". Hardcoding one country silently corrupts any
+// other country's local-format input, so `country` makes the
 // trunk-prefix/dial-code assumption explicit and overridable per tenant;
 // numbers already carrying a "+" or "00" prefix are unambiguous and pass
 // through unaffected by it, so this only changes behavior for bare local
 // numbers.
 
-export const COUNTRY_CODES = ["PY", "AR", "BR", "SE", "US"] as const;
+export const COUNTRY_CODES = ["SE", "NO", "DK", "FI", "US"] as const;
 export type CountryCode = (typeof COUNTRY_CODES)[number];
 
-export const DEFAULT_COUNTRY: CountryCode = "PY";
+// Swedish edition (plan.md §1.11). A tenant can still override it in
+// settings — the neighbours are here because a Swedish SMB's customer list
+// has Norwegian and Danish numbers in it.
+export const DEFAULT_COUNTRY: CountryCode = "SE";
 
 const DIAL_CODE: Record<CountryCode, string> = {
-  PY: "595",
-  AR: "54",
-  BR: "55",
   SE: "46",
+  NO: "47",
+  DK: "45",
+  FI: "358",
   US: "1",
 };
 
@@ -30,7 +33,8 @@ export function normalizePhone(raw: string, country: CountryCode = DEFAULT_COUNT
 
   const dial = DIAL_CODE[country];
   // A leading trunk "0" (local dialing convention) is dropped in favor of
-  // the country's dial code — true for PY, AR, BR and SE alike.
+  // the country's dial code — true for SE, NO, FI alike. Denmark has no
+  // trunk prefix, so a Danish number simply never starts with one.
   if (digits.startsWith("0")) return `+${dial}${digits.slice(1)}`;
   if (digits.startsWith(dial)) return `+${digits}`;
   return `+${dial}${digits}`;

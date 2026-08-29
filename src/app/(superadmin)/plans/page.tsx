@@ -3,7 +3,8 @@ import { requireSuperadminContext } from "@/modules/tenancy/context";
 import { listPlans } from "@/modules/tenancy/plans";
 import { PageHeader } from "@/components/page-header";
 import { CreatePlanForm } from "./CreatePlanForm";
-import { formatNumber } from "@/lib/i18n/format";
+import { formatMoney } from "@/lib/i18n/format";
+import { DEFAULT_CURRENCY } from "@/lib/money";
 import { getLocale } from "next-intl/server";
 
 // Defense in depth (§3.3): the (superadmin) layout already redirects a
@@ -26,7 +27,7 @@ export default async function PlansPage() {
               <tr className="border-b">
                 <th className="py-2">{t("name")}</th>
                 <th className="py-2">{t("durationMonths")}</th>
-                <th className="py-2">{t("price")}</th>
+                <th className="py-2">{t("price", { currency: DEFAULT_CURRENCY })}</th>
                 <th className="py-2">{t("active")}</th>
               </tr>
             </thead>
@@ -35,7 +36,7 @@ export default async function PlansPage() {
                 <tr key={plan.id} className="border-b">
                   <td className="py-2">{plan.name}</td>
                   <td className="py-2">{plan.durationMonths}</td>
-                  <td className="py-2">{formatNumber(plan.price, locale)}</td>
+                  <td className="py-2">{formatMoney(plan.price, DEFAULT_CURRENCY, locale)}</td>
                   <td className="py-2">{plan.isActive ? "✓" : "—"}</td>
                 </tr>
               ))}

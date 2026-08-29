@@ -16,9 +16,9 @@ const initialState: DealFormState = {
 };
 
 // Create-deal form (PLAN.md §10 1R #6), useActionState-shaped like the 1M
-// auth forms. The value box is the one that actually bites: guaraníes are
-// integer minor units (§2.3), so "1.5" used to reach zod and throw an error
-// page — now it comes back under the field.
+// auth forms. The value box is the one that actually bites: what is typed is
+// kronor and what is stored is öre (plan.md §1.2), so the parse happens on the
+// server and anything it refuses comes back under the field.
 
 type Option = { id: string; name: string };
 
@@ -26,10 +26,13 @@ export function CreateDealForm({
   pipelineId,
   contacts,
   stages,
+  currency,
 }: {
   pipelineId: string;
   contacts: Option[];
   stages: Option[];
+  /** The tenant's currency — labels the value box and decides its decimals. */
+  currency: string;
 }) {
   const t = useTranslations("app.pipeline");
   const [state, formAction, pending] = useActionState(
@@ -86,14 +89,14 @@ export function CreateDealForm({
         <FieldError field="stageId" />
       </label>
       <label className="flex flex-col gap-1 text-sm">
-        {t("value")}
+        {t("value", { currency })}
         {/* Not type="number": it defaults to step="1", so the browser
             silently blocks the submit on "1.5" with its own bubble, in its
             own language, and the Spanish message below never runs (§1.2).
             inputMode gets the numeric keypad without the validation. */}
         <Input
           name="value"
-          inputMode="numeric"
+          inputMode="decimal"
           defaultValue={state.values.value ?? ""}
         />
         <FieldError field="value" />

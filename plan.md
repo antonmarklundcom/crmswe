@@ -408,6 +408,53 @@ manual steps. STOP — no further phases.
   `buyer_snapshot` on issued documents intact (that is the 7-year record) while
   scrubbing the live `contacts` row.
 
+- **2026-08-29 — O3 (channels, e-post & GDPR):** PR #3. WhatsApp is behind
+  **one** tenant-settings flag, `settings.whatsappEnabled`, absent reading as
+  off so every inherited tenant already says no. Off means gone, not
+  unlinked: `/inbox`, `/inbox/[id]`, `/whatsapp` and both inbox API routes
+  answer 404, the nav loses both entries, the dashboard loses the "connect
+  WhatsApp" step and the unread card, the contact page loses its conversation
+  tab, `/sites` loses the WA routing picker, and the webhook marks inbound
+  events `skipped` rather than ingesting personal data into an inbox nobody
+  can open. Both states are tested (`modules/whatsapp/feature.test.ts` for
+  off, `isolation.test.ts` now flag-on for the rest) **and** verified against
+  a running build. The inert `factura-electronica` nav stub is gone.
+  E-post is now the primary channel: `quoteEmail`, `invoiceEmail` and
+  `paymentReminderEmail` carry the public link, the brutto amount and the
+  bankgiro/OCR block read off the seller snapshot frozen at issue. No
+  delivery failure can fail a document — no address, no Resend key, a closed
+  24h window all come back as a reported reason. Per-tenant sender is a
+  display name plus reply-to, because the *address* must stay a domain with
+  SPF/DKIM. Unconfigured Resend is a real log driver that prints the links.
+  `WHATSAPP_APP_SECRET`/`WHATSAPP_WEBHOOK_VERIFY_TOKEN` became optional
+  (§4.5) and fail closed: no secret ⇒ no signature verified ⇒ webhook 503.
+  GDPR lives in `modules/crm/gdpr.ts`: an Article-15 export walking all
+  thirteen contact-linked tables with children nested, downloaded from a
+  session-only audited route; and anonymisation that scrubs the live contact,
+  message bodies, form payloads, AI drafts and note text **while leaving
+  every issued document and its `buyer_snapshot` untouched** — bokföringslagen
+  wins over Art. 17 by Art. 17(3)(b), and the audit entry records
+  `retention: bokforingslagen_7y` beside the act. The contact row survives
+  scrubbed rather than deleted, because deleting it would orphan the
+  invoices.
+  Calendar: ISO-8601 week numbers in both views (rail corner, month column),
+  `<html lang="sv-SE">`, and five `?? "es"` customer-facing locale fallbacks
+  became `DEFAULT_LOCALE`.
+  Deviations/finds worth knowing: **`/inbox` was answering HTTP 200 with the
+  404 page in its body** — `loading.tsx` opens a Suspense boundary and Next
+  flushes the status line before the page body runs, so `notFound()` in a
+  page could only change what rendered; the check moved to a segment layout.
+  Nothing but running the app catches that (KNOWN-ISSUES O1-6 now says how).
+  Also: `webhook_events.status` gained `skipped` (TS-only — the column is
+  already varchar(20), no DDL), and quote/document `notes` are deliberately
+  not scrubbed (O3-4).
+  Next: S1 (`prompts/sonnet-1-branding.md`) — **model switch to Sonnet**.
+  Start at `src/lib/site-config.ts`; O1-5 is sharpened and still the first
+  job, since `/d/[token]` and now every customer email footer render under
+  the brand name that file holds. `messages/*.json` gained an `email.quote` /
+  `email.invoice` / `email.paymentReminder` namespace and an
+  `app.settings.whatsappChannel*` / `emailSender*` block, all three locales.
+
 ## 10. Backlog
 
 - ROT/RUT line types (config-driven rates/caps with validity dates; personnummer

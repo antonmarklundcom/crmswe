@@ -101,10 +101,12 @@ type PricedDocument = {
 /**
  * The one path from typed line items to stored amounts.
  *
- * Every rate is resolved against the tenant's `vat_rates` configuration for
- * the document's own date, so a rate that is not configured is refused rather
- * than written onto an invoice, and a document dated before a rate change
- * still prices with the rate that was in force then.
+ * Every rate is resolved against the tenant's `vat_rates` configuration as of
+ * `on`, so a rate that is not configured is refused rather than written onto
+ * an invoice. Drafts pass today — a draft has no date yet, and takes one when
+ * it is issued. The credit-note flow passes the *original's* issue date, so a
+ * credit prices with the rate its faktura was charged at even if the tenant's
+ * configuration has moved since.
  *
  * Both writers (create and update-draft) and the credit-note flow go through
  * here, which is what makes the rounding rule a property of the module rather
@@ -371,7 +373,14 @@ export async function issueDocument(ctx: TenantContext, id: string) {
   // Förfallodatum: whatever the draft set, else the tenant's betalvillkor
   // counted from today. A configured default, never a constant here — the
   // 30-day norm is a column on `tenants` for exactly that reason.
-  const dueAt = document.dueAt ?? addDays(issuedAt, tenant.paymentTermsDays);
+  //
+  // A kreditfaktura gets none: it asks for no payment, so a due date on one
+  // is a date nothing happens on, and it would put the credit note into any
+  // overdue-invoice list that filters on `due_at`.
+  const dueAt =
+    document.type === "kreditfaktura"
+      ? null
+      : (document.dueAt ?? addDays(issuedAt, tenant.paymentTermsDays));
 
   // Leveransdatum is a required field on a Swedish faktura. When the draft
   // did not say otherwise, the service was delivered on the day it was

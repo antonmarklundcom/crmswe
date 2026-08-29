@@ -5,6 +5,46 @@ instead of stopping a phase. Each entry says who should pick it up.
 
 ## Open
 
+### O2-1 — A PDF cannot draw characters outside WinAnsi
+The document PDFs use react-pdf's built-in Helvetica, which encodes WinAnsi and
+**silently drops** anything outside it — no error, no placeholder, the glyph is
+simply absent. O2 hit this with the U+2212 minus sign that `sv-SE` formats
+negative amounts with: every amount on a kreditfaktura lost its sign, so the
+credit note printed as an identical copy of the invoice it reversed. That case
+is fixed (`pdfMoney` / `toPdfSafe` in `modules/renderable-document/format.ts`),
+but the general limitation stands: a product name or customer address
+containing, say, Greek or Cyrillic letters, or an emoji, will not render.
+The real fix is embedding a Unicode font (`Font.register`), which costs bundle
+size and a licensing decision. *Owner: S3 at the latest, or whenever a tenant
+reports missing characters.*
+
+### O2-2 — Momssats is resolved at "now" for a draft, not at a document date
+`priceLines` resolves a line's momssats against `vat_rates` as of the moment
+the draft is saved. That is right — a draft has no date until it is issued —
+but it means a draft written just before a rate change and issued just after
+carries the old rate. The credit-note path deliberately does the opposite and
+prices at the *original's* issue date, which is what makes a credit cancel its
+faktura exactly. Re-pricing a draft at issue time was rejected: it would change
+amounts the user has already seen and approved, without telling them.
+*Owner: none — recorded as a deliberate trade-off. Revisit if Sweden announces
+a rate change with a date attached.*
+
+### O2-3 — A faktura can be issued with legally required fields missing
+`missingInvoiceFields` warns on the draft screen when the seller's org.nr,
+momsregnr or payment account, or the buyer's name or address, are absent — but
+issuing is not blocked. Blocking was rejected: it would strand a tenant who has
+not filled in their företagsuppgifter and needs to bill someone today, and the
+app cannot referee the edge cases (a foreign buyer, an exempt seller) well
+enough to be the authority on what is required. *Owner: whoever does the
+pre-launch fiscal review; revisit if real tenants ship incomplete invoices.*
+
+### O2-4 — Partial kreditfaktura is not supported
+`createCreditNote` reverses a faktura in full and refuses a second credit
+against the same one. Crediting only some lines, or only part of an amount, is
+legitimate and reasonably common. It needs a line picker and a rule for what
+"already credited" then means, which is more UI than O2's scope allowed.
+*Owner: Backlog (plan.md §10).*
+
 ### O1-1 — Seeded momssatser carry a placeholder `valid_from` (verify with Skatteverket)
 `vat_rates` rows seeded for a new tenant (`src/modules/tenancy/vat-rates.ts`,
 migration `0025`) use `2000-01-01` as `valid_from`. That is **not** the
@@ -15,12 +55,11 @@ Real statutory validity dates should be entered per tenant before the product
 is used for real invoicing (plan.md §4.11). *Owner: whoever does the pre-launch
 fiscal review; S3 at the latest.*
 
-### O1-2 — Spanish strings still in thrown service errors
-`modules/documents/documents.ts`, `modules/quotes/quotes.ts` and
-`modules/tenancy/context.ts` throw messages like `"La nota de venta necesita al
-menos un ítem"`. They never reach a user (the actions catch them and return an
-i18n key), but they read wrong in a log. *Owner: O2 for the documents module
-(§5.2.6 renames those surfaces anyway); S1 for the rest.*
+### O1-2 — Spanish strings still in thrown service errors *(mostly closed in O2)*
+`modules/documents/documents.ts` and `modules/quotes/quotes.ts` now throw
+stable codes (`document_not_draft`, `quote_needs_items`, …), which the actions
+map to message keys. What is left is `modules/tenancy/context.ts`:
+`"Se requiere rol de administrador"`. *Owner: S1.*
 
 ### O1-3 — `documents.due_at` serves as the plan's `due_date`
 plan.md §5.1.5 lists `due_date` among the new document columns, but `due_at`
@@ -43,9 +82,17 @@ metadata and `src/app/manifest.ts` still describe a Paraguayan WhatsApp CRM.
 That is S1's assignment (plan.md §6.1) and was left untouched here to keep the
 phases separable. *Owner: S1.*
 
-### O1-6 — Integration suites cannot be run in the O1 build environment
-The build session had no reachable MySQL (the container registry is blocked by
-the network policy), so every `describe.skipIf(!hasDb)` suite was verified by
-CI rather than locally. Anything that only CI can catch — the migration itself
-above all — is worth a second look on the next red build. *Owner: none —
-context for future sessions.*
+### O1-6 — Integration suites cannot be run in the build environment *(solved in O2)*
+O1 had no reachable MySQL: Docker has no daemon in these containers and the
+container registry is blocked by the network policy, so every
+`describe.skipIf(!hasDb)` suite was left to CI.
+
+**This is solvable.** `apt-get update && apt-get install -y --no-install-recommends
+mariadb-server`, then `mariadbd-safe --user=mysql &`, gives a MySQL-compatible
+server the whole suite runs against — migrations included. MariaDB 10.11 ran
+every migration and all 709 tests without a dialect problem. Future sessions in
+this repo should do that rather than shipping DB-backed changes unverified.
+One caveat: `drizzle-kit generate` diffs against MariaDB's introspection and
+emits spurious no-op `MODIFY COLUMN` lines for boolean columns — check a
+generated migration and delete anything you did not actually change.
+*Owner: none — context for future sessions.*

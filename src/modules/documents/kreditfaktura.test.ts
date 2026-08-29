@@ -262,6 +262,9 @@ describe.skipIf(!hasDb)("moms & kreditfaktura (MySQL)", () => {
     expect(issuedCredit!.status).toBe("issued");
     expect(issuedCredit!.ocrNumber).toBeTruthy();
     expect(issuedCredit!.number.startsWith("KF-")).toBe(true);
+    // No förfallodatum: a credit note asks for no payment, and a due date on
+    // one would drag it into any overdue-invoice list that filters on it.
+    expect(issuedCredit!.dueAt).toBeNull();
 
     // The next faktura continues the FA series where it left off.
     const next = await mod.createDocument(ctx, { contactId, items: mixedLines });

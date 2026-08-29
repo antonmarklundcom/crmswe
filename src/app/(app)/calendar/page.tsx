@@ -1,3 +1,4 @@
+import { Fragment } from "react";
 import Link from "next/link";
 import { CalendarDays } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
@@ -14,7 +15,13 @@ import {
   weekGridPosition,
   type CalendarView,
 } from "@/modules/calendar/grid";
-import { isDayKey, startOfDay, todayIn, weekdayOf } from "@/modules/calendar/zoned-time";
+import {
+  isDayKey,
+  isoWeekOf,
+  startOfDay,
+  todayIn,
+  weekdayOf,
+} from "@/modules/calendar/zoned-time";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Select } from "@/components/ui/form-fields";
 import { PageHeader } from "@/components/page-header";
@@ -41,6 +48,11 @@ const WEEK_GRID_HOUR_PX = 48;
  * columns. Shared by every row (header, all-day, hourly body) so they stay
  * aligned. */
 const WEEK_GRID_COLUMNS = "3.5rem repeat(7, minmax(0, 1fr))";
+
+/** The month grid's columns: a narrow week-number rail, then the seven days.
+ * Swedish planning runs on week numbers (sweden-business-apps §7), so they
+ * get a column of their own rather than being tucked into a day cell. */
+const MONTH_GRID_COLUMNS = "2.5rem repeat(7, minmax(0, 1fr))";
 
 export type CalendarSearchParams = {
   view?: string;
@@ -143,6 +155,13 @@ export default async function CalendarPage({
               {t("next")}
             </Link>
             <span className="ml-2 text-sm font-medium first-letter:uppercase">{monthLabel}</span>
+            {/* In week view the anchor names one week, so its number belongs
+                beside the month rather than only in the grid. */}
+            {!isMonth && (
+              <span className="text-sm text-muted-foreground tabular-nums">
+                {t("weekNumber", { week: isoWeekOf(range.days[0]) })}
+              </span>
+            )}
           </div>
 
           <form method="get" className="flex items-end gap-2">
@@ -167,7 +186,13 @@ export default async function CalendarPage({
 
         {isMonth ? (
           <div className="overflow-x-auto">
-            <div className="grid min-w-[46rem] grid-cols-7 gap-px rounded-md border bg-border">
+            <div
+              className="grid min-w-[48rem] gap-px rounded-md border bg-border"
+              style={{ gridTemplateColumns: MONTH_GRID_COLUMNS }}
+            >
+              <div className="bg-card px-2 py-1 text-xs font-medium text-muted-foreground">
+                {t("weekShort")}
+              </div>
               {range.days.slice(0, 7).map((day) => (
                 <div
                   key={`head-${day}`}
@@ -180,14 +205,24 @@ export default async function CalendarPage({
                 </div>
               ))}
 
-              {range.days.map((day) => {
+              {range.days.map((day, index) => {
                 const dayEntries = buckets.get(day) ?? [];
                 const isToday = day === range.today;
                 const outsideMonth = day.slice(0, 7) !== anchor.slice(0, 7);
 
                 return (
+                  <Fragment key={day}>
+                    {/* One cell per row, so it lines up with the seven days
+                        beside it rather than floating over them. Rendering it
+                        here rather than in a separate pass keeps the grid a
+                        single flat list of cells, which is what makes the
+                        columns align at all. */}
+                    {index % 7 === 0 && (
+                      <div className="flex items-start justify-center bg-card px-1 py-2 text-xs tabular-nums text-muted-foreground">
+                        {isoWeekOf(day)}
+                      </div>
+                    )}
                   <div
-                    key={day}
                     className={cn(
                       "flex min-h-24 flex-col gap-1 bg-card p-2",
                       // Weekends and days from the neighbouring month recede,
@@ -227,6 +262,7 @@ export default async function CalendarPage({
                       </Link>
                     ))}
                   </div>
+                  </Fragment>
                 );
               })}
             </div>
@@ -243,7 +279,12 @@ export default async function CalendarPage({
                 className="grid gap-px"
                 style={{ gridTemplateColumns: WEEK_GRID_COLUMNS }}
               >
-                <div className="bg-card" />
+                {/* The rail's corner cell, which was empty. "v. 35" over the
+                    hour rail is how a Swedish week planner is read. */}
+                <div className="flex flex-col items-center justify-center bg-card px-1 py-2 text-xs text-muted-foreground">
+                  <span>{t("weekShort")}</span>
+                  <span className="font-medium tabular-nums">{isoWeekOf(range.days[0])}</span>
+                </div>
                 {range.days.map((day) => {
                   const isToday = day === range.today;
                   return (

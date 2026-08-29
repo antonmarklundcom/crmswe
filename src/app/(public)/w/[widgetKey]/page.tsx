@@ -7,6 +7,7 @@ import {
 } from "@/modules/chatwidget/public";
 import { getTranslator } from "@/lib/i18n/translator";
 import { ChatWindow } from "./window";
+import { DEFAULT_LOCALE } from "@/lib/i18n/locales";
 
 // The iframe document (docs/SPEC-CHAT-WIDGET.md §1.2). Served from the CRM's
 // own origin and embedded by w.js, so every request the chat makes below is
@@ -38,7 +39,7 @@ export default async function ChatWidgetFrame({
 
   const referer = (await headers()).get("referer");
   if (!embedRefererAllowed(widget, referer)) notFound();
-  const locale = tenant.locale ?? "es";
+  const locale = tenant.locale ?? DEFAULT_LOCALE;
   const t = await getTranslator(locale, "public.chat");
 
   return (

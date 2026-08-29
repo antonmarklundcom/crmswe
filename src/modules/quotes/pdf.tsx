@@ -14,6 +14,7 @@ import {
 } from "@/modules/renderable-document/pdf";
 import { documentDate, pdfMoney as money } from "@/modules/renderable-document/format";
 import { formatRateLabel, type VatSummaryRow } from "@/lib/se/moms";
+import { DEFAULT_LOCALE } from "@/lib/i18n/locales";
 
 // Quote PDF (PLAN.md §8), now a configuration of the shared document shell
 // (§13 H9) rather than its own copy of the layout: what is left here is
@@ -71,7 +72,7 @@ export function QuoteDocument({
   data: QuotePdfData;
   labels: QuotePdfLabels;
 }) {
-  const locale = data.locale ?? "es";
+  const locale = data.locale ?? DEFAULT_LOCALE;
   const accent = data.branding.primaryColor || "#111111";
 
   const totals: PdfTotalsRow[] = [

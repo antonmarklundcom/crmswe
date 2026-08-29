@@ -241,7 +241,9 @@
         "endBeforeStart": "The end has to come after the start",
         "notAllowed": "This appointment is not yours to change",
         "unknown": "The appointment couldn't be saved"
-      }
+      },
+      "weekShort": "wk",
+      "weekNumber": "Week {week}"
     },
     "forms": {
       "title": "Forms",

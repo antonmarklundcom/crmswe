@@ -7,6 +7,7 @@ import { clientIp } from "@/lib/http/client-ip";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { getTranslator } from "@/lib/i18n/translator";
 import { BookingPicker } from "./picker";
+import { DEFAULT_LOCALE } from "@/lib/i18n/locales";
 
 // The public booking page (docs/SPEC-BOOKING.md §5). Same shape as the public
 // quote view /q/[token] and the hosted form pages: server-rendered, the
@@ -37,7 +38,7 @@ export default async function PublicBookingPage({
   const tenant = await getTenant(resolved.tenant.id);
   const branding = ((tenant?.settings ?? {}) as TenantSettings).branding ?? {};
   const accent = branding.primaryColor || undefined;
-  const locale = tenant?.locale ?? "es";
+  const locale = tenant?.locale ?? DEFAULT_LOCALE;
   const t = await getTranslator(locale, "public.booking");
 
   const locationLabel = {

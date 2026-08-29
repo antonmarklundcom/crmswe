@@ -1,5 +1,6 @@
 import { GRACE_PERIOD_DAYS } from "@/modules/tenancy/subscriptions";
 import { getTranslator } from "@/lib/i18n/translator";
+import { DEFAULT_LOCALE } from "@/lib/i18n/locales";
 import { formatDate, formatMoney } from "@/lib/i18n/format";
 import { siteConfig } from "@/lib/site-config";
 
@@ -59,7 +60,7 @@ export async function invitationEmail(input: {
       ${paragraph(t("body", { inviter: input.inviterName }))}
       ${button(input.acceptUrl, t("cta"))}
     `,
-      input.locale ?? "es",
+      input.locale ?? DEFAULT_LOCALE,
     ),
   };
 }
@@ -77,7 +78,7 @@ export async function passwordResetEmail(input: {
       ${paragraph(t("body"))}
       ${button(input.resetUrl, t("cta"))}
     `,
-      input.locale ?? "es",
+      input.locale ?? DEFAULT_LOCALE,
     ),
   };
 }
@@ -89,7 +90,7 @@ export async function subscriptionExpiryWarningEmail(input: {
   locale?: string | null;
 }): Promise<Email> {
   const t = await getTranslator(input.locale, "email.subscriptionExpiry");
-  const date = formatDate(input.expiresAt, input.locale ?? "es", {
+  const date = formatDate(input.expiresAt, input.locale ?? DEFAULT_LOCALE, {
     day: "2-digit",
     month: "long",
     year: "numeric",
@@ -102,7 +103,7 @@ export async function subscriptionExpiryWarningEmail(input: {
       ${heading(t("title"))}
       ${paragraph(t("body", { tenant: input.tenantName, date, grace: GRACE_PERIOD_DAYS }))}
     `,
-      input.locale ?? "es",
+      input.locale ?? DEFAULT_LOCALE,
     ),
   };
 }
@@ -123,7 +124,7 @@ export async function siteIngestAlertEmail(input: {
   sitesUrl: string;
   locale?: string | null;
 }): Promise<Email> {
-  const locale = input.locale ?? "es";
+  const locale = input.locale ?? DEFAULT_LOCALE;
   const t = await getTranslator(locale, "email.siteIngestAlert");
 
   const lastLead = input.lastSuccessAt
@@ -196,7 +197,7 @@ export async function taskRemindersEmail(input: {
   tasksUrl: string;
   locale?: string | null;
 }): Promise<Email> {
-  const locale = input.locale ?? "es";
+  const locale = input.locale ?? DEFAULT_LOCALE;
   const t = await getTranslator(locale, "email.taskReminders");
 
   const overdueCount = input.items.filter((item) => item.overdue).length;

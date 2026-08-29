@@ -8,6 +8,7 @@ import { getTranslator } from "@/lib/i18n/translator";
 import { formatDateTime } from "@/lib/i18n/format";
 import { cancelBookingAction } from "./actions";
 import { RescheduleSection } from "./reschedule";
+import { DEFAULT_LOCALE } from "@/lib/i18n/locales";
 
 // The visitor's manage link (docs/SPEC-BOOKING.md §5). The token *is* the
 // secret — the same model as the public quote view /q/[token] — which is why
@@ -36,7 +37,7 @@ export default async function ManageBookingPage({
   const { booking, type, tenant, canCancel } = resolved;
   const branding = ((tenant.settings ?? {}) as TenantSettings).branding ?? {};
   const accent = branding.primaryColor || undefined;
-  const locale = tenant.locale ?? "es";
+  const locale = tenant.locale ?? DEFAULT_LOCALE;
   const t = await getTranslator(locale, "public.booking");
   const tShared = await getTranslator(locale, "public.shared");
 

@@ -241,7 +241,9 @@
         "endBeforeStart": "Slutet måste ligga efter starten",
         "notAllowed": "Den här bokningen är inte din att ändra",
         "unknown": "Bokningen kunde inte sparas"
-      }
+      },
+      "weekShort": "v.",
+      "weekNumber": "Vecka {week}"
     },
     "forms": {
       "title": "Formulär",

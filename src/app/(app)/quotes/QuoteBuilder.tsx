@@ -3,7 +3,13 @@
 import { useActionState, useState } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import { Button } from "@/components/ui/button";
-import { formatMoneyInput, parseMoneyInput, parseQuantity, previewTotals } from "@/lib/money";
+import {
+  formatMoneyInput,
+  parseMoneyInput,
+  parseQuantity,
+  previewTotals,
+} from "@/lib/money";
+import { formatRateLabel } from "@/lib/se/moms";
 import { useEchoGeneration } from "@/lib/use-echo-generation";
 import { createQuoteAction, type QuoteFormState } from "./actions";
 import { formatMoney } from "@/lib/i18n/format";
@@ -14,13 +20,17 @@ import { Input, Select, Textarea } from "@/components/ui/form-fields";
 const initialState: QuoteFormState = { error: null, field: null, values: { contactId: "" } };
 
 type Contact = { id: string; label: string };
-type Product = { id: string; name: string; unitPrice: number };
+type Product = { id: string; name: string; unitPrice: number; vatRateBps: number | null };
+
+/** A momssats the tenant has configured — never a constant in code. */
+export type VatRateOption = { rateBps: number; label: string };
 
 export type BuilderLabels = {
   contact: string;
   description: string;
   qty: string;
   unitPrice: string;
+  vatRate: string;
   lineTotal: string;
   addLine: string;
   removeLine: string;
@@ -30,6 +40,8 @@ export type BuilderLabels = {
   validUntil: string;
   notes: string;
   subtotal: string;
+  net: string;
+  vatTotal: string;
   total: string;
   create: string;
 };
@@ -40,25 +52,45 @@ export type BuilderLabels = {
 // that decides whether it's valid. The string is a *major-unit* amount —
 // "1 495,50" — which parseMoneyInput turns into öre on both sides (plan.md
 // §1.2).
-type Line = { key: number; productId: string; description: string; qty: string; unitPrice: string };
+type Line = {
+  key: number;
+  productId: string;
+  description: string;
+  qty: string;
+  unitPrice: string;
+  /** Momssats in basis points, as a string because it is a select value. */
+  vatRateBps: string;
+};
 
 let nextKey = 1;
-const blankLine = (): Line => ({ key: nextKey++, productId: "", description: "", qty: "1", unitPrice: "0" });
+const blankLine = (defaultRateBps: number): Line => ({
+  key: nextKey++,
+  productId: "",
+  description: "",
+  qty: "1",
+  unitPrice: "0",
+  vatRateBps: String(defaultRateBps),
+});
 
 export function QuoteBuilder({
   contacts,
   products,
   labels,
   currency,
+  vatRates,
 }: {
   contacts: Contact[];
   products: Product[];
   labels: BuilderLabels;
   /** The tenant's currency — decides how many decimals an amount may carry. */
   currency: string;
+  /** The tenant's configured momssatser, highest first. */
+  vatRates: VatRateOption[];
 }) {
+  // The tenant's first configured rate is the default — never 2500 in code.
+  const defaultRateBps = vatRates[0]?.rateBps ?? 0;
   const t = useTranslations("app.quotes");
-  const [lines, setLines] = useState<Line[]>([blankLine()]);
+  const [lines, setLines] = useState<Line[]>(() => [blankLine(defaultRateBps)]);
   const [discount, setDiscount] = useState("0");
   const [state, formAction, pending] = useActionState(createQuoteAction, initialState);
   const generation = useEchoGeneration(state);
@@ -74,15 +106,25 @@ export function QuoteBuilder({
     update(key, {
       productId,
       ...(product
-        ? { description: product.name, unitPrice: formatMoneyInput(product.unitPrice, currency) }
+        ? {
+            description: product.name,
+            unitPrice: formatMoneyInput(product.unitPrice, currency),
+            // A product carries its own momssats; picking one sets the rate
+            // too, still editable afterwards.
+            ...(product.vatRateBps !== null
+              ? { vatRateBps: String(product.vatRateBps) }
+              : {}),
+          }
         : {}),
     });
   }
 
-  // The preview parses the same strings the server will, and goes blank
-  // wherever the server would refuse the value — a displayed total is either
-  // the one that will be stored or nothing at all.
+  // The preview runs the same moms engine the server will, on the same parsed
+  // values, so the offert quotes exactly what the faktura will charge — down
+  // to the öre-level rounding. It goes blank wherever the server would refuse
+  // a value rather than showing a total the saved offert won't match.
   const totals = previewTotals(lines, discount, currency);
+
   const locale = useLocale();
   const fmt = (n: number) => formatMoney(n, currency, locale);
   const blank = "—";
@@ -178,6 +220,24 @@ export function QuoteBuilder({
               />
             </label>
 
+            <label className="flex w-40 flex-col gap-1">
+              {labels.vatRate}
+              {/* From the tenant's vat_rates rows: the rate quoted here is
+                  the rate the faktura will charge. */}
+              <Select
+                name="vatRateBps"
+                value={line.vatRateBps}
+                onChange={(e) => update(line.key, { vatRateBps: e.target.value })}
+                className="px-2 py-1"
+              >
+                {vatRates.map((rate) => (
+                  <option key={rate.rateBps} value={rate.rateBps}>
+                    {rate.label}
+                  </option>
+                ))}
+              </Select>
+            </label>
+
             <span className="w-32 text-right">{lineTotal(line)}</span>
 
             {lines.length > 1 && (
@@ -196,7 +256,7 @@ export function QuoteBuilder({
           variant="outline"
           size="sm"
           className="w-fit"
-          onClick={() => setLines((prev) => [...prev, blankLine()])}
+          onClick={() => setLines((prev) => [...prev, blankLine(defaultRateBps)])}
         >
           {labels.addLine}
         </Button>
@@ -224,13 +284,33 @@ export function QuoteBuilder({
       </div>
 
       <div className="flex flex-col items-end gap-1 text-sm">
-        <div className="flex w-56 justify-between">
+        <div className="flex w-64 justify-between">
           <span>{labels.subtotal}</span>
           <span>{totals ? fmt(totals.subtotal) : blank}</span>
         </div>
-        <div className="flex w-56 justify-between text-base font-semibold">
+        {totals && totals.discount !== 0 && (
+          <div className="flex w-64 justify-between">
+            <span>{labels.net}</span>
+            <span>{fmt(totals.net)}</span>
+          </div>
+        )}
+        {/* Per rate, so a mixed-rate offert shows where its moms comes from
+            — the same breakdown the faktura will print. */}
+        {totals?.summary.map((row) => (
+          <div key={row.rateBps} className="flex w-64 justify-between text-muted-foreground">
+            <span>
+              {labels.vatTotal} {formatRateLabel(row.rateBps)}
+            </span>
+            <span>{fmt(row.vat)}</span>
+          </div>
+        ))}
+        <div className="flex w-64 justify-between">
+          <span>{labels.vatTotal}</span>
+          <span>{totals ? fmt(totals.vatTotal) : blank}</span>
+        </div>
+        <div className="flex w-64 justify-between text-base font-semibold">
           <span>{labels.total}</span>
-          <span>{totals ? fmt(totals.total) : blank}</span>
+          <span>{totals ? fmt(totals.gross) : blank}</span>
         </div>
       </div>
 

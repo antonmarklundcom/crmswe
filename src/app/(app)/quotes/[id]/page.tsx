@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { requireTenantContext } from "@/modules/tenancy/context";
-import { getQuote, listQuoteItems } from "@/modules/quotes/quotes";
+import { getQuote, listQuoteItems, quoteMoms } from "@/modules/quotes/quotes";
 import { publicQuoteUrl } from "@/modules/quotes/delivery";
 import { getDocumentByQuote } from "@/modules/documents/documents";
 import { getContact } from "@/modules/crm/contacts";
@@ -30,6 +30,10 @@ export default async function QuoteDetailPage({
     getContact(ctx, quote.contactId),
     getDocumentByQuote(ctx, quote.id),
   ]);
+
+  // Computed on read, like everywhere else an offert's moms is shown: it
+  // freezes nothing, because it may still change.
+  const moms = quoteMoms(items, quote.discount);
 
   const fmt = (n: number) => formatMoney(n, quote.currency, locale);
   const publicUrl = publicQuoteUrl(quote.publicToken);
@@ -81,14 +85,24 @@ export default async function QuoteDetailPage({
           <span>{fmt(quote.subtotal)}</span>
         </div>
         {quote.discount > 0 && (
-          <div className="flex w-56 justify-between">
-            <span>{t("discount")}</span>
-            <span>-{fmt(quote.discount)}</span>
-          </div>
+          <>
+            <div className="flex w-56 justify-between">
+              <span>{t("discount")}</span>
+              <span>-{fmt(quote.discount)}</span>
+            </div>
+            <div className="flex w-56 justify-between">
+              <span>{t("net")}</span>
+              <span>{fmt(quote.total)}</span>
+            </div>
+          </>
         )}
+        <div className="flex w-56 justify-between">
+          <span>{t("vatTotal")}</span>
+          <span>{fmt(moms.vatTotal)}</span>
+        </div>
         <div className="flex w-56 justify-between text-base font-semibold">
           <span>{t("total")}</span>
-          <span>{fmt(quote.total)}</span>
+          <span>{fmt(moms.gross)}</span>
         </div>
       </div>
 

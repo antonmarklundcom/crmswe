@@ -7,6 +7,7 @@ import type { TenantContext } from "@/modules/tenancy/context";
 import { tenantDb } from "@/modules/tenancy/db";
 import { toCsv } from "@/modules/crm/export";
 import { listProducts } from "./products";
+import { listVatRates } from "@/modules/tenancy/vat-rates";
 
 // ⚠️ `unit_price` is a **major-unit** amount in this file — "1495.00", not
 // "149500" — on both the export and the import side (plan.md §1.2). A
@@ -21,7 +22,12 @@ import { listProducts } from "./products";
 // the owner's other apps (ecom, negocio.com.py, …) — that's an explicit
 // separate decision, deferred (PLAN.md doesn't cover it yet). The row shape
 // mirrors `products` (PLAN.md §4 "quotes"): name, description, unit_price,
-// currency, is_active.
+// currency, vat_rate_bps, is_active.
+//
+// `vat_rate_bps` is basis points (2500 = 25 %), not a percentage, so a
+// spreadsheet cannot turn "25" into "25 % of a percent" or a locale decimal
+// comma into a column break. A blank cell means "the tenant's default rate",
+// which is what an inherited catalog exported before O2 has.
 //
 // Modeled on the contacts importer (`modules/crm/import.ts`): same
 // row-level report shape, same "never fail the whole file on one bad row"
@@ -33,6 +39,7 @@ export const PRODUCT_CSV_COLUMNS = [
   "description",
   "unit_price",
   "currency",
+  "vat_rate_bps",
   "is_active",
 ] as const;
 
@@ -49,6 +56,7 @@ export async function exportProductsCsv(ctx: TenantContext): Promise<string> {
     // unquoted CSV cell is a column break waiting to happen.
     formatMoneyInput(product.unitPrice, product.currency).replace(",", "."),
     product.currency,
+    product.vatRateBps === null ? "" : String(product.vatRateBps),
     product.isActive ? "true" : "false",
   ]);
   return toCsv(PRODUCT_CSV_COLUMNS, csvRows);
@@ -61,6 +69,7 @@ export type ImportProductRowError = {
   reason:
     | "nameMissing"
     | "unitPriceInvalid"
+    | "vatRateInvalid"
     | "currencyInvalid"
     | "activeInvalid"
     | "duplicateInFile"
@@ -115,6 +124,10 @@ export async function importProducts(
 
   const existing = await listProducts(ctx, true);
   const byName = new Map(existing.map((product) => [product.name.toLowerCase(), { id: product.id }]));
+  // The rates this tenant may price at. Read once for the whole file rather
+  // than per row — an import is a bulk operation and the configuration does
+  // not change underneath it.
+  const configuredRates = new Set((await listVatRates(ctx)).map((rate) => rate.rateBps));
   const seen = new Set<string>();
 
   for (const [index, row] of rows.entries()) {
@@ -165,6 +178,21 @@ export async function importProducts(
       continue;
     }
 
+    // A blank cell means "the tenant's default rate", resolved when the
+    // product reaches a document line. A value that is not one of the
+    // tenant's configured rates is refused rather than written into the
+    // catalog, where it would later reach an invoice (plan.md §4.11).
+    const rawVatRate = (row.vat_rate_bps ?? "").trim();
+    let vatRateBps: number | null = null;
+    if (rawVatRate.length > 0) {
+      const candidate = Number(rawVatRate);
+      if (!Number.isInteger(candidate) || !configuredRates.has(candidate)) {
+        report.errors.push({ row: rowNumber, reason: "vatRateInvalid" });
+        continue;
+      }
+      vatRateBps = candidate;
+    }
+
     try {
       const current = byName.get(key);
       if (current) {
@@ -174,6 +202,7 @@ export async function importProducts(
             description: parsed.data.description ?? null,
             unitPrice,
             currency: parsed.data.currency,
+            vatRateBps,
             isActive,
           })
           .where(eq(products.id, current.id));
@@ -188,6 +217,7 @@ export async function importProducts(
             description: parsed.data.description,
             unitPrice,
             currency: parsed.data.currency,
+            vatRateBps,
             isActive,
           });
         // A name introduced earlier in the same file must resolve against

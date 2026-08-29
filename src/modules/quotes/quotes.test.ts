@@ -137,8 +137,15 @@ describe.skipIf(!hasDb)("quotes (MySQL)", () => {
     expect(items[0].lineTotal).toBe(400000);
 
     await expect(createQuote(ctxA, { contactId: contactAId, items: [] })).rejects.toThrow(
-      /al menos un ítem/,
+      /quote_needs_items/,
     );
+
+    // Lines carry the momssats they were quoted at, so the faktura this
+    // offert converts into charges what the customer was told (plan.md §5.2.2).
+    const { defaultVatRateBps } = await import("@/modules/tenancy/vat-rates");
+    const defaultRate = await defaultVatRateBps(ctxA);
+    expect(items.map((item) => item.vatRateBps)).toEqual([defaultRate, defaultRate]);
+    expect(items[0].vatAmount).toBe(Math.round((400000 * defaultRate) / 10_000));
   });
 
   it("quotes are isolated per tenant", async () => {

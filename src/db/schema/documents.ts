@@ -77,6 +77,28 @@ export const documents = mysqlTable(
      * by a later edit to `vat_rates` (plan.md §2, §5.2.3).
      */
     vatSummary: json("vat_summary"),
+    /**
+     * Who this faktura was made out to, frozen when it was issued:
+     * `{ name, orgNr, addressLine1, addressLine2, postalCode, city, country,
+     * email, phone }`.
+     *
+     * The same argument as `vatSummary`. A faktura is a record kept for seven
+     * years, and the legally required buyer name and address are the ones
+     * that were on it when it was sent — not the ones on the contact row
+     * today. Without this, a customer moving office silently rewrites every
+     * invoice they have ever received.
+     */
+    buyerSnapshot: json("buyer_snapshot"),
+    /**
+     * Who issued it, frozen the same way: `{ name, orgNr, momsRegNr,
+     * bankgiro, plusgiro, fSkatt, invoiceFooter }`.
+     *
+     * A tenant that changes bankgiro must not retroactively change which
+     * account every past invoice asked to be paid into — that is a
+     * reconciliation problem, and for the F-skatt line, a fiscal claim about
+     * a date in the past.
+     */
+    sellerSnapshot: json("seller_snapshot"),
     issuedAt: datetime("issued_at"),
     /** Förfallodatum: issue date + the tenant's betalvillkor. */
     dueAt: datetime("due_at"),

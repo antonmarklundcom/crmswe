@@ -3,7 +3,7 @@ import { generateDocumentPdf } from "@/modules/documents/delivery";
 import { clientIp } from "@/lib/http/client-ip";
 import { checkRateLimit } from "@/lib/rate-limit";
 
-// Serves the nota de venta PDF at a public, unauthenticated URL (PLAN.md
+// Serves the faktura PDF at a public, unauthenticated URL (PLAN.md
 // §10 1Q). This is the URL handed to Meta when sending the document over
 // WhatsApp — Meta fetches the file itself, so it cannot require a session.
 export async function GET(

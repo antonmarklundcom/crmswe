@@ -9,6 +9,8 @@ import { checkRateLimit } from "@/lib/rate-limit";
 import { getTranslator } from "@/lib/i18n/translator";
 import { formatDate } from "@/lib/i18n/format";
 import { money } from "@/modules/renderable-document/format";
+import { formatRateLabel } from "@/lib/se/moms";
+import { quoteMoms } from "@/modules/quotes/quotes";
 
 // Public read-only quote view (PLAN.md §8) — the token is the secret, and
 // there is deliberately no accept/reject button in Phase 1: the rep sets
@@ -41,6 +43,9 @@ export default async function PublicQuotePage({
   if (!resolved) notFound();
 
   const { quote, items, ctx } = resolved;
+  // Computed on read — an offert freezes no moms summary, because it may
+  // still change (modules/quotes/quotes.ts).
+  const moms = quoteMoms(items, quote.discount);
   const [contact, tenant] = await Promise.all([
     getContact(ctx, quote.contactId),
     getTenant(quote.tenantId),
@@ -90,6 +95,7 @@ export default async function PublicQuotePage({
               <th className="py-2">{t("description")}</th>
               <th className="py-2 text-right">{t("qty")}</th>
               <th className="py-2 text-right">{t("price")}</th>
+              <th className="py-2 text-right">{t("vat")}</th>
               <th className="py-2 text-right">{t("total")}</th>
             </tr>
           </thead>
@@ -99,6 +105,9 @@ export default async function PublicQuotePage({
                 <td className="py-2">{item.description}</td>
                 <td className="py-2 text-right">{item.qty}</td>
                 <td className="py-2 text-right">{money(item.unitPrice, quote.currency, locale)}</td>
+                <td className="py-2 text-right">
+                  {item.vatRateBps === null ? "" : formatRateLabel(item.vatRateBps)}
+                </td>
                 <td className="py-2 text-right">{money(item.lineTotal, quote.currency, locale)}</td>
               </tr>
             ))}
@@ -112,14 +121,24 @@ export default async function PublicQuotePage({
           <span>{money(quote.subtotal, quote.currency, locale)}</span>
         </div>
         {quote.discount > 0 && (
-          <div className="flex w-56 justify-between">
-            <span>{t("discount")}</span>
-            <span>-{money(quote.discount, quote.currency, locale)}</span>
-          </div>
+          <>
+            <div className="flex w-56 justify-between">
+              <span>{t("discount")}</span>
+              <span>-{money(quote.discount, quote.currency, locale)}</span>
+            </div>
+            <div className="flex w-56 justify-between">
+              <span>{t("net")}</span>
+              <span>{money(quote.total, quote.currency, locale)}</span>
+            </div>
+          </>
         )}
+        <div className="flex w-56 justify-between">
+          <span>{t("vatTotal")}</span>
+          <span>{money(moms.vatTotal, quote.currency, locale)}</span>
+        </div>
         <div className="flex w-56 justify-between text-base font-semibold">
           <span>{t("total")}</span>
-          <span style={{ color: accent }}>{money(quote.total, quote.currency, locale)}</span>
+          <span style={{ color: accent }}>{money(moms.gross, quote.currency, locale)}</span>
         </div>
       </div>
 

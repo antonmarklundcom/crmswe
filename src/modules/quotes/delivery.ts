@@ -9,7 +9,7 @@ import {
   sendDocumentOverWhatsapp,
   storeDocumentPdf,
 } from "@/modules/renderable-document/delivery";
-import { getQuote, listQuoteItems, setQuotePdfKey, setQuoteStatus } from "./quotes";
+import { getQuote, listQuoteItems, quoteMoms, setQuotePdfKey, setQuoteStatus } from "./quotes";
 import { renderQuotePdf } from "./pdf";
 
 // Thrown messages are stable codes, not copy (PLAN.md §13 H5 #4): a
@@ -43,6 +43,9 @@ export async function generateQuotePdf(ctx: TenantContext, quoteId: string): Pro
   if (!contact) throw new Error("contact_not_found");
 
   const settings = (tenant?.settings ?? {}) as TenantSettings;
+  // Computed on read, not stored: an offert is still editable, so freezing a
+  // moms summary onto it would only create something to go stale.
+  const moms = quoteMoms(items, quote.discount);
 
   const pdf = await renderQuotePdf({
     number: quote.number,
@@ -54,6 +57,9 @@ export async function generateQuotePdf(ctx: TenantContext, quoteId: string): Pro
     subtotal: quote.subtotal,
     discount: quote.discount,
     total: quote.total,
+    vatTotal: moms.vatTotal,
+    vatSummary: moms.summary,
+    gross: moms.gross,
     validUntil: quote.validUntil,
     notes: quote.notes,
     createdAt: quote.createdAt,
@@ -63,6 +69,7 @@ export async function generateQuotePdf(ctx: TenantContext, quoteId: string): Pro
       qty: item.qty,
       unitPrice: item.unitPrice,
       lineTotal: item.lineTotal,
+      vatRateBps: item.vatRateBps,
     })),
   });
 

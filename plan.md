@@ -375,6 +375,38 @@ manual steps. STOP — no further phases.
   Next: O2 (`prompts/opus-2-moms-faktura.md`) — the columns it needs already
   exist; start at `src/lib/se/` for the moms math and
   `src/modules/documents/` for the faktura itself.
+- **2026-08-29 — O2 (moms & faktura engine):** PR #2. `src/lib/se/moms.ts` is
+  the moms engine: **one** rounding rule — per line, half away from zero,
+  document total = sum of the rounded lines — with a document-level rabatt
+  allocated pro rata by largest remainder, because on a mixed-rate faktura the
+  moms depends on which lines a discount comes off. Away-from-zero is
+  load-bearing, not stylistic: it makes `vat(-x) === -vat(x)`, which is why a
+  kreditfaktura cancels its faktura to the öre. Property tests over 5 000
+  generated documents assert netto + moms = brutto with nothing lost. Rates
+  always come from `vat_rates` for a date; an unconfigured rate is refused.
+  Migration `0026` adds a buyer address to `contacts` (a faktura legally needs
+  one and there was nowhere to put it) and buyer/seller **snapshots** frozen
+  onto the document at issue, on the same logic as `vat_summary`. The faktura
+  PDF and `/d/[token]` now carry every field in sweden-business-apps §1;
+  `pdf-text.ts` reads text back out of a rendered PDF so the test asserts the
+  invoice *says* those things, not just that its bytes are stable.
+  Deviations worth knowing: **payments reconcile against the gross** (`total`
+  is exklusive moms, so balancing against it called every settled invoice
+  overpaid — a real bug this phase fixed); **an issued faktura can no longer be
+  voided**, correction is a kreditfaktura, and void is draft-only; an offert
+  now quotes inklusive moms and freezes no summary, computing it on read.
+  Two bugs found and fixed while testing: `sv-SE` formats negatives with U+2212
+  which react-pdf's Helvetica silently drops, so every kreditfaktura amount
+  lost its minus sign; and the offert's per-line momssats was not carried into
+  the faktura it converts to.
+  **A local MySQL is available after all** — `apt-get install mariadb-server`
+  (see KNOWN-ISSUES O1-6), so all 709 tests including the integration suites
+  were verified locally rather than left to CI.
+  Next: O3 (`prompts/opus-3-channels-gdpr.md`). Start at
+  `src/modules/documents/delivery.ts`, which still sends over WhatsApp and is
+  where e-post-first begins; GDPR anonymization must leave the frozen
+  `buyer_snapshot` on issued documents intact (that is the 7-year record) while
+  scrubbing the live `contacts` row.
 
 ## 10. Backlog
 

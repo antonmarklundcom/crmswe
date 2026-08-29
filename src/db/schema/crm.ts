@@ -74,6 +74,21 @@ export const contacts = mysqlTable(
      * one. Validated and formatted through lib/se/identity — never here.
      */
     orgNr: varchar("org_nr", { length: 12 }),
+    // --- Faktureringsadress (plan.md §5.2.3). A Swedish faktura must carry
+    // the buyer's name *and address* (mervärdesskattelagen), and before O2
+    // there was nowhere to put one. Structured rather than a single free-text
+    // block so a later PEPPOL BIS export has the fields it needs (§10) —
+    // that export is the reason this is five columns and not one.
+    //
+    // All nullable: a lead captured from a web form has no address, and must
+    // still be a contact. The invoice flow is what requires them, and it says
+    // so at issue time rather than at capture time.
+    addressLine1: varchar("address_line1", { length: 200 }),
+    addressLine2: varchar("address_line2", { length: 200 }),
+    postalCode: varchar("postal_code", { length: 16 }),
+    city: varchar("city", { length: 100 }),
+    /** ISO 3166-1 alpha-2. Defaults to SE for a new contact in this edition. */
+    country: char("country", { length: 2 }),
     notes: text("notes"),
     source: varchar("source", { length: 100 }),
     ownerUserId: char("owner_user_id", { length: 26 }),

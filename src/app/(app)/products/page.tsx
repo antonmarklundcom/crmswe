@@ -3,6 +3,8 @@ import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { requireTenantContext } from "@/modules/tenancy/context";
 import { listProducts } from "@/modules/quotes/products";
+import { listVatRates } from "@/modules/tenancy/vat-rates";
+import { formatRateLabel } from "@/lib/se/moms";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
@@ -22,7 +24,7 @@ export default async function ProductsPage() {
   // not rendered for them. Export is read-only, so it stays available to
   // everyone who can see the catalog.
   const isAdmin = ctx.role === "admin";
-  const products = await listProducts(ctx, true);
+  const [products, vatRates] = await Promise.all([listProducts(ctx, true), listVatRates(ctx)]);
 
   return (
     <div className="flex flex-col gap-8">
@@ -59,6 +61,7 @@ export default async function ProductsPage() {
                 <tr className="border-b">
                   <th className="py-2">{t("name")}</th>
                   <th className="py-2 text-right">{t("unitPrice", { currency: ctx.currency })}</th>
+                  <th className="py-2 text-right">{t("vatRate")}</th>
                   <th className="py-2" />
                 </tr>
               </thead>
@@ -73,6 +76,9 @@ export default async function ProductsPage() {
                     </td>
                     <td className="py-2 text-right">
                       {formatMoney(product.unitPrice, product.currency, locale)}
+                    </td>
+                    <td className="py-2 text-right">
+                      {product.vatRateBps === null ? "" : formatRateLabel(product.vatRateBps)}
                     </td>
                     <td className="py-2 text-right">
                       {isAdmin && (
@@ -100,7 +106,10 @@ export default async function ProductsPage() {
       {isAdmin && (
         <section id="nuevo-producto" className="scroll-mt-6">
           <h2 className="mb-4 text-lg font-semibold">{t("createTitle")}</h2>
-          <ProductCreateForm currency={ctx.currency} />
+          <ProductCreateForm
+            currency={ctx.currency}
+            vatRates={vatRates.map((rate) => ({ rateBps: rate.rateBps, label: rate.label }))}
+          />
         </section>
       )}
     </div>

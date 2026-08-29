@@ -3,6 +3,13 @@ import { eq } from "drizzle-orm";
 import { db } from "@/db/client";
 import { tenants } from "@/db/schema";
 import type { CountryCode } from "@/lib/phone";
+import {
+  isValidBankgiro,
+  isValidOrgNr,
+  isValidPlusgiro,
+  momsRegNrFromOrgNr,
+  toTenDigits,
+} from "@/lib/se/identity";
 import type { TenantContext } from "./context";
 import { assertTenantWritable } from "./db";
 import { getTenant } from "./tenants";
@@ -112,6 +119,97 @@ export async function updateTenantTimezone(ctx: TenantContext, timezone: string)
   assertTenantWritable(ctx);
   await db.update(tenants).set({ timezone }).where(eq(tenants.id, ctx.tenantId));
   return getTenant(ctx.tenantId);
+}
+
+/**
+ * Företagsuppgifter — the seller block every faktura prints (plan.md §2,
+ * §5.2.3). Typed columns rather than settings JSON, so this is its own write
+ * rather than a merge.
+ *
+ * The identifiers are validated here, at the only door they come in through:
+ * an org.nr that fails its Luhn check is a typo, and a typo in the org.nr on
+ * an invoice is the kind of error a customer's bookkeeper bounces the invoice
+ * over. `momsRegNr` is left to the tenant rather than always derived, because
+ * group and foreign registrations exist — but when it is blank and the org.nr
+ * is good, the derived SE-form is filled in, since that is right for an
+ * ordinary Swedish company and nobody should have to type it.
+ */
+export type TenantCompanyProfile = {
+  orgNr?: string | null;
+  momsRegNr?: string | null;
+  bankgiro?: string | null;
+  plusgiro?: string | null;
+  fskatt?: boolean;
+  paymentTermsDays?: number;
+  invoiceFooter?: string | null;
+};
+
+export async function updateTenantCompanyProfile(
+  ctx: TenantContext,
+  input: TenantCompanyProfile,
+) {
+  assertTenantWritable(ctx);
+
+  const values: Partial<typeof tenants.$inferInsert> = {};
+
+  if (input.orgNr !== undefined) {
+    const orgNr = blankToNull(input.orgNr);
+    if (orgNr !== null) {
+      const canonical = toTenDigits(orgNr);
+      if (canonical === null || !isValidOrgNr(orgNr)) throw new Error("invalid_org_nr");
+      // Stored canonically, ten digits without the hyphen; formatting for
+      // display is lib/se/identity's job, never the column's.
+      values.orgNr = canonical;
+    } else {
+      values.orgNr = null;
+    }
+  }
+
+  if (input.momsRegNr !== undefined) values.momsRegNr = blankToNull(input.momsRegNr);
+
+  if (input.bankgiro !== undefined) {
+    const bankgiro = blankToNull(input.bankgiro);
+    if (bankgiro !== null && !isValidBankgiro(bankgiro)) throw new Error("invalid_bankgiro");
+    values.bankgiro = bankgiro;
+  }
+
+  if (input.plusgiro !== undefined) {
+    const plusgiro = blankToNull(input.plusgiro);
+    if (plusgiro !== null && !isValidPlusgiro(plusgiro)) throw new Error("invalid_plusgiro");
+    values.plusgiro = plusgiro;
+  }
+
+  if (input.fskatt !== undefined) values.fskatt = input.fskatt;
+
+  if (input.paymentTermsDays !== undefined) {
+    // A negative or absurd betalvillkor would produce a förfallodatum before
+    // the invoice date. A year is well past any real Swedish payment term.
+    if (!Number.isInteger(input.paymentTermsDays) || input.paymentTermsDays < 0 ||
+        input.paymentTermsDays > 365) {
+      throw new Error("invalid_payment_terms");
+    }
+    values.paymentTermsDays = input.paymentTermsDays;
+  }
+
+  if (input.invoiceFooter !== undefined) values.invoiceFooter = blankToNull(input.invoiceFooter);
+
+  // Fill in the derivable momsregnr when the tenant left it blank.
+  const orgNrAfter = values.orgNr !== undefined ? values.orgNr : (await getTenant(ctx.tenantId))?.orgNr;
+  if (!blankToNull(values.momsRegNr ?? null) && orgNrAfter) {
+    values.momsRegNr = momsRegNrFromOrgNr(orgNrAfter);
+  }
+
+  if (Object.keys(values).length > 0) {
+    await db.update(tenants).set(values).where(eq(tenants.id, ctx.tenantId));
+  }
+  return getTenant(ctx.tenantId);
+}
+
+/** An emptied form field means "cleared", not "the empty string". */
+function blankToNull(value: string | null | undefined): string | null {
+  if (value === null || value === undefined) return null;
+  const trimmed = value.trim();
+  return trimmed.length === 0 ? null : trimmed;
 }
 
 /**

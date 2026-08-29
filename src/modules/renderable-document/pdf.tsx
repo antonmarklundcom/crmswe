@@ -6,24 +6,27 @@
 import React from "react";
 import { Document, Page, Text, View, Image, StyleSheet } from "@react-pdf/renderer";
 import type { TenantBranding } from "@/modules/tenancy/settings";
-import { money } from "./format";
+import { pdfMoney } from "./format";
 
-// The shared PDF shell (PLAN.md §13 H9). The quote and the nota de venta
-// were near-identical react-pdf trees; SIFEN's factura (§9) would have been
-// a third copy. The shell owns everything both documents agree on — page,
-// header, client block, item table, totals, footer — and takes the parts
-// they differ in as data: the meta lines under the title, an optional
+// The shared PDF shell (PLAN.md §13 H9). The offert and the faktura were
+// near-identical react-pdf trees; the shell owns everything they agree on —
+// page, header, client block, item table, totals, footer — and takes the
+// parts they differ in as data: the meta lines under the title, an optional
 // stamp, the totals rows, and a tail slot for whatever prints below the
-// totals (a validity note, a disclaimer box).
+// totals (a validity note, a momsspecifikation, a payment block).
 //
-// Every style below is byte-for-byte what the two files had, because the
-// batch's exit criterion is that the rendered PDFs are unchanged.
+// O2 added the parts a Swedish faktura needs and an offert does not: a seller
+// identity block in the header, and an optional per-line momssats column that
+// appears only when a caller supplies the header for it.
 
 export type PdfLineItem = {
   description: string;
   qty: number;
   unitPrice: number;
   lineTotal: number;
+  /** Momssats as printed, e.g. "25 %". Only a faktura supplies it; when any
+   * item does, the table grows a moms column (plan.md §5.2.3). */
+  vat?: string;
 };
 
 export type PdfTotalsRow = {
@@ -42,10 +45,16 @@ export type DocumentColumns = {
   qty: string;
   price: string;
   total: string;
+  /** Header for the per-line momssats column. Supplying it turns the column
+   * on; an offert leaves it out and the table is unchanged. */
+  vat?: string;
 };
 
 export type DocumentShellProps = {
   tenantName: string;
+  /** Säljarens namn, org.nr and momsregistreringsnummer — required on a
+   * Swedish faktura, absent on an offert (plan.md §5.2.3). */
+  sellerLines?: string[];
   branding: TenantBranding;
   locale: string;
   currency: string;
@@ -55,15 +64,14 @@ export type DocumentShellProps = {
   stamp?: { text: string; color: string };
   clientLabel: string;
   clientLines: string[];
-  /** A line set apart under the client block — the nota de venta's due
-   * date. Node, for the same run-splitting reason as `footer`. */
+  /** A line set apart under the client block. Node, for the same
+   * run-splitting reason as `footer`. */
   clientFooter?: React.ReactNode;
   columns: DocumentColumns;
   items: PdfLineItem[];
   totals: PdfTotalsRow[];
-  /** Width of the totals block. The quote has always printed 220pt and the
-   * nota de venta 240pt; keeping that difference is cheaper than changing
-   * how a customer-facing document looks in a refactor. */
+  /** Width of the totals block. The offert prints 220pt and the faktura
+   * 240pt — the faktura's rows carry longer labels. */
   totalsWidth?: number;
   /** Printed between the totals and the page footer. */
   tail?: React.ReactNode;
@@ -100,7 +108,32 @@ export const styles = StyleSheet.create({
   colDesc: { flex: 4 },
   colQty: { flex: 1, textAlign: "right" },
   colPrice: { flex: 2, textAlign: "right" },
+  colVat: { flex: 1.2, textAlign: "right" },
   colTotal: { flex: 2, textAlign: "right" },
+  seller: { color: "#555", marginTop: 4, fontSize: 8, lineHeight: 1.4 },
+  // Momsspecifikation — beskattningsunderlag och momsbelopp per sats.
+  specTitle: { marginTop: 20, marginBottom: 4, fontFamily: "Helvetica-Bold" },
+  specHeader: {
+    flexDirection: "row",
+    borderBottomWidth: 0.5,
+    borderBottomColor: "#999",
+    paddingBottom: 3,
+    fontFamily: "Helvetica-Bold",
+  },
+  specRow: { flexDirection: "row", paddingVertical: 3 },
+  specRate: { flex: 2 },
+  specBase: { flex: 3, textAlign: "right" },
+  specVat: { flex: 3, textAlign: "right" },
+  // Betalningsuppgifter — bankgiro/plusgiro, OCR, betalvillkor.
+  payBox: {
+    marginTop: 18,
+    padding: 8,
+    borderWidth: 0.5,
+    borderColor: "#999",
+    lineHeight: 1.5,
+  },
+  payLabel: { color: "#666" },
+  fskatt: { marginTop: 12, fontFamily: "Helvetica-Bold" },
   totals: { marginTop: 12, alignItems: "flex-end" },
   totalsRow: {
     flexDirection: "row",
@@ -156,6 +189,11 @@ export function DocumentShell(props: DocumentShellProps) {
             ) : (
               <Text style={[styles.tenantName, { color: accent }]}>{props.tenantName}</Text>
             )}
+            {props.sellerLines?.map((line, index) => (
+              <Text key={index} style={styles.seller}>
+                {line}
+              </Text>
+            ))}
           </View>
           <View>
             <Text style={[styles.title, { color: accent }]}>{props.title}</Text>
@@ -182,6 +220,7 @@ export function DocumentShell(props: DocumentShellProps) {
           <Text style={styles.colDesc}>{props.columns.description}</Text>
           <Text style={styles.colQty}>{props.columns.qty}</Text>
           <Text style={styles.colPrice}>{props.columns.price}</Text>
+          {props.columns.vat && <Text style={styles.colVat}>{props.columns.vat}</Text>}
           <Text style={styles.colTotal}>{props.columns.total}</Text>
         </View>
 
@@ -189,8 +228,9 @@ export function DocumentShell(props: DocumentShellProps) {
           <View key={index} style={styles.row}>
             <Text style={styles.colDesc}>{item.description}</Text>
             <Text style={styles.colQty}>{item.qty}</Text>
-            <Text style={styles.colPrice}>{money(item.unitPrice, props.currency, props.locale)}</Text>
-            <Text style={styles.colTotal}>{money(item.lineTotal, props.currency, props.locale)}</Text>
+            <Text style={styles.colPrice}>{pdfMoney(item.unitPrice, props.currency, props.locale)}</Text>
+            {props.columns.vat && <Text style={styles.colVat}>{item.vat ?? ""}</Text>}
+            <Text style={styles.colTotal}>{pdfMoney(item.lineTotal, props.currency, props.locale)}</Text>
           </View>
         ))}
 

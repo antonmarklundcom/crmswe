@@ -12,7 +12,8 @@ import {
   type PdfLineItem,
   type PdfTotalsRow,
 } from "@/modules/renderable-document/pdf";
-import { documentDate, money } from "@/modules/renderable-document/format";
+import { documentDate, pdfMoney as money } from "@/modules/renderable-document/format";
+import { formatRateLabel, type VatSummaryRow } from "@/lib/se/moms";
 
 // Quote PDF (PLAN.md §8), now a configuration of the shared document shell
 // (§13 H9) rather than its own copy of the layout: what is left here is
@@ -28,11 +29,18 @@ export type QuotePdfData = {
   currency: string;
   subtotal: number;
   discount: number;
+  /** Netto after the rabatt — the beskattningsunderlag. */
   total: number;
+  /** Momsbelopp, computed on read: an offert may still change, so unlike a
+   * faktura it freezes nothing (modules/quotes/quotes.ts `quoteMoms`). */
+  vatTotal: number;
+  vatSummary: VatSummaryRow[];
+  /** total + vatTotal — the price the customer is being quoted. */
+  gross: number;
   validUntil: Date | null;
   notes: string | null;
   createdAt: Date;
-  items: PdfLineItem[];
+  items: Array<PdfLineItem & { vatRateBps: number | null }>;
   /** The **tenant's** locale, never the sending rep's: this document is read
    * by their customer (PLAN.md §13 H5 #4). */
   locale?: string | null;
@@ -49,6 +57,9 @@ export type QuotePdfLabels = {
   total: string;
   subtotal: string;
   discount: string;
+  vat: string;
+  net: string;
+  vatTotal: string;
   validUntil: string;
   footer: string;
 };
@@ -68,9 +79,16 @@ export function QuoteDocument({
     ...(data.discount > 0
       ? [{ label: labels.discount, value: `-${money(data.discount, data.currency, locale)}` }]
       : []),
+    ...(data.discount > 0
+      ? [{ label: labels.net, value: money(data.total, data.currency, locale) }]
+      : []),
+    // An offert quotes what the customer will actually pay, so it names the
+    // moms and totals inklusive — a quoted "netto" a private customer reads
+    // as the price is the classic complaint about invoicing software here.
+    { label: labels.vatTotal, value: money(data.vatTotal, data.currency, locale) },
     {
       label: labels.total,
-      value: money(data.total, data.currency, locale),
+      value: money(data.gross, data.currency, locale),
       kind: "grand" as const,
       valueColor: accent,
     },
@@ -90,9 +108,13 @@ export function QuoteDocument({
         description: labels.description,
         qty: labels.qty,
         price: labels.price,
+        vat: labels.vat,
         total: labels.total,
       }}
-      items={data.items}
+      items={data.items.map((item) => ({
+        ...item,
+        vat: item.vatRateBps === null ? "" : formatRateLabel(item.vatRateBps),
+      }))}
       totals={totals}
       totalsWidth={220}
       tail={
@@ -125,6 +147,9 @@ export async function renderQuotePdf(data: QuotePdfData): Promise<Buffer> {
     total: t("total"),
     subtotal: t("subtotal"),
     discount: t("discount"),
+    vat: t("vat"),
+    net: t("net"),
+    vatTotal: t("vatTotal"),
     validUntil: t("validUntil"),
     footer: t("footer"),
   };

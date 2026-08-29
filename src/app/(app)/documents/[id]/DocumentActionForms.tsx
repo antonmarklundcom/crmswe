@@ -5,11 +5,13 @@ import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { PAYMENT_METHODS } from "@/modules/documents/types";
 import {
+  createCreditNoteAction,
   recordPaymentAction,
   voidDocumentAction,
   type RecordPaymentField,
   type RecordPaymentFormState,
   type VoidDocumentFormState,
+  type CreditNoteFormState,
 } from "../actions";
 import { Input, Select } from "@/components/ui/form-fields";
 
@@ -122,6 +124,38 @@ export function VoidDocumentForm({ documentId }: { documentId: string }) {
       </label>
       <Button type="submit" variant="outline" size="sm" className="w-fit" disabled={pending}>
         {t("voidAction")}
+      </Button>
+    </form>
+  );
+}
+
+const creditInitialState: CreditNoteFormState = { error: null };
+
+/**
+ * Creates the kreditfaktura that reverses an issued faktura.
+ *
+ * Deliberately plain: no reason field, no confirmation copy beyond the
+ * warning the page already shows. The credit note is created as a *draft*, so
+ * the review step is the draft itself — the admin reads it and issues it, or
+ * abandons it — rather than a dialog asking whether they meant it.
+ */
+export function CreditNoteForm({ documentId }: { documentId: string }) {
+  const t = useTranslations("app.documents");
+  const [state, formAction, pending] = useActionState(
+    createCreditNoteAction,
+    creditInitialState,
+  );
+
+  return (
+    <form action={formAction} className="flex flex-col gap-2 text-sm">
+      <input type="hidden" name="documentId" value={documentId} />
+      {state.error && (
+        <p role="alert" className="text-sm text-destructive">
+          {t(`errors.${state.error}` as "errors.unknown")}
+        </p>
+      )}
+      <Button type="submit" variant="outline" size="sm" className="w-fit" disabled={pending}>
+        {t("createCredit")}
       </Button>
     </form>
   );

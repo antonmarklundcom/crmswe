@@ -20,7 +20,7 @@ export const PUBLIC_PREFIXES = [
   "/api",
   "/f/",
   "/q/",
-  // Public nota de venta view + PDF (§10 1Q). The /pdf path in particular
+  // Public faktura view + PDF. The /pdf path in particular
   // is fetched by *Meta* when delivering the document over WhatsApp, so a
   // redirect to /login here doesn't look like an auth bug — it looks like
   // WhatsApp silently not delivering attachments.

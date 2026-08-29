@@ -29,7 +29,7 @@ import type { TenantContext } from "@/modules/tenancy/context";
 // own, and the check runs in the same transaction as the delete.
 //
 // What counts as history is anything with meaning outside the record itself:
-// a numbered quote or nota de venta, a WhatsApp conversation, an inbound lead
+// a numbered offert or faktura, a WhatsApp conversation, an inbound lead
 // submission, an automation run. Rows that describe *only* this record — its
 // tags, its activity feed, its tasks, its AI drafts — go with it, since they
 // are unreadable once it is gone. Nothing here is a soft delete: a contact

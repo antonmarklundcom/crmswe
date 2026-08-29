@@ -15,6 +15,12 @@
 // typed number as minor units shows amounts 100× wrong — which on an invoice
 // is not a rounding error, it's a wrong number.
 
+import {
+  computeDocumentMoms,
+  type MomsDocumentLine,
+  type MomsDocumentTotals,
+} from "@/lib/se/moms";
+
 /** Tenant default when nothing else names a currency (plan.md §1.3). */
 export const DEFAULT_CURRENCY = "SEK";
 
@@ -172,7 +178,10 @@ export type RawLineInput = {
   productId?: string;
   description: string;
   qty: string;
+  /** Major units, exklusive moms. */
   unitPrice: string;
+  /** Momssats in basis points, as a string because it is a select's value. */
+  vatRateBps: string;
 };
 
 /**
@@ -187,23 +196,30 @@ export function parseQuantity(raw: string): number | null {
 }
 
 /**
- * The builder's live preview. Mirrors the server's own reading of the posted
- * form — drop the blank rows, parse each amount the same way, apply the same
- * clamped discount math — and returns null when any value the server will
- * reject is present, so the display goes blank rather than showing a total
- * that the stored document won't match.
+ * The builder's live preview, for the offert and faktura builders alike.
+ *
+ * Runs the **same moms engine the server runs**, on the same parsed values,
+ * so the netto, per-rate moms and att-betala shown while typing are the
+ * amounts that will be stored — down to the öre-level rounding. Approximating
+ * here would mean a preview that disagrees with the saved document by an öre
+ * on exactly the mixed-rate invoices the rounding rule exists for.
+ *
+ * Returns null when any value the server would reject is present, so the
+ * display goes blank rather than showing a total the stored document won't
+ * match. One implementation, because two builders each maintaining their own
+ * copy of "what the server will do" is how they drift apart.
  */
 export function previewTotals(
   rawLines: RawLineInput[],
   rawDiscount: string,
   currency: string = DEFAULT_CURRENCY,
-): ComputedTotals | null {
+): MomsDocumentTotals | null {
   // A cleared discount field means "no discount", which is what the server
   // reads it as too — not a value that blanks the whole preview.
   const discount = parseMoneyInput(rawDiscount.trim() || "0", currency);
   if (discount === null || discount < 0) return null;
 
-  const items: LineInput[] = [];
+  const items: MomsDocumentLine[] = [];
   for (const line of rawLines) {
     // Blank rows are "not filled in yet" — the server drops them too, so an
     // untouched extra row must not blank the preview.
@@ -211,10 +227,12 @@ export function previewTotals(
     const qty = parseQuantity(line.qty);
     const unitPrice = parseMoneyInput(line.unitPrice, currency);
     if (qty === null || qty < 1 || unitPrice === null || unitPrice < 0) return null;
-    items.push({ productId: line.productId, description: line.description, qty, unitPrice });
+    items.push({ lineTotal: qty * unitPrice, vatRateBps: Number(line.vatRateBps) || 0 });
   }
+  // Nothing filled in yet is not a document to price.
+  if (items.length === 0) return null;
 
-  return computeLineTotals(items, discount);
+  return computeDocumentMoms(items, discount);
 }
 
 /** Totals are derived here, never taken from the client. */

@@ -18,6 +18,8 @@ function createQuoteSchema(currency: string) {
     qty: z.coerce.number().int().min(1),
     unitPrice: moneyAmountSchema(currency),
     productId: z.string().optional(),
+    // Basis points; validated against the tenant's vat_rates in the service.
+    vatRateBps: z.coerce.number().int().min(0).max(10_000).optional(),
   });
 
   return z.object({
@@ -47,6 +49,7 @@ function parseItems(formData: FormData) {
   const qtys = formData.getAll("qty").map(String);
   const prices = formData.getAll("unitPrice").map(String);
   const productIds = formData.getAll("productId").map(String);
+  const vatRates = formData.getAll("vatRateBps").map(String);
 
   return descriptions
     .map((description, i) => ({
@@ -54,6 +57,7 @@ function parseItems(formData: FormData) {
       qty: qtys[i],
       unitPrice: prices[i],
       productId: productIds[i] || undefined,
+      vatRateBps: vatRates[i] || undefined,
     }))
     // Blank rows are how the builder represents "not filled in yet".
     .filter((line) => line.description.trim().length > 0);

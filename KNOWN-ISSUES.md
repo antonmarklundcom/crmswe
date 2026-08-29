@@ -93,6 +93,12 @@ metadata and `src/app/manifest.ts` still describe a Paraguayan WhatsApp CRM.
 That is S1's assignment (plan.md §6.1) and was left untouched here to keep the
 phases separable. *Owner: S1.*
 
+**Sharpened in O2 — this one is customer-visible.** Loading a real issued
+faktura at `/d/[token]` renders the page under `<title>clientes.com.py</title>`.
+That is not an internal-only branding wart: it is the browser tab and the
+bookmark title on the page a Swedish tenant sends their customer to pay an
+invoice. Worth doing first in S1, ahead of the rest of the sweep.
+
 ### O1-6 — Integration suites cannot be run in the build environment *(solved in O2)*
 O1 had no reachable MySQL: Docker has no daemon in these containers and the
 container registry is blocked by the network policy, so every

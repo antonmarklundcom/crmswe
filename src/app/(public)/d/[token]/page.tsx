@@ -173,9 +173,11 @@ export default async function PublicDocumentPage({
         </div>
         {document.discount !== 0 && (
           <>
+            {/* Signed, so the rows still add up on a kreditfaktura, where
+                the rabatt is added back to a negative subtotal. */}
             <div className="flex justify-between py-1">
               <span>{t("discount")}</span>
-              <span>-{fmt(Math.abs(document.discount))}</span>
+              <span>{fmt(-document.discount)}</span>
             </div>
             <div className="flex justify-between py-1">
               <span>{t("net")}</span>

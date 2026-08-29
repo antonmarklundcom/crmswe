@@ -237,6 +237,22 @@ describe("the faktura carries every legally required field", () => {
     expect(text).not.toContain("Godkänd för F-skatt");
   });
 
+  it("prints a rabatt row that the rows above and below still add up with", async () => {
+    // Subtotal + rabatt row = beskattningsunderlag, on both document types.
+    // A hardcoded minus in front of the magnitude gets this right on a
+    // faktura and wrong on a kreditfaktura, where the rabatt is added back
+    // to a negative subtotal — printed rows that visibly do not reconcile.
+    const invoice = pdfText(await renderDocumentPdf(faktura));
+    expect(invoice).toContain("13\u00a0765,00"); // subtotal
+    expect(invoice).toContain("-1\u00a0000,00"); // rabatt, taken off
+    expect(invoice).toContain("12\u00a0765,00"); // beskattningsunderlag
+
+    const credit = pdfText(await renderDocumentPdf(kreditfaktura));
+    expect(credit).toContain("-13\u00a0765,00"); // subtotal
+    expect(credit).toContain("1\u00a0000,00"); // rabatt, added back
+    expect(credit).toContain("-12\u00a0765,00"); // beskattningsunderlag
+  });
+
   it("names the faktura a kreditfaktura reverses", async () => {
     // A credit note that doesn't say what it credits is an unexplained
     // negative amount in somebody's books.

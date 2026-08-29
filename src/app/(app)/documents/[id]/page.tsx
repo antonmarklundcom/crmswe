@@ -255,9 +255,10 @@ export default async function DocumentDetailPage({
             </div>
             {document.discount !== 0 && (
               <>
+                {/* Signed, so the rows still add up on a kreditfaktura. */}
                 <div className="flex w-64 justify-between">
                   <span>{t("discount")}</span>
-                  <span>-{fmt(Math.abs(document.discount))}</span>
+                  <span>{fmt(-document.discount)}</span>
                 </div>
                 <div className="flex w-64 justify-between">
                   <span>{t("net")}</span>

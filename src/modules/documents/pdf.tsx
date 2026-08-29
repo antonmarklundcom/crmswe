@@ -142,8 +142,12 @@ export function FakturaDocument({
 
   const totals: PdfTotalsRow[] = [
     { label: labels.subtotal, value: fmt(data.subtotal) },
+    // The signed amount actually taken off, not a hardcoded minus in front
+    // of a magnitude. On a kreditfaktura the subtotal is negative and the
+    // rabatt is added *back*, so a forced "-500,00" under "-13 227,00" would
+    // print rows that do not add up to the netto below them.
     ...(data.discount !== 0
-      ? [{ label: labels.discount, value: `-${fmt(Math.abs(data.discount))}` }]
+      ? [{ label: labels.discount, value: fmt(-data.discount) }]
       : []),
     // Netto is called out on its own line whenever a rabatt moved it, so the
     // beskattningsunderlag the moms is computed on is visible rather than

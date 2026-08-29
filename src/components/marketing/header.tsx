@@ -14,13 +14,13 @@ export async function MarketingHeader() {
     <header className="mk-header" data-sticky-header>
       <div className="mk-wrap mk-header__inner">
         <Link href="/" className="mk-wordmark">
-          clientes<span>.com.py</span>
+          CRM<span>Swe</span>
         </Link>
 
         <nav className="mk-nav" aria-label={t("menu")}>
-          <Link href="/metodo">{t("metodo")}</Link>
-          <Link href="/nosotros">{t("nosotros")}</Link>
-          <Link href="/contacto">{t("contacto")}</Link>
+          <Link href="/sa-funkar-det">{t("saFunkarDet")}</Link>
+          <Link href="/om-oss">{t("omOss")}</Link>
+          <Link href="/kontakt">{t("kontakt")}</Link>
         </nav>
 
         <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>

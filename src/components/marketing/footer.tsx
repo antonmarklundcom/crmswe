@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { CRM_LOGIN_URL, contact, siteConfig, telHref } from "@/lib/site-config";
-import { WhatsAppLink } from "./cta";
+import { CookieSettingsLink } from "./cookie-consent";
 
 export async function MarketingFooter() {
   const t = await getTranslations("marketing");
@@ -36,30 +36,24 @@ export async function MarketingFooter() {
         <div className="mk-footer__grid">
           <div>
             <Link href="/" className="mk-wordmark" style={{ color: "inherit" }}>
-              clientes<span>.com.py</span>
+              CRM<span>Swe</span>
             </Link>
             <p style={{ marginTop: "1rem", color: "inherit", opacity: 0.85 }}>
               {t("footer.tagline")}
             </p>
-            <WhatsAppLink
-              label={t("cta.whatsapp")}
-              prefill={t("cta.waPrefill")}
-              location="footer"
-              className="mk-btn mk-btn--ghost"
-            />
           </div>
 
           <div>
             <p style={{ color: "inherit", fontWeight: 500 }}>{t("footer.siteTitle")}</p>
             <ul className="mk-footer__list">
               <li>
-                <Link href="/metodo">{t("nav.metodo")}</Link>
+                <Link href="/sa-funkar-det">{t("nav.saFunkarDet")}</Link>
               </li>
               <li>
-                <Link href="/nosotros">{t("nav.nosotros")}</Link>
+                <Link href="/om-oss">{t("nav.omOss")}</Link>
               </li>
               <li>
-                <Link href="/contacto">{t("nav.contacto")}</Link>
+                <Link href="/kontakt">{t("nav.kontakt")}</Link>
               </li>
             </ul>
           </div>
@@ -84,7 +78,9 @@ export async function MarketingFooter() {
           <span>
             {new Date().getFullYear()} {siteConfig.name}. {t("footer.rights")}
           </span>
-          <span>{t("footer.madeIn")}</span>
+          <span>
+            <CookieSettingsLink label={t("cookie.settingsLabel")} />
+          </span>
         </div>
       </div>
     </footer>

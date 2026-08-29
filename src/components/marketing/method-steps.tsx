@@ -60,7 +60,7 @@ export function MethodRail({
 /**
  * P7 sticky-side scroll — the heading holds still in the left column while
  * the four expanded steps scroll past on the right. This is the plan's
- * "scroll-triggered method steps" on /metodo: the reveal is the only motion,
+ * "scroll-triggered method steps" on /sa-funkar-det: the reveal is the only motion,
  * and it is off entirely under `prefers-reduced-motion`.
  */
 export function MethodDetail({

@@ -1,4 +1,4 @@
-import { submitContactAction } from "@/app/(marketing)/contacto/actions";
+import { submitContactAction } from "@/app/(marketing)/kontakt/actions";
 
 export type ContactFormCopy = {
   name: string;
@@ -20,31 +20,31 @@ export function ContactForm({ copy }: { copy: ContactFormCopy }) {
   return (
     <form action={submitContactAction}>
       <div className="mk-field">
-        <label htmlFor="nombre">{copy.name}</label>
-        <input id="nombre" name="nombre" autoComplete="name" required />
+        <label htmlFor="namn">{copy.name}</label>
+        <input id="namn" name="namn" autoComplete="name" required />
       </div>
 
       <div className="mk-field">
-        <label htmlFor="empresa">{copy.company}</label>
-        <input id="empresa" name="empresa" autoComplete="organization" required />
+        <label htmlFor="foretag">{copy.company}</label>
+        <input id="foretag" name="foretag" autoComplete="organization" required />
       </div>
 
       <div className="mk-field">
-        <label htmlFor="telefono">{copy.phone}</label>
+        <label htmlFor="telefon">{copy.phone}</label>
         {/* Phone is contact identity in the CRM — the one genuinely required
-            field. Local format is what people type; it is normalized to
-            +595… server-side. */}
+            field. Local format is what people type; it is normalized
+            server-side. */}
         <input
-          id="telefono"
-          name="telefono"
+          id="telefon"
+          name="telefon"
           type="tel"
           inputMode="tel"
           autoComplete="tel"
           placeholder={copy.phonePlaceholder}
-          aria-describedby="telefono-hint"
+          aria-describedby="telefon-hint"
           required
         />
-        <span id="telefono-hint" className="mk-meta">
+        <span id="telefon-hint" className="mk-meta">
           {copy.phoneHint}
         </span>
       </div>
@@ -55,8 +55,8 @@ export function ContactForm({ copy }: { copy: ContactFormCopy }) {
       </div>
 
       <div className="mk-field">
-        <label htmlFor="rubro">{copy.sector}</label>
-        <select id="rubro" name="rubro" defaultValue="">
+        <label htmlFor="bransch">{copy.sector}</label>
+        <select id="bransch" name="bransch" defaultValue="">
           <option value="" disabled>
             {copy.sectorPlaceholder}
           </option>
@@ -69,8 +69,8 @@ export function ContactForm({ copy }: { copy: ContactFormCopy }) {
       </div>
 
       <div className="mk-field">
-        <label htmlFor="mensaje">{copy.messageOptional}</label>
-        <textarea id="mensaje" name="mensaje" rows={4} />
+        <label htmlFor="meddelande">{copy.messageOptional}</label>
+        <textarea id="meddelande" name="meddelande" rows={4} />
       </div>
 
       {/* Honeypot: costs three lines and removes most bot traffic before it
@@ -84,7 +84,7 @@ export function ContactForm({ copy }: { copy: ContactFormCopy }) {
         type="submit"
         className="mk-btn mk-btn--primary"
         data-ev="form_submit"
-        data-ev-loc="contacto"
+        data-ev-loc="kontakt"
       >
         {copy.submit}
       </button>

@@ -81,8 +81,6 @@
       "quotes": "Presupuestos",
       "documents": "Facturas",
       "products": "Productos",
-      "facturaElectronica": "Factura electrónica",
-      "soon": "Próximamente",
       "automations": "Automatizaciones",
       "users": "Equipo",
       "groups": {
@@ -515,6 +513,9 @@
       },
       "reviewLinkTitle": "Enlace de reseña de Google",
       "reviewLinkIntro": "El enlace de tu perfil de Google Business para pedir reseñas ('Recibir más reseñas' en Google Business Profile). Se usa en el nodo 'Pedir reseña de Google' de las automatizaciones.",
+      "whatsappChannelTitle": "Canal de WhatsApp",
+      "whatsappChannelIntro": "WhatsApp está desactivado en este producto. Vos y tus clientes usan el correo para presupuestos, facturas y recordatorios. Si lo volvés a activar, recuperás la bandeja de WhatsApp, la pantalla de conexión y el ruteo de leads a un número de WhatsApp.",
+      "whatsappChannelEnabled": "Usar WhatsApp como canal",
       "businessHoursTitle": "Horario de atención",
       "sheetsTitle": "Google Sheets",
       "sheetsIntro": "Tus contactos en una planilla que se actualiza sola, sin conectar tu cuenta de Google y sin costo. La planilla lee un enlace privado de tu empresa; no le damos acceso a nadie más.",

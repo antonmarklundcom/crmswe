@@ -16,6 +16,7 @@ import {
   isWithinFreeFormWindow,
 } from "@/modules/whatsapp/inbox";
 import { listApprovedTemplates } from "@/modules/whatsapp/templates";
+import { whatsappEnabledFor } from "@/modules/whatsapp/feature";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { TaskList, type TaskListLabels } from "@/components/task-list";
@@ -47,6 +48,13 @@ import { Input, Select, Textarea } from "@/components/ui/form-fields";
 
 const TABS = ["conversacion", "tareas", "actividad", "datos"] as const;
 type Tab = (typeof TABS)[number];
+
+/** The tabs this contact page actually shows. The conversation tab is the
+ * WhatsApp thread, so it goes with the channel (plan.md §5.3.1) — and with it
+ * gone, "tareas" is what the page opens on. */
+function visibleTabs(whatsappEnabled: boolean): readonly Tab[] {
+  return whatsappEnabled ? TABS : TABS.filter((candidate) => candidate !== "conversacion");
+}
 
 
 
@@ -80,7 +88,11 @@ export default async function ContactDetailPage({
   const contact = await getContact(ctx, id);
   if (!contact) notFound();
 
-  const tab: Tab = TABS.includes(rawTab as Tab) ? (rawTab as Tab) : "conversacion";
+  const whatsappEnabled = await whatsappEnabledFor(ctx);
+  const tabs = visibleTabs(whatsappEnabled);
+  // A `?tab=conversacion` link bookmarked before the channel was switched off
+  // lands on the first tab that still exists rather than on an empty page.
+  const tab: Tab = tabs.includes(rawTab as Tab) ? (rawTab as Tab) : tabs[0];
 
   const [
     timeline,
@@ -98,7 +110,7 @@ export default async function ContactDetailPage({
       listDealsForContact(ctx, id),
       listTagsForContact(ctx, id),
       listTags(ctx),
-      listConversationsForContact(ctx, id),
+      whatsappEnabled ? listConversationsForContact(ctx, id) : Promise.resolve([]),
       listTasksForContact(ctx, id),
       // What is booked with this person — the agenda read from the record
       // rather than from the calendar page (modules/calendar).
@@ -219,7 +231,7 @@ export default async function ContactDetailPage({
       </header>
 
       <nav className="flex gap-1 border-b">
-        {TABS.map((candidate) => (
+        {tabs.map((candidate) => (
           <Link
             key={candidate}
             href={`/contacts/${id}?tab=${candidate}`}

@@ -86,6 +86,24 @@ export type TenantSettings = {
    */
   defaultCountry?: CountryCode;
   /**
+   * The one switch that decides whether this product has a WhatsApp channel
+   * at all (plan.md §1.7, §5.3.1).
+   *
+   * The Swedish edition is e-post-first, so this is **off unless a tenant
+   * turns it on**: `undefined` reads as off, which is what every tenant row
+   * written before this field existed says. Off means the surfaces are not
+   * merely hidden — `/inbox`, `/whatsapp` and the inbox API answer 404, the
+   * webhook stops accepting that tenant's messages, and the nav, dashboard,
+   * contact page and site forms lose their WhatsApp halves.
+   *
+   * The module underneath is untouched and fully working: this repo is a
+   * fork of vendercrm and fixes are cherry-picked in both directions
+   * (plan.md §1.1), so deleting the code would cost more than hiding it.
+   * Flipping this back on is one write, and the flag-on path is tested
+   * alongside the flag-off one for exactly that reason.
+   */
+  whatsappEnabled?: boolean;
+  /**
    * Google review link for the `send_review_request` automation action
    * (PLAN.md §10 1R #5 — the GBP review-request half of §10 1P, built here
    * because it needs no Google API: it's a link). A tenant's Google Business
@@ -113,6 +131,10 @@ export async function updateTenantDefaultCountry(ctx: TenantContext, defaultCoun
 
 export async function updateTenantReviewLink(ctx: TenantContext, reviewLink: string) {
   return mergeTenantSettings(ctx, { reviewLink });
+}
+
+export async function updateTenantWhatsappEnabled(ctx: TenantContext, whatsappEnabled: boolean) {
+  return mergeTenantSettings(ctx, { whatsappEnabled });
 }
 
 export async function updateTenantTimezone(ctx: TenantContext, timezone: string) {
@@ -269,6 +291,11 @@ async function mergeTenantSettings(ctx: TenantContext, patch: Partial<TenantSett
     ai: patch.ai ? { ...current.ai, ...patch.ai } : current.ai,
     defaultCountry: patch.defaultCountry ?? current.defaultCountry,
     reviewLink: patch.reviewLink ?? current.reviewLink,
+    // `??` would be wrong here: turning the flag *off* patches it to `false`,
+    // and `false ?? current` keeps the old `true`. Only an absent key means
+    // "leave it alone".
+    whatsappEnabled:
+      patch.whatsappEnabled !== undefined ? patch.whatsappEnabled : current.whatsappEnabled,
   };
 
   await db.update(tenants).set({ settings: merged }).where(eq(tenants.id, ctx.tenantId));

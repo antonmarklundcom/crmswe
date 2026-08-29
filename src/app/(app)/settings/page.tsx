@@ -21,8 +21,10 @@ import {
   DefaultCountryForm,
   ReviewLinkForm,
   AiSettingsForm,
+  WhatsappChannelForm,
 } from "./SettingsForms";
 import { DEFAULT_TIMEZONE } from "@/lib/i18n/format";
+import { isWhatsappEnabled } from "@/modules/whatsapp/feature";
 
 export default async function SettingsPage() {
   const ctx = await requireTenantContext();
@@ -113,6 +115,15 @@ export default async function SettingsPage() {
       <section>
         <h2 className="mb-4 text-lg font-semibold">{t("businessHoursTitle")}</h2>
         <BusinessHoursForm businessHours={businessHours} />
+      </section>
+
+      {/* The one switch behind every WhatsApp surface (plan.md §5.3.1). */}
+      <section>
+        <h2 className="mb-2 text-lg font-semibold">{t("whatsappChannelTitle")}</h2>
+        <p className="mb-4 max-w-2xl text-sm text-muted-foreground">
+          {t("whatsappChannelIntro")}
+        </p>
+        <WhatsappChannelForm whatsappEnabled={isWhatsappEnabled(settings)} />
       </section>
 
       {/* AI auto-reply (PLAN.md §10 1O). The two switches that carry real

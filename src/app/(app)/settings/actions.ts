@@ -9,6 +9,7 @@ import {
   updateTenantTimezone,
   updateTenantDefaultCountry,
   updateTenantReviewLink,
+  updateTenantWhatsappEnabled,
   regenerateContactsFeedToken,
   updateTenantAiSettings,
   type BusinessHours,
@@ -168,6 +169,35 @@ export async function updateReviewLinkAction(
   }
 
   revalidatePath("/settings");
+  return { error: null, saved: true, values };
+}
+
+/**
+ * The WhatsApp channel switch (plan.md §5.3.1). Admin-only like every other
+ * setting on this page — turning it on adds a whole channel, its inbox and
+ * its 24-hour-window rules to the product, which is not an agent's call.
+ *
+ * The checkbox is absent from the form data when unchecked, which is exactly
+ * the "off" this reads: `formData.get` returns null and the flag is written
+ * `false` rather than left alone.
+ */
+export async function updateWhatsappEnabledAction(
+  _prevState: SettingsFormState,
+  formData: FormData,
+): Promise<SettingsFormState> {
+  const ctx = await requireTenantAdmin();
+  const values = submitted(formData);
+
+  try {
+    await updateTenantWhatsappEnabled(ctx, formData.get("whatsappEnabled") === "on");
+  } catch {
+    return { error: "unknown", saved: false, values };
+  }
+
+  // The nav lives in the app layout, so every route's rendering depends on
+  // this flag — revalidating /settings alone would leave a stale sidebar
+  // behind on the very screen that just changed it.
+  revalidatePath("/", "layout");
   return { error: null, saved: true, values };
 }
 

@@ -1,6 +1,8 @@
+import { notFound } from "next/navigation";
 import { Smartphone } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { requireTenantContext } from "@/modules/tenancy/context";
+import { whatsappEnabledFor } from "@/modules/whatsapp/feature";
 import { listAccountsForTenant } from "@/modules/whatsapp/accounts";
 import { listTemplates } from "@/modules/whatsapp/templates";
 import { Button } from "@/components/ui/button";
@@ -11,6 +13,10 @@ import { WhatsappConnectForm } from "./WhatsappConnectForm";
 
 export default async function WhatsappPage() {
   const ctx = await requireTenantContext();
+  // Hidden means gone, not merely unlinked (plan.md §5.3.1): a Swedish tenant
+  // typing the URL gets the same 404 as for a route that was never built.
+  if (!(await whatsappEnabledFor(ctx))) notFound();
+
   const t = await getTranslations("app.whatsapp");
 
   if (ctx.role !== "admin") {

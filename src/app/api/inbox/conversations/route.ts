@@ -3,7 +3,8 @@ import { inArray } from "drizzle-orm";
 import { contacts } from "@/db/schema";
 import { tenantDb } from "@/modules/tenancy/db";
 import { listConversations } from "@/modules/whatsapp/inbox";
-import { requireSession } from "@/lib/api/guards";
+import { apiError, requireSession } from "@/lib/api/guards";
+import { whatsappEnabledFor } from "@/modules/whatsapp/feature";
 
 // Backs the inbox list's 5s poll (PLAN.md §6.5). Session-authenticated,
 // same-origin only — no API key path, unlike /api/v1/leads.
@@ -18,6 +19,11 @@ export async function GET() {
   const guard = await requireSession();
   if (!guard.ok) return guard.response;
   const { ctx } = guard;
+
+  // The inbox poll answers 404 for a tenant without the channel, exactly as
+  // the page it backs does (plan.md §5.3.1) — a hidden surface must not stay
+  // readable through the API that feeds it.
+  if (!(await whatsappEnabledFor(ctx))) return apiError("not_found", 404);
 
   const conversations = await listConversations(ctx);
 

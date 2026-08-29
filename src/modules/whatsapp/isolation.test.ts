@@ -56,6 +56,15 @@ describe.skipIf(!hasDb)("whatsapp isolation + webhook processing", () => {
     ctxA = (await buildSystemTenantContext(tenantA!.id))!;
     ctxB = (await buildSystemTenantContext(tenantB!.id))!;
 
+    // Both tenants run the channel. It is off by default in this edition
+    // (plan.md §5.3.1), and this suite is the flag-on half of that: it
+    // asserts the module still behaves exactly as it always has once a
+    // tenant switches WhatsApp on. The flag-off half — that ingestion stops
+    // and the surfaces disappear — is ./feature.test.ts.
+    const { updateTenantWhatsappEnabled } = await import("@/modules/tenancy/settings");
+    await updateTenantWhatsappEnabled(ctxA, true);
+    await updateTenantWhatsappEnabled(ctxB, true);
+
     phoneNumberIdA = `pn-a-${newId()}`;
     const accountA = await connectAccountManually(ctxA, {
       wabaId: `waba-a-${newId()}`,

@@ -81,8 +81,6 @@
       "quotes": "Quotes",
       "documents": "Invoices",
       "products": "Products",
-      "facturaElectronica": "Electronic invoicing",
-      "soon": "Coming soon",
       "automations": "Automations",
       "users": "Team",
       "groups": {
@@ -800,6 +798,9 @@
       },
       "reviewLinkTitle": "Google review link",
       "reviewLinkIntro": "The link from your Google Business profile for asking for reviews ('Get more reviews' in Google Business Profile). It's used by the 'Ask for a Google review' automation node.",
+      "whatsappChannelTitle": "WhatsApp channel",
+      "whatsappChannelIntro": "WhatsApp is switched off in this product. You and your customers use email for quotes, invoices and reminders. Turning it back on restores the WhatsApp inbox, the connection screen, and routing leads to a WhatsApp number.",
+      "whatsappChannelEnabled": "Use WhatsApp as a channel",
       "businessHoursTitle": "Business hours",
       "sheetsTitle": "Google Sheets",
       "sheetsIntro": "Your contacts in a spreadsheet that updates itself, with no Google account to connect and no cost. The spreadsheet reads a private link belonging to your company; nobody else is given access.",

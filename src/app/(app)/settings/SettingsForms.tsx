@@ -11,6 +11,7 @@ import {
   updateDefaultCountryAction,
   updateReviewLinkAction,
   updateTimezoneAction,
+  updateWhatsappEnabledAction,
   type SettingsFormState,
 } from "./actions";
 import { Input, Select, Textarea } from "@/components/ui/form-fields";
@@ -162,6 +163,47 @@ export function ReviewLinkForm({ reviewLink }: { reviewLink: string }) {
           placeholder="https://g.page/r/.../review"
           className="flex-1"
         />
+        <Button type="submit" variant="outline" disabled={pending}>
+          {tc("save")}
+        </Button>
+      </div>
+      <ErrorOrSaved state={state} tc={tc} t={t} />
+    </form>
+  );
+}
+
+/**
+ * The WhatsApp channel switch (plan.md §5.3.1). Off is the Swedish default and
+ * what this product is designed around — turning it on restores the inbox,
+ * the connection screen and the WhatsApp halves of the dashboard, contact
+ * page and site routing, all of which are still in the codebase.
+ *
+ * The hidden field is load-bearing: this form's only real input is a
+ * checkbox, and an unticked checkbox posts nothing, so without it a
+ * submission would come back with an empty `values` and `echoedCheckbox`
+ * would fall back to the pre-submit prop — showing the box still ticked
+ * immediately after it was cleared.
+ */
+export function WhatsappChannelForm({ whatsappEnabled }: { whatsappEnabled: boolean }) {
+  const t = useTranslations("app.settings");
+  const tc = useTranslations("common");
+  const [state, formAction, pending] = useActionState(
+    updateWhatsappEnabledAction,
+    initialState,
+  );
+
+  return (
+    <form action={formAction} className="flex max-w-2xl flex-col gap-2">
+      <input type="hidden" name="submitted" value="1" />
+      <label className="flex items-center gap-2 text-sm">
+        <input
+          type="checkbox"
+          name="whatsappEnabled"
+          defaultChecked={echoedCheckbox(state.values, "whatsappEnabled", whatsappEnabled)}
+        />
+        {t("whatsappChannelEnabled")}
+      </label>
+      <div>
         <Button type="submit" variant="outline" disabled={pending}>
           {tc("save")}
         </Button>

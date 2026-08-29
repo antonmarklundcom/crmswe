@@ -186,7 +186,12 @@ export const webhookEvents = mysqlTable(
     phoneNumberId: varchar("phone_number_id", { length: 100 }),
     status: varchar("status", {
       length: 20,
-      enum: ["received", "processed", "failed"],
+      // `skipped` is a deliberate non-ingest, not a failure: the number is
+      // connected but the tenant has WhatsApp switched off (plan.md §5.3.1).
+      // Separated from `failed` so it never shows up as breakage in the
+      // health view. Widening this costs no DDL — the column is a
+      // varchar(20) and the enum is a TypeScript constraint only.
+      enum: ["received", "processed", "failed", "skipped"],
     })
       .notNull()
       .default("received"),

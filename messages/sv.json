@@ -81,8 +81,6 @@
       "quotes": "Offerter",
       "documents": "Fakturor",
       "products": "Produkter",
-      "facturaElectronica": "Elektronisk fakturering",
-      "soon": "Kommer snart",
       "automations": "Automationer",
       "users": "Team",
       "groups": {
@@ -800,6 +798,9 @@
       },
       "reviewLinkTitle": "Länk för Google-recension",
       "reviewLinkIntro": "Länken från din Google Business-profil för att be om recensioner ('Få fler recensioner' i Google Business Profile). Den används av automationsnoden 'Be om en Google-recension'.",
+      "whatsappChannelTitle": "WhatsApp-kanal",
+      "whatsappChannelIntro": "WhatsApp är avstängt i den här produkten. Du och dina kunder använder e-post för offerter, fakturor och påminnelser. Slår du på det igen får du tillbaka WhatsApp-inkorgen, anslutningssidan och möjligheten att styra leads till ett WhatsApp-nummer.",
+      "whatsappChannelEnabled": "Använd WhatsApp som kanal",
       "businessHoursTitle": "Öppettider",
       "sheetsTitle": "Google Sheets",
       "sheetsIntro": "Dina kontakter i ett kalkylark som uppdaterar sig självt, utan att koppla ditt Google-konto och utan kostnad. Kalkylarket läser en privat länk som tillhör ditt företag; ingen annan får åtkomst.",

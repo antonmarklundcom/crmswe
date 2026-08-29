@@ -10,6 +10,7 @@ import { buildSystemTenantContext, type TenantContext } from "@/modules/tenancy/
 import { tenantDb } from "@/modules/tenancy/db";
 import { createContact, getContactByPhone } from "@/modules/crm/contacts";
 import { resolveAccountByPhoneNumberId, getDecryptedAccessToken } from "./accounts";
+import { whatsappEnabledForTenantId } from "./feature";
 import { GRAPH_API_BASE } from "./graph";
 import { whatsappEvents } from "./events";
 import { inboundMessageTime, latest } from "./inbound-time";
@@ -84,10 +85,14 @@ export async function persistRawEvent(payload: unknown, phoneNumberId: string | 
   return id;
 }
 
-async function markEvent(id: string, status: "processed" | "failed", error?: string) {
+async function markEvent(
+  id: string,
+  status: "processed" | "failed" | "skipped",
+  reason?: string,
+) {
   await db
     .update(webhookEvents)
-    .set({ status, error: error?.slice(0, 2000) })
+    .set({ status, error: reason?.slice(0, 2000) })
     .where(eq(webhookEvents.id, id));
 }
 
@@ -119,6 +124,19 @@ async function processValue(eventId: string, value: z.infer<typeof webhookValueS
   const ctx = await buildSystemTenantContext(account.tenantId);
   if (!ctx) {
     await markEvent(eventId, "failed", `Tenant ${account.tenantId} not found`);
+    return;
+  }
+
+  // A tenant with the channel switched off (plan.md §5.3.1) does not ingest.
+  // Meta keeps delivering to the platform webhook for as long as the number
+  // is connected, and writing those messages into an inbox nobody can open
+  // would quietly accumulate personal data — inbound bodies, names, phone
+  // numbers — for a tenant that has no way to read, answer or erase it.
+  // `skipped`, not `failed`: nothing went wrong, this tenant simply has no
+  // WhatsApp. The raw event stays in webhook_events either way, so flipping
+  // the flag on loses no history.
+  if (!(await whatsappEnabledForTenantId(account.tenantId))) {
+    await markEvent(eventId, "skipped", `WhatsApp disabled for tenant ${account.tenantId}`);
     return;
   }
 

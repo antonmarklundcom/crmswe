@@ -16,7 +16,9 @@ import {
   setDocumentPdfKey,
 } from "./documents";
 import { renderDocumentPdf } from "./pdf";
-import { balanceOf, paymentStateOf, type DocumentStatus } from "./types";
+import { buyerLines, resolveBuyer, resolveSeller } from "./presentation";
+import { parseVatSummary } from "@/lib/se/moms";
+import { balanceOf, grossOf, paymentStateOf, type DocumentStatus, type DocumentType } from "./types";
 
 // Thrown messages are stable codes, not copy (PLAN.md §13 H5 #4): a
 // literal Spanish sentence here is a string the user might see in an
@@ -24,10 +26,12 @@ import { balanceOf, paymentStateOf, type DocumentStatus } from "./types";
 // the reader's own language — an action's form state where there is a form,
 // the route group's error boundary where there isn't.
 
-// Nota de venta delivery (PLAN.md §10 1Q) — the same shape as quote
-// delivery (§8): render the PDF with tenant branding, store it via the
-// storage adapter, send it as a WhatsApp document, with the public link
-// /d/[token] as the fallback and preview.
+// Faktura delivery — the same shape as offert delivery (§8): render the PDF
+// with tenant branding, store it via the storage adapter, send it, with the
+// public link /d/[token] as the fallback and preview.
+//
+// E-post becomes the primary channel in O3 (plan.md §5.3.2); the WhatsApp
+// send below stays until then so the flow is never without a delivery path.
 
 export function publicDocumentUrl(token: string): string {
   return `${env.APP_URL}/d/${token}`;
@@ -55,21 +59,42 @@ export async function generateDocumentPdf(
 
   const settings = (tenant?.settings ?? {}) as TenantSettings;
 
+  // Parties come from the snapshot frozen at issue whenever there is one, so
+  // a reprint reproduces the invoice rather than re-rendering it against
+  // today's contact and tenant rows (plan.md §5.2.3).
+  const seller = resolveSeller(document.sellerSnapshot, tenant);
+  const buyer = resolveBuyer(document.buyerSnapshot, contact);
+  const t = await getTranslator(tenant?.locale, "pdf.faktura");
+
+  // A kreditfaktura names the faktura it reverses.
+  const credited = document.creditsDocumentId
+    ? await getDocument(ctx, document.creditsDocumentId)
+    : null;
+
+  const gross = grossOf(document);
   const pdf = await renderDocumentPdf({
+    type: document.type as DocumentType,
     number: document.number,
     tenantName: tenant?.name ?? "",
     branding: settings.branding ?? {},
-    contactName: contact.name,
-    contactPhone: contact.phone,
+    seller,
+    buyerLines: buyerLines(buyer, t("orgNr")),
     currency: document.currency,
     subtotal: document.subtotal,
     discount: document.discount,
     total: document.total,
+    vatTotal: document.vatTotal,
+    vatSummary: parseVatSummary(document.vatSummary),
+    gross,
     amountPaid: paid,
-    balance: balanceOf(document.total, paid),
-    state: paymentStateOf(document.status as DocumentStatus, document.total, paid),
+    balance: balanceOf(gross, paid),
+    state: paymentStateOf(document.status as DocumentStatus, gross, paid),
     dueAt: document.dueAt,
+    deliveryDate: document.deliveryDate,
     issuedAt: document.issuedAt,
+    ocrNumber: document.ocrNumber,
+    paymentTermsDays: tenant?.paymentTermsDays ?? null,
+    creditsNumber: credited?.number ?? null,
     notes: document.notes,
     createdAt: document.createdAt,
     locale: tenant?.locale,
@@ -78,6 +103,7 @@ export async function generateDocumentPdf(
       qty: item.qty,
       unitPrice: item.unitPrice,
       lineTotal: item.lineTotal,
+      vatRateBps: item.vatRateBps,
     })),
   });
 
@@ -95,7 +121,7 @@ export type SendDocumentResult = {
 };
 
 /**
- * Sends the nota de venta over WhatsApp. A closed 24h window is an expected
+ * Sends the faktura over WhatsApp. A closed 24h window is an expected
  * outcome, not a failure: the PDF and public link still exist, so the send
  * is reported as partial rather than throwing (§8's precedent).
  *
@@ -118,7 +144,7 @@ export async function sendDocumentToContact(
 
   const publicUrl = publicDocumentUrl(document.publicToken);
   const tenant = await getTenant(ctx.tenantId);
-  const t = await getTranslator(tenant?.locale, "pdf.notaVenta");
+  const t = await getTranslator(tenant?.locale, "pdf.faktura");
   const captionPrefix = t("caption");
 
 

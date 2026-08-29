@@ -12,7 +12,7 @@ import {
   type PdfLineItem,
   type PdfTotalsRow,
 } from "@/modules/renderable-document/pdf";
-import { documentDate, money } from "@/modules/renderable-document/format";
+import { documentDate, pdfMoney as money } from "@/modules/renderable-document/format";
 
 // Quote PDF (PLAN.md §8), now a configuration of the shared document shell
 // (§13 H9) rather than its own copy of the layout: what is left here is

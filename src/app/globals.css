@@ -4,7 +4,7 @@
 @custom-variant dark (&:is(.dark *));
 
 /* ============================================================================
- * VenderCRM — app tokens
+ * CRM Swe — app tokens
  * ----------------------------------------------------------------------------
  * The app used to run on stock shadcn: 104 tokens at zero chroma, which is
  * precisely why every screen read flat and unbranded. These are the same
@@ -12,8 +12,8 @@
  * colour.
  *
  * The hue is not invented: it is the marketing site's accent (#0F6B85, hue
- * 193° in HSL / 223° in OKLCH, see the `.mk` block below), so clientes.com.py
- * and the CRM behind it are one product rather than two. Neutrals carry a
+ * 193° in HSL / 223° in OKLCH, see the `.mk` block below), so the marketing
+ * site and the CRM behind it are one product rather than two. Neutrals carry a
  * trace of that hue instead of being pure grey — a background at chroma
  * 0.0025 reads as "considered" where #FFF/#F5F5F5 reads as "unstyled", at no
  * cost to legibility.
@@ -173,7 +173,7 @@
 }
 
 /* ============================================================================
- * clientes.com.py — marketing site
+ * CRM Swe — marketing site
  * ----------------------------------------------------------------------------
  * Everything below is scoped under `.mk` and prefixed `mk-`. It defines its
  * own tokens rather than reusing the shadcn ones above, because the two

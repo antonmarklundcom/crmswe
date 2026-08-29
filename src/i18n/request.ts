@@ -10,8 +10,8 @@ import {
   type SupportedLocale,
 } from "@/lib/i18n/locales";
 
-// `es` remains the default and reference locale (PLAN.md §1.2). English and
-// Swedish are a *user* preference (§13 H5): the locale lives on the users
+// `sv` is the default and reference locale (plan.md §1.11). English and
+// Spanish are a *user* preference (§13 H5): the locale lives on the users
 // row, not in the URL, so links stay shareable across a mixed-language team
 // and nothing about the routing changes.
 //
@@ -19,7 +19,7 @@ import {
 //   1. the signed-in user's own choice (`users.locale`)
 //   2. their tenant's locale — the sensible default for a new colleague
 //   3. the cookie the switcher writes before sign-in (login, public pages)
-//   4. `es`
+//   4. `sv`
 async function resolveLocale(): Promise<SupportedLocale> {
   const cookieLocale = (await cookies()).get(LOCALE_COOKIE)?.value;
 

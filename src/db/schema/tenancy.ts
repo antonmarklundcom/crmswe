@@ -106,8 +106,8 @@ export const users = mysqlTable(
     banExpires: datetime("ban_expires"),
     // UI language for this user (PLAN.md §13 H5). Null = follow the tenant's
     // locale, which is the default for everyone until they choose otherwise
-    // — `es` stays the reference locale (§1.2), this is a preference on top
-    // of it, not a second product.
+    // — `sv` stays the reference locale (plan.md §1.11), this is a
+    // preference on top of it, not a second product.
     locale: varchar("locale", { length: 10 }),
     // Daily "your tasks are due" email (PLAN.md §13 H6). Opt-out, not
     // opt-in: a reminder nobody switched on is a reminder nobody gets, and

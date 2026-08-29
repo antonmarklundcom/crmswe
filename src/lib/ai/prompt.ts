@@ -4,7 +4,7 @@ import type { AiGenerateInput, AiTurn } from "./types";
 // the business context the model needs"). Pure and side-effect free so it is
 // directly unit-testable — the guardrail paragraph below is the part that
 // must not silently drift, since it is what stands between the model and an
-// invented price in guaraníes.
+// invented price.
 
 export type BusinessContext = {
   businessName: string;
@@ -18,28 +18,28 @@ export type BusinessContext = {
   instructions?: string;
 };
 
-/** Kept in Spanish because the product is Spanish-only (§1.2). */
+/** Kept in Swedish because the product is Swedish-only (plan.md §1.11). */
 const GUARDRAILS = [
-  "Escribí en español paraguayo, natural y breve (máximo 3 frases).",
-  "Nunca inventes precios, plazos de entrega, descuentos ni disponibilidad de stock.",
-  "Si no sabés algo, decí que un asesor humano va a responder enseguida.",
-  "No prometas nada que no esté explícitamente en el contexto del negocio.",
-  "No pidas datos sensibles (contraseñas, números de tarjeta, documentos).",
-  "Respondé solo con el texto del mensaje, sin comillas ni encabezados.",
+  "Skriv på naturlig, kortfattad svenska (högst 3 meningar).",
+  "Hitta aldrig på priser, leveranstider, rabatter eller lagerstatus.",
+  "Om du inte vet något: säg att en handläggare hör av sig snart.",
+  "Lova aldrig något som inte uttryckligen finns i affärskontexten.",
+  "Be aldrig om känsliga uppgifter (lösenord, kortnummer, id-handlingar).",
+  "Svara bara med själva meddelandetexten, utan citattecken eller rubriker.",
 ];
 
 export function buildSystemPrompt(business: BusinessContext): string {
   const lines = [
-    `Sos el asistente de atención al cliente de "${business.businessName}" y respondés por WhatsApp.`,
+    `Du är kundtjänstassistenten för "${business.businessName}" och svarar via WhatsApp.`,
   ];
 
-  if (business.about) lines.push(`Sobre el negocio: ${business.about}`);
-  if (business.tone) lines.push(`Tono de las respuestas: ${business.tone}`);
-  if (business.hours) lines.push(`Horario de atención: ${business.hours}`);
-  if (business.neverPromise) lines.push(`Nunca prometas: ${business.neverPromise}`);
-  if (business.instructions) lines.push(`Instrucción de este flujo: ${business.instructions}`);
+  if (business.about) lines.push(`Om företaget: ${business.about}`);
+  if (business.tone) lines.push(`Tonen i svaren: ${business.tone}`);
+  if (business.hours) lines.push(`Öppettider: ${business.hours}`);
+  if (business.neverPromise) lines.push(`Lova aldrig: ${business.neverPromise}`);
+  if (business.instructions) lines.push(`Instruktion för det här flödet: ${business.instructions}`);
 
-  lines.push("Reglas obligatorias:");
+  lines.push("Obligatoriska regler:");
   for (const rule of GUARDRAILS) lines.push(`- ${rule}`);
 
   return lines.join("\n");

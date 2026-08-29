@@ -89,7 +89,7 @@ export function resolveSwitchTarget(
   if (!options.whatsappEnabled && WHATSAPP_ONLY.includes(section)) return SWITCH_FALLBACK;
 
   // The section list, never the sub-page: `/contacts/01J...` and
-  // `/contacts/import` and `/pipeline/etapas` all become the section itself.
+  // `/contacts/import` and `/pipeline/steg` all become the section itself.
   // Keeping a sub-page would either 404 or, for the id routes, answer
   // "does this record exist in the other business?".
   return section;

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { isAppHost, isPublicPath, resolveHostRedirect } from "./middleware";
+import { APEX_HOST, APP_HOST } from "./lib/site-config";
 
 // The auth allowlist fails closed, which is the right default but makes an
 // omission silent in a confusing way: a missing public prefix doesn't look
@@ -56,8 +57,8 @@ describe("isPublicPath", () => {
 // loose on crm.* means the CRM is wide open. Hence a test per direction.
 
 describe("isPublicPath, host-aware", () => {
-  const apex = "clientes.com.py";
-  const crm = "crm.clientes.com.py";
+  const apex = APEX_HOST;
+  const crm = APP_HOST;
 
   it("keeps the strict allowlist on the crm host", () => {
     expect(isPublicPath("/dashboard", crm)).toBe(false);
@@ -104,10 +105,10 @@ describe("isPublicPath, host-aware", () => {
 
 describe("isAppHost", () => {
   it("recognises only the crm subdomain", () => {
-    expect(isAppHost("crm.clientes.com.py")).toBe(true);
-    expect(isAppHost("crm.clientes.com.py:3000")).toBe(true);
-    expect(isAppHost("clientes.com.py")).toBe(false);
-    expect(isAppHost("www.clientes.com.py")).toBe(false);
+    expect(isAppHost(APP_HOST)).toBe(true);
+    expect(isAppHost(`${APP_HOST}:3000`)).toBe(true);
+    expect(isAppHost(APEX_HOST)).toBe(false);
+    expect(isAppHost(`www.${APEX_HOST}`)).toBe(false);
     expect(isAppHost("localhost:3000")).toBe(false);
     expect(isAppHost(null)).toBe(false);
   });
@@ -115,16 +116,16 @@ describe("isAppHost", () => {
 
 describe("resolveHostRedirect", () => {
   it("301s www to the apex, preserving path and query", () => {
-    expect(resolveHostRedirect("www.clientes.com.py", "/metodo", "?utm_source=ads")).toEqual({
-      url: "https://clientes.com.py/metodo?utm_source=ads",
+    expect(resolveHostRedirect(`www.${APEX_HOST}`, "/metodo", "?utm_source=ads")).toEqual({
+      url: `https://${APEX_HOST}/metodo?utm_source=ads`,
       status: 301,
     });
   });
 
   it("sends stale app bookmarks from the apex to the crm host", () => {
     for (const path of ["/dashboard", "/login", "/pipeline", "/contacts/abc123"]) {
-      expect(resolveHostRedirect("clientes.com.py", path)).toEqual({
-        url: `https://crm.clientes.com.py${path}`,
+      expect(resolveHostRedirect(APEX_HOST, path)).toEqual({
+        url: `https://${APP_HOST}${path}`,
         status: 307,
       });
     }
@@ -132,7 +133,7 @@ describe("resolveHostRedirect", () => {
 
   it("leaves marketing paths on the apex alone", () => {
     for (const path of ["/", "/metodo", "/contacto", "/nosotros"]) {
-      expect(resolveHostRedirect("clientes.com.py", path)).toBeNull();
+      expect(resolveHostRedirect(APEX_HOST, path)).toBeNull();
     }
   });
 
@@ -140,15 +141,15 @@ describe("resolveHostRedirect", () => {
     // A quote link sent over WhatsApp, or a site posting its leads, must not
     // be bounced to another hostname mid-request.
     for (const path of ["/api/v1/leads", "/q/tok", "/d/tok/pdf", "/f/acme/contacto"]) {
-      expect(resolveHostRedirect("clientes.com.py", path)).toBeNull();
+      expect(resolveHostRedirect(APEX_HOST, path)).toBeNull();
     }
   });
 
   it("does not match an app prefix that is only a lookalike", () => {
     // "/settings" is an app path; "/settings-de-privacidad" would be a
     // marketing URL and must not be redirected off the apex.
-    expect(resolveHostRedirect("clientes.com.py", "/settings-de-privacidad")).toBeNull();
-    expect(resolveHostRedirect("clientes.com.py", "/planes")).toBeNull();
+    expect(resolveHostRedirect(APEX_HOST, "/settings-de-privacidad")).toBeNull();
+    expect(resolveHostRedirect(APEX_HOST, "/planes")).toBeNull();
   });
 
   it("never redirects development or preview hosts to production", () => {
@@ -158,7 +159,7 @@ describe("resolveHostRedirect", () => {
   });
 
   it("leaves the crm host untouched", () => {
-    expect(resolveHostRedirect("crm.clientes.com.py", "/dashboard")).toBeNull();
-    expect(resolveHostRedirect("crm.clientes.com.py", "/")).toBeNull();
+    expect(resolveHostRedirect(APP_HOST, "/dashboard")).toBeNull();
+    expect(resolveHostRedirect(APP_HOST, "/")).toBeNull();
   });
 });

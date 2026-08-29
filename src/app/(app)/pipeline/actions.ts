@@ -187,12 +187,12 @@ export async function deleteStageAction(formData: FormData) {
     if (err instanceof StageConfigError) {
       // "It still holds deals" is the answer the admin needs, and it is not
       // secret — it comes back in the URL so the page can say it.
-      redirect(`/pipeline/etapas?error=${err.code}`);
+      redirect(`/pipeline/steg?error=${err.code}`);
     }
     throw err;
   }
 
-  redirect("/pipeline/etapas");
+  redirect("/pipeline/steg");
 }
 
 export async function createStageAction(formData: FormData) {

@@ -1,6 +1,6 @@
 {
   "common": {
-    "appName": "clientes.com.py",
+    "appName": "CRM Swe",
     "loading": "Laddar…",
     "save": "Spara",
     "saved": "Ändringarna sparades",
@@ -27,7 +27,7 @@
       "invalid": "Inbjudan är ogiltig eller har gått ut",
       "success": "Kontot är skapat. Du kan logga in nu.",
       "joinTitle": "Gå med i företaget",
-      "existingAccount": "{email} har redan ett clientes.com.py-konto. Du behöver inte skapa ett till: logga in med den adressen så läggs det här företaget till bland dem du redan arbetar i.",
+      "existingAccount": "{email} har redan ett CRM Swe-konto. Du behöver inte skapa ett till: logga in med den adressen så läggs det här företaget till bland dem du redan arbetar i.",
       "joinSubmit": "Lägg till företaget på mitt konto",
       "joined": "Klart. Du har nu tillgång till företaget — välj det i växlaren högst upp.",
       "goToApp": "Till CRM:et",
@@ -188,7 +188,7 @@
         "titleRequired": "Ge affären en titel.",
         "contactRequired": "Välj vilken kontakt affären hör till.",
         "stageRequired": "Välj vilket steg affären startar i.",
-        "valueInvalid": "Värdet anges i hela guaraní, utan decimaler eller tecken.",
+        "valueInvalid": "Värdet anges i kronor, till exempel 1 000,00.",
         "unknown": "Vi kunde inte skapa affären. Försök igen."
       },
       "moveFailed": "Vi kunde inte flytta affären. Den återgick till föregående steg.",
@@ -327,7 +327,7 @@
       "deactivate": "Avaktivera",
       "errors": {
         "nameRequired": "Ge produkten ett namn.",
-        "unitPriceInvalid": "Priset anges i hela guaraní, utan decimaler eller tecken.",
+        "unitPriceInvalid": "Priset anges i kronor, till exempel 1 000,00.",
         "unknown": "Vi kunde inte spara produkten. Försök igen.",
         "vatRateInvalid": "Välj en momssats som finns i dina inställningar."
       },
@@ -675,8 +675,8 @@
       "errors": {
         "contactRequired": "Välj vilken kontakt offerten hör till.",
         "itemsRequired": "Lägg till minst en rad med beskrivning.",
-        "itemInvalid": "Kontrollera raderna: antalet börjar på 1 och priset anges i hela guaraní, utan decimaler eller tecken.",
-        "discountInvalid": "Rabatten anges i hela guaraní, utan decimaler eller tecken.",
+        "itemInvalid": "Kontrollera raderna: antalet börjar på 1 och priset anges i kronor, till exempel 1 000,00.",
+        "discountInvalid": "Rabatten anges i kronor, till exempel 1 000,00.",
         "unknown": "Vi kunde inte skapa offerten. Försök igen."
       },
       "vatRate": "Momssats",
@@ -848,7 +848,7 @@
       "aiModeHelp": "I utkastläge lämnar AI:n meddelandet i konversationen och en säljare avgör. Vi rekommenderar utkastläge i minst en vecka innan du går över till automatisk sändning.",
       "aiBusinessName": "Verksamhetens namn",
       "aiAbout": "Vad verksamheten säljer",
-      "aiAboutPlaceholder": "Installation och underhåll av luftkonditionering i Asunción med omnejd.",
+      "aiAboutPlaceholder": "Installation och underhåll av luftkonditionering i Stockholm med omnejd.",
       "aiTone": "Tonläge",
       "aiTonePlaceholder": "Nära, personligt, utan fackspråk",
       "aiHours": "Tider den får nämna",
@@ -1026,11 +1026,11 @@
           },
           "env": {
             "title": "Spara nyckeln i webbplatsens miljö",
-            "body": "Som VENDERCRM_API_KEY i .env-filen eller i webbhotellets miljövariabler. Aldrig i HTML:en, i webbläsarens JavaScript eller i kodförrådet."
+            "body": "Som CRMSWE_API_KEY i .env-filen eller i webbhotellets miljövariabler. Aldrig i HTML:en, i webbläsarens JavaScript eller i kodförrådet."
           },
           "handler": {
             "title": "Klistra in hanteraren på din server",
-            "body": "Välj din teknik nedan och kopiera koden. Formuläret pekar på din egen endpoint, och det är den som anropar clientes.com.py."
+            "body": "Välj din teknik nedan och kopiera koden. Formuläret pekar på din egen endpoint, och det är den som anropar CRM Swe."
           },
           "verify": {
             "title": "Testa med ett riktigt inskick",
@@ -1046,7 +1046,7 @@
           "idempotency": "Skicka alltid idempotency_key. Med samma nyckel skapar ett omförsök eller en dubbelklickning ingen dubblettkontakt.",
           "phone": "Telefonnumret är obligatoriskt och är kontaktens identitet. Vi tar emot paraguayanskt lokalformat (0981 123 456) och normaliserar det till +595.",
           "spam": "Lägg in honeypot och gärna Cloudflare Turnstile. Spam stoppas på din webbplats, inte inne i CRM:et.",
-          "nonBlocking": "Svarar inte clientes.com.py ska besökaren ändå få tacksidan, och felet loggas hos dig. Förlora aldrig ett lead på en timeout."
+          "nonBlocking": "Svarar inte CRM Swe ska besökaren ändå få tacksidan, och felet loggas hos dig. Förlora aldrig ett lead på en timeout."
         }
       },
       "turnstile": {
@@ -1579,7 +1579,7 @@
       "copied": "Kopierat",
       "addExisting": {
         "title": "Lägg till någon som redan har konto",
-        "intro": "Om personen redan använder clientes.com.py i ett annat företag: skapa inte ett andra konto, ge dem tillgång till det här i stället. De behåller sina övriga företag och växlar mellan dem.",
+        "intro": "Om personen redan använder CRM Swe i ett annat företag: skapa inte ett andra konto, ge dem tillgång till det här i stället. De behåller sina övriga företag och växlar mellan dem.",
         "submit": "Ge tillgång",
         "added": "Tillgång given till",
         "errors": {
@@ -1591,7 +1591,7 @@
     },
     "tenants": {
       "title": "Företag",
-      "intro": "Alla företag som använder clientes.com.py: skapa ett nytt, spärra åtkomsten eller logga in som dem för att ge support.",
+      "intro": "Alla företag som använder CRM Swe: skapa ett nytt, spärra åtkomsten eller logga in som dem för att ge support.",
       "createTitle": "Nytt företag",
       "name": "Namn",
       "slug": "Slug",
@@ -1634,7 +1634,7 @@
       "createSubmit": "Skapa prenumeration",
       "errors": {
         "planRequired": "Välj en plan i listan.",
-        "amountInvalid": "Beloppet anges i hela guaraní, utan decimaler eller punkter (t.ex. 250000).",
+        "amountInvalid": "Beloppet anges i kronor, till exempel 1 000,00.",
         "unknown": "Vi kunde inte registrera det. Försök igen."
       }
     },
@@ -1648,7 +1648,7 @@
       "active": "Aktiv",
       "errors": {
         "nameRequired": "Ge planen ett namn.",
-        "priceInvalid": "Priset anges i hela guaraní, större än noll.",
+        "priceInvalid": "Priset anges i kronor, större än noll.",
         "unknown": "Vi kunde inte skapa planen. Försök igen."
       }
     },
@@ -2235,19 +2235,19 @@
   },
   "email": {
     "invitation": {
-      "subject": "{inviter} har bjudit in dig till {tenant} i clientes.com.py",
+      "subject": "{inviter} har bjudit in dig till {tenant} i CRM Swe",
       "title": "Du har blivit inbjuden till {tenant}",
-      "body": "{inviter} har bjudit in dig till teamet i clientes.com.py. Länken gäller i 7 dagar.",
+      "body": "{inviter} har bjudit in dig till teamet i CRM Swe. Länken gäller i 7 dagar.",
       "cta": "Acceptera inbjudan"
     },
     "passwordReset": {
-      "subject": "Återställ ditt lösenord — clientes.com.py",
+      "subject": "Återställ ditt lösenord — CRM Swe",
       "title": "Återställ ditt lösenord",
       "body": "Du har begärt att återställa ditt lösenord. Var det inte du kan du bortse från det här mejlet — länken gäller i en timme.",
       "cta": "Välj nytt lösenord"
     },
     "subscriptionExpiry": {
-      "subject": "Din prenumeration på clientes.com.py går ut om {days} dagar",
+      "subject": "Din prenumeration på CRM Swe går ut om {days} dagar",
       "title": "Din prenumeration går snart ut",
       "body": "Prenumerationen för <strong>{tenant}</strong> går ut den <strong>{date}</strong>. Därefter har du {grace} dagars läsbehörighet innan kontot spärras. Kontakta din leverantör för att förnya och undvika avbrott."
     },

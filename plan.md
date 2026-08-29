@@ -455,6 +455,53 @@ manual steps. STOP — no further phases.
   `email.invoice` / `email.paymentReminder` namespace and an
   `app.settings.whatsappChannel*` / `emailSender*` block, all three locales.
 
+- **2026-08-29 — S1 (branding & UI sweep):** PR #5. `site-config.ts` splits
+  infra from content: `APEX_HOST`/`APP_HOST` now read `process.env` with a
+  `crmswe.se` placeholder default, brand is `"CRM Swe"`, `locale: "sv-SE"`,
+  `contact.ruc` renamed `orgNr`. New icon: same rounded-square mark, a "C"
+  glyph on a new blue (`#182b4d`, distinct hue from the old navy) — the whole
+  PNG/ICO set regenerated from `icon.svg` via headless Chromium screenshots
+  (no image-processing package in the project; Playwright's pre-installed
+  Chromium did the rasterising, plus a hand-rolled ICO packer for
+  `favicon.ico`). `layout.tsx`/`manifest.ts` read `siteConfig.name` instead
+  of a literal. Routes: `/f/.../gracias` → `/tack` (old path kept as a
+  redirect — it's shared with customers); `/pipeline/etapas` → `/pipeline/steg`
+  (no redirect — internal-only, confirmed via `switch-target.ts`, which
+  treats any subpath generically). `dentista.com.py` site-key placeholder →
+  `tandlakare.se`. Found and fixed two real bugs while sweeping, not just
+  branding: `src/lib/ai/prompt.ts`'s AI-auto-reply system prompt was
+  hardcoded Paraguayan Spanish (`"Escribí en español paraguayo..."`) — now
+  Swedish, since a Swedish tenant's AI auto-reply was answering customers in
+  Spanish; same for `DEFAULT_REVIEW_REQUEST_TEXT` in
+  `modules/automations/actions.ts`. Also closed O1-2 (last Spanish thrown-error
+  string) and O1-5 (`/d/[token]`'s browser-tab title, now `siteConfig.name`
+  instead of `clientes.com.py` — verified against a real seeded tenant, not
+  just code-read). `.env.example` gained `APEX_HOST`/`APP_HOST`.
+  Deviations/finds: the exit grep's own "deliberate legacy handling" carve-out
+  doesn't cleanly cover the `marketing` namespace in `messages/{sv,en}.json` —
+  it's a full Paraguayan ad-agency site (Google Ads/Meta Ads/SEO copy), not a
+  branding-distance away from correct, and S2 rewrites it wholesale anyway
+  (plan.md §6.2) including the route slugs. Sweeping it mechanically now would
+  be thrown away; left untouched and documented as **KNOWN-ISSUES S1-1**,
+  which is that phase's real assignment, not deferred cleanup. Also found via
+  an actual walkthrough (curl against the built app, not just reading code):
+  `NextIntlClientProvider` in `layout.tsx` ships *every* message namespace to
+  *every* page's hydration payload, so the still-Paraguayan `marketing`
+  namespace is in view-source on `/login`/`/dashboard` too, though nothing
+  renders it there — **KNOWN-ISSUES S1-2**. `messages/es.json` is untouched
+  throughout, per the O1 precedent that it is the deliberately-kept legacy
+  locale. Money-format validation copy (`valueInvalid`/`unitPriceInvalid`/etc.
+  in `sv.json`/`en.json`) still said "whole guaraníes, no decimals" after O1's
+  öre migration — fixed to kronor examples; this is text-only, not a moms/money
+  logic change. 741 tests green, verified against local MariaDB per O1-6/O2-6;
+  build green; full walkthrough (login → dashboard → pipeline/steg → sites →
+  `/d/[nonexistent]`) against the built app with a seeded tenant, not just
+  code-read.
+  Next: S2 (`prompts/sonnet-2-marketing.md`) — same model, no switch. Start
+  by reading **KNOWN-ISSUES S1-1** in full before touching
+  `src/app/(marketing)/`; it is effectively S2's real starting brief, not a
+  footnote.
+
 ## 10. Backlog
 
 - ROT/RUT line types (config-driven rates/caps with validity dates; personnummer

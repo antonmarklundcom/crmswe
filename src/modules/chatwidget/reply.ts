@@ -169,7 +169,7 @@ export async function generateChatReply(
 
   const system = buildSystemPrompt({
     ...config.business,
-    // The tenant's own words are *appended* to lib/ai's Spanish guardrail
+    // The tenant's own words are *appended* to lib/ai's Swedish guardrail
     // block, never in place of it — a widget prompt cannot switch off "never
     // invent a price".
     instructions: widget.systemPrompt ?? undefined,

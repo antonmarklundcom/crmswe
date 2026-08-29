@@ -80,7 +80,7 @@ export async function submitContactAction(formData: FormData) {
     name: name || undefined,
     email: email || undefined,
     message: message || undefined,
-    source: "clientes.com.py:contacto",
+    source: "CRM Swe:contacto",
     page_url: attribution.landing_page ?? `${SITE_URL}/contacto`,
     referrer: attribution.referrer ?? referer,
     utm_source: attribution.utm_source,

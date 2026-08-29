@@ -1,5 +1,5 @@
 /*
- * VenderCRM chat widget embed (docs/SPEC-CHAT-WIDGET.md §1.2).
+ * CRM Swe chat widget embed (docs/SPEC-CHAT-WIDGET.md §1.2).
  *
  * Drop on every page of a connected site:
  *   <script src="https://YOUR-CRM/w.js" data-widget="wgt_01H..." defer></script>

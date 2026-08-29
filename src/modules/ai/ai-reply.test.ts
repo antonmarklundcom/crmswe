@@ -300,7 +300,7 @@ describe.skipIf(!canRunEndToEnd)("ai_reply end to end", () => {
     expect(drafts[0].provider).toBe("openai");
     expect(drafts[0].promptTokens).toBe(100);
     expect(drafts[0].completionTokens).toBe(20);
-    expect(drafts[0].prompt).toContain("Nunca inventes precios");
+    expect(drafts[0].prompt).toContain("Hitta aldrig på priser");
 
     // Nothing left for WhatsApp.
     expect(await listMessagesForConversation(ctxA, conversationIdA)).toHaveLength(before);

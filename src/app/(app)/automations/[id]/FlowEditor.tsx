@@ -320,7 +320,7 @@ function NodeConfigPanel({
             placeholder={t("fields.reviewTextPlaceholder", { tag: "{{review_link}}" })}
             className="px-2 py-1"
           />
-          {/* Left blank uses a sensible Spanish default with the link —
+          {/* Left blank uses a sensible Swedish default with the link —
               see modules/automations/actions.ts DEFAULT_REVIEW_REQUEST_TEXT. */}
           <span className="text-xs text-muted-foreground">{t("fields.reviewTextHint")}</span>
         </label>

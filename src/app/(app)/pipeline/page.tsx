@@ -68,7 +68,7 @@ export default async function PipelinePage({
         action={
           isAdmin ? (
             <Link
-              href={`/pipeline/etapas?pipeline=${pipeline.id}`}
+              href={`/pipeline/steg?pipeline=${pipeline.id}`}
               className="text-sm underline underline-offset-4"
             >
               {t("editStages")}

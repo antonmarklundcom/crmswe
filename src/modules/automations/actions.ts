@@ -116,7 +116,7 @@ async function sendWhatsappAction(
     const messageId = await sendTemplate(ctx, {
       conversationId: conversation.id,
       templateName: String(config.templateName),
-      language: String(config.language ?? "es"),
+      language: String(config.language ?? "sv"),
     });
     await stampAutomationRun(ctx, messageId, runId);
     return { skipped: false, detail: { messageId, template: config.templateName } };

@@ -140,7 +140,7 @@ export async function requireTenantContext(): Promise<TenantContext> {
 export async function requireTenantAdmin(): Promise<TenantContext> {
   const ctx = await requireTenantContext();
   if (ctx.role !== "admin") {
-    throw new Error("Se requiere rol de administrador");
+    throw new Error("Admin role required");
   }
   return ctx;
 }

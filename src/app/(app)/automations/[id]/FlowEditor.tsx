@@ -369,7 +369,7 @@ function NodeConfigPanel({
           <label className="flex flex-col gap-1">
             {t("fields.language")}
             <Input
-              value={String(config.language ?? "es")}
+              value={String(config.language ?? "sv")}
               onChange={(e) => set("language", e.target.value)}
               className="w-20 px-2 py-1"
             />

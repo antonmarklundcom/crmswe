@@ -36,7 +36,7 @@ export async function sendText(ctx: TenantContext, input: SendTextInput) {
 
   if (!withinFreeFormWindow(conversation.lastInboundAt)) {
     throw new Error(
-      "La ventana de 24 horas está cerrada — solo se pueden enviar plantillas aprobadas.",
+      "24-timmarsfönstret är stängt — endast godkända mallar kan skickas.",
     );
   }
 
@@ -77,7 +77,7 @@ export async function sendDocument(ctx: TenantContext, input: SendDocumentInput)
 
   if (!withinFreeFormWindow(conversation.lastInboundAt)) {
     throw new Error(
-      "La ventana de 24 horas está cerrada — solo se pueden enviar plantillas aprobadas.",
+      "24-timmarsfönstret är stängt — endast godkända mallar kan skickas.",
     );
   }
 
@@ -175,6 +175,15 @@ export async function deliverQueuedMessage(
   // webhook processing.
   const ctx = await buildSystemTenantContext(tenantId);
   if (!ctx) return;
+
+  // Re-check here, not just at enqueue time (queueOutboundMessage above):
+  // a tenant can flip the channel off after a message is already queued but
+  // before the worker picks it up (O3-5). The window is seconds to minutes,
+  // but "off" should mean off.
+  if (!(await whatsappEnabledFor(ctx))) {
+    await failMessage(messageId, "whatsapp_disabled");
+    return;
+  }
 
   const account = await getAccount(ctx, conversation.waAccountId);
   if (!account) {

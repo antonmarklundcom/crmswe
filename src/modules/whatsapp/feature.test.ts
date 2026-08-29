@@ -189,6 +189,41 @@ describe.skipIf(!hasDb)("the WhatsApp channel switch (MySQL integration)", () =>
     ).rejects.toThrow("whatsapp_disabled");
   });
 
+  it("refuses to deliver a message queued before the channel was switched off", async () => {
+    // O3-5: `queueOutboundMessage` only guards the moment a message is
+    // enqueued. A template needs no open 24h window, so without a check at
+    // delivery time too, a template queued a second before a tenant flips
+    // the kill switch would still reach Meta after "off" took effect.
+    await updateTenantWhatsappEnabled(ctx, true);
+    const eventId = await persistRawEvent(inbound("Kan jag boka?"), phoneNumberId);
+    await processWebhookEvent(eventId);
+    const [conversation] = await listConversations(ctx);
+    expect(conversation).toBeDefined();
+
+    const { sendTemplate, deliverQueuedMessage } = await import("./send");
+    const messageId = await sendTemplate(ctx, {
+      conversationId: conversation.id,
+      templateName: "paminnelse",
+      language: "sv",
+    });
+
+    await updateTenantWhatsappEnabled(ctx, false);
+
+    await deliverQueuedMessage(ctx.tenantId, messageId, {
+      messaging_product: "whatsapp",
+      type: "template",
+      template: { name: "paminnelse", language: { code: "sv" } },
+    });
+
+    const { eq } = await import("drizzle-orm");
+    const { messages: messagesTable } = await import("@/db/schema");
+    const [message] = await db
+      .select()
+      .from(messagesTable)
+      .where(eq(messagesTable.id, messageId));
+    expect(message.status).toBe("failed");
+  });
+
   it("stops ingesting again when it is switched back off", async () => {
     // `mergeTenantSettings` deep-merges, and `false ?? current` would keep a
     // stored `true` — so turning the channel off has to actually turn it off.

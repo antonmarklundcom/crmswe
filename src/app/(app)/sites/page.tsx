@@ -323,7 +323,7 @@ export default async function SitesPage() {
 
       <SiteGuide
         appUrl={env.APP_URL}
-        formEndpointExample={`${env.APP_URL}/f/${tenant?.slug ?? "tu-empresa"}/contacto`}
+        formEndpointExample={`${env.APP_URL}/f/${tenant?.slug ?? "mitt-företag"}/kontakt`}
         labels={guideLabels}
       />
 

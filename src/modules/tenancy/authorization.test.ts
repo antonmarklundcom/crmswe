@@ -273,7 +273,7 @@ beforeEach(() => {
 describe("admin-only server actions", () => {
   for (const { name, service, call } of adminOnlyActions) {
     it(`rejects an agent — ${name}`, async () => {
-      await expect(call()).rejects.toThrow(/administrador/i);
+      await expect(call()).rejects.toThrow(/admin role required/i);
       expect(service()).not.toHaveBeenCalled();
     });
   }

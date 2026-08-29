@@ -244,7 +244,7 @@ describe.skipIf(!hasDb)("whatsapp isolation + webhook processing", () => {
       .where(eq(schema.conversations.id, conversation.id));
 
     await expect(sendText(ctxA, { conversationId: conversation.id, body: "hola" })).rejects.toThrow(
-      /ventana de 24 horas/,
+      /24-timmarsfönstret/,
     );
   });
 

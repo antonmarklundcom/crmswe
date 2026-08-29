@@ -1,10 +1,30 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { NextIntlClientProvider } from "next-intl";
-import { getLocale } from "next-intl/server";
+import { getLocale, getMessages } from "next-intl/server";
 import { intlTag } from "@/lib/i18n/locales";
 import { siteConfig } from "@/lib/site-config";
 import "./globals.css";
+
+// Namespaces an actual Client Component reads via `useTranslations` (grep
+// confirms this — `marketing`, `pdf`, `email`, `audit`, `public` and
+// `tenancy` are server-only). Without a `messages` prop here, next-intl
+// serialises the *whole* resolved locale into every page's hydration
+// payload — including the marketing copy on `/dashboard` and `/login`
+// (KNOWN-ISSUES S1-2). Scoping it to what the client actually needs keeps
+// that payload from growing every time a server-only namespace does.
+const CLIENT_NAMESPACES = ["common", "auth", "app", "superadmin", "errors"] as const;
+
+function pickNamespaces<T extends Record<string, unknown>>(
+  messages: T,
+  namespaces: readonly string[],
+): Partial<T> {
+  const picked: Partial<T> = {};
+  for (const namespace of namespaces) {
+    if (namespace in messages) picked[namespace as keyof T] = messages[namespace as keyof T];
+  }
+  return picked;
+}
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -57,6 +77,7 @@ export default async function RootLayout({
   // currently prefers the browser's own locale regardless, so this is the
   // correct signal rather than a guarantee (see KNOWN-ISSUES O3-1).
   const locale = await getLocale();
+  const messages = await getMessages();
 
   return (
     <html
@@ -64,7 +85,9 @@ export default async function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <NextIntlClientProvider>{children}</NextIntlClientProvider>
+        <NextIntlClientProvider messages={pickNamespaces(messages, CLIENT_NAMESPACES)}>
+          {children}
+        </NextIntlClientProvider>
       </body>
     </html>
   );

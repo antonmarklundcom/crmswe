@@ -41,7 +41,7 @@ describe("resolveSwitchTarget", () => {
 
   it("drops sub-pages that are not record ids too", () => {
     expect(resolveSwitchTarget("/contacts/import", "agent")).toBe("/contacts");
-    expect(resolveSwitchTarget("/pipeline/etapas", "admin")).toBe("/pipeline");
+    expect(resolveSwitchTarget("/pipeline/steg", "admin")).toBe("/pipeline");
   });
 
   it("drops the query string — its filters name the old business's tags and users", () => {

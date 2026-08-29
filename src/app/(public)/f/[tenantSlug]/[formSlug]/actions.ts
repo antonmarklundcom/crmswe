@@ -32,5 +32,5 @@ export async function submitFormAction(
     userAgent: headersList.get("user-agent") ?? undefined,
   });
 
-  redirect(result.redirectUrl || `/f/${tenantSlug}/${formSlug}/gracias`);
+  redirect(result.redirectUrl || `/f/${tenantSlug}/${formSlug}/tack`);
 }

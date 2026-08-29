@@ -142,7 +142,7 @@ async function sendWhatsappAction(
 }
 
 const DEFAULT_REVIEW_REQUEST_TEXT =
-  "¡Gracias por confiar en nosotros! Si tenés un minuto, nos ayudaría mucho que dejes una reseña: {{review_link}}";
+  "Tack för att du valde oss! Om du har en minut över skulle det betyda mycket om du lämnade en recension: {{review_link}}";
 
 /**
  * GBP review request (PLAN.md §10 1R #5 / §10 1P). No Google API, no OAuth —

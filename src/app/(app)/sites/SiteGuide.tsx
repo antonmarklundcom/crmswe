@@ -78,21 +78,21 @@ export function SiteGuide({
       id: "html",
       label: "HTML",
       language: "html",
-      code: `<!-- The form posts to YOUR server, never to clientes.com.py directly. -->
-<form action="/contacto.php" method="POST">
-  <input name="nombre" required>
-  <input name="telefono" type="tel" required placeholder="0981 123 456">
+      code: `<!-- Formuläret postar till DIN server, aldrig direkt till CRM Swe. -->
+<form action="/kontakt.php" method="POST">
+  <input name="namn" required>
+  <input name="telefon" type="tel" required placeholder="070-123 45 67">
   <input name="email" type="email">
-  <textarea name="mensaje"></textarea>
+  <textarea name="meddelande"></textarea>
 
-  <!-- Honeypot: bots fill it, humans never see it. -->
+  <!-- Honeypot: botar fyller i det, människor ser det aldrig. -->
   <input name="website" tabindex="-1" autocomplete="off"
          style="position:absolute;left:-9999px" aria-hidden="true">
 
-  <button type="submit">Enviar</button>
+  <button type="submit">Skicka</button>
 </form>
 
-<!-- First-touch attribution cookie (optional but recommended). -->
+<!-- First-touch-attributionscookie (valfritt men rekommenderat). -->
 <script src="${appUrl}/vc-attribution.js" defer></script>`,
     },
     {
@@ -100,25 +100,25 @@ export function SiteGuide({
       label: "PHP",
       language: "php",
       code: `<?php
-// contacto.php — runs on your server, so the key is never exposed.
+// kontakt.php — körs på din server, så nyckeln exponeras aldrig.
 $apiKey = getenv('CRMSWE_API_KEY');
 
-// 1. Honeypot: silently accept and drop.
-if (!empty($_POST['website'])) { header('Location: /gracias.html'); exit; }
+// 1. Honeypot: acceptera tyst och kasta.
+if (!empty($_POST['website'])) { header('Location: /tack.html'); exit; }
 
-// 2. First-touch attribution written by vc-attribution.js.
+// 2. First-touch-attribution skriven av vc-attribution.js.
 $attr = json_decode($_COOKIE['vc_attr'] ?? '{}', true) ?: [];
 
-// 3. Idempotency key — same key = same lead, so a double submit or a
-//    retry after a timeout never creates a duplicate contact.
-$idempotencyKey = hash('sha256', ($_POST['telefono'] ?? '') . '|' . date('Y-m-d-H'));
+// 3. Idempotensnyckel — samma nyckel = samma lead, så ett dubbelt
+//    formulärskick eller ett omförsök efter timeout skapar aldrig en dubblett.
+$idempotencyKey = hash('sha256', ($_POST['telefon'] ?? '') . '|' . date('Y-m-d-H'));
 
 $payload = [
-  'phone'           => $_POST['telefono'] ?? '',   // required
-  'name'            => $_POST['nombre'] ?? null,
+  'phone'           => $_POST['telefon'] ?? '',   // krävs
+  'name'            => $_POST['namn'] ?? null,
   'email'           => $_POST['email'] ?? null,
-  'message'         => $_POST['mensaje'] ?? null,
-  'source'          => 'formulario-contacto',
+  'message'         => $_POST['meddelande'] ?? null,
+  'source'          => 'kontaktformular',
   'page_url'        => $attr['landing_page'] ?? null,
   'referrer'        => $attr['referrer'] ?? null,
   'utm_source'      => $attr['utm_source'] ?? null,
@@ -143,37 +143,37 @@ $response = curl_exec($ch);
 $status   = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 curl_close($ch);
 
-// 4. Never block the visitor on the CRM. Log and thank them either way.
+// 4. Blockera aldrig besökaren på CRM:et. Logga och tacka dem ändå.
 if ($status !== 201 && $status !== 200) {
-  error_log("VenderCRM lead failed ($status): $response");
+  error_log("CRM Swe lead failed ($status): $response");
 }
 
-header('Location: /gracias.html');
+header('Location: /tack.html');
 exit;`,
     },
     {
       id: "node",
       label: "Node.js",
       language: "javascript",
-      code: `// Express route — same rules: server-side, key from env.
+      code: `// Express-route — samma regler: serversidan, nyckeln från env.
 import crypto from "node:crypto";
 
-app.post("/api/contacto", async (req, res) => {
-  const { nombre, telefono, email, mensaje, website } = req.body;
+app.post("/api/kontakt", async (req, res) => {
+  const { namn, telefon, email, meddelande, website } = req.body;
 
   // 1. Honeypot.
-  if (website) return res.redirect("/gracias");
+  if (website) return res.redirect("/tack");
 
-  // 2. First-touch attribution cookie.
+  // 2. First-touch-attributionscookie.
   let attr = {};
   try {
     attr = JSON.parse(decodeURIComponent(req.cookies?.vc_attr ?? "%7B%7D"));
   } catch {}
 
-  // 3. Stable idempotency key for this submission.
+  // 3. Stabil idempotensnyckel för det här formulärskicket.
   const idempotencyKey = crypto
     .createHash("sha256")
-    .update(\`\${telefono}|\${new Date().toISOString().slice(0, 13)}\`)
+    .update(\`\${telefon}|\${new Date().toISOString().slice(0, 13)}\`)
     .digest("hex");
 
   try {
@@ -184,11 +184,11 @@ app.post("/api/contacto", async (req, res) => {
         "X-Api-Key": process.env.CRMSWE_API_KEY,
       },
       body: JSON.stringify({
-        phone: telefono,                 // required
-        name: nombre,
+        phone: telefon,                  // krävs
+        name: namn,
         email,
-        message: mensaje,
-        source: "formulario-contacto",
+        message: meddelande,
+        source: "kontaktformular",
         page_url: attr.landing_page,
         referrer: attr.referrer,
         utm_source: attr.utm_source,
@@ -201,25 +201,25 @@ app.post("/api/contacto", async (req, res) => {
     });
 
     if (!response.ok) {
-      console.error("VenderCRM lead failed", response.status, await response.text());
+      console.error("CRM Swe lead failed", response.status, await response.text());
     }
   } catch (err) {
-    // 4. Never block the visitor on the CRM being reachable.
-    console.error("VenderCRM unreachable", err);
+    // 4. Blockera aldrig besökaren på att CRM:et går att nå.
+    console.error("CRM Swe unreachable", err);
   }
 
-  res.redirect("/gracias");
+  res.redirect("/tack");
 });`,
     },
     {
       id: "nostack",
-      label: "Sin backend",
+      label: "Utan backend",
       language: "html",
-      code: `<!-- No server to run code on? Point the form straight at the hosted
-     page instead — same result, no API key to manage. -->
-<a href="${formEndpointExample}">Formulario alojado en clientes.com.py</a>
+      code: `<!-- Ingen server att köra kod på? Peka formuläret direkt mot den
+     hostade sidan i stället — samma resultat, ingen API-nyckel att sköta. -->
+<a href="${formEndpointExample}">Formulär hostat hos CRM Swe</a>
 
-<!-- Or embed it: -->
+<!-- Eller bädda in det: -->
 <iframe src="${formEndpointExample}" style="width:100%;height:600px;border:0"></iframe>`,
     },
   ];

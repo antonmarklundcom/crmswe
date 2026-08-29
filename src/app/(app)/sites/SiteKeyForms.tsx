@@ -101,7 +101,7 @@ export function NewSiteForm({
           <Input
             name="domain"
             defaultValue={state.values.domain ?? ""}
-            placeholder="dentista.com.py"
+            placeholder="tandlakare.se"
           />
         </label>
         <label className="flex flex-col gap-1 text-sm">

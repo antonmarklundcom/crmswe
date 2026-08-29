@@ -12,7 +12,7 @@ describe("buildSystemPrompt", () => {
   it("always carries the guardrails, even with no tenant context filled in", () => {
     const prompt = buildSystemPrompt({ businessName: "Climatex" });
     expect(prompt).toContain("Climatex");
-    expect(prompt).toContain("Nunca inventes precios");
+    expect(prompt).toContain("Hitta aldrig på priser");
   });
 
   it("includes the tenant's own never-promise list and per-node instruction", () => {

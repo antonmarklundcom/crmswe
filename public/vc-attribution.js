@@ -1,5 +1,5 @@
 /*
- * VenderCRM first-touch attribution snippet (PLAN.md §5.1).
+ * CRM Swe first-touch attribution snippet (PLAN.md §5.1).
  *
  * Drop on every page of a connected site:
  *   <script src="https://YOUR-CRM/vc-attribution.js" defer></script>
@@ -12,7 +12,7 @@
  * Read it on your server when posting to /api/v1/leads:
  *   JSON.parse(decodeURIComponent(cookies.vc_attr || "%7B%7D"))
  *
- * This is the ONLY client-side code VenderCRM ships. Pageview/scroll/funnel
+ * This is the ONLY client-side code CRM Swe ships. Pageview/scroll/funnel
  * analytics are deliberately not built here — self-host Umami for that.
  */
 (function () {

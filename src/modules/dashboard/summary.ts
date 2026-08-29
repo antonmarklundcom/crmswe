@@ -36,7 +36,6 @@ const PENDING_QUOTE_STATUSES = new Set(["draft", "sent"]);
 export type DashboardStats = {
   /** Deals sitting in a stage that is neither won nor lost. */
   openDeals: number;
-  /** Summed value of those deals, guaraníes only (§4: no FX conversion). */
   /** Summed value of open deals, minor units of `currency` (plan.md §1.2). */
   openDealsValue: number;
   /** The currency those amounts are in — the tenant's own. */

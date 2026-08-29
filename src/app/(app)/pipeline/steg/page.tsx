@@ -66,7 +66,7 @@ export default async function StagesPage({
           {pipelines.map((p) => (
             <Link
               key={p.id}
-              href={`/pipeline/etapas?pipeline=${p.id}`}
+              href={`/pipeline/steg?pipeline=${p.id}`}
               className={`rounded-full border px-3 py-1 text-sm ${
                 p.id === pipeline.id
                   ? "border-primary bg-primary text-primary-foreground"

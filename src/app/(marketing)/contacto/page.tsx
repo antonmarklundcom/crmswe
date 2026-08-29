@@ -112,7 +112,7 @@ export default async function ContactoPage({
           t("ribbon.monthly"),
           t("ribbon.measured"),
           t("ribbon.ownData"),
-          ...(contact.ruc ? [t("ribbon.ruc", { ruc: contact.ruc })] : []),
+          ...(contact.orgNr ? [t("ribbon.ruc", { ruc: contact.orgNr })] : []),
         ]}
       />
 

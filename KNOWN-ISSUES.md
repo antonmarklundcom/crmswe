@@ -38,6 +38,21 @@ app cannot referee the edge cases (a foreign buyer, an exempt seller) well
 enough to be the authority on what is required. *Owner: whoever does the
 pre-launch fiscal review; revisit if real tenants ship incomplete invoices.*
 
+### O2-6 — A fresh session's shallow clone tracks only `main`
+Sessions in this repo start from `git clone --depth 1`, which sets
+`remote.origin.fetch` to `+refs/heads/main:refs/remotes/origin/main`. A phase
+branch therefore has no `origin/<branch>` tracking ref locally even after a
+successful push, so `git status` shows no upstream and tooling that checks for
+unpushed work reports the branch as unpushed when it is fully pushed. Confirm
+with `git ls-remote origin refs/heads/<branch>` before believing it, then:
+
+    git config --unset-all remote.origin.fetch
+    git config --add remote.origin.fetch '+refs/heads/*:refs/remotes/origin/*'
+    git fetch origin <branch>
+    git branch --set-upstream-to=origin/<branch> <branch>
+
+*Owner: none — context for future sessions.*
+
 ### O2-5 — Early invoices get a very short OCR number
 `generateOcrNumber` strips leading zeros before adding the length and check
 digits, so `FA-000001` produces the OCR `0141` — four digits, valid under

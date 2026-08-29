@@ -2,6 +2,7 @@ import { and, eq, like, or, type SQL } from "drizzle-orm";
 import { contactTags, contacts, tags } from "@/db/schema";
 import { newId } from "@/lib/ids";
 import { normalizePhone, DEFAULT_COUNTRY, type CountryCode } from "@/lib/phone";
+import { isValidOrgNr, toTenDigits } from "@/lib/se/identity";
 import type { TenantContext } from "@/modules/tenancy/context";
 import { tenantDb } from "@/modules/tenancy/db";
 import { crmEvents } from "./events";
@@ -11,7 +12,25 @@ import { crmEvents } from "./events";
 
 export { normalizePhone };
 
-export type CreateContactInput = {
+/**
+ * Faktureringsuppgifter on a contact (plan.md §5.2.3). A Swedish faktura must
+ * carry the buyer's name *and address*, so this is where the address gets
+ * entered — but every field stays optional, because a lead captured from a
+ * web form has none of them and must still become a contact. The faktura is
+ * what insists on them, at issue time.
+ */
+export type ContactBillingInput = {
+  /** Any written form; stored canonically as ten digits. */
+  orgNr?: string | null;
+  addressLine1?: string | null;
+  addressLine2?: string | null;
+  postalCode?: string | null;
+  city?: string | null;
+  /** ISO 3166-1 alpha-2. */
+  country?: string | null;
+};
+
+export type CreateContactInput = ContactBillingInput & {
   name: string;
   phone: string;
   email?: string;
@@ -25,6 +44,45 @@ export type UpdateContactInput = Partial<
 > & {
   phone?: string;
 };
+
+/**
+ * Normalizes and validates the billing fields.
+ *
+ * The org.nr is Luhn-checked at this single door and stored as ten bare
+ * digits, so every reader — the invoice, a search, a dedupe — sees one
+ * format. A number that fails the check is refused rather than stored: an
+ * org.nr is printed on a faktura, and a wrong one there is the kind of thing
+ * a customer's bookkeeper returns the invoice over.
+ */
+function billingValues(
+  input: ContactBillingInput,
+): Partial<typeof contacts.$inferInsert> {
+  const values: Partial<typeof contacts.$inferInsert> = {};
+  const text = (value: string | null | undefined) => {
+    const trimmed = (value ?? "").trim();
+    return trimmed.length === 0 ? null : trimmed;
+  };
+
+  if (input.orgNr !== undefined) {
+    const raw = text(input.orgNr);
+    if (raw === null) {
+      values.orgNr = null;
+    } else {
+      const canonical = toTenDigits(raw);
+      if (canonical === null || !isValidOrgNr(raw)) throw new Error("invalid_org_nr");
+      values.orgNr = canonical;
+    }
+  }
+  if (input.addressLine1 !== undefined) values.addressLine1 = text(input.addressLine1);
+  if (input.addressLine2 !== undefined) values.addressLine2 = text(input.addressLine2);
+  if (input.postalCode !== undefined) values.postalCode = text(input.postalCode);
+  if (input.city !== undefined) values.city = text(input.city);
+  if (input.country !== undefined) {
+    const country = text(input.country);
+    values.country = country === null ? null : country.toUpperCase().slice(0, 2);
+  }
+  return values;
+}
 
 export type ListContactsFilters = {
   search?: string;
@@ -51,6 +109,7 @@ export async function createContact(
       notes: input.notes,
       source: input.source,
       ownerUserId: input.ownerUserId,
+      ...billingValues(input),
     });
 
   await crmEvents.emit("contact.created", { tenantId: ctx.tenantId, contactId: id });
@@ -64,7 +123,14 @@ export async function updateContact(
   input: UpdateContactInput,
   defaultCountry: CountryCode = DEFAULT_COUNTRY,
 ) {
-  const values: Partial<typeof contacts.$inferInsert> = { ...input };
+  // Spread the plain fields, then let billingValues own the ones it
+  // validates and canonicalizes — an unvalidated org.nr must not reach the
+  // column through the generic spread.
+  const { orgNr, addressLine1, addressLine2, postalCode, city, country, ...rest } = input;
+  const values: Partial<typeof contacts.$inferInsert> = {
+    ...rest,
+    ...billingValues({ orgNr, addressLine1, addressLine2, postalCode, city, country }),
+  };
   if (input.phone) values.phone = normalizePhone(input.phone, defaultCountry);
 
   await tenantDb(ctx).update(contacts).set(values).where(eq(contacts.id, id));

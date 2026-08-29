@@ -183,6 +183,13 @@
       "when": 1787961246811,
       "tag": "0025_swedish_foundation",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "5",
+      "when": 1787964574024,
+      "tag": "0026_moms_faktura",
+      "breakpoints": true
     }
   ]
 }

@@ -138,51 +138,62 @@ describe.skipIf(!hasDb)("documents (MySQL)", () => {
     // The one-way door.
     await expect(
       mod.updateDraftDocument(ctxA, doc!.id, { items: lines }),
-    ).rejects.toThrow(/ya fue emitida/);
-    await expect(mod.issueDocument(ctxA, doc!.id)).rejects.toThrow(/ya fue emitida/);
+    ).rejects.toThrow(/document_not_draft/);
+    await expect(mod.issueDocument(ctxA, doc!.id)).rejects.toThrow(/document_not_draft/);
   });
 
   it("refuses payments on a draft and accepts them once issued", async () => {
     const doc = await mod.createDocument(ctxA, { contactId: contactA, items: lines });
 
     await expect(mod.recordPayment(ctxA, doc!.id, { amount: 100 })).rejects.toThrow(
-      /emitida/,
+      /payment_requires_issued_document/,
     );
 
     await mod.issueDocument(ctxA, doc!.id);
     await expect(mod.recordPayment(ctxA, doc!.id, { amount: 0 })).rejects.toThrow(
-      /mayor que cero/,
+      /payment_must_be_positive/,
     );
 
+    // The customer owes the *brutto*: 2 500 000 öre netto at the seeded 25 %
+    // default is 3 125 000 öre on the payment slip. Reconciling against the
+    // netto would call a fully paid invoice overpaid.
+    const gross = 3_125_000;
     const after = await mod.recordPayment(ctxA, doc!.id, {
       amount: 1_000_000,
       method: "transfer",
     });
+    expect(after!.gross).toBe(gross);
+    expect(after!.total).toBe(2_500_000);
+    expect(after!.vatTotal).toBe(625_000);
     expect(after!.amountPaid).toBe(1_000_000);
-    expect(after!.balance).toBe(1_500_000);
+    expect(after!.balance).toBe(gross - 1_000_000);
     expect(after!.state).toBe("partial");
 
-    const paid = await mod.recordPayment(ctxA, doc!.id, { amount: 1_500_000, method: "cash" });
+    const paid = await mod.recordPayment(ctxA, doc!.id, {
+      amount: gross - 1_000_000,
+      method: "cash",
+    });
     expect(paid!.state).toBe("paid");
     expect(paid!.balance).toBe(0);
   });
 
-  it("refuses to void a document with payments, and voids a clean one", async () => {
-    const withPayment = await mod.createDocument(ctxA, { contactId: contactA, items: lines });
-    await mod.issueDocument(ctxA, withPayment!.id);
-    await mod.recordPayment(ctxA, withPayment!.id, { amount: 500 });
-
-    await expect(mod.voidDocument(ctxA, withPayment!.id, "error")).rejects.toThrow(
-      /pagos registrados/,
-    );
-
-    // Removing the payment makes it voidable again — the ledger, not a flag,
-    // is what gates this.
-    const payments = await mod.listPayments(ctxA, withPayment!.id);
-    await mod.deletePayment(ctxA, withPayment!.id, payments[0].id);
-    const voided = await mod.voidDocument(ctxA, withPayment!.id, "cargado por error");
+  it("voids a draft, and refuses to void anything already issued", async () => {
+    // Abandoning a draft retires its number rather than reusing it, so the
+    // series stays unbroken.
+    const draft = await mod.createDocument(ctxA, { contactId: contactA, items: lines });
+    const voided = await mod.voidDocument(ctxA, draft!.id, "skapad av misstag");
     expect(voided!.status).toBe("void");
-    expect(voided!.voidReason).toBe("cargado por error");
+    expect(voided!.voidReason).toBe("skapad av misstag");
+
+    // An issued faktura is räkenskapsinformation. Voiding it would take a
+    // live invoice out of the series instead of recording that it was
+    // reversed — the correction route is a kreditfaktura (plan.md §5.2.4).
+    const issued = await mod.createDocument(ctxA, { contactId: contactA, items: lines });
+    await mod.issueDocument(ctxA, issued!.id);
+    await expect(mod.voidDocument(ctxA, issued!.id, "fel belopp")).rejects.toThrow(
+      /issued_document_requires_credit_note/,
+    );
+    expect((await mod.getDocument(ctxA, issued!.id))!.status).toBe("issued");
   });
 
   it("copies quote lines by value, so a later change to the quote can't rewrite the document", async () => {
@@ -229,7 +240,7 @@ describe.skipIf(!hasDb)("documents (MySQL)", () => {
 
     expect(await mod.getDocumentByPublicToken(token)).not.toBeNull();
 
-    await mod.voidDocument(ctxA, doc!.id, "anulada");
+    await mod.voidDocument(ctxA, doc!.id, "makulerad");
     expect(await mod.getDocumentByPublicToken(token)).toBeNull();
   });
 

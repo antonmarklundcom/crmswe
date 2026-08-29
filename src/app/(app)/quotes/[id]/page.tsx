@@ -52,7 +52,7 @@ export default async function QuoteDetailPage({
         </div>
         <form action={sendQuoteAction}>
           <input type="hidden" name="quoteId" value={quote.id} />
-          <Button type="submit">{t("sendWhatsapp")}</Button>
+          <Button type="submit">{t("sendToCustomer")}</Button>
         </form>
       </header>
 

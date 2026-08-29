@@ -81,8 +81,6 @@
       "quotes": "Offerter",
       "documents": "Fakturor",
       "products": "Produkter",
-      "facturaElectronica": "Elektronisk fakturering",
-      "soon": "Kommer snart",
       "automations": "Automationer",
       "users": "Team",
       "groups": {
@@ -243,7 +241,9 @@
         "endBeforeStart": "Slutet måste ligga efter starten",
         "notAllowed": "Den här bokningen är inte din att ändra",
         "unknown": "Bokningen kunde inte sparas"
-      }
+      },
+      "weekShort": "v.",
+      "weekNumber": "Vecka {week}"
     },
     "forms": {
       "title": "Formulär",
@@ -548,7 +548,18 @@
           "nameTaken": "Det finns redan en vy med det namnet",
           "unknown": "Vyn kunde inte sparas"
         }
-      }
+      },
+      "gdprTitle": "Registerutdrag (GDPR)",
+      "gdprExportHint": "Laddar ner allt ditt företag lagrar om den här kontakten som en JSON-fil, att skicka vidare till personen som begärt utdraget. Nedladdningen loggas i händelseloggen.",
+      "gdprExport": "Ladda ner registerutdrag",
+      "anonymizeTitle": "Anonymisera kontakten",
+      "anonymizeHint": "Tar bort namn, telefon, e-post, org.nr, adress och anteckningar, samt innehållet i meddelanden, formulärsvar och bokningssvar. Går inte att ångra.",
+      "anonymizeRetention": "Utställda fakturor raderas inte och kundadressen på dem ändras inte: bokföringslagen kräver att räkenskapsinformation sparas i sju år, och GDPR:s rätt till radering viker för det. Kontakten finns kvar, avidentifierad, så att fakturorna fortfarande hänger ihop.",
+      "anonymizeConfirmLabel": "Skriv {word} för att bekräfta",
+      "anonymizeConfirmMissing": "Skriv {word} i rutan för att bekräfta.",
+      "anonymize": "Anonymisera",
+      "anonymizeDone": "Kontakten är anonymiserad. Utställda fakturor är orörda.",
+      "anonymizeFailed": "Kunde inte anonymisera kontakten."
     },
     "inbox": {
       "title": "Inkorg",
@@ -647,7 +658,7 @@
       "subtotal": "Delsumma",
       "total": "Totalt",
       "createQuote": "Skapa offert",
-      "sendWhatsapp": "Skicka via WhatsApp",
+      "sendToCustomer": "Skicka till kunden",
       "publicLink": "Publik länk",
       "downloadPdf": "Ladda ner PDF",
       "statusValues": {
@@ -779,7 +790,8 @@
         "creditFailed": "Kreditfakturan kunde inte skapas. Kontrollera att fakturan är utfärdad och inte redan krediterad.",
         "unknown": "Vi kunde inte spara. Försök igen."
       },
-      "exclVat": "exkl. moms"
+      "exclVat": "exkl. moms",
+      "sendReminder": "Skicka påminnelse"
     },
     "settings": {
       "title": "Inställningar",
@@ -800,6 +812,9 @@
       },
       "reviewLinkTitle": "Länk för Google-recension",
       "reviewLinkIntro": "Länken från din Google Business-profil för att be om recensioner ('Få fler recensioner' i Google Business Profile). Den används av automationsnoden 'Be om en Google-recension'.",
+      "whatsappChannelTitle": "WhatsApp-kanal",
+      "whatsappChannelIntro": "WhatsApp är avstängt i den här produkten. Du och dina kunder använder e-post för offerter, fakturor och påminnelser. Slår du på det igen får du tillbaka WhatsApp-inkorgen, anslutningssidan och möjligheten att styra leads till ett WhatsApp-nummer.",
+      "whatsappChannelEnabled": "Använd WhatsApp som kanal",
       "businessHoursTitle": "Öppettider",
       "sheetsTitle": "Google Sheets",
       "sheetsIntro": "Dina kontakter i ett kalkylark som uppdaterar sig självt, utan att koppla ditt Google-konto och utan kostnad. Kalkylarket läser en privat länk som tillhör ditt företag; ingen annan får åtkomst.",
@@ -867,7 +882,15 @@
         "off": "Av",
         "enable": "Slå på",
         "disable": "Stäng av"
-      }
+      },
+      "emailSenderTitle": "Avsändare för e-post till kunder",
+      "emailSenderIntro": "Offerter, fakturor och påminnelser skickas med e-post. Här bestämmer du vad kunden ser som avsändare och vart svaren går.",
+      "emailFromName": "Avsändarnamn",
+      "emailReplyTo": "Svara till",
+      "emailReplyToHelp": "Hit går kundens svar. Lämnas det tomt går svaren till plattformens adress och når dig inte.",
+      "emailFromEmail": "Egen avsändaradress (avancerat)",
+      "emailFromEmailHelp": "Lämna tomt om du inte vet. Adressen måste ligga på en domän som är verifierad hos vår e-postleverantör (SPF och DKIM) — annars studsar fakturan eller hamnar i skräpposten. Utan egen adress skickas posten från plattformen med ditt företagsnamn som avsändare, vilket fungerar för de allra flesta.",
+      "emailSettingsInvalid": "Kontrollera e-postadresserna."
     },
     "automations": {
       "title": "Automationer",
@@ -2260,6 +2283,40 @@
       "appointmentsSubject": "Du har {count} bokning(ar) idag",
       "appointmentsBody": "I din kalender de närmaste 24 timmarna: {count} bokning(ar).",
       "allDay": "Heldag"
+    },
+    "quote": {
+      "subject": "Offert {number} från {tenant}",
+      "title": "Offert {number}",
+      "body": "Hej {name}! Här är din offert från {tenant} på {amount} inklusive moms. Klicka nedan för att läsa hela offerten och ladda ner den som PDF.",
+      "validUntil": "Offerten gäller till och med {date}.",
+      "cta": "Öppna offerten",
+      "fallback": "Fungerar inte knappen? Kopiera den här länken till webbläsaren: {url}"
+    },
+    "invoice": {
+      "subject": "Faktura {number} från {tenant}",
+      "creditSubject": "Kreditfaktura {number} från {tenant}",
+      "title": "Faktura {number}",
+      "creditTitle": "Kreditfaktura {number}",
+      "body": "Hej {name}! Här är din faktura från {tenant} på {amount}. Klicka nedan för att läsa den och ladda ner den som PDF.",
+      "creditBody": "Hej {name}! Här är en kreditfaktura från {tenant} på {amount}, som krediterar faktura {credits}.",
+      "dueAt": "Förfallodatum: {date}.",
+      "payment": "Betala till {account} och ange OCR-nummer {ocr}.",
+      "paymentNoOcr": "Betala till {account}.",
+      "cta": "Öppna fakturan",
+      "fallback": "Fungerar inte knappen? Kopiera den här länken till webbläsaren: {url}"
+    },
+    "paymentReminder": {
+      "subject": "Påminnelse: faktura {number} förfaller {date}",
+      "overdueSubject": "Påminnelse: faktura {number} har förfallit",
+      "title": "Påminnelse om faktura {number}",
+      "body": "Hej {name}! Vi har ännu inte registrerat någon betalning för faktura {number} från {tenant}. Utestående belopp är {amount}.",
+      "dueAt": "Fakturan förfaller {date}.",
+      "overdue": "Fakturan förföll {date}.",
+      "payment": "Betala till {account} och ange OCR-nummer {ocr}.",
+      "paymentNoOcr": "Betala till {account}.",
+      "crossed": "Har du redan betalat? Då kan du bortse från det här meddelandet.",
+      "cta": "Öppna fakturan",
+      "fallback": "Fungerar inte knappen? Kopiera den här länken till webbläsaren: {url}"
     }
   },
   "pdf": {

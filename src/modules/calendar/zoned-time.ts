@@ -123,10 +123,44 @@ export function weekdayOf(day: DayKey): number {
   return new Date(`${day}T00:00:00Z`).getUTCDay();
 }
 
-/** Monday-first, the week Paraguay (and every locale this ships in) reads. */
+/** Monday-first, the week Sweden — and every locale this ships in — reads. */
 export function startOfWeek(day: DayKey): DayKey {
   const weekday = weekdayOf(day);
   return addDays(day, weekday === 0 ? -6 : 1 - weekday);
+}
+
+/**
+ * ISO-8601 week number (plan.md §5.3.4; sweden-business-apps §7).
+ *
+ * Swedish planning runs on week numbers for real — "vecka 35" is how a
+ * booking is agreed on the phone — so a calendar here that does not show
+ * them is missing something a Swedish user expects to read, not a nicety.
+ *
+ * ISO, not "count the weeks since January 1st": week 1 is the week holding
+ * the first Thursday, so the first days of a year routinely belong to week
+ * 52 or 53 of the year before, and the last days to week 1 of the next. That
+ * is the definition Sweden uses, and off-by-one at New Year is precisely the
+ * bug that makes a week number untrustworthy.
+ *
+ * Computed on the day key itself, in UTC, with no timezone involved — which
+ * week a calendar day falls in is the same answer everywhere, exactly like
+ * `addDays` above.
+ */
+export function isoWeekOf(day: DayKey): number {
+  const date = new Date(`${day}T00:00:00Z`);
+  // Monday = 0 … Sunday = 6, so stepping to Thursday is the same arithmetic
+  // whatever day we start on.
+  const weekday = (date.getUTCDay() + 6) % 7;
+  date.setUTCDate(date.getUTCDate() - weekday + 3);
+
+  // The Thursday of week 1 — found from January 4th, which ISO guarantees is
+  // always in week 1, by the same step.
+  const jan4 = new Date(Date.UTC(date.getUTCFullYear(), 0, 4));
+  const jan4Weekday = (jan4.getUTCDay() + 6) % 7;
+  jan4.setUTCDate(jan4.getUTCDate() - jan4Weekday + 3);
+
+  const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+  return 1 + Math.round((date.getTime() - jan4.getTime()) / WEEK_MS);
 }
 
 export function startOfMonth(day: DayKey): DayKey {

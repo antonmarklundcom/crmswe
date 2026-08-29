@@ -9,6 +9,13 @@ import {
   sendDocumentOverWhatsapp,
   storeDocumentPdf,
 } from "@/modules/renderable-document/delivery";
+import {
+  sendDocumentEmail,
+  tenantSender,
+  type DocumentEmailResult,
+} from "@/modules/renderable-document/email";
+import { quoteEmail } from "@/lib/email/templates";
+import { isWhatsappEnabled } from "@/modules/whatsapp/feature";
 import { getQuote, listQuoteItems, quoteMoms, setQuotePdfKey, setQuoteStatus } from "./quotes";
 import { renderQuotePdf } from "./pdf";
 
@@ -18,9 +25,11 @@ import { renderQuotePdf } from "./pdf";
 // the reader's own language — an action's form state where there is a form,
 // the route group's error boundary where there isn't.
 
-// Quote delivery (PLAN.md §8): render the PDF with tenant branding, store it
-// via the storage adapter, then send it as a WhatsApp document — with the
-// public link /q/[token] as the fallback and preview.
+// Offert delivery (PLAN.md §8; plan.md §5.3.2): render the PDF with tenant
+// branding, store it via the storage adapter, then send the customer the
+// public link /q/[token] — by e-post, which is this edition's primary
+// channel, and additionally over WhatsApp for a tenant that has that channel
+// switched on.
 
 export function publicQuoteUrl(token: string): string {
   return `${env.APP_URL}/q/${token}`;
@@ -80,17 +89,25 @@ export async function generateQuotePdf(ctx: TenantContext, quoteId: string): Pro
 }
 
 export type SendQuoteResult = {
-  /** Null when WhatsApp couldn't be used — the public link is then the delivery. */
-  messageId: string | null;
+  /** Always present: the link *is* the delivery when no channel carries it. */
   publicUrl: string;
+  email: DocumentEmailResult;
+  /** Null when this tenant has no WhatsApp channel (plan.md §5.3.1). */
+  messageId: string | null;
   whatsappError?: string;
 };
 
 /**
- * Sends the quote over WhatsApp and flips it to `sent` with a `quote_sent`
- * activity (§8). A closed 24h window is an expected outcome, not a failure:
- * the PDF and public link still exist, so the status still advances and the
- * reason is reported back for the UI to show.
+ * Sends the offert to the customer and flips it to `sent` with a `quote_sent`
+ * activity (§8).
+ *
+ * E-post first (plan.md §5.3.2), WhatsApp as well for a tenant that runs it.
+ * **Neither is allowed to fail the send.** A contact with no address, an
+ * environment with no Resend key, a closed 24h WhatsApp window — all are
+ * expected outcomes, not errors: the PDF and the public link exist either
+ * way, so the status still advances and the reasons are reported back for
+ * the UI to show. An offert that could not be mailed is one the rep sends
+ * by hand from the link; an offert that threw would be one nobody sends.
  */
 export async function sendQuote(ctx: TenantContext, quoteId: string): Promise<SendQuoteResult> {
   const quote = await getQuote(ctx, quoteId);
@@ -99,19 +116,47 @@ export async function sendQuote(ctx: TenantContext, quoteId: string): Promise<Se
   await generateQuotePdf(ctx, quote.id);
 
   const publicUrl = publicQuoteUrl(quote.publicToken);
-  const tenant = await getTenant(ctx.tenantId);
-  // The caption reaches the customer, so it follows the tenant's locale like
-  // the PDF beside it (§13 H5 #4).
+  const [tenant, contact, items] = await Promise.all([
+    getTenant(ctx.tenantId),
+    getContact(ctx, quote.contactId),
+    listQuoteItems(ctx, quote.id),
+  ]);
+  const settings = (tenant?.settings ?? {}) as TenantSettings;
+
+  // The customer reads this, so everything in it follows the *tenant's*
+  // locale, never the rep's (§13 H5 #4) — same rule as the PDF beside it.
+  const mail = await quoteEmail({
+    tenantName: tenant?.name ?? "",
+    contactName: contact?.name ?? "",
+    number: quote.number,
+    // An offert quotes inklusive moms (§5.2), and its moms is computed on
+    // read rather than frozen, so the figure in the mail comes from the same
+    // call the PDF and the public page use.
+    amount: quoteMoms(items, quote.discount).gross,
+    currency: quote.currency,
+    validUntil: quote.validUntil,
+    publicUrl,
+    locale: tenant?.locale,
+  });
+
+  const email = await sendDocumentEmail(ctx, {
+    to: contact?.email,
+    subject: mail.subject,
+    html: mail.html,
+    sender: tenantSender(settings, tenant?.name ?? ""),
+  });
+
   const t = await getTranslator(tenant?.locale, "pdf.quote");
   const captionPrefix = t("caption");
 
-
-  const delivery = await sendDocumentOverWhatsapp(ctx, {
-    contactId: quote.contactId,
-    link: publicQuotePdfUrl(quote.publicToken),
-    filename: `${quote.number}.pdf`,
-    caption: `${captionPrefix} ${quote.number}`,
-  });
+  const delivery = isWhatsappEnabled(settings)
+    ? await sendDocumentOverWhatsapp(ctx, {
+        contactId: quote.contactId,
+        link: publicQuotePdfUrl(quote.publicToken),
+        filename: `${quote.number}.pdf`,
+        caption: `${captionPrefix} ${quote.number}`,
+      })
+    : { messageId: null as string | null, whatsappError: undefined };
   const { messageId, whatsappError } = delivery;
 
   await setQuoteStatus(ctx, quote.id, "sent");
@@ -125,11 +170,14 @@ export async function sendQuote(ctx: TenantContext, quoteId: string): Promise<Se
       total: quote.total,
       currency: quote.currency,
       publicUrl,
+      viaEmail: email.sent,
+      emailTo: email.to,
+      emailError: email.reason,
       viaWhatsapp: messageId !== null,
       whatsappError,
     },
     userId: ctx.userId,
   });
 
-  return { messageId, publicUrl, whatsappError };
+  return { publicUrl, email, messageId, whatsappError };
 }

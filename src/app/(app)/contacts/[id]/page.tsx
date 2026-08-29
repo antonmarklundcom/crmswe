@@ -10,13 +10,15 @@ import { listDealsForContact } from "@/modules/crm/deals";
 import { listTasksForContact } from "@/modules/crm/tasks";
 import { listEventsForContact } from "@/modules/calendar/events";
 import { findContactDeleteBlockers, type ContactBlocker } from "@/modules/crm/deletion";
+import { ANONYMIZE_CONFIRM_WORD } from "@/modules/crm/gdpr";
 import {
   listConversationsForContact,
   listMessagesForConversation,
   isWithinFreeFormWindow,
 } from "@/modules/whatsapp/inbox";
 import { listApprovedTemplates } from "@/modules/whatsapp/templates";
-import { Button } from "@/components/ui/button";
+import { whatsappEnabledFor } from "@/modules/whatsapp/feature";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { TaskList, type TaskListLabels } from "@/components/task-list";
 import { EmptyState } from "@/components/empty-state";
@@ -26,6 +28,7 @@ import { ContactEditForm } from "./ContactEditForm";
 import {
   addNoteAction,
   deleteContactAction,
+  anonymizeContactAction,
   addTagToContactAction,
   removeTagFromContactAction,
   sendContactMessageAction,
@@ -48,6 +51,13 @@ import { Input, Select, Textarea } from "@/components/ui/form-fields";
 const TABS = ["conversacion", "tareas", "actividad", "datos"] as const;
 type Tab = (typeof TABS)[number];
 
+/** The tabs this contact page actually shows. The conversation tab is the
+ * WhatsApp thread, so it goes with the channel (plan.md §5.3.1) — and with it
+ * gone, "tareas" is what the page opens on. */
+function visibleTabs(whatsappEnabled: boolean): readonly Tab[] {
+  return whatsappEnabled ? TABS : TABS.filter((candidate) => candidate !== "conversacion");
+}
+
 
 
 /** Same countdown the inbox shows — accurate as of page load (§6.5). */
@@ -65,10 +75,15 @@ export default async function ContactDetailPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ tab?: string; deleteError?: string }>;
+  searchParams: Promise<{
+    tab?: string;
+    deleteError?: string;
+    anonymizeError?: string;
+    anonymized?: string;
+  }>;
 }) {
   const { id } = await params;
-  const { tab: rawTab, deleteError } = await searchParams;
+  const { tab: rawTab, deleteError, anonymizeError, anonymized } = await searchParams;
   const ctx = await requireTenantContext();
   const t = await getTranslations("app.contacts");
   const locale = await getLocale();
@@ -80,7 +95,11 @@ export default async function ContactDetailPage({
   const contact = await getContact(ctx, id);
   if (!contact) notFound();
 
-  const tab: Tab = TABS.includes(rawTab as Tab) ? (rawTab as Tab) : "conversacion";
+  const whatsappEnabled = await whatsappEnabledFor(ctx);
+  const tabs = visibleTabs(whatsappEnabled);
+  // A `?tab=conversacion` link bookmarked before the channel was switched off
+  // lands on the first tab that still exists rather than on an empty page.
+  const tab: Tab = tabs.includes(rawTab as Tab) ? (rawTab as Tab) : tabs[0];
 
   const [
     timeline,
@@ -98,7 +117,7 @@ export default async function ContactDetailPage({
       listDealsForContact(ctx, id),
       listTagsForContact(ctx, id),
       listTags(ctx),
-      listConversationsForContact(ctx, id),
+      whatsappEnabled ? listConversationsForContact(ctx, id) : Promise.resolve([]),
       listTasksForContact(ctx, id),
       // What is booked with this person — the agenda read from the record
       // rather than from the calendar page (modules/calendar).
@@ -219,7 +238,7 @@ export default async function ContactDetailPage({
       </header>
 
       <nav className="flex gap-1 border-b">
-        {TABS.map((candidate) => (
+        {tabs.map((candidate) => (
           <Link
             key={candidate}
             href={`/contacts/${id}?tab=${candidate}`}
@@ -456,6 +475,59 @@ export default async function ContactDetailPage({
               }}
             />
           </section>
+
+          {/* The two GDPR rights, next to each other because a tenant
+              handling a request from one person needs both (plan.md §5.3.3):
+              hand over what you hold, then erase what you may. */}
+          <section>
+            <h2 className="mb-3 text-lg font-semibold">{t("gdprTitle")}</h2>
+            <p className="mb-3 text-sm text-muted-foreground">{t("gdprExportHint")}</p>
+            {/* A plain link, not a form: the route is a GET that streams a
+                file, and every access to it is audited server-side. */}
+            <a
+              href={`/api/exports/contact/${contact.id}`}
+              className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
+            >
+              {t("gdprExport")}
+            </a>
+          </section>
+
+          {ctx.role === "admin" && (
+            <section>
+              <h2 className="mb-3 text-lg font-semibold">{t("anonymizeTitle")}</h2>
+              <p className="mb-3 max-w-2xl text-sm text-muted-foreground">
+                {t("anonymizeHint")}
+              </p>
+              {/* Said before the button, not after the fact: an admin
+                  answering an erasure request has to know in advance that the
+                  invoices are staying, and why. */}
+              <p className="mb-3 max-w-2xl text-sm text-muted-foreground">
+                {t("anonymizeRetention")}
+              </p>
+
+              {anonymized && (
+                <p className="mb-3 text-sm text-muted-foreground">{t("anonymizeDone")}</p>
+              )}
+              {anonymizeError && (
+                <p className="mb-3 text-sm text-destructive">
+                  {anonymizeError === "confirm"
+                    ? t("anonymizeConfirmMissing", { word: ANONYMIZE_CONFIRM_WORD })
+                    : t("anonymizeFailed")}
+                </p>
+              )}
+
+              <form action={anonymizeContactAction} className="flex flex-wrap items-end gap-2">
+                <input type="hidden" name="contactId" value={contact.id} />
+                <label className="flex flex-col gap-1 text-sm">
+                  {t("anonymizeConfirmLabel", { word: ANONYMIZE_CONFIRM_WORD })}
+                  <Input name="confirm" className="max-w-xs" autoComplete="off" />
+                </label>
+                <Button type="submit" size="sm" variant="outline">
+                  {t("anonymize")}
+                </Button>
+              </form>
+            </section>
+          )}
 
           {/* Deletion is for a record created by mistake, so it is offered
               only while the contact has no history and only to an admin

@@ -20,6 +20,7 @@ import {
 
 import { requireTenantContext } from "@/modules/tenancy/context";
 import { getTenant } from "@/modules/tenancy/tenants";
+import { whatsappEnabledFor } from "@/modules/whatsapp/feature";
 import { getDashboardSummary } from "@/modules/dashboard/summary";
 import { Card } from "@/components/ui/card";
 import { PageHeader } from "@/components/page-header";
@@ -137,6 +138,10 @@ export default async function DashboardPage() {
     overdue: tTasks("overdue"),
   };
   const isAdmin = ctx.role === "admin";
+  // The Swedish product is e-post-first (plan.md §1.7): "connect WhatsApp"
+  // must not be the first thing a new tenant is told to do, and the unread
+  // card must not link to a route that 404s.
+  const whatsappEnabled = await whatsappEnabledFor(ctx);
 
   // Steps an `agent` can't act on (WhatsApp connection, automations — §3.2)
   // are left out of their list rather than shown as a dead end.
@@ -145,7 +150,7 @@ export default async function DashboardPage() {
       key: "whatsapp",
       done: checklist.whatsappConnected,
       href: "/whatsapp",
-      visible: isAdmin,
+      visible: isAdmin && whatsappEnabled,
     },
     { key: "contact", done: checklist.hasContact, href: "/contacts", visible: true },
     { key: "deal", done: checklist.hasDeal, href: "/pipeline", visible: true },
@@ -183,13 +188,18 @@ export default async function DashboardPage() {
           })}
           href="/pipeline"
         />
-        <StatCard
-          icon={MessagesSquare}
-          label={t("stats.unread")}
-          value={formatNumberL(stats.unreadMessages)}
-          hint={t("stats.unreadHint", { count: stats.unreadConversations })}
-          href="/inbox"
-        />
+        {/* Counts WhatsApp conversations only, so it goes with the channel:
+            with WhatsApp off it would read a permanent zero and link to a
+            404. The row is a responsive grid, so three cards lay out fine. */}
+        {whatsappEnabled && (
+          <StatCard
+            icon={MessagesSquare}
+            label={t("stats.unread")}
+            value={formatNumberL(stats.unreadMessages)}
+            hint={t("stats.unreadHint", { count: stats.unreadConversations })}
+            href="/inbox"
+          />
+        )}
         <StatCard
           icon={FileText}
           label={t("stats.pendingQuotes")}

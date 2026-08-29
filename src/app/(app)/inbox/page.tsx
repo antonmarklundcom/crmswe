@@ -1,6 +1,8 @@
+import { notFound } from "next/navigation";
 import { MessagesSquare, Smartphone } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { requireTenantContext } from "@/modules/tenancy/context";
+import { whatsappEnabledFor } from "@/modules/whatsapp/feature";
 import { listConversations } from "@/modules/whatsapp/inbox";
 import { listAccountsForTenant } from "@/modules/whatsapp/accounts";
 import { listTenantUsers } from "@/modules/tenancy/users";
@@ -11,6 +13,8 @@ import { InboxList } from "./InboxList";
 
 export default async function InboxPage() {
   const ctx = await requireTenantContext();
+  if (!(await whatsappEnabledFor(ctx))) notFound();
+
   const t = await getTranslations("app.inbox");
 
   const [conversations, accounts, users] = await Promise.all([

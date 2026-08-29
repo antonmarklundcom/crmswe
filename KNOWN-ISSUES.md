@@ -5,6 +5,48 @@ instead of stopping a phase. Each entry says who should pick it up.
 
 ## Open
 
+### O3-1 — `sv-SE` date pickers are a request, not a guarantee
+`<html lang>` now carries the full BCP-47 tag (`sv-SE`), which is the
+standards-correct way to tell a browser how to draw a native
+`<input type="date">` and which day its week starts on. Firefox honours it.
+**Chrome and Safari do not** — they use the browser's or the OS's own locale
+regardless, so a Swedish user running an en-US Chrome still sees `mm/dd/yyyy`
+in the raw picker. The app's own rendered dates are unaffected: those go
+through `lib/i18n/format`, which is `sv-SE` throughout. Closing this properly
+means replacing every `<input type="date">` with a custom picker component,
+which is a real UI project and buys back only the picker chrome.
+*Owner: none — recorded as a platform limit. Revisit if a tenant complains.*
+
+### O3-2 — The superadmin WhatsApp-health console is not behind the flag
+`/whatsapp-health` in the superadmin console still exists and still lists
+every tenant's WhatsApp accounts. It is deliberately untouched: the flag is
+*per tenant*, and a platform-wide operator surface cannot be gated by one
+tenant's setting. It is invisible to tenant users either way (superadmin
+only), so it is a wart on Anton's own console rather than a leak. If the
+Swedish product never runs WhatsApp for anybody, the whole surface can go.
+*Owner: S3, if it is still pointless by then.*
+
+### O3-3 — Two WhatsApp template-language defaults still say `es`
+`modules/automations/actions.ts` and the flow editor default a WhatsApp
+message template's language code to `"es"`. Both sit inside the WhatsApp
+surface, which is hidden by default (§5.3.1), so they are unreachable in the
+Swedish product as shipped. Left alone deliberately: changing them buys
+nothing while the channel is off and adds a conflict to every vendercrm
+cherry-pick through those files (plan.md §1.1). *Owner: whoever first turns
+the channel on for a Swedish tenant.*
+
+### O3-4 — Anonymisation does not scrub quote and document notes
+`anonymizeContact` leaves the free-text `notes` on quotes and documents
+alone. On a document that is deliberate and load-bearing: it is
+räkenskapsinformation, kept seven years. On a **quote** it is a judgement
+call — an offert is a commercial record but not a fiscal one, so its notes
+could arguably be scrubbed. They are not, because a quote's notes are
+normally about the *work* ("takpannor, norra sidan") rather than the person,
+and the conservative failure here is leaving a sentence that names nobody
+rather than shredding a tenant's record of what they quoted for. Revisit if
+a real erasure request turns up a quote note naming the customer.
+*Owner: whoever does the pre-launch GDPR review.*
+
 ### O2-1 — A PDF cannot draw characters outside WinAnsi
 The document PDFs use react-pdf's built-in Helvetica, which encodes WinAnsi and
 **silently drops** anything outside it — no error, no placeholder, the glyph is
@@ -127,4 +169,19 @@ this repo should do that rather than shipping DB-backed changes unverified.
 One caveat: `drizzle-kit generate` diffs against MariaDB's introspection and
 emits spurious no-op `MODIFY COLUMN` lines for boolean columns — check a
 generated migration and delete anything you did not actually change.
+
+**O3 goes one step further: the whole app runs here.** `npm run build` then
+`npx next start -p 3100`, seed a tenant with `scripts/seed-tenant.ts`, and
+sign in over the auth API with curl:
+
+    curl -s -c /tmp/c.txt -X POST localhost:3100/api/auth/sign-in/email \
+      -H 'Content-Type: application/json' \
+      -d '{"email":"…","password":"…"}'
+
+then `curl -b /tmp/c.txt` any page. That is worth the ten minutes: it is how
+O3 found that `/inbox` was answering **200** with the 404 page in its body
+(see the O3 build-log entry), which every test and the build agreed was
+fine. Two traps: `NODE_ENV=development` in `.env` makes `next build` fail
+while prerendering `/404`, and `pkill -f "next start"` matches its own shell
+— kill `next-server` instead.
 *Owner: none — context for future sessions.*

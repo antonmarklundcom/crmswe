@@ -11,6 +11,7 @@ import { formatDate } from "@/lib/i18n/format";
 import { money } from "@/modules/renderable-document/format";
 import { formatRateLabel } from "@/lib/se/moms";
 import { quoteMoms } from "@/modules/quotes/quotes";
+import { DEFAULT_LOCALE } from "@/lib/i18n/locales";
 
 // Public read-only quote view (PLAN.md §8) — the token is the secret, and
 // there is deliberately no accept/reject button in Phase 1: the rep sets
@@ -55,7 +56,7 @@ export default async function PublicQuotePage({
 
   // The tenant's language, not the reader's browser: this page is the same
   // artifact as the PDF beside it (PLAN.md §13 H5 #4).
-  const locale = tenant?.locale ?? "es";
+  const locale = tenant?.locale ?? DEFAULT_LOCALE;
   const t = await getTranslator(locale, "public.quote");
 
   return (

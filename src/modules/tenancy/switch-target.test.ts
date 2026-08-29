@@ -5,11 +5,16 @@ import { resolveSwitchTarget, SWITCH_FALLBACK } from "./switch-target";
 // is the difference between "the switcher keeps you where you were" and "the
 // switcher tells you whether a record exists in a business you just left".
 
+/** Switching into a business that runs the WhatsApp channel (plan.md
+ * §5.3.1). Most cases here predate the flag and are about paths that have
+ * nothing to do with it, so they leave it at its default — hidden. */
+const WITH_WHATSAPP = { whatsappEnabled: true } as const;
+
 describe("resolveSwitchTarget", () => {
   it("keeps you in the same section when it is a list you can still see", () => {
     expect(resolveSwitchTarget("/pipeline", "agent")).toBe("/pipeline");
     expect(resolveSwitchTarget("/contacts", "agent")).toBe("/contacts");
-    expect(resolveSwitchTarget("/inbox", "agent")).toBe("/inbox");
+    expect(resolveSwitchTarget("/inbox", "agent", WITH_WHATSAPP)).toBe("/inbox");
     expect(resolveSwitchTarget("/dashboard", "agent")).toBe("/dashboard");
   });
 
@@ -23,7 +28,9 @@ describe("resolveSwitchTarget", () => {
     expect(resolveSwitchTarget("/pipeline/01JABCDEF0123456789ABCDEFG", "agent")).toBe(
       "/pipeline",
     );
-    expect(resolveSwitchTarget("/inbox/01JABCDEF0123456789ABCDEFG", "admin")).toBe("/inbox");
+    expect(resolveSwitchTarget("/inbox/01JABCDEF0123456789ABCDEFG", "admin", WITH_WHATSAPP)).toBe(
+      "/inbox",
+    );
     expect(resolveSwitchTarget("/quotes/01JABCDEF0123456789ABCDEFG", "admin")).toBe(
       "/quotes",
     );
@@ -49,7 +56,7 @@ describe("resolveSwitchTarget", () => {
     // (§3.1), so this is a normal switch, not an attack: land them somewhere
     // that works instead of on a page where every button throws.
     for (const path of ["/users", "/settings", "/sites", "/forms", "/automations", "/whatsapp"]) {
-      expect(resolveSwitchTarget(path, "agent")).toBe(SWITCH_FALLBACK);
+      expect(resolveSwitchTarget(path, "agent", WITH_WHATSAPP)).toBe(SWITCH_FALLBACK);
     }
   });
 
@@ -59,6 +66,33 @@ describe("resolveSwitchTarget", () => {
     expect(resolveSwitchTarget("/automations/01JABCDEF0123456789ABCDEFG", "admin")).toBe(
       "/automations",
     );
+  });
+
+  it("sends you to the dashboard when the business you switched into has no WhatsApp", () => {
+    // The destination decides, not the business being left (plan.md §5.3.1):
+    // /inbox and /whatsapp are 404 there, so landing on them would be the
+    // same dead end the role check already avoids.
+    for (const path of ["/inbox", "/whatsapp", "/inbox/01JABCDEF0123456789ABCDEFG"]) {
+      expect(resolveSwitchTarget(path, "admin")).toBe(SWITCH_FALLBACK);
+      expect(resolveSwitchTarget(path, "admin", { whatsappEnabled: false })).toBe(
+        SWITCH_FALLBACK,
+      );
+    }
+
+    // Every other section is untouched by the flag.
+    expect(resolveSwitchTarget("/contacts", "admin", { whatsappEnabled: false })).toBe(
+      "/contacts",
+    );
+    expect(resolveSwitchTarget("/chat", "admin", { whatsappEnabled: false })).toBe(
+      SWITCH_FALLBACK,
+    );
+  });
+
+  it("keeps an admin in the inbox when that business does run WhatsApp", () => {
+    expect(resolveSwitchTarget("/inbox", "admin", WITH_WHATSAPP)).toBe("/inbox");
+    expect(resolveSwitchTarget("/whatsapp", "admin", WITH_WHATSAPP)).toBe("/whatsapp");
+    // Role still wins over the flag: an agent has no /whatsapp either way.
+    expect(resolveSwitchTarget("/whatsapp", "agent", WITH_WHATSAPP)).toBe(SWITCH_FALLBACK);
   });
 
   it("refuses anything it does not recognise rather than passing it through", () => {

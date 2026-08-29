@@ -119,7 +119,7 @@ export async function sendTaskReminders(now: Date = new Date()): Promise<TaskRem
         });
 
         const sent = await sendEmail({ to: user.email, subject, html });
-        if (sent) result.usersEmailed += 1;
+        if (sent.sent) result.usersEmailed += 1;
         result.tasksListed += mine.length;
         result.appointmentsListed += appointments.length;
       }

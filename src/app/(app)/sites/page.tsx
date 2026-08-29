@@ -10,6 +10,7 @@ import { listHookCaptures, captureLeafPaths, siteHookMapping } from "@/modules/s
 import { ingestReasonKey, listSiteHealth, siteHealthStatus } from "@/modules/sites/health";
 import { listPipelines, listStagesForPipeline } from "@/modules/crm/pipelines";
 import { listAccountsForTenant } from "@/modules/whatsapp/accounts";
+import { whatsappEnabledFor } from "@/modules/whatsapp/feature";
 import { getLeadStats } from "@/modules/leads/stats";
 import { env } from "@/lib/config/env";
 import { Button } from "@/components/ui/button";
@@ -71,10 +72,16 @@ export default async function SitesPage() {
 
   const tg = await getTranslations("app.sites.guide");
 
+  // A site can route its leads to a WhatsApp number; a tenant without the
+  // channel (plan.md §5.3.1) has no such numbers and gets no picker. `null`
+  // rather than an empty list, so the forms can tell "no WhatsApp here" from
+  // "WhatsApp on, nothing connected yet" — the second still needs the field.
+  const whatsappEnabled = await whatsappEnabledFor(ctx);
+
   const [sites, pipelines, waAccounts, stats, tenant, health] = await Promise.all([
     listSites(ctx),
     listPipelines(ctx),
-    listAccountsForTenant(ctx),
+    whatsappEnabled ? listAccountsForTenant(ctx) : Promise.resolve(null),
     getLeadStats(ctx),
     getTenant(ctx.tenantId),
     listSiteHealth(ctx),
@@ -256,21 +263,23 @@ export default async function SitesPage() {
                     ))}
                   </Select>
                 </label>
-                <label className="flex flex-col gap-1">
-                  {t("waAccount")}
-                  <Select
-                    name="waAccountId"
-                    defaultValue={site.waAccountId ?? ""}
-                    className="px-2 py-1"
-                  >
-                    <option value="">{t("none")}</option>
-                    {waAccounts.map((account) => (
-                      <option key={account.id} value={account.id}>
-                        {account.displayNumber || account.phoneNumberId}
-                      </option>
-                    ))}
-                  </Select>
-                </label>
+                {waAccounts && (
+                  <label className="flex flex-col gap-1">
+                    {t("waAccount")}
+                    <Select
+                      name="waAccountId"
+                      defaultValue={site.waAccountId ?? ""}
+                      className="px-2 py-1"
+                    >
+                      <option value="">{t("none")}</option>
+                      {waAccounts.map((account) => (
+                        <option key={account.id} value={account.id}>
+                          {account.displayNumber || account.phoneNumberId}
+                        </option>
+                      ))}
+                    </Select>
+                  </label>
+                )}
                 <Button type="submit" size="sm" variant="outline">
                   {t("saveRouting")}
                 </Button>
@@ -303,7 +312,7 @@ export default async function SitesPage() {
           labels={labels}
           pipelines={pipelines.map((p) => ({ id: p.id, label: p.name }))}
           stages={stageOptions}
-          waAccounts={waAccounts.map((a) => ({
+          waAccounts={waAccounts?.map((a) => ({
             id: a.id,
             label: a.displayNumber || a.phoneNumberId,
           }))}

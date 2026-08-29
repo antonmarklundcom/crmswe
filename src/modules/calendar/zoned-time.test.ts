@@ -6,6 +6,7 @@ import {
   isDayKey,
   startOfDay,
   startOfMonth,
+  isoWeekOf,
   startOfWeek,
   toLocalFields,
   weekdayOf,
@@ -86,5 +87,43 @@ describe("calendar arithmetic", () => {
     expect(isDayKey("2026-8-24")).toBe(false);
     expect(isDayKey("2026-13-40")).toBe(false);
     expect(isDayKey(undefined)).toBe(false);
+  });
+});
+
+describe("isoWeekOf", () => {
+  it("numbers an ordinary week the way a Swedish calendar does", () => {
+    // 2026-08-24 is a Monday; the whole week shares its number.
+    expect(isoWeekOf("2026-08-24")).toBe(35);
+    expect(isoWeekOf("2026-08-30")).toBe(35);
+    expect(isoWeekOf("2026-08-31")).toBe(36);
+  });
+
+  it("puts the first days of a year in the previous year's last week when ISO says so", () => {
+    // 2027-01-01 is a Friday, so its week's Thursday is 2026-12-31 — week 53
+    // of 2026, not week 1 of 2027. Counting weeks from January 1st instead
+    // is exactly the off-by-one that makes a week number untrustworthy.
+    expect(isoWeekOf("2027-01-01")).toBe(53);
+    expect(isoWeekOf("2027-01-03")).toBe(53);
+    expect(isoWeekOf("2027-01-04")).toBe(1);
+  });
+
+  it("puts the last days of a year in the next year's week 1 when ISO says so", () => {
+    // 2024-12-30 is a Monday whose Thursday falls on 2025-01-02.
+    expect(isoWeekOf("2024-12-30")).toBe(1);
+    expect(isoWeekOf("2024-12-29")).toBe(52);
+  });
+
+  it("knows a 53-week year", () => {
+    // 2026 starts on a Thursday, which is what makes it a 53-week year.
+    expect(isoWeekOf("2026-12-28")).toBe(53);
+    expect(isoWeekOf("2026-01-01")).toBe(1);
+  });
+
+  it("gives every day of a week the same number", () => {
+    const monday = "2026-03-02";
+    const numbers = new Set(
+      Array.from({ length: 7 }, (_, index) => isoWeekOf(addDays(monday, index))),
+    );
+    expect(numbers.size).toBe(1);
   });
 });

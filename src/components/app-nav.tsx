@@ -13,7 +13,6 @@ import {
   MessagesSquare,
   MessageCircle,
   Package,
-  Receipt,
   ScrollText,
   Settings,
   Smartphone,
@@ -52,7 +51,6 @@ const ICONS = {
   whatsapp: Smartphone,
   users: UserCog,
   settings: Settings,
-  facturaElectronica: Receipt,
 } satisfies Record<string, LucideIcon>;
 
 export type NavIcon = keyof typeof ICONS;
@@ -61,9 +59,12 @@ export type NavItem = {
   href: string;
   label: string;
   icon: NavIcon;
-  /** Renders inert (Phase 2 placeholder, PLAN.md §8). */
+  /** Renders inert — for an item that names a surface that exists but isn't
+   * reachable yet. Nothing uses it since the Paraguayan e-invoicing stub was
+   * dropped (plan.md §5.3.1); kept because "the nav can show a roadmap item"
+   * is a property of this component, not of that one entry. */
   disabled?: boolean;
-  /** Small pill under the label — "Próximamente" for the Phase 2 item. */
+  /** Small pill under the label, e.g. "Kommer snart". */
   badge?: string;
 };
 
@@ -97,8 +98,8 @@ function NavLink({ item, active }: { item: NavItem; active: boolean }) {
         )}
       >
         <Icon className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
-        {/* Label and badge stack: "Factura electrónica Próximamente" on one
-            line doesn't fit the sidebar width. */}
+        {/* Label and badge stack: a label plus its pill on one line doesn't
+            fit the sidebar width. */}
         <span className="flex min-w-0 flex-col items-start gap-1">
           {item.label}
           {item.badge && (

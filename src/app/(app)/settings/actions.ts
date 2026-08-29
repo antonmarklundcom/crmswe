@@ -9,6 +9,8 @@ import {
   updateTenantTimezone,
   updateTenantDefaultCountry,
   updateTenantReviewLink,
+  updateTenantWhatsappEnabled,
+  updateTenantEmailSettings,
   regenerateContactsFeedToken,
   updateTenantAiSettings,
   type BusinessHours,
@@ -168,6 +170,82 @@ export async function updateReviewLinkAction(
   }
 
   revalidatePath("/settings");
+  return { error: null, saved: true, values };
+}
+
+/**
+ * Who a customer sees an offert or faktura arriving from (plan.md §5.3.2).
+ *
+ * `fromEmail` is validated as an address but *not* verified as a sending
+ * domain — this app cannot know what a tenant has published SPF and DKIM
+ * for, and Resend refuses the send at delivery time if the domain is not
+ * verified there. The field's help text is where that is said; a valid-
+ * looking address that silently bounces is the failure mode to warn about,
+ * and `sendEmail` reports the provider's refusal rather than swallowing it.
+ */
+const emailSettingsSchema = z.object({
+  fromName: z.string().max(200).optional(),
+  fromEmail: z.email().optional().or(z.literal("")),
+  replyTo: z.email().optional().or(z.literal("")),
+});
+
+export async function updateEmailSettingsAction(
+  _prevState: SettingsFormState,
+  formData: FormData,
+): Promise<SettingsFormState> {
+  const ctx = await requireTenantAdmin();
+  const values = submitted(formData);
+  const parsed = emailSettingsSchema.safeParse({
+    fromName: formData.get("fromName") || undefined,
+    fromEmail: formData.get("fromEmail") || undefined,
+    replyTo: formData.get("replyTo") || undefined,
+  });
+  if (!parsed.success) {
+    return { error: "emailSettingsInvalid", saved: false, values };
+  }
+
+  try {
+    await updateTenantEmailSettings(ctx, {
+      // An emptied field means "clear this", which is what puts the sender
+      // back to the platform default — not "leave whatever was there".
+      fromName: parsed.data.fromName ?? "",
+      fromEmail: parsed.data.fromEmail ?? "",
+      replyTo: parsed.data.replyTo ?? "",
+    });
+  } catch {
+    return { error: "unknown", saved: false, values };
+  }
+
+  revalidatePath("/settings");
+  return { error: null, saved: true, values };
+}
+
+/**
+ * The WhatsApp channel switch (plan.md §5.3.1). Admin-only like every other
+ * setting on this page — turning it on adds a whole channel, its inbox and
+ * its 24-hour-window rules to the product, which is not an agent's call.
+ *
+ * The checkbox is absent from the form data when unchecked, which is exactly
+ * the "off" this reads: `formData.get` returns null and the flag is written
+ * `false` rather than left alone.
+ */
+export async function updateWhatsappEnabledAction(
+  _prevState: SettingsFormState,
+  formData: FormData,
+): Promise<SettingsFormState> {
+  const ctx = await requireTenantAdmin();
+  const values = submitted(formData);
+
+  try {
+    await updateTenantWhatsappEnabled(ctx, formData.get("whatsappEnabled") === "on");
+  } catch {
+    return { error: "unknown", saved: false, values };
+  }
+
+  // The nav lives in the app layout, so every route's rendering depends on
+  // this flag — revalidating /settings alone would leave a stale sidebar
+  // behind on the very screen that just changed it.
+  revalidatePath("/", "layout");
   return { error: null, saved: true, values };
 }
 

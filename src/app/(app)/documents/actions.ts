@@ -13,7 +13,7 @@ import {
   recordPayment,
   deletePayment,
 } from "@/modules/documents/documents";
-import { sendDocumentToContact } from "@/modules/documents/delivery";
+import { sendDocumentToContact, sendPaymentReminder } from "@/modules/documents/delivery";
 import { moneyAmountSchema } from "@/lib/money-schema";
 
 // Amounts arrive as the user typed them — "1 495,50" — and become öre here
@@ -277,6 +277,28 @@ export async function sendDocumentAction(formData: FormData) {
   const parsed = z.string().min(1).safeParse(formData.get("documentId"));
   if (!parsed.success) return;
   await sendDocumentToContact(ctx, parsed.data);
+  revalidatePath(`/documents/${parsed.data}`);
+}
+
+/**
+ * Betalningspåminnelse (plan.md §5.3.2). Hidden-id-only like the send button
+ * beside it, and the page only renders it for an issued, unpaid faktura — so
+ * the refusals inside `sendPaymentReminder` are belt-and-braces against a
+ * balance settled between render and click, not a path a rep walks into.
+ * Swallowed for the same reason the other hidden-id actions are: there is no
+ * user-fillable field for a message to sit under, and the outcome — sent, or
+ * "no address on this contact" — lands on the contact's timeline either way.
+ */
+export async function sendPaymentReminderAction(formData: FormData) {
+  const ctx = await requireTenantContext();
+  const parsed = z.string().min(1).safeParse(formData.get("documentId"));
+  if (!parsed.success) return;
+  try {
+    await sendPaymentReminder(ctx, parsed.data);
+  } catch {
+    // Already paid, or no longer issued. Nothing to say that the refreshed
+    // page does not already show.
+  }
   revalidatePath(`/documents/${parsed.data}`);
 }
 

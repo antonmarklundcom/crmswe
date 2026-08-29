@@ -20,6 +20,7 @@ import { createActivity } from "@/modules/crm/activities";
 import { sendText, sendTemplate } from "@/modules/whatsapp/send";
 import { checkPlanLimit } from "@/modules/tenancy/limits";
 import { RecordDeleteError, deleteContactRecord } from "@/modules/crm/deletion";
+import { ANONYMIZE_CONFIRM_WORD, anonymizeContact } from "@/modules/crm/gdpr";
 
 // The contact forms are useActionState-shaped (PLAN.md §10 1R #6): a
 // validation failure comes back as state the form renders next to the field
@@ -224,6 +225,50 @@ export async function sendContactTemplateAction(contactId: string, formData: For
     language: input.template.slice(separator + 1),
   });
   revalidatePath(`/contacts/${contactId}`);
+}
+
+/**
+ * Anonymisering — the erasure request deletion cannot answer (plan.md
+ * §5.3.3; see modules/crm/gdpr.ts for what is scrubbed and what is kept).
+ *
+ * Admin-only and audited (the module enforces both again; this is the door,
+ * not the lock). The confirmation is a typed word rather than a second
+ * button: this is irreversible, it is offered on a contact whose invoices
+ * are staying put, and an admin who reaches it by mis-clicking must not be
+ * able to complete it by mis-clicking twice.
+ */
+export async function anonymizeContactAction(formData: FormData) {
+  const ctx = await requireTenantAdmin();
+  const parsed = z
+    .object({
+      contactId: z.string().min(1).max(26),
+      confirm: z.string(),
+    })
+    .safeParse({
+      contactId: formData.get("contactId"),
+      confirm: formData.get("confirm"),
+    });
+  if (!parsed.success) return;
+  const { contactId } = parsed.data;
+
+  // The word is the tenant's own language, not a magic English string —
+  // matched case- and space-insensitively, because it is a speed bump, not a
+  // password.
+  if (parsed.data.confirm.trim().toLowerCase() !== ANONYMIZE_CONFIRM_WORD) {
+    redirect(`/contacts/${contactId}?tab=datos&anonymizeError=confirm`);
+  }
+
+  try {
+    await anonymizeContact(ctx, contactId, { confirm: true });
+  } catch {
+    redirect(`/contacts/${contactId}?tab=datos&anonymizeError=failed`);
+  }
+
+  // No redirect away: the contact still exists, scrubbed, and the admin
+  // should see what it looks like now — including the invoices still on it.
+  revalidatePath(`/contacts/${contactId}`);
+  revalidatePath("/contacts");
+  redirect(`/contacts/${contactId}?tab=datos&anonymized=1`);
 }
 
 // Deleting a contact created by mistake (see modules/crm/deletion.ts for why

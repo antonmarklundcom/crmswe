@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale } from "next-intl/server";
+import { intlTag } from "@/lib/i18n/locales";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -47,11 +48,18 @@ export default async function RootLayout({
 }>) {
   // Follows the resolved locale (src/i18n/request.ts) rather than being
   // pinned to Spanish — screen readers and translation tooling both read it.
+  //
+  // The *full* tag (`sv-SE`, not `sv`), because `lang` is also what a browser
+  // reads to decide how to draw a native `<input type="date">` and which day
+  // its week starts on (plan.md §5.3.4). A bare `sv` leaves the region — and
+  // therefore the date order — unstated. Firefox honours this; Chrome
+  // currently prefers the browser's own locale regardless, so this is the
+  // correct signal rather than a guarantee (see KNOWN-ISSUES O3-1).
   const locale = await getLocale();
 
   return (
     <html
-      lang={locale}
+      lang={intlTag(locale)}
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">

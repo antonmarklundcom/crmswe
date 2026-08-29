@@ -60,7 +60,9 @@ export function NewSiteForm({
   labels: KeyLabels;
   pipelines: Option[];
   stages: Option[];
-  waAccounts: Option[];
+  /** Null when this tenant has no WhatsApp channel (plan.md §5.3.1) — the
+   * field is then not rendered at all, rather than offered empty. */
+  waAccounts?: Option[];
 }) {
   const t = useTranslations("app.sites");
   const [state, formAction, pending] = useActionState(createSiteAction, createInitialState);
@@ -124,17 +126,19 @@ export function NewSiteForm({
             ))}
           </Select>
         </label>
-        <label className="flex flex-col gap-1 text-sm">
-          {labels.waAccount}
-          <Select name="waAccountId">
-            <option value="">{labels.none}</option>
-            {waAccounts.map((option) => (
-              <option key={option.id} value={option.id}>
-                {option.label}
-              </option>
-            ))}
-          </Select>
-        </label>
+        {waAccounts && (
+          <label className="flex flex-col gap-1 text-sm">
+            {labels.waAccount}
+            <Select name="waAccountId">
+              <option value="">{labels.none}</option>
+              {waAccounts.map((option) => (
+                <option key={option.id} value={option.id}>
+                  {option.label}
+                </option>
+              ))}
+            </Select>
+          </label>
+        )}
         {state.error && state.field === null && (
           <p role="alert" className="text-sm text-destructive">
             {t(`errors.${state.error}` as "errors.unknown")}

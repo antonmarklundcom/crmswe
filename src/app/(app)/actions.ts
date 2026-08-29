@@ -7,6 +7,7 @@ import { stopImpersonation } from "@/modules/auth/impersonation";
 import { requireTenantContext } from "@/modules/tenancy/context";
 import { MembershipError, switchActiveTenant } from "@/modules/tenancy/memberships";
 import { resolveSwitchTarget, SWITCH_FALLBACK } from "@/modules/tenancy/switch-target";
+import { whatsappEnabledForTenantId } from "@/modules/whatsapp/feature";
 
 /** "Volver a la consola" — the exit half of impersonation, which existed in
  * modules/auth but had no caller anywhere in the UI (PLAN.md §13 H4). */
@@ -42,7 +43,11 @@ export async function switchBusinessAction(formData: FormData) {
     // so take it from the membership this returns, not from the context they
     // are leaving.
     const membership = await switchActiveTenant(ctx.userId, parsed.data.tenantId);
-    target = resolveSwitchTarget(parsed.data.pathname, membership.role);
+    target = resolveSwitchTarget(parsed.data.pathname, membership.role, {
+      // The business being switched into, not the one being left: whether
+      // /inbox exists is a property of the destination.
+      whatsappEnabled: await whatsappEnabledForTenantId(parsed.data.tenantId),
+    });
   } catch (err) {
     // No live membership for that business — a stale switcher, or a forged
     // id. Either way, stay put and say nothing: a distinguishable error here

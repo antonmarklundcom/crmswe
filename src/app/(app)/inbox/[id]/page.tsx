@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { requireTenantContext } from "@/modules/tenancy/context";
+import { whatsappEnabledFor } from "@/modules/whatsapp/feature";
 import {
   getConversation,
   listMessagesForConversation,
@@ -19,6 +20,7 @@ export default async function ConversationPage({
 }) {
   const { id } = await params;
   const ctx = await requireTenantContext();
+  if (!(await whatsappEnabledFor(ctx))) notFound();
 
   const conversation = await getConversation(ctx, id);
   if (!conversation) notFound();

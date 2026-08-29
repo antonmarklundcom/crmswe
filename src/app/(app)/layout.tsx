@@ -1,9 +1,11 @@
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { getTenantContext } from "@/modules/tenancy/context";
+import type { TenantSettings } from "@/modules/tenancy/settings";
 import { getUserById } from "@/modules/tenancy/users";
 import { listMembershipsForUser } from "@/modules/tenancy/memberships";
 import { getTenant } from "@/modules/tenancy/tenants";
+import { isWhatsappEnabled } from "@/modules/whatsapp/feature";
 import { AppNav, type NavGroup } from "@/components/app-nav";
 import { UserMenu } from "@/components/user-menu";
 import { BusinessSwitcher, type SwitchableBusiness } from "@/components/business-switcher";
@@ -61,6 +63,11 @@ export default async function AppLayout({
     listMembershipsForUser(ctx.userId),
   ]);
 
+  // WhatsApp is off unless this tenant asked for it (plan.md §5.3.1). The nav
+  // is the first place that has to be true: a link to a route that answers
+  // 404 is worse than no link.
+  const whatsappEnabled = isWhatsappEnabled(tenant?.settings as TenantSettings | null);
+
   const businesses: SwitchableBusiness[] = memberships.map(({ membership, tenant: t }) => ({
     id: t.id,
     name: t.name,
@@ -79,10 +86,14 @@ export default async function AppLayout({
       items: [
         { href: "/contacts", label: t("contacts"), icon: "contacts" },
         { href: "/pipeline", label: t("pipeline"), icon: "pipeline" },
-        { href: "/inbox", label: t("inbox"), icon: "inbox" },
+        ...(whatsappEnabled
+          ? [{ href: "/inbox", label: t("inbox"), icon: "inbox" as const }]
+          : []),
         // A surface of its own rather than a tab inside /inbox: the WhatsApp
         // inbox has its own assignment and 24h-window rules, and a unified
-        // inbox is a decision that deserves to be made on purpose.
+        // inbox is a decision that deserves to be made on purpose. It stays
+        // whatever WhatsApp does — the chat widget is its own channel and the
+        // Swedish product keeps it.
         { href: "/chat", label: t("chat"), icon: "chat" },
         { href: "/calendar", label: t("calendar"), icon: "calendar" },
         { href: "/quotes", label: t("quotes"), icon: "quotes" },
@@ -110,22 +121,20 @@ export default async function AppLayout({
     {
       label: t("groups.settings"),
       items: [
+        ...(isAdmin && whatsappEnabled
+          ? [{ href: "/whatsapp", label: t("whatsapp"), icon: "whatsapp" as const }]
+          : []),
         ...(isAdmin
           ? [
-              { href: "/whatsapp", label: t("whatsapp"), icon: "whatsapp" as const },
               { href: "/users", label: t("users"), icon: "users" as const },
               { href: "/settings", label: t("settings"), icon: "settings" as const },
             ]
           : []),
-        // Phase 2 (§9). Present but inert so the roadmap is visible in the
-        // product itself, per §8's "nav item exists, disabled".
-        {
-          href: "/factura-electronica",
-          label: t("facturaElectronica"),
-          icon: "facturaElectronica" as const,
-          disabled: true,
-          badge: t("soon"),
-        },
+        // The inert "factura electrónica — pronto" entry is gone (plan.md
+        // §5.3.1): it advertised Paraguay's SIFEN e-invoicing, whose module
+        // O1 deleted. Sweden's equivalent is Peppol/SIE export, which is
+        // Backlog (plan.md §10) and will get its own entry when it is real
+        // rather than a badge promising something nobody is building.
       ],
     },
   ];

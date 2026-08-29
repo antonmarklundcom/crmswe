@@ -3,7 +3,7 @@
 import { useActionState } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
-import type { BusinessHours } from "@/modules/tenancy/settings";
+import type { BusinessHours, TenantEmailSettings } from "@/modules/tenancy/settings";
 import {
   updateAiSettingsAction,
   updateBrandingAction,
@@ -11,6 +11,8 @@ import {
   updateDefaultCountryAction,
   updateReviewLinkAction,
   updateTimezoneAction,
+  updateWhatsappEnabledAction,
+  updateEmailSettingsAction,
   type SettingsFormState,
 } from "./actions";
 import { Input, Select, Textarea } from "@/components/ui/form-fields";
@@ -162,6 +164,107 @@ export function ReviewLinkForm({ reviewLink }: { reviewLink: string }) {
           placeholder="https://g.page/r/.../review"
           className="flex-1"
         />
+        <Button type="submit" variant="outline" disabled={pending}>
+          {tc("save")}
+        </Button>
+      </div>
+      <ErrorOrSaved state={state} tc={tc} t={t} />
+    </form>
+  );
+}
+
+/**
+ * The sender on offert-, faktura- and påminnelsemail (plan.md §5.3.2).
+ *
+ * Three fields, and only two of them are usually filled in: a display name,
+ * and a reply-to. Setting the *address* requires the tenant to have verified
+ * their own domain in Resend, which the help text says, because a tenant who
+ * types their own address without doing that gets invoices that bounce or
+ * land in skräpposten — and finds out from their customer, not from here.
+ */
+export function EmailSenderForm({
+  email,
+  tenantName,
+}: {
+  email: TenantEmailSettings;
+  tenantName: string;
+}) {
+  const t = useTranslations("app.settings");
+  const tc = useTranslations("common");
+  const [state, formAction, pending] = useActionState(updateEmailSettingsAction, initialState);
+
+  return (
+    <form action={formAction} className="flex max-w-md flex-col gap-3">
+      <label className="flex flex-col gap-1 text-sm">
+        {t("emailFromName")}
+        <Input
+          name="fromName"
+          defaultValue={state.values.fromName ?? email.fromName ?? ""}
+          placeholder={tenantName}
+        />
+      </label>
+
+      <label className="flex flex-col gap-1 text-sm">
+        {t("emailReplyTo")}
+        <Input
+          name="replyTo"
+          defaultValue={state.values.replyTo ?? email.replyTo ?? ""}
+          placeholder="fakturor@dittforetag.se"
+        />
+        <span className="text-xs text-muted-foreground">{t("emailReplyToHelp")}</span>
+      </label>
+
+      <label className="flex flex-col gap-1 text-sm">
+        {t("emailFromEmail")}
+        <Input
+          name="fromEmail"
+          defaultValue={state.values.fromEmail ?? email.fromEmail ?? ""}
+        />
+        <span className="text-xs text-muted-foreground">{t("emailFromEmailHelp")}</span>
+      </label>
+
+      <div>
+        <Button type="submit" variant="outline" disabled={pending}>
+          {tc("save")}
+        </Button>
+      </div>
+      <ErrorOrSaved state={state} tc={tc} t={t} />
+    </form>
+  );
+}
+
+/**
+ * The WhatsApp channel switch (plan.md §5.3.1). Off is the Swedish default and
+ * what this product is designed around — turning it on restores the inbox,
+ * the connection screen and the WhatsApp halves of the dashboard, contact
+ * page and site routing, all of which are still in the codebase.
+ *
+ * The hidden field is load-bearing: this form's only real input is a
+ * checkbox, and an unticked checkbox posts nothing, so without it a
+ * submission would come back with an empty `values` and `echoedCheckbox`
+ * would fall back to the pre-submit prop — showing the box still ticked
+ * immediately after it was cleared.
+ */
+export function WhatsappChannelForm({ whatsappEnabled }: { whatsappEnabled: boolean }) {
+  const t = useTranslations("app.settings");
+  const tc = useTranslations("common");
+  const [state, formAction, pending] = useActionState(
+    updateWhatsappEnabledAction,
+    initialState,
+  );
+
+  return (
+    <form action={formAction} className="flex max-w-2xl flex-col gap-2">
+      <input type="hidden" name="submitted" value="1" />
+      <label className="flex items-center gap-2 text-sm">
+        <input
+          type="checkbox"
+          name="whatsappEnabled"
+          defaultChecked={echoedCheckbox(state.values, "whatsappEnabled", whatsappEnabled)}
+        />
+        {t("whatsappChannelEnabled")}
+      </label>
+      <div>
         <Button type="submit" variant="outline" disabled={pending}>
           {tc("save")}
         </Button>

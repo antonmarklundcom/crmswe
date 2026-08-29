@@ -17,11 +17,22 @@ import type { TenantRole } from "./context";
 //     dashboard when you arrive as an agent, or you land on a page whose
 //     every button throws.
 //
+//  3. **So can which sections exist at all.** One business may run WhatsApp
+//     and the next may not (plan.md §5.3.1), and `/inbox` is a 404 in the
+//     second — the same class of problem as the role check, answered the
+//     same way.
+//
 // Pure and side-effect free on purpose: it is the piece worth testing
 // exhaustively, and it runs before anything is written.
 
 /** Sections an agent may not enter (§3.2, mirrored by the nav in the layout). */
 const ADMIN_ONLY = ["/automations", "/forms", "/sites", "/whatsapp", "/users", "/settings"];
+
+/** Sections that exist only while the business has a WhatsApp channel
+ * (plan.md §5.3.1). Same shape of problem as the role check below: the
+ * business you switch *into* decides, and landing on one of these in a
+ * business that has WhatsApp off means landing on a 404. */
+const WHATSAPP_ONLY = ["/inbox", "/whatsapp"];
 
 /** Where each section's list lives. A path under one of these keeps the
  * section and loses everything after it. */
@@ -54,6 +65,7 @@ export const SWITCH_FALLBACK = "/dashboard";
 export function resolveSwitchTarget(
   pathname: string | null | undefined,
   role: TenantRole,
+  options: { whatsappEnabled?: boolean } = {},
 ): string {
   if (!pathname || !pathname.startsWith("/")) return SWITCH_FALLBACK;
 
@@ -70,6 +82,11 @@ export function resolveSwitchTarget(
   if (!section) return SWITCH_FALLBACK;
 
   if (role !== "admin" && ADMIN_ONLY.includes(section)) return SWITCH_FALLBACK;
+
+  // Defaults to hidden, matching the flag itself (modules/whatsapp/feature):
+  // a caller that forgets to pass it sends the user somewhere that certainly
+  // exists rather than somewhere that might not.
+  if (!options.whatsappEnabled && WHATSAPP_ONLY.includes(section)) return SWITCH_FALLBACK;
 
   // The section list, never the sub-page: `/contacts/01J...` and
   // `/contacts/import` and `/pipeline/etapas` all become the section itself.

@@ -16,7 +16,12 @@ import { getTenant } from "@/modules/tenancy/tenants";
 import { getContact } from "@/modules/crm/contacts";
 import { Button } from "@/components/ui/button";
 import { DocumentBuilder, type DocumentBuilderLabels } from "../DocumentBuilder";
-import { issueDocumentAction, sendDocumentAction, deletePaymentAction } from "../actions";
+import {
+  issueDocumentAction,
+  sendDocumentAction,
+  sendPaymentReminderAction,
+  deletePaymentAction,
+} from "../actions";
 import { RecordPaymentForm, VoidDocumentForm, CreditNoteForm } from "./DocumentActionForms";
 import { formatMoney } from "@/lib/i18n/format";
 import { formatRateLabel, parseVatSummary } from "@/lib/se/moms";
@@ -115,10 +120,24 @@ export default async function DocumentDetailPage({
         </div>
 
         {document.status === "issued" && (
-          <form action={sendDocumentAction}>
-            <input type="hidden" name="documentId" value={document.id} />
-            <Button type="submit">{t("send")}</Button>
-          </form>
+          <div className="flex flex-wrap items-center gap-2">
+            <form action={sendDocumentAction}>
+              <input type="hidden" name="documentId" value={document.id} />
+              <Button type="submit">{t("send")}</Button>
+            </form>
+
+            {/* Only for a faktura with something still outstanding: a
+                kreditfaktura is money going the other way, and chasing a
+                settled invoice is the one mistake a reminder must not make. */}
+            {document.type === "faktura" && totals && totals.balance > 0 && (
+              <form action={sendPaymentReminderAction}>
+                <input type="hidden" name="documentId" value={document.id} />
+                <Button type="submit" variant="outline">
+                  {t("sendReminder")}
+                </Button>
+              </form>
+            )}
+          </div>
         )}
       </header>
 

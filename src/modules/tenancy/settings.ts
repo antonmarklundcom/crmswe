@@ -73,6 +73,28 @@ export type TenantAiSettings = {
   handoffKeyword?: string;
 };
 
+/**
+ * Who a customer sees an offert or faktura arriving from, and where their
+ * reply goes (plan.md §5.3.2; sweden-business-apps §6).
+ *
+ * `fromEmail` is deliberately the awkward one. Mail is only trusted from a
+ * domain that has published SPF and DKIM for the sender, so a tenant cannot
+ * simply declare `fakturor@sitt-företag.se` and have it work — an unverified
+ * sender lands in skräpposten or bounces outright. The default therefore
+ * keeps the platform's own verified address and puts the tenant's *name* in
+ * front of it, which is what the customer reads anyway, and routes replies to
+ * the tenant with `replyTo`. `fromEmail` exists for the tenant who has gone
+ * and verified their domain in Resend, and the settings screen says so.
+ */
+export type TenantEmailSettings = {
+  /** Display name on the sender. Falls back to the tenant's name. */
+  fromName?: string;
+  /** Only for a domain verified in Resend — see above. */
+  fromEmail?: string;
+  /** Where a customer's reply lands. */
+  replyTo?: string;
+};
+
 export type TenantSettings = {
   branding?: TenantBranding;
   businessHours?: BusinessHours;
@@ -85,6 +107,26 @@ export type TenantSettings = {
    * (`lib/phone.ts`'s `DEFAULT_COUNTRY`).
    */
   defaultCountry?: CountryCode;
+  /**
+   * The one switch that decides whether this product has a WhatsApp channel
+   * at all (plan.md §1.7, §5.3.1).
+   *
+   * The Swedish edition is e-post-first, so this is **off unless a tenant
+   * turns it on**: `undefined` reads as off, which is what every tenant row
+   * written before this field existed says. Off means the surfaces are not
+   * merely hidden — `/inbox`, `/whatsapp` and the inbox API answer 404, the
+   * webhook stops accepting that tenant's messages, and the nav, dashboard,
+   * contact page and site forms lose their WhatsApp halves.
+   *
+   * The module underneath is untouched and fully working: this repo is a
+   * fork of vendercrm and fixes are cherry-picked in both directions
+   * (plan.md §1.1), so deleting the code would cost more than hiding it.
+   * Flipping this back on is one write, and the flag-on path is tested
+   * alongside the flag-off one for exactly that reason.
+   */
+  whatsappEnabled?: boolean;
+  /** Per-tenant sender for customer-facing mail (plan.md §5.3.2). */
+  email?: TenantEmailSettings;
   /**
    * Google review link for the `send_review_request` automation action
    * (PLAN.md §10 1R #5 — the GBP review-request half of §10 1P, built here
@@ -113,6 +155,17 @@ export async function updateTenantDefaultCountry(ctx: TenantContext, defaultCoun
 
 export async function updateTenantReviewLink(ctx: TenantContext, reviewLink: string) {
   return mergeTenantSettings(ctx, { reviewLink });
+}
+
+export async function updateTenantWhatsappEnabled(ctx: TenantContext, whatsappEnabled: boolean) {
+  return mergeTenantSettings(ctx, { whatsappEnabled });
+}
+
+export async function updateTenantEmailSettings(
+  ctx: TenantContext,
+  email: TenantEmailSettings,
+) {
+  return mergeTenantSettings(ctx, { email });
 }
 
 export async function updateTenantTimezone(ctx: TenantContext, timezone: string) {
@@ -267,8 +320,14 @@ async function mergeTenantSettings(ctx: TenantContext, patch: Partial<TenantSett
     businessHours: patch.businessHours ?? current.businessHours,
     exports: patch.exports ?? current.exports,
     ai: patch.ai ? { ...current.ai, ...patch.ai } : current.ai,
+    email: patch.email ? { ...current.email, ...patch.email } : current.email,
     defaultCountry: patch.defaultCountry ?? current.defaultCountry,
     reviewLink: patch.reviewLink ?? current.reviewLink,
+    // `??` would be wrong here: turning the flag *off* patches it to `false`,
+    // and `false ?? current` keeps the old `true`. Only an absent key means
+    // "leave it alone".
+    whatsappEnabled:
+      patch.whatsappEnabled !== undefined ? patch.whatsappEnabled : current.whatsappEnabled,
   };
 
   await db.update(tenants).set({ settings: merged }).where(eq(tenants.id, ctx.tenantId));

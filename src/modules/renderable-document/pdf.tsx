@@ -8,16 +8,16 @@ import { Document, Page, Text, View, Image, StyleSheet } from "@react-pdf/render
 import type { TenantBranding } from "@/modules/tenancy/settings";
 import { pdfMoney } from "./format";
 
-// The shared PDF shell (PLAN.md §13 H9). The quote and the nota de venta
-// were near-identical react-pdf trees; SIFEN's factura (§9) would have been
-// a third copy. The shell owns everything both documents agree on — page,
-// header, client block, item table, totals, footer — and takes the parts
-// they differ in as data: the meta lines under the title, an optional
+// The shared PDF shell (PLAN.md §13 H9). The offert and the faktura were
+// near-identical react-pdf trees; the shell owns everything they agree on —
+// page, header, client block, item table, totals, footer — and takes the
+// parts they differ in as data: the meta lines under the title, an optional
 // stamp, the totals rows, and a tail slot for whatever prints below the
-// totals (a validity note, a disclaimer box).
+// totals (a validity note, a momsspecifikation, a payment block).
 //
-// Every style below is byte-for-byte what the two files had, because the
-// batch's exit criterion is that the rendered PDFs are unchanged.
+// O2 added the parts a Swedish faktura needs and an offert does not: a seller
+// identity block in the header, and an optional per-line momssats column that
+// appears only when a caller supplies the header for it.
 
 export type PdfLineItem = {
   description: string;
@@ -64,15 +64,14 @@ export type DocumentShellProps = {
   stamp?: { text: string; color: string };
   clientLabel: string;
   clientLines: string[];
-  /** A line set apart under the client block — the nota de venta's due
-   * date. Node, for the same run-splitting reason as `footer`. */
+  /** A line set apart under the client block. Node, for the same
+   * run-splitting reason as `footer`. */
   clientFooter?: React.ReactNode;
   columns: DocumentColumns;
   items: PdfLineItem[];
   totals: PdfTotalsRow[];
-  /** Width of the totals block. The quote has always printed 220pt and the
-   * nota de venta 240pt; keeping that difference is cheaper than changing
-   * how a customer-facing document looks in a refactor. */
+  /** Width of the totals block. The offert prints 220pt and the faktura
+   * 240pt — the faktura's rows carry longer labels. */
   totalsWidth?: number;
   /** Printed between the totals and the page footer. */
   tail?: React.ReactNode;

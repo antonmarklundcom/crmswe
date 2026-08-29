@@ -3,7 +3,8 @@ import { ScrollText } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { requireTenantContext } from "@/modules/tenancy/context";
 import { listDocuments, amountPaid } from "@/modules/documents/documents";
-import { paymentStateOf, type DocumentStatus } from "@/modules/documents/types";
+import { grossOf, paymentStateOf, type DocumentStatus } from "@/modules/documents/types";
+import { listVatRates } from "@/modules/tenancy/vat-rates";
 import { listProducts } from "@/modules/quotes/products";
 import { listContacts } from "@/modules/crm/contacts";
 import { EmptyState } from "@/components/empty-state";
@@ -17,10 +18,11 @@ export default async function DocumentsPage() {
   const t = await getTranslations("app.documents");
   const locale = await getLocale();
 
-  const [documents, contacts, products] = await Promise.all([
+  const [documents, contacts, products, vatRates] = await Promise.all([
     listDocuments(ctx),
     listContacts(ctx),
     listProducts(ctx),
+    listVatRates(ctx),
   ]);
 
   const rows = await Promise.all(
@@ -37,6 +39,7 @@ export default async function DocumentsPage() {
     description: t("description"),
     qty: t("qty"),
     unitPrice: t("unitPrice"),
+    vatRate: t("vatRate"),
     lineTotal: t("lineTotal"),
     addLine: t("addLine"),
     removeLine: t("removeLine"),
@@ -44,8 +47,11 @@ export default async function DocumentsPage() {
     freeText: t("freeText"),
     discount: t("discount"),
     dueAt: t("dueAt"),
+    deliveryDate: t("deliveryDate"),
     notes: t("notes"),
     subtotal: t("subtotal"),
+    net: t("net"),
+    vatTotal: t("vatTotal"),
     total: t("total"),
     submit: t("create"),
   };
@@ -55,13 +61,18 @@ export default async function DocumentsPage() {
       <section className="flex flex-col gap-4">
         <PageHeader title={t("title")} description={t("intro")} />
 
+        {/* plan.md §5.2 exit criterion: reports and lists reconcile on the
+            netto, and the UI says so rather than leaving a reader to work out
+            which of two numbers a column holds. */}
+        <p className="text-xs text-muted-foreground">{t("netNotice")}</p>
+
         {documents.length === 0 ? (
           <EmptyState
             icon={ScrollText}
             title={t("emptyTitle")}
             description={t("emptyBody")}
             actionLabel={contacts.length > 0 ? t("create") : undefined}
-            actionHref={contacts.length > 0 ? "#nueva-nota" : undefined}
+            actionHref={contacts.length > 0 ? "#ny-faktura" : undefined}
           />
         ) : (
           <div className="overflow-x-auto">
@@ -69,17 +80,22 @@ export default async function DocumentsPage() {
               <thead>
                 <tr className="border-b">
                   <th className="py-2">{t("number")}</th>
+                  <th className="py-2">{t("type")}</th>
                   <th className="py-2">{t("contact")}</th>
                   <th className="py-2">{t("status")}</th>
                   <th className="py-2">{t("paymentState")}</th>
+                  <th className="py-2 text-right">{t("subtotal")}</th>
                   <th className="py-2 text-right">{t("total")}</th>
                 </tr>
               </thead>
               <tbody>
                 {rows.map(({ document, paid }) => {
+                  // Against the gross: the customer pays netto + moms, so a
+                  // state computed on the netto calls every settled invoice
+                  // overpaid.
                   const state = paymentStateOf(
                     document.status as DocumentStatus,
-                    document.total,
+                    grossOf(document),
                     paid,
                   );
                   return (
@@ -88,6 +104,9 @@ export default async function DocumentsPage() {
                         <Link href={`/documents/${document.id}`} className="underline">
                           {document.number}
                         </Link>
+                      </td>
+                      <td className="py-2">
+                        {t(`typeValues.${document.type}` as "typeValues.faktura")}
                       </td>
                       <td className="py-2">
                         {contactsById.get(document.contactId)?.name ?? document.contactId}
@@ -101,6 +120,9 @@ export default async function DocumentsPage() {
                       <td className="py-2 text-right">
                         {formatMoney(document.total, document.currency, locale)}
                       </td>
+                      <td className="py-2 text-right">
+                        {formatMoney(grossOf(document), document.currency, locale)}
+                      </td>
                     </tr>
                   );
                 })}
@@ -110,7 +132,7 @@ export default async function DocumentsPage() {
         )}
       </section>
 
-      <section id="nueva-nota" className="scroll-mt-6">
+      <section id="ny-faktura" className="scroll-mt-6">
         <h2 className="mb-4 text-lg font-semibold">{t("createTitle")}</h2>
         {contacts.length === 0 ? (
           <p className="text-sm text-muted-foreground">
@@ -124,7 +146,13 @@ export default async function DocumentsPage() {
             mode="create"
             currency={ctx.currency}
             contacts={contacts.map((c) => ({ id: c.id, label: `${c.name} — ${c.phone}` }))}
-            products={products.map((p) => ({ id: p.id, name: p.name, unitPrice: p.unitPrice }))}
+            products={products.map((p) => ({
+              id: p.id,
+              name: p.name,
+              unitPrice: p.unitPrice,
+              vatRateBps: p.vatRateBps,
+            }))}
+            vatRates={vatRates.map((rate) => ({ rateBps: rate.rateBps, label: rate.label }))}
             labels={labels}
           />
         )}

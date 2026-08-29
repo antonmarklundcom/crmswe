@@ -10,8 +10,16 @@ import { tenantDb } from "@/modules/tenancy/db";
 export type CreateProductInput = {
   name: string;
   description?: string;
+  /** Exklusive moms, minor units — prices are always entered net (plan.md §5.2.2). */
   unitPrice: number;
   currency?: string;
+  /**
+   * Momssats in basis points. Omitted means "the tenant's default at the time
+   * a line is priced" rather than "no moms" — resolved against `vat_rates`
+   * when the product reaches a document, so a rate change does not silently
+   * rewrite the catalog.
+   */
+  vatRateBps?: number | null;
 };
 
 export async function createProduct(ctx: TenantContext, input: CreateProductInput) {
@@ -24,6 +32,7 @@ export async function createProduct(ctx: TenantContext, input: CreateProductInpu
       description: input.description,
       unitPrice: input.unitPrice,
       currency: input.currency ?? ctx.currency,
+      vatRateBps: input.vatRateBps ?? null,
     });
   return getProduct(ctx, id);
 }

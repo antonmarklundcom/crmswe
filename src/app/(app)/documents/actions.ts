@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { requireTenantContext, requireTenantAdmin } from "@/modules/tenancy/context";
 import {
   createDocument,
+  createCreditNote,
   updateDraftDocument,
   issueDocument,
   voidDocument,
@@ -24,6 +25,10 @@ const lineSchema = (currency: string) =>
     qty: z.coerce.number().int().min(1),
     unitPrice: moneyAmountSchema(currency),
     productId: z.string().optional(),
+    // Basis points. Shape only — whether the tenant actually has this rate
+    // configured is decided in the service layer against `vat_rates`, which
+    // is the only place that knows (plan.md §4.11).
+    vatRateBps: z.coerce.number().int().min(0).max(10_000).optional(),
   });
 
 function parseLines(formData: FormData) {
@@ -31,6 +36,7 @@ function parseLines(formData: FormData) {
   const qtys = formData.getAll("qty").map(String);
   const prices = formData.getAll("unitPrice").map(String);
   const productIds = formData.getAll("productId").map(String);
+  const vatRates = formData.getAll("vatRateBps").map(String);
 
   return descriptions
     .map((description, i) => ({
@@ -38,6 +44,8 @@ function parseLines(formData: FormData) {
       qty: qtys[i],
       unitPrice: prices[i],
       productId: productIds[i] || undefined,
+      // Absent means "the tenant's default", which the service resolves.
+      vatRateBps: vatRates[i] || undefined,
     }))
     // Blank rows are how the builder represents "not filled in yet".
     .filter((line) => line.description.trim().length > 0);
@@ -48,6 +56,7 @@ const createDocumentSchema = (currency: string) =>
     contactId: z.string().min(1),
     discount: moneyAmountSchema(currency),
     dueAt: z.string().optional(),
+    deliveryDate: z.string().optional(),
     notes: z.string().max(5000).optional(),
     items: z.array(lineSchema(currency)).min(1),
   });
@@ -71,6 +80,16 @@ function lineFailureKey(error: z.ZodError): "itemInvalid" | "discountInvalid" | 
   return "itemsRequired";
 }
 
+// The service layer throws stable codes, not copy. The few a user can
+// actually cause get their own message; anything else is a bug and reads as
+// "we couldn't save that". Not exported: a "use server" module may only
+// export async functions.
+function serviceErrorKey(error: unknown): string {
+  const message = error instanceof Error ? error.message : "";
+  if (message.startsWith("vat_rate_not_configured")) return "vatRateInvalid";
+  return "unknown";
+}
+
 export type DocumentFormState = {
   error: string | null;
   field: DocumentField | null;
@@ -89,6 +108,7 @@ export async function createDocumentAction(
     // A cleared discount box means no discount, not a rejected form.
     discount: String(formData.get("discount") ?? "").trim() || "0",
     dueAt: formData.get("dueAt") || undefined,
+    deliveryDate: formData.get("deliveryDate") || undefined,
     notes: formData.get("notes") || undefined,
     items: parseLines(formData),
   });
@@ -106,11 +126,14 @@ export async function createDocumentAction(
       contactId: parsed.data.contactId,
       discount: parsed.data.discount,
       dueAt: parsed.data.dueAt ? new Date(parsed.data.dueAt) : undefined,
+      deliveryDate: parsed.data.deliveryDate
+        ? new Date(parsed.data.deliveryDate)
+        : undefined,
       notes: parsed.data.notes,
       items: parsed.data.items,
     });
-  } catch {
-    return { error: "unknown", field: null, values: { contactId } };
+  } catch (error) {
+    return { error: serviceErrorKey(error), field: null, values: { contactId } };
   }
 
   revalidatePath("/documents");
@@ -122,6 +145,7 @@ const updateDocumentSchema = (currency: string) =>
     documentId: z.string().min(1),
     discount: moneyAmountSchema(currency),
     dueAt: z.string().optional(),
+    deliveryDate: z.string().optional(),
     notes: z.string().max(5000).optional(),
     items: z.array(lineSchema(currency)).min(1),
   });
@@ -143,6 +167,7 @@ export async function updateDraftDocumentAction(
     // A cleared discount box means no discount, not a rejected form.
     discount: String(formData.get("discount") ?? "").trim() || "0",
     dueAt: formData.get("dueAt") || undefined,
+    deliveryDate: formData.get("deliveryDate") || undefined,
     notes: formData.get("notes") || undefined,
     items: parseLines(formData),
   });
@@ -155,11 +180,14 @@ export async function updateDraftDocumentAction(
     await updateDraftDocument(ctx, parsed.data.documentId, {
       discount: parsed.data.discount,
       dueAt: parsed.data.dueAt ? new Date(parsed.data.dueAt) : undefined,
+      deliveryDate: parsed.data.deliveryDate
+        ? new Date(parsed.data.deliveryDate)
+        : undefined,
       notes: parsed.data.notes,
       items: parsed.data.items,
     });
-  } catch {
-    return { error: "unknown", values: { contactId: "" } };
+  } catch (error) {
+    return { error: serviceErrorKey(error), values: { contactId: "" } };
   }
 
   revalidatePath(`/documents/${parsed.data.documentId}`);
@@ -212,6 +240,36 @@ export async function voidDocumentAction(
 
   revalidatePath(`/documents/${parsed.data.documentId}`);
   return { error: null, values: { reason: "" } };
+}
+
+export type CreditNoteFormState = { error: string | null };
+
+/**
+ * Creates the kreditfaktura that reverses an issued faktura.
+ *
+ * Admin-only, on the same reasoning as voiding used to be: it puts a second
+ * numbered document into the tenant's series and reverses money already on
+ * the books. The result is a draft, so the admin still reviews it before it
+ * is issued.
+ */
+export async function createCreditNoteAction(
+  _prevState: CreditNoteFormState,
+  formData: FormData,
+): Promise<CreditNoteFormState> {
+  const ctx = await requireTenantAdmin();
+  const parsed = z.string().min(1).safeParse(formData.get("documentId"));
+  if (!parsed.success) return { error: "creditFailed" };
+
+  let credit;
+  try {
+    credit = await createCreditNote(ctx, parsed.data);
+  } catch {
+    return { error: "creditFailed" };
+  }
+
+  revalidatePath(`/documents/${parsed.data}`);
+  revalidatePath("/documents");
+  redirect(`/documents/${credit!.id}`);
 }
 
 export async function sendDocumentAction(formData: FormData) {

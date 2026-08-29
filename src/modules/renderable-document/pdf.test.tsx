@@ -16,6 +16,9 @@ import { pdfText } from "./pdf-text";
 // carry (plan.md §5.2.3, sweden-business-apps §1). A fingerprint cannot catch
 // a missing momsspecifikation, because a document that lost one is perfectly
 // stable; only reading the text back can.
+//
+// Both digests were re-taken in O2: the faktura became a legally complete
+// Swedish invoice, and the offert grew a moms column.
 const FIXTURE_BRANDING = { primaryColor: "#0f766e" };
 
 const quote = {
@@ -32,9 +35,25 @@ const quote = {
   notes: "Inklusive installation och ett servicebesök.",
   createdAt: new Date("2026-02-01T12:00:00.000Z"),
   locale: "sv",
+  // 25 % on both lines: 13 500,00 kr netto → 3 375,00 kr moms.
+  vatTotal: 337_500,
+  vatSummary: [{ rateBps: 2500, base: 1_350_000, vat: 337_500 }],
+  gross: 1_687_500,
   items: [
-    { description: "Luftvärmepump 12 000 BTU", qty: 2, unitPrice: 600000, lineTotal: 1200000 },
-    { description: "Installation", qty: 1, unitPrice: 300000, lineTotal: 300000 },
+    {
+      description: "Luftvärmepump 12 000 BTU",
+      qty: 2,
+      unitPrice: 600000,
+      lineTotal: 1200000,
+      vatRateBps: 2500,
+    },
+    {
+      description: "Installation",
+      qty: 1,
+      unitPrice: 300000,
+      lineTotal: 300000,
+      vatRateBps: 2500,
+    },
   ],
 };
 
@@ -140,12 +159,13 @@ async function fingerprint(pdf: Buffer): Promise<string> {
 }
 
 describe("document PDFs are pixel-stable", () => {
-  it("renders the offert exactly as it did before the moms engine", async () => {
-    // Unchanged by O2 on purpose: an offert grew no moms column, so its
-    // digest is the same one H9 and O1 recorded.
+  it("renders the offert stably", async () => {
+    // Re-taken in O2: the offert grew a moms column and quotes inklusive
+    // moms, because a private customer reads the quoted figure as the price
+    // they will pay.
     const pdf = await renderQuotePdf(quote);
     expect(await fingerprint(pdf)).toBe(
-      "57bc05c3886c4cb59fb7ff3d5c88b0e36efa70891f507a58854cc6292c15f62f",
+      "ff4323099ab59d5e3693e9371249eef45e58b311a0ab96421a70b224c632c9c5",
     );
   });
 
@@ -244,5 +264,17 @@ describe("formatSequenceNumber", () => {
     expect(formatSequenceNumber("OFF", 1)).toBe("OFF-000001");
     expect(formatSequenceNumber("FA", 45)).toBe("FA-000045");
     expect(formatSequenceNumber("KF", 1234567)).toBe("KF-1234567");
+  });
+});
+
+describe("the offert quotes moms", () => {
+  it("shows the momssats per line and totals inklusive moms", async () => {
+    // A quoted figure a private customer reads as "the price" must be the
+    // one they will actually pay.
+    const text = pdfText(await renderQuotePdf(quote));
+    expect(text).toContain("25\u00a0%");
+    expect(text).toContain("Moms");
+    expect(text).toContain("3\u00a0375,00");
+    expect(text).toContain("16\u00a0875,00");
   });
 });

@@ -4,13 +4,22 @@ import { useActionState } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { createProductAction, type ProductField, type ProductFormState } from "./actions";
-import { Input, Textarea } from "@/components/ui/form-fields";
+import { Input, Select, Textarea } from "@/components/ui/form-fields";
 
 // Lives here, not in actions.ts: a "use server" module may only export
 // async functions.
 const initialState: ProductFormState = { error: null, field: null, values: {} };
 
-export function ProductCreateForm({ currency }: { currency: string }) {
+/** A momssats the tenant has configured — never a constant in code. */
+export type VatRateOption = { rateBps: number; label: string };
+
+export function ProductCreateForm({
+  currency,
+  vatRates,
+}: {
+  currency: string;
+  vatRates: VatRateOption[];
+}) {
   const t = useTranslations("app.products");
   const tc = useTranslations("common");
   const [state, formAction, pending] = useActionState(createProductAction, initialState);
@@ -52,6 +61,19 @@ export function ProductCreateForm({ currency }: { currency: string }) {
           defaultValue={state.values.unitPrice ?? ""}
         />
         <FieldError field="unitPrice" />
+      </label>
+      <label className="flex flex-col gap-1 text-sm">
+        {t("vatRate")}
+        {/* Options come from the tenant's own vat_rates rows, so a
+            momsbefriad business sees only 0 % (plan.md §4.11). */}
+        <Select name="vatRateBps" defaultValue={state.values.vatRateBps ?? ""}>
+          {vatRates.map((rate) => (
+            <option key={rate.rateBps} value={rate.rateBps}>
+              {rate.label}
+            </option>
+          ))}
+        </Select>
+        <FieldError field="vatRateBps" />
       </label>
       {state.error && state.field === null && (
         <p role="alert" className="text-sm text-destructive">

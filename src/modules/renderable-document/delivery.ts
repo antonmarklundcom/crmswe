@@ -12,7 +12,7 @@ import { sendDocument } from "@/modules/whatsapp/send";
 // the document to exist at all, while WhatsApp failing is an *expected*
 // outcome (a closed 24-hour window, a disconnected number) that leaves the
 // public link as the delivery. Callers decide what a failed send means for
-// their own status — sending a quote advances it, sending a nota de venta
+// their own status — sending a quote advances it, sending a faktura
 // deliberately doesn't.
 
 export type StoredPdf = { key: string; pdf: Buffer };

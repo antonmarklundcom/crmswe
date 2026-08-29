@@ -4,6 +4,7 @@ import { getTranslations } from "next-intl/server";
 import { requireTenantContext } from "@/modules/tenancy/context";
 import { listQuotes } from "@/modules/quotes/quotes";
 import { listProducts } from "@/modules/quotes/products";
+import { listVatRates } from "@/modules/tenancy/vat-rates";
 import { listContacts } from "@/modules/crm/contacts";
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
@@ -16,10 +17,11 @@ export default async function QuotesPage() {
   const t = await getTranslations("app.quotes");
   const locale = await getLocale();
 
-  const [quotes, contacts, products] = await Promise.all([
+  const [quotes, contacts, products, vatRates] = await Promise.all([
     listQuotes(ctx),
     listContacts(ctx),
     listProducts(ctx),
+    listVatRates(ctx),
   ]);
 
   const labels: BuilderLabels = {
@@ -27,6 +29,7 @@ export default async function QuotesPage() {
     description: t("description"),
     qty: t("qty"),
     unitPrice: t("unitPrice"),
+    vatRate: t("vatRate"),
     lineTotal: t("lineTotal"),
     addLine: t("addLine"),
     removeLine: t("removeLine"),
@@ -36,6 +39,8 @@ export default async function QuotesPage() {
     validUntil: t("validUntil"),
     notes: t("notes"),
     subtotal: t("subtotal"),
+    net: t("net"),
+    vatTotal: t("vatTotal"),
     total: t("total"),
     create: t("createQuote"),
   };
@@ -98,7 +103,13 @@ export default async function QuotesPage() {
           <QuoteBuilder
             currency={ctx.currency}
             contacts={contacts.map((c) => ({ id: c.id, label: `${c.name} — ${c.phone}` }))}
-            products={products.map((p) => ({ id: p.id, name: p.name, unitPrice: p.unitPrice }))}
+            products={products.map((p) => ({
+              id: p.id,
+              name: p.name,
+              unitPrice: p.unitPrice,
+              vatRateBps: p.vatRateBps,
+            }))}
+            vatRates={vatRates.map((rate) => ({ rateBps: rate.rateBps, label: rate.label }))}
             labels={labels}
           />
         )}

@@ -49,23 +49,35 @@ describe.skipIf(!hasDb)("product CSV import/export (MySQL integration)", () => {
   it("exports the catalog, including inactive products, as CSV", async () => {
     const ctx = await makeCtx("Export");
     // 500 000 öre — 5 000,00 kr — which the export must write in kronor.
-    await createProduct(ctx, { name: "Konsultation", unitPrice: 500000 });
+    await createProduct(ctx, { name: "Konsultation", unitPrice: 500000, vatRateBps: 2500 });
     const inactive = await createProduct(ctx, { name: "Gammal", unitPrice: 1000 });
     await (await import("./products")).updateProduct(ctx, inactive!.id, { isActive: false });
 
     const csv = await exportProductsCsv(ctx);
     const { headers, rows } = parseCsv(csv);
 
-    expect(headers).toEqual(["name", "description", "unit_price", "currency", "is_active"]);
+    expect(headers).toEqual([
+      "name",
+      "description",
+      "unit_price",
+      "currency",
+      "vat_rate_bps",
+      "is_active",
+    ]);
     expect(rows).toHaveLength(2);
     const konsultation = rows.find((r) => r.name === "Konsultation");
     expect(konsultation).toMatchObject({
       unit_price: "5000.00",
       currency: "SEK",
+      // Basis points, not "25 %": a percentage sign or a decimal comma in a
+      // CSV cell is a column break waiting to happen.
+      vat_rate_bps: "2500",
       is_active: "true",
     });
     const gammal = rows.find((r) => r.name === "Gammal");
-    expect(gammal).toMatchObject({ unit_price: "10.00", is_active: "false" });
+    // A product with no rate of its own exports a blank cell, which reads
+    // back as "the tenant's default".
+    expect(gammal).toMatchObject({ unit_price: "10.00", vat_rate_bps: "", is_active: "false" });
   });
 
   it("round-trips an exported file without moving the decimal point", async () => {

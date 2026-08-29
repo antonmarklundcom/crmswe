@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { requireTenantAdmin } from "@/modules/tenancy/context";
 import { moneyAmountSchema } from "@/lib/money-schema";
 import { createProduct, updateProduct } from "@/modules/quotes/products";
+import { resolveVatRateBps } from "@/modules/tenancy/vat-rates";
 
 // The catalog is tenant configuration (§3.2): agents sell from it — and so
 // still read it on /products, /quotes and /documents — but only an admin
@@ -12,7 +13,7 @@ import { createProduct, updateProduct } from "@/modules/quotes/products";
 
 // useActionState-shaped (PLAN.md §10 1R #6): a bad price or a missing name
 // comes back as state rendered next to the input, not Next's error page.
-export type ProductField = "name" | "unitPrice";
+export type ProductField = "name" | "unitPrice" | "vatRateBps";
 
 export type ProductFormState = {
   error: string | null;
@@ -23,6 +24,7 @@ export type ProductFormState = {
 const PRODUCT_FIELD_ERRORS: Record<ProductField, string> = {
   name: "nameRequired",
   unitPrice: "unitPriceInvalid",
+  vatRateBps: "vatRateInvalid",
 };
 
 // Built per request: the price is typed in major units and stored in minor
@@ -33,6 +35,9 @@ const createProductSchema = (currency: string) =>
     name: z.string().min(1).max(200),
     description: z.string().max(2000).optional().or(z.literal("")),
     unitPrice: moneyAmountSchema(currency),
+    // Shape only; whether the tenant has this rate configured is decided
+    // against `vat_rates` below.
+    vatRateBps: z.coerce.number().int().min(0).max(10_000).optional(),
   });
 
 export async function createProductAction(
@@ -50,6 +55,7 @@ export async function createProductAction(
     name: formData.get("name"),
     description: formData.get("description") || undefined,
     unitPrice: formData.get("unitPrice"),
+    vatRateBps: formData.get("vatRateBps") || undefined,
   });
 
   if (!parsed.success) {
@@ -66,8 +72,15 @@ export async function createProductAction(
       name: parsed.data.name,
       description: parsed.data.description || undefined,
       unitPrice: parsed.data.unitPrice,
+      // Refuses a rate the tenant has not configured, rather than writing an
+      // arbitrary one into the catalog where it would later reach an invoice.
+      vatRateBps: await resolveVatRateBps(ctx, parsed.data.vatRateBps),
     });
-  } catch {
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "";
+    if (message.startsWith("vat_rate_not_configured")) {
+      return { error: "vatRateInvalid", field: "vatRateBps", values };
+    }
     return { error: "unknown", field: null, values };
   }
 

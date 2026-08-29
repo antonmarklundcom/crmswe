@@ -3,7 +3,8 @@
 import { useActionState, useState } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import { Button } from "@/components/ui/button";
-import { formatMoneyInput, parseMoneyInput, parseQuantity, previewTotals } from "@/lib/money";
+import { formatMoneyInput, parseMoneyInput, parseQuantity } from "@/lib/money";
+import { computeDocumentMoms, formatRateLabel } from "@/lib/se/moms";
 import { useEchoGeneration } from "@/lib/use-echo-generation";
 import {
   createDocumentAction,
@@ -24,13 +25,14 @@ const createInitialState: DocumentFormState = {
 const updateInitialState: UpdateDocumentFormState = { error: null, values: { contactId: "" } };
 
 type Contact = { id: string; label: string };
-type Product = { id: string; name: string; unitPrice: number };
+type Product = { id: string; name: string; unitPrice: number; vatRateBps: number | null };
 
 export type DocumentBuilderLabels = {
   contact: string;
   description: string;
   qty: string;
   unitPrice: string;
+  vatRate: string;
   lineTotal: string;
   addLine: string;
   removeLine: string;
@@ -38,11 +40,18 @@ export type DocumentBuilderLabels = {
   freeText: string;
   discount: string;
   dueAt: string;
+  deliveryDate: string;
   notes: string;
   subtotal: string;
+  net: string;
+  vatTotal: string;
   total: string;
   submit: string;
 };
+
+/** A momssats the tenant has configured — the picker's options never come
+ * from a constant in code (plan.md §4.11). */
+export type VatRateOption = { rateBps: number; label: string };
 
 // Amounts are held as raw strings, not numbers: the inputs are
 // inputMode="decimal" rather than type="number" (see the fields below), so
@@ -55,7 +64,10 @@ type Line = {
   productId: string;
   description: string;
   qty: string;
+  /** Major units, exklusive moms — what the user types. */
   unitPrice: string;
+  /** Momssats in basis points, as a string because it is a select value. */
+  vatRateBps: string;
 };
 
 // What an existing draft supplies: real integers off the row, converted to
@@ -66,15 +78,17 @@ type InitialLine = {
   description: string;
   qty: number;
   unitPrice: number;
+  vatRateBps: number | null;
 };
 
 let nextKey = 1;
-const blankLine = (): Line => ({
+const blankLine = (defaultRateBps: number): Line => ({
   key: nextKey++,
   productId: "",
   description: "",
   qty: "1",
   unitPrice: "0",
+  vatRateBps: String(defaultRateBps),
 });
 
 type CreateProps = {
@@ -84,6 +98,8 @@ type CreateProps = {
   labels: DocumentBuilderLabels;
   /** The tenant's currency — decides how many decimals an amount may carry. */
   currency: string;
+  /** The tenant's configured momssatser, highest first. */
+  vatRates: VatRateOption[];
 };
 
 type EditProps = {
@@ -92,25 +108,32 @@ type EditProps = {
   products: Product[];
   labels: DocumentBuilderLabels;
   currency: string;
+  vatRates: VatRateOption[];
   initial: {
     lines: InitialLine[];
     discount: number;
     dueAt: string;
+    deliveryDate: string;
     notes: string;
   };
 };
 
 export function DocumentBuilder(props: CreateProps | EditProps) {
-  const { products, labels, currency } = props;
+  const { products, labels, currency, vatRates } = props;
   const t = useTranslations("app.documents");
+  // The tenant's first configured rate is the picker's default. Never 2500 in
+  // code: a momsbefriad tenant's default is 0 %, and only their configuration
+  // knows that (plan.md §4.11).
+  const defaultRateBps = vatRates[0]?.rateBps ?? 0;
   const [lines, setLines] = useState<Line[]>(() =>
     props.mode === "edit" && props.initial.lines.length > 0
       ? props.initial.lines.map((line) => ({
           ...line,
           qty: String(line.qty),
           unitPrice: formatMoneyInput(line.unitPrice, currency),
+          vatRateBps: String(line.vatRateBps ?? defaultRateBps),
         }))
-      : [blankLine()],
+      : [blankLine(defaultRateBps)],
   );
   const [discount, setDiscount] = useState(
     props.mode === "edit" ? formatMoneyInput(props.initial.discount, currency) : "0",
@@ -143,18 +166,47 @@ export function DocumentBuilder(props: CreateProps | EditProps) {
     update(key, {
       productId,
       ...(product
-        ? { description: product.name, unitPrice: formatMoneyInput(product.unitPrice, currency) }
+        ? {
+            description: product.name,
+            unitPrice: formatMoneyInput(product.unitPrice, currency),
+            // A product carries its own momssats — books are 6 %, a service
+            // 25 % — so picking one sets the rate too, still editable after.
+            ...(product.vatRateBps !== null
+              ? { vatRateBps: String(product.vatRateBps) }
+              : {}),
+          }
         : {}),
     });
   }
 
-  // The preview parses the same strings the server will, and goes blank
-  // wherever the server would refuse the value — a displayed total is either
-  // the one that will be stored or nothing at all.
-  const totals = previewTotals(lines, discount, currency);
+  // The preview runs the *same* moms engine the server will, on the same
+  // parsed values, so what the builder shows is what gets stored — including
+  // the öre-level rounding, which is the whole reason not to approximate it
+  // here. It goes blank wherever the server would refuse a value, rather than
+  // showing a total the saved document won't match.
+  const totals = previewTotals();
   const locale = useLocale();
   const fmt = (n: number) => formatMoney(n, currency, locale);
   const blank = "—";
+
+  function previewTotals() {
+    const parsed = parseMoneyInput(discount.trim() || "0", currency);
+    if (parsed === null || parsed < 0) return null;
+
+    const items: Array<{ lineTotal: number; vatRateBps: number }> = [];
+    for (const line of lines) {
+      // A blank row is "not filled in yet" — the server drops it too, so an
+      // untouched extra row must not blank the preview.
+      if (line.description.trim().length === 0) continue;
+      const qty = parseQuantity(line.qty);
+      const unitPrice = parseMoneyInput(line.unitPrice, currency);
+      if (qty === null || qty < 1 || unitPrice === null || unitPrice < 0) return null;
+      items.push({ lineTotal: qty * unitPrice, vatRateBps: Number(line.vatRateBps) || 0 });
+    }
+    if (items.length === 0) return null;
+    return computeDocumentMoms(items, parsed);
+  }
+
   function lineTotal(line: Line) {
     const qty = parseQuantity(line.qty);
     const unitPrice = parseMoneyInput(line.unitPrice, currency);
@@ -255,6 +307,25 @@ export function DocumentBuilder(props: CreateProps | EditProps) {
               />
             </label>
 
+            <label className="flex w-40 flex-col gap-1">
+              {labels.vatRate}
+              {/* Options come from the tenant's vat_rates rows, so a
+                  momsbefriad business sees only 0 % and nobody can pick a
+                  rate their configuration does not have. */}
+              <Select
+                name="vatRateBps"
+                value={line.vatRateBps}
+                onChange={(e) => update(line.key, { vatRateBps: e.target.value })}
+                className="px-2 py-1"
+              >
+                {vatRates.map((rate) => (
+                  <option key={rate.rateBps} value={rate.rateBps}>
+                    {rate.label}
+                  </option>
+                ))}
+              </Select>
+            </label>
+
             <span className="w-32 text-right">{lineTotal(line)}</span>
 
             {lines.length > 1 && (
@@ -273,7 +344,7 @@ export function DocumentBuilder(props: CreateProps | EditProps) {
           variant="outline"
           size="sm"
           className="w-fit"
-          onClick={() => setLines((prev) => [...prev, blankLine()])}
+          onClick={() => setLines((prev) => [...prev, blankLine(defaultRateBps)])}
         >
           {labels.addLine}
         </Button>
@@ -299,6 +370,14 @@ export function DocumentBuilder(props: CreateProps | EditProps) {
           />
         </label>
         <label className="flex flex-col gap-1 text-sm">
+          {labels.deliveryDate}
+          <Input
+            name="deliveryDate"
+            type="date"
+            defaultValue={props.mode === "edit" ? props.initial.deliveryDate : undefined}
+          />
+        </label>
+        <label className="flex flex-col gap-1 text-sm">
           {labels.notes}
           <Textarea
             name="notes"
@@ -308,13 +387,33 @@ export function DocumentBuilder(props: CreateProps | EditProps) {
       </div>
 
       <div className="flex flex-col items-end gap-1 text-sm">
-        <div className="flex w-56 justify-between">
+        <div className="flex w-64 justify-between">
           <span>{labels.subtotal}</span>
           <span>{totals ? fmt(totals.subtotal) : blank}</span>
         </div>
-        <div className="flex w-56 justify-between text-base font-semibold">
+        {totals && totals.discount !== 0 && (
+          <div className="flex w-64 justify-between">
+            <span>{labels.net}</span>
+            <span>{fmt(totals.net)}</span>
+          </div>
+        )}
+        {/* Per-rate, so a mixed-rate document shows where its moms comes
+            from before it is ever issued. */}
+        {totals?.summary.map((row) => (
+          <div key={row.rateBps} className="flex w-64 justify-between text-muted-foreground">
+            <span>
+              {labels.vatTotal} {formatRateLabel(row.rateBps)}
+            </span>
+            <span>{fmt(row.vat)}</span>
+          </div>
+        ))}
+        <div className="flex w-64 justify-between">
+          <span>{labels.vatTotal}</span>
+          <span>{totals ? fmt(totals.vatTotal) : blank}</span>
+        </div>
+        <div className="flex w-64 justify-between text-base font-semibold">
           <span>{labels.total}</span>
-          <span>{totals ? fmt(totals.total) : blank}</span>
+          <span>{totals ? fmt(totals.gross) : blank}</span>
         </div>
       </div>
 

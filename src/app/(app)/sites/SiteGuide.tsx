@@ -101,7 +101,7 @@ export function SiteGuide({
       language: "php",
       code: `<?php
 // contacto.php — runs on your server, so the key is never exposed.
-$apiKey = getenv('VENDERCRM_API_KEY');
+$apiKey = getenv('CRMSWE_API_KEY');
 
 // 1. Honeypot: silently accept and drop.
 if (!empty($_POST['website'])) { header('Location: /gracias.html'); exit; }
@@ -181,7 +181,7 @@ app.post("/api/contacto", async (req, res) => {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "X-Api-Key": process.env.VENDERCRM_API_KEY,
+        "X-Api-Key": process.env.CRMSWE_API_KEY,
       },
       body: JSON.stringify({
         phone: telefono,                 // required

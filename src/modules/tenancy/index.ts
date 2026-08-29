@@ -7,3 +7,4 @@ export * from "./subscriptions";
 export * from "./users";
 export * from "./invitations";
 export * from "./settings";
+export * from "./vat-rates";

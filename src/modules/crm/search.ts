@@ -104,7 +104,7 @@ export async function searchTenant(
       title: row.title,
       // Money goes through the same formatter as every other screen (§13
       // H5 #5) — the palette used to print raw minor units, so a deal worth
-      // 1.500.000 PYG read as "1500000 PYG" here and correctly everywhere else.
+      // 12 500,00 kr read as "1250000" here and correctly everywhere else.
       subtitle: money(row.value, row.currency),
       href: `/pipeline/${row.id}`,
     })),

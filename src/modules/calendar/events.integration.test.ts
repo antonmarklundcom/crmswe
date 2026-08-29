@@ -47,6 +47,7 @@ describe.skipIf(!hasDb)("calendar events (MySQL integration)", () => {
       role: "admin",
       impersonatorUserId: null,
       accessStatus: "active",
+      currency: "SEK",
     };
     ownerCtx = { ...adminCtx, userId: "agent-owner", role: "agent" };
     otherAgentCtx = { ...adminCtx, userId: "agent-other", role: "agent" };

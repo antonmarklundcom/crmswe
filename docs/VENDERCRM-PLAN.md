@@ -1,5 +1,13 @@
 # VenderCRM — Architecture & Build Plan
 
+> **Inherited document — read `plan.md` first.** This repo is the Swedish
+> edition (crmswe), forked from vendercrm. This file stays authoritative for the
+> architecture that already exists (tenancy model, isolation rules, module
+> layout) and is what the `PLAN.md §…` citations throughout the source refer to;
+> it was moved here from `PLAN.md` in phase O1 because the two filenames collide
+> on case-insensitive checkouts. Where it conflicts with `plan.md`, `plan.md`
+> wins.
+
 > **Authored by Fable 5** (planning/architecture model) for handoff to **Sonnet 5** and
 > **Opus 4.8** (build models). This document is the source of truth for scope, schema,
 > and sequencing. Build models: do not re-litigate locked decisions (§1.2); when a

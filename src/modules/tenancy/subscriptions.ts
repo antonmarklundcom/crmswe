@@ -2,6 +2,7 @@ import { and, desc, eq } from "drizzle-orm";
 import { db } from "@/db/client";
 import { payments, subscriptions } from "@/db/schema";
 import { newId } from "@/lib/ids";
+import { DEFAULT_CURRENCY } from "@/lib/money";
 import type { SuperadminContext } from "./context";
 import { getPlan } from "./plans";
 import { writeAuditLog } from "./audit";
@@ -109,7 +110,9 @@ export async function recordPayment(
     id: paymentId,
     subscriptionId: subscription.id,
     amount: input.amount,
-    currency: input.currency ?? "PYG",
+    // Platform billing, not tenant data: the plan price is in the
+    // platform's own currency, not the customer's (plan.md §1.3).
+    currency: input.currency ?? DEFAULT_CURRENCY,
     method: input.method,
     reference: input.reference,
     recordedBy: ctx.userId,

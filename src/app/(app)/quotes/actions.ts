@@ -4,25 +4,31 @@ import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireTenantContext } from "@/modules/tenancy/context";
+import { moneyAmountSchema } from "@/lib/money-schema";
 import { createQuote, setQuoteStatus } from "@/modules/quotes/quotes";
 import { sendQuote } from "@/modules/quotes/delivery";
 import { createDocumentFromQuote } from "@/modules/documents/documents";
 
-const lineSchema = z.object({
-  description: z.string().min(1).max(500),
-  qty: z.coerce.number().int().min(1),
-  unitPrice: z.coerce.number().int().min(0),
-  productId: z.string().optional(),
-});
+// Amounts arrive as the user typed them — "1 495,50" — and become öre here
+// (plan.md §1.2). The schema is built per request because how many decimals
+// an amount may carry is a property of the tenant's currency.
+function createQuoteSchema(currency: string) {
+  const lineSchema = z.object({
+    description: z.string().min(1).max(500),
+    qty: z.coerce.number().int().min(1),
+    unitPrice: moneyAmountSchema(currency),
+    productId: z.string().optional(),
+  });
 
-const createQuoteSchema = z.object({
-  contactId: z.string().min(1),
-  dealId: z.string().optional(),
-  discount: z.coerce.number().int().min(0).optional(),
-  validUntil: z.string().optional(),
-  notes: z.string().max(5000).optional(),
-  items: z.array(lineSchema).min(1),
-});
+  return z.object({
+    contactId: z.string().min(1),
+    dealId: z.string().optional(),
+    discount: moneyAmountSchema(currency),
+    validUntil: z.string().optional(),
+    notes: z.string().max(5000).optional(),
+    items: z.array(lineSchema).min(1),
+  });
+}
 
 // useActionState-shaped (PLAN.md §10 1R #6): the builder keeps its own line
 // items client-side, so the only field worth pointing an inline error at is
@@ -60,10 +66,11 @@ export async function createQuoteAction(
   const ctx = await requireTenantContext();
   const contactId = String(formData.get("contactId") ?? "");
 
-  const parsed = createQuoteSchema.safeParse({
+  const parsed = createQuoteSchema(ctx.currency).safeParse({
     contactId,
     dealId: formData.get("dealId") || undefined,
-    discount: formData.get("discount") || 0,
+    // A cleared discount box means no discount, not a rejected form.
+    discount: String(formData.get("discount") ?? "").trim() || "0",
     validUntil: formData.get("validUntil") || undefined,
     notes: formData.get("notes") || undefined,
     items: parseItems(formData),

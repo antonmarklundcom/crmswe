@@ -87,7 +87,7 @@ describe.skipIf(!hasDb)("lead ingest + sites isolation", () => {
 
   function body(overrides: Record<string, unknown> = {}) {
     return {
-      phone: `0981${Math.floor(100000 + Math.random() * 899999)}`,
+      phone: `070${Math.floor(1000000 + Math.random() * 8999999)}`,
       name: "Cliente Test",
       idempotency_key: `idem-${newId()}`,
       ...overrides,
@@ -102,7 +102,7 @@ describe.skipIf(!hasDb)("lead ingest + sites isolation", () => {
   });
 
   it("creates a contact + deal in the site's configured stage and stamps first-touch UTMs", async () => {
-    const phone = `0981${Math.floor(100000 + Math.random() * 899999)}`;
+    const phone = `070${Math.floor(1000000 + Math.random() * 8999999)}`;
     const outcome = await ingestLead(
       keyA,
       body({
@@ -122,8 +122,8 @@ describe.skipIf(!hasDb)("lead ingest + sites isolation", () => {
       .select()
       .from(schema.contacts)
       .where(eq(schema.contacts.id, outcome.result.contactId));
-    // Paraguayan local format normalised to E.164 (§5).
-    expect(contact.phone.startsWith("+595")).toBe(true);
+    // Swedish local format normalised to E.164 (§5).
+    expect(contact.phone.startsWith("+4670")).toBe(true);
     expect(contact.firstSiteId).toBe(siteAId);
     expect((contact.firstTouchUtm as { campaign?: string }).campaign).toBe("verano");
 
@@ -152,7 +152,7 @@ describe.skipIf(!hasDb)("lead ingest + sites isolation", () => {
   });
 
   it("first-touch attribution is not overwritten when the same contact returns via another campaign", async () => {
-    const phone = `0981${Math.floor(100000 + Math.random() * 899999)}`;
+    const phone = `070${Math.floor(1000000 + Math.random() * 8999999)}`;
 
     const first = await ingestLead(keyA, body({ phone, utm_campaign: "primera" }));
     await ingestLead(keyA, body({ phone, utm_campaign: "segunda" }));

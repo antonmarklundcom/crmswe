@@ -173,7 +173,7 @@ export default async function WhatsappHealthPage() {
   );
 }
 
-function JobList({
+async function JobList({
   jobs,
   empty,
   retryLabel,
@@ -182,6 +182,8 @@ function JobList({
   empty: string;
   retryLabel: string;
 }) {
+  const locale = await getLocale();
+
   if (jobs.length === 0) return <p className="text-sm text-muted-foreground">{empty}</p>;
 
   return (
@@ -200,7 +202,7 @@ function JobList({
             </p>
             <p className="break-words text-muted-foreground">{job.lastError ?? "—"}</p>
             <p className="text-xs text-muted-foreground">
-              {(job.lockedAt ?? job.runAt).toLocaleString("es-PY")}
+              {formatDateTime(job.lockedAt ?? job.runAt, locale)}
               {job.tenantId ? ` · ${job.tenantId}` : ""}
             </p>
           </div>

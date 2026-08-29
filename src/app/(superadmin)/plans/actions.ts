@@ -1,6 +1,8 @@
 "use server";
 
 import { z } from "zod";
+import { DEFAULT_CURRENCY } from "@/lib/money";
+import { moneyAmountSchema } from "@/lib/money-schema";
 import { revalidatePath } from "next/cache";
 import { requireSuperadminContext } from "@/modules/tenancy/context";
 import { createPlan } from "@/modules/tenancy/plans";
@@ -8,7 +10,7 @@ import { createPlan } from "@/modules/tenancy/plans";
 const createPlanSchema = z.object({
   name: z.string().min(1).max(100),
   durationMonths: z.coerce.number().refine((v): v is 3 | 6 | 12 => [3, 6, 12].includes(v)),
-  price: z.coerce.number().int().positive(),
+  price: moneyAmountSchema(DEFAULT_CURRENCY, { min: 1 }),
 });
 
 // useActionState-shaped (PLAN.md §10 1R #6): a missing name or a bad price

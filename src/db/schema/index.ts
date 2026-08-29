@@ -5,6 +5,7 @@ export * from "./crm";
 export * from "./calendar";
 export * from "./forms";
 export * from "./sites";
+export * from "./fiscal";
 export * from "./quotes";
 export * from "./documents";
 export * from "./automations";

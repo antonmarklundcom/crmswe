@@ -1,15 +1,15 @@
 # Spec — Booking system (`modules/booking/`)
 
-> **Status: signed off, built, and folded into PLAN.md as `§10 1W`** — that
+> **Status: signed off, built, and folded into VENDERCRM-PLAN.md as `§10 1W`** — that
 > section is the summary of record; this document is the long form behind it.
-> Written against PLAN.md §1.2 (locked), §2.2 (module rule), §3.3
+> Written against VENDERCRM-PLAN.md §1.2 (locked), §2.2 (module rule), §3.3
 > (isolation), §5.1–5.2 (public-surface pattern) and the existing
 > `modules/calendar/`. Differences between this spec and what shipped are
 > recorded in **§10 As built** at the end.
 
 ---
 
-## 1. The decision PLAN.md asks for first: is a booking a new entity?
+## 1. The decision VENDERCRM-PLAN.md asks for first: is a booking a new entity?
 
 §5.1 ruled that *a lead is not a new entity* — an inbound submission upserts a
 `contact` and optionally opens a `deal`, because the kanban already runs on

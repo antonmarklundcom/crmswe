@@ -23,7 +23,7 @@ export async function createProduct(ctx: TenantContext, input: CreateProductInpu
       name: input.name,
       description: input.description,
       unitPrice: input.unitPrice,
-      currency: input.currency ?? "PYG",
+      currency: input.currency ?? ctx.currency,
     });
   return getProduct(ctx, id);
 }

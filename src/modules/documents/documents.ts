@@ -50,7 +50,7 @@ export async function createDocument(ctx: TenantContext, input: CreateDocumentIn
     throw new Error("La nota de venta necesita al menos un ítem");
   }
 
-  const type = input.type ?? "nota_venta";
+  const type = input.type ?? "faktura";
   const { lines, subtotal, discount, total } = computeLineTotals(input.items, input.discount);
   const id = newId();
   const number = await nextDocumentNumber(ctx, type);
@@ -64,7 +64,7 @@ export async function createDocument(ctx: TenantContext, input: CreateDocumentIn
       contactId: input.contactId,
       dealId: input.dealId,
       status: "draft",
-      currency: input.currency ?? "PYG",
+      currency: input.currency ?? ctx.currency,
       subtotal,
       discount,
       total,
@@ -93,7 +93,7 @@ export async function createDocumentFromQuote(
   const items = await listQuoteItems(ctx, quote.id);
   if (items.length === 0) throw new Error("El presupuesto no tiene ítems");
 
-  const type: DocumentType = "nota_venta";
+  const type: DocumentType = "faktura";
   const id = newId();
   const number = await nextDocumentNumber(ctx, type);
 

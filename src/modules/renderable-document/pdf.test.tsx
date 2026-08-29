@@ -8,40 +8,42 @@ import { formatSequenceNumber } from "./format";
 // makes the rest of the output a stable fingerprint of the layout, so this
 // suite fails if anyone changes what a customer receives without meaning to.
 //
-// The digests below were taken from the pre-extraction code. Changing a
-// document's look is allowed — updating the expected digest in the same
-// commit is how you say so out loud.
+// The digests below were re-taken in O1, when money stopped being "amount +
+// currency code" and became a properly formatted currency amount in öre
+// (plan.md §1.2) — the fixture prices are minor units, so 150 000 öre is
+// 1 500,00 kr. Changing a document's look is allowed; updating the expected
+// digest in the same commit is how you say so out loud.
 const FIXTURE_BRANDING = { primaryColor: "#0f766e" };
 
 const quote = {
-  number: "COT-000123",
-  tenantName: "Acme SRL",
+  number: "OFF-000123",
+  tenantName: "Acme AB",
   branding: FIXTURE_BRANDING,
-  contactName: "Ana Gómez",
-  contactPhone: "+595981123456",
-  currency: "PYG",
+  contactName: "Anna Gustavsson",
+  contactPhone: "+46701234567",
+  currency: "SEK",
   subtotal: 1500000,
   discount: 150000,
   total: 1350000,
   validUntil: new Date("2026-03-15T00:00:00.000Z"),
-  notes: "Incluye instalación y una visita de mantenimiento.",
+  notes: "Inklusive installation och ett servicebesök.",
   createdAt: new Date("2026-02-01T12:00:00.000Z"),
-  locale: "es",
+  locale: "sv",
   items: [
-    { description: "Equipo split 12.000 BTU", qty: 2, unitPrice: 600000, lineTotal: 1200000 },
-    { description: "Instalación", qty: 1, unitPrice: 300000, lineTotal: 300000 },
+    { description: "Luftvärmepump 12 000 BTU", qty: 2, unitPrice: 600000, lineTotal: 1200000 },
+    { description: "Installation", qty: 1, unitPrice: 300000, lineTotal: 300000 },
   ],
 };
 
 const document = {
   ...quote,
-  number: "NV-000045",
+  number: "FA-000045",
   amountPaid: 350000,
   balance: 1000000,
   state: "partial" as const,
   dueAt: new Date("2026-03-01T00:00:00.000Z"),
   issuedAt: new Date("2026-02-02T12:00:00.000Z"),
-  notes: "Saldo a 30 días.",
+  notes: "Betalningsvillkor 30 dagar.",
 };
 
 async function fingerprint(pdf: Buffer): Promise<string> {
@@ -57,22 +59,22 @@ describe("document PDFs are pixel-stable", () => {
   it("renders the quote exactly as it did before the shared shell", async () => {
     const pdf = await renderQuotePdf(quote);
     expect(await fingerprint(pdf)).toBe(
-      "3fc4649897abc19960333f3bbb34bb46f3f0dada52f0041787fb766bd1ee2c12",
+      "57bc05c3886c4cb59fb7ff3d5c88b0e36efa70891f507a58854cc6292c15f62f",
     );
   });
 
-  it("renders the nota de venta exactly as it did before the shared shell", async () => {
+  it("renders the faktura exactly as it did before the shared shell", async () => {
     const pdf = await renderDocumentPdf(document);
     expect(await fingerprint(pdf)).toBe(
-      "404c5d7a07139e4f8fecd536314363d7a860727b2c6744f1a19b37dee2cf9ebf",
+      "6b9f315ef0ee307486135c5e860e3c88e985d25ad1d0b11874cac92bb175d373",
     );
   });
 });
 
 describe("formatSequenceNumber", () => {
   it("pads to six digits, whatever the prefix", () => {
-    expect(formatSequenceNumber("COT", 1)).toBe("COT-000001");
-    expect(formatSequenceNumber("NV", 45)).toBe("NV-000045");
-    expect(formatSequenceNumber("NV", 1234567)).toBe("NV-1234567");
+    expect(formatSequenceNumber("OFF", 1)).toBe("OFF-000001");
+    expect(formatSequenceNumber("FA", 45)).toBe("FA-000045");
+    expect(formatSequenceNumber("KF", 1234567)).toBe("KF-1234567");
   });
 });

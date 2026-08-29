@@ -106,6 +106,7 @@ export default async function DocumentDetailPage({
         <h2 className="text-lg font-semibold">{t("editTitle")}</h2>
         <DocumentBuilder
           mode="edit"
+          currency={ctx.currency}
           documentId={document.id}
           products={products.map((p) => ({ id: p.id, name: p.name, unitPrice: p.unitPrice }))}
           labels={labels}

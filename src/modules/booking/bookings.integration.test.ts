@@ -27,14 +27,27 @@ describe.skipIf(!hasDb)("bookings (MySQL integration)", () => {
   let elsewhere: TenantContext;
   let tenantSlug: string;
   let resourceId: string;
+  let zonedTimeToUtc: (typeof import("@/modules/calendar/zoned-time"))["zonedTimeToUtc"];
 
-  // A Monday, in Asunción's own time. 09:00 local is 12:00Z.
-  const MONDAY = "2026-09-07";
+  const MONDAY = "2026-09-07"; // a Monday
   const at = (iso: string) => new Date(iso);
   const NOW = at("2026-09-01T12:00:00Z");
 
+  /** The tenant's own timezone, stated rather than inherited from the default. */
+  const TZ = "Europe/Stockholm";
+
+  /**
+   * A wall-clock time in the tenant's timezone, as the instant it is. Every
+   * expectation below goes through this instead of a hardcoded `…Z` literal:
+   * the literals silently encoded one timezone's offset, so changing the
+   * default moved every slot in the suite, and Sweden's own summer/winter
+   * change would have moved half of them anyway.
+   */
+  const local = (date: string, time: string) => zonedTimeToUtc(date, time, TZ);
+
   beforeAll(async () => {
     ({ newId } = await import("@/lib/ids"));
+    ({ zonedTimeToUtc } = await import("@/modules/calendar/zoned-time"));
     bookingsModule = await import("./bookings");
     typesModule = await import("./types");
     resourcesModule = await import("./resources");
@@ -44,7 +57,11 @@ describe.skipIf(!hasDb)("bookings (MySQL integration)", () => {
     const superadmin = { userId: "sa-booking", impersonatorUserId: null } as const;
 
     tenantSlug = `bk-${newId().toLowerCase()}`;
-    const tenant = await createTenant(superadmin, { name: `Bk ${newId()}`, slug: tenantSlug });
+    const tenant = await createTenant(superadmin, {
+      name: `Bk ${newId()}`,
+      slug: tenantSlug,
+      timezone: TZ,
+    });
     const other = await createTenant(superadmin, {
       name: `Other ${newId()}`,
       slug: `obk-${newId().toLowerCase()}`,
@@ -56,6 +73,7 @@ describe.skipIf(!hasDb)("bookings (MySQL integration)", () => {
       role: "admin",
       impersonatorUserId: null,
       accessStatus: "active",
+      currency: "SEK",
     };
     elsewhere = { ...ctx, tenantId: other!.id };
 
@@ -89,8 +107,8 @@ describe.skipIf(!hasDb)("bookings (MySQL integration)", () => {
     return {
       bookingTypeId: "",
       startsAt,
-      name: "Ana Giménez",
-      phone: `+59598${Math.floor(1000000 + Math.random() * 8999999)}`,
+      name: "Anna Lind",
+      phone: `+4670${Math.floor(1000000 + Math.random() * 8999999)}`,
       ...overrides,
     };
   }
@@ -128,7 +146,7 @@ describe.skipIf(!hasDb)("bookings (MySQL integration)", () => {
     const type = await makeType();
     const slots = await bookingsModule.availableSlots(ctx, type, MONDAY, MONDAY, NOW);
     expect(slots).toHaveLength(8); // 08:00–12:00 in 30-minute steps
-    expect(slots[0].startsAt.toISOString()).toBe("2026-09-07T11:00:00.000Z");
+    expect(slots[0].startsAt.toISOString()).toBe(local(MONDAY, "08:00").toISOString());
   });
 
   it("closes the whole day the /booking form's date range describes", async () => {
@@ -136,8 +154,8 @@ describe.skipIf(!hasDb)("bookings (MySQL integration)", () => {
     // the end as midnight *after* the last day, so the day an admin typed is
     // itself closed. That arithmetic is what this pins — a blackout ending at
     // 00:00 of the same day would close nothing at all.
-    const { zonedTimeToUtc, addDays } = await import("@/modules/calendar/zoned-time");
-    const timeZone = "America/Asuncion";
+    const { addDays } = await import("@/modules/calendar/zoned-time");
+    const timeZone = TZ;
     const type = await makeType();
 
     const blackout = await resourcesModule.createBlackout(ctx, {
@@ -159,7 +177,7 @@ describe.skipIf(!hasDb)("bookings (MySQL integration)", () => {
 
     const remaining = await bookingsModule.availableSlots(ctx, type, MONDAY, MONDAY, NOW);
     expect(remaining).toHaveLength(4); // 08:00–10:00 in 30-minute steps
-    expect(remaining.at(-1)!.startsAt.toISOString()).toBe("2026-09-07T12:30:00.000Z");
+    expect(remaining.at(-1)!.startsAt.toISOString()).toBe(local(MONDAY, "09:30").toISOString());
 
     // Every other case in this file books the same Monday, so the closure
     // does not outlive the test that made it.
@@ -170,7 +188,7 @@ describe.skipIf(!hasDb)("bookings (MySQL integration)", () => {
     const type = await makeType();
     const result = await bookingsModule.reserveBooking(
       ctx,
-      { ...reserveInput(at("2026-09-07T11:00:00.000Z")), bookingTypeId: type.id },
+      { ...reserveInput(local(MONDAY, "08:00")), bookingTypeId: type.id },
       NOW,
     );
 
@@ -181,7 +199,7 @@ describe.skipIf(!hasDb)("bookings (MySQL integration)", () => {
     const { getCalendarEvent } = await import("@/modules/calendar/events");
     const event = await getCalendarEvent(ctx, result.booking.calendarEventId!);
     expect(event).not.toBeNull();
-    expect(event!.startsAt.toISOString()).toBe("2026-09-07T11:00:00.000Z");
+    expect(event!.startsAt.toISOString()).toBe(local(MONDAY, "08:00").toISOString());
     // The rep's own agenda, which is what makes the busy check honest.
     expect(event!.assignedUserId).toBe("rep-one");
 
@@ -207,7 +225,7 @@ describe.skipIf(!hasDb)("bookings (MySQL integration)", () => {
 
     const result = await bookingsModule.reserveBooking(
       ctx,
-      { ...reserveInput(at("2026-09-07T11:30:00.000Z")), bookingTypeId: type.id },
+      { ...reserveInput(local(MONDAY, "08:30")), bookingTypeId: type.id },
       NOW,
     );
     expect(result.dealId).not.toBeNull();
@@ -215,7 +233,7 @@ describe.skipIf(!hasDb)("bookings (MySQL integration)", () => {
 
   it("stops the same slot being taken twice", async () => {
     const type = await makeType();
-    const slot = at("2026-09-14T11:00:00.000Z"); // the next Monday
+    const slot = local("2026-09-14", "08:00"); // the next Monday
 
     await bookingsModule.reserveBooking(
       ctx,
@@ -242,8 +260,8 @@ describe.skipIf(!hasDb)("bookings (MySQL integration)", () => {
     // clash check, and the inserts deadlocked — ER_LOCK_DEADLOCK out of the
     // service as a 500 where the visitor was promised a 409.
     const type = await makeType({ durationMinutes: 30, slotIncrementMinutes: 15 });
-    const first = at("2026-11-16T11:00:00.000Z"); // a Monday, 08:00 local
-    const second = at("2026-11-16T11:15:00.000Z");
+    const first = local("2026-11-16", "08:00"); // a Monday
+    const second = local("2026-11-16", "08:15");
 
     const settled = await Promise.allSettled([
       bookingsModule.reserveBooking(ctx, { ...reserveInput(first), bookingTypeId: type.id }, NOW),
@@ -271,11 +289,11 @@ describe.skipIf(!hasDb)("bookings (MySQL integration)", () => {
 
   it("refuses a start time that was never on offer", async () => {
     const type = await makeType();
-    // 03:00 local — outside the availability window, and posted by hand.
+    // 05:00 local — outside the availability window, and posted by hand.
     await expect(
       bookingsModule.reserveBooking(
         ctx,
-        { ...reserveInput(at("2026-09-07T06:00:00.000Z")), bookingTypeId: type.id },
+        { ...reserveInput(local(MONDAY, "05:00")), bookingTypeId: type.id },
         NOW,
       ),
     ).rejects.toMatchObject({ code: "slotUnavailable" });
@@ -286,20 +304,20 @@ describe.skipIf(!hasDb)("bookings (MySQL integration)", () => {
     const { createCalendarEvent } = await import("@/modules/calendar/events");
     await createCalendarEvent(ctx, {
       title: "Visita propia",
-      startsAt: at("2026-09-21T11:00:00.000Z"),
-      endsAt: at("2026-09-21T11:30:00.000Z"),
+      startsAt: local("2026-09-21", "08:00"),
+      endsAt: local("2026-09-21", "08:30"),
       assignedUserId: "rep-one",
     });
 
     const slots = await bookingsModule.availableSlots(ctx, type, "2026-09-21", "2026-09-21", NOW);
     expect(slots.map((slot) => slot.startsAt.toISOString())).not.toContain(
-      "2026-09-21T11:00:00.000Z",
+      local("2026-09-21", "08:00").toISOString(),
     );
   });
 
   it("frees the slot and clears the agenda when cancelled", async () => {
     const type = await makeType();
-    const slot = at("2026-09-28T11:00:00.000Z");
+    const slot = local("2026-09-28", "08:00");
 
     const first = await bookingsModule.reserveBooking(
       ctx,
@@ -325,7 +343,7 @@ describe.skipIf(!hasDb)("bookings (MySQL integration)", () => {
 
   it("holds the visitor to the cancellation cutoff but never staff", async () => {
     const type = await makeType({ settings: { cancellationCutoffMinutes: 120 } });
-    const slot = at("2026-10-05T11:00:00.000Z");
+    const slot = local("2026-10-05", "08:00");
     const result = await bookingsModule.reserveBooking(
       ctx,
       { ...reserveInput(slot), bookingTypeId: type.id },
@@ -333,7 +351,7 @@ describe.skipIf(!hasDb)("bookings (MySQL integration)", () => {
     );
 
     // 08:55 for a 09:00 slot: inside the cutoff.
-    const tooLate = at("2026-10-05T10:55:00.000Z");
+    const tooLate = local("2026-10-05", "07:55");
     await expect(
       bookingsModule.cancelBooking(ctx, result.booking.id, "contact", undefined, tooLate),
     ).rejects.toMatchObject({ code: "cutoffPassed" });
@@ -352,14 +370,14 @@ describe.skipIf(!hasDb)("bookings (MySQL integration)", () => {
     const type = await makeType();
     const first = await bookingsModule.reserveBooking(
       ctx,
-      { ...reserveInput(at("2026-10-12T11:00:00.000Z")), bookingTypeId: type.id },
+      { ...reserveInput(local("2026-10-12", "08:00")), bookingTypeId: type.id },
       NOW,
     );
 
     const moved = await bookingsModule.rescheduleBooking(
       ctx,
       first.booking.id,
-      at("2026-10-12T11:30:00.000Z"),
+      local("2026-10-12", "08:30"),
       "contact",
       NOW,
     );
@@ -377,7 +395,7 @@ describe.skipIf(!hasDb)("bookings (MySQL integration)", () => {
     const type = await makeType();
     const booked = await bookingsModule.reserveBooking(
       ctx,
-      { ...reserveInput(at("2026-11-02T11:00:00.000Z")), bookingTypeId: type.id },
+      { ...reserveInput(local("2026-11-02", "08:00")), bookingTypeId: type.id },
       NOW,
     );
 
@@ -387,7 +405,7 @@ describe.skipIf(!hasDb)("bookings (MySQL integration)", () => {
         booked.booking.id,
         // A Sunday: outside the resource's Monday-only availability, so no
         // slot was ever offered there.
-        at("2026-11-01T14:00:00.000Z"),
+        local("2026-11-01", "11:00"),
         "contact",
         NOW,
       ),
@@ -395,20 +413,20 @@ describe.skipIf(!hasDb)("bookings (MySQL integration)", () => {
 
     const untouched = await bookingsModule.getBooking(ctx, booked.booking.id);
     expect(untouched!.status).toBe("confirmed");
-    expect(untouched!.startsAt.toISOString()).toBe("2026-11-02T11:00:00.000Z");
+    expect(untouched!.startsAt.toISOString()).toBe(local("2026-11-02", "08:00").toISOString());
   });
 
   it("moves a booking from the visitor's own manage link", async () => {
     const type = await makeType();
     const booked = await bookingsModule.reserveBooking(
       ctx,
-      { ...reserveInput(at("2026-11-09T11:00:00.000Z")), bookingTypeId: type.id },
+      { ...reserveInput(local("2026-11-09", "08:00")), bookingTypeId: type.id },
       NOW,
     );
 
     const moved = await publicModule.publicReschedule(
       booked.booking.publicToken,
-      "2026-11-09T12:00:00.000Z",
+      local("2026-11-09", "09:00").toISOString(),
       "203.0.113.9",
       NOW,
     );
@@ -418,7 +436,7 @@ describe.skipIf(!hasDb)("bookings (MySQL integration)", () => {
     // A reschedule is cancel + create, so the visitor lands on a new token —
     // the manage page redirects there rather than showing the cancelled row.
     expect(moved.data.manageToken).not.toBe(booked.booking.publicToken);
-    expect(moved.data.startsAt).toBe("2026-11-09T12:00:00.000Z");
+    expect(moved.data.startsAt).toBe(local("2026-11-09", "09:00").toISOString());
 
     const resolved = await publicModule.getPublicBooking(moved.data.manageToken, NOW);
     expect(resolved!.booking.rescheduledFromId).toBe(booked.booking.id);
@@ -446,7 +464,7 @@ describe.skipIf(!hasDb)("bookings (MySQL integration)", () => {
 
     const booked = await bookingsModule.reserveBooking(
       ctx,
-      { ...reserveInput(at("2026-11-23T11:00:00.000Z")), bookingTypeId: type.id },
+      { ...reserveInput(local("2026-11-23", "08:00")), bookingTypeId: type.id },
       NOW,
     );
     expect(booked.dealId).not.toBeNull();
@@ -459,7 +477,7 @@ describe.skipIf(!hasDb)("bookings (MySQL integration)", () => {
     const moved = await bookingsModule.rescheduleBooking(
       ctx,
       booked.booking.id,
-      at("2026-11-23T11:30:00.000Z"),
+      local("2026-11-23", "08:30"),
       "contact",
       NOW,
     );
@@ -487,7 +505,7 @@ describe.skipIf(!hasDb)("bookings (MySQL integration)", () => {
     const type = await makeType();
     const booked = await bookingsModule.reserveBooking(
       ctx,
-      { ...reserveInput(at("2026-11-30T11:00:00.000Z")), bookingTypeId: type.id },
+      { ...reserveInput(local("2026-11-30", "08:00")), bookingTypeId: type.id },
       NOW,
     );
 
@@ -495,7 +513,7 @@ describe.skipIf(!hasDb)("bookings (MySQL integration)", () => {
       bookingsModule.rescheduleBooking(
         ctx,
         booked.booking.id,
-        at("2026-11-30T11:00:00.000Z"),
+        local("2026-11-30", "08:00"),
         "contact",
         NOW,
       ),
@@ -512,10 +530,10 @@ describe.skipIf(!hasDb)("bookings (MySQL integration)", () => {
     const type = await makeType();
     const booked = await bookingsModule.reserveBooking(
       ctx,
-      { ...reserveInput(at("2026-12-07T11:00:00.000Z")), bookingTypeId: type.id },
+      { ...reserveInput(local("2026-12-07", "08:00")), bookingTypeId: type.id },
       NOW,
     );
-    const target = at("2026-12-07T11:30:00.000Z");
+    const target = local("2026-12-07", "08:30");
 
     const [move, rival] = await Promise.allSettled([
       bookingsModule.rescheduleBooking(ctx, booked.booking.id, target, "contact", NOW),
@@ -538,7 +556,7 @@ describe.skipIf(!hasDb)("bookings (MySQL integration)", () => {
       });
       // Untouched: same row, same time, still confirmed.
       expect(theirs[0].id).toBe(booked.booking.id);
-      expect(theirs[0].startsAt.toISOString()).toBe("2026-12-07T11:00:00.000Z");
+      expect(theirs[0].startsAt.toISOString()).toBe(local("2026-12-07", "08:00").toISOString());
     } else {
       expect(rival.status).toBe("rejected");
       expect(theirs[0].rescheduledFromId).toBe(booked.booking.id);
@@ -563,8 +581,8 @@ describe.skipIf(!hasDb)("bookings (MySQL integration)", () => {
     });
 
     const inputs = [
-      reserveInput(at("2026-12-14T11:00:00.000Z")),
-      reserveInput(at("2026-12-14T11:15:00.000Z")),
+      reserveInput(local("2026-12-14", "08:00")),
+      reserveInput(local("2026-12-14", "08:15")),
     ];
     const settled = await Promise.allSettled(
       inputs.map((input) =>
@@ -599,7 +617,7 @@ describe.skipIf(!hasDb)("bookings (MySQL integration)", () => {
     const type = await makeType({ settings: { reminderMinutes: 120 } });
     const booked = await bookingsModule.reserveBooking(
       ctx,
-      { ...reserveInput(at("2026-12-21T11:00:00.000Z")), bookingTypeId: type.id },
+      { ...reserveInput(local("2026-12-21", "08:00")), bookingTypeId: type.id },
       NOW,
     );
     expect(booked.booking.reminderJobId).toBeTruthy();
@@ -607,7 +625,7 @@ describe.skipIf(!hasDb)("bookings (MySQL integration)", () => {
     const moved = await bookingsModule.rescheduleBooking(
       ctx,
       booked.booking.id,
-      at("2026-12-21T11:30:00.000Z"),
+      local("2026-12-21", "08:30"),
       "contact",
       NOW,
     );
@@ -626,7 +644,7 @@ describe.skipIf(!hasDb)("bookings (MySQL integration)", () => {
     const type = await makeType();
     const result = await bookingsModule.reserveBooking(
       ctx,
-      { ...reserveInput(at("2026-10-19T11:00:00.000Z")), bookingTypeId: type.id },
+      { ...reserveInput(local("2026-10-19", "08:00")), bookingTypeId: type.id },
       NOW,
     );
 
@@ -643,7 +661,7 @@ describe.skipIf(!hasDb)("bookings (MySQL integration)", () => {
     const type = await makeType();
     const result = await bookingsModule.reserveBooking(
       ctx,
-      { ...reserveInput(at("2026-10-26T11:00:00.000Z")), bookingTypeId: type.id },
+      { ...reserveInput(local("2026-10-26", "08:00")), bookingTypeId: type.id },
       NOW,
     );
 
@@ -675,7 +693,11 @@ describe.skipIf(!hasDb)("bookings (MySQL integration)", () => {
     const outcome = await publicModule.publicReserve(
       tenantSlug,
       type.slug,
-      { startsAt: "2026-11-02T11:00:00.000Z", name: "Ana", phone: "+595981000111" },
+      {
+        startsAt: local("2026-11-02", "08:00").toISOString(),
+        name: "Ana",
+        phone: "+46701000111",
+      },
       {},
       NOW,
     );
@@ -707,9 +729,9 @@ describe.skipIf(!hasDb)("bookings (MySQL integration)", () => {
       tenantSlug,
       type.slug,
       {
-        startsAt: "2026-11-09T11:00:00.000Z",
+        startsAt: local("2026-11-09", "08:00").toISOString(),
         name: "Bot",
-        phone: "+595981000222",
+        phone: "+46701000222",
         _hp: "filled",
       },
       {},

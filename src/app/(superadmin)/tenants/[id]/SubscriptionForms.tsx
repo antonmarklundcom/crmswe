@@ -4,6 +4,7 @@ import { useActionState } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { useEchoGeneration } from "@/lib/use-echo-generation";
+import { DEFAULT_CURRENCY } from "@/lib/money";
 import {
   createSubscriptionAction,
   recordPaymentAction,
@@ -115,14 +116,14 @@ export function RecordPaymentForm({
       <input type="hidden" name="tenantId" value={tenantId} />
       <input type="hidden" name="subscriptionId" value={subscriptionId} />
       <label className="flex flex-col gap-1 text-sm">
-        {ts("amount")}
+        {ts("amount", { currency: DEFAULT_CURRENCY })}
         {/* Not type="number": it implies step="1", which blocks a decimal
-            with a browser-language bubble before the Spanish message can
-            run. Amounts are integer minor units (§2.3) — the server says so
-            in Spanish. */}
+            with a browser-language bubble before the app's own message can
+            run. The amount is typed in major units and stored in minor units
+            (plan.md §1.2) — the server does that conversion and answers. */}
         <Input
           name="amount"
-          inputMode="numeric"
+          inputMode="decimal"
           defaultValue={state.values.amount ?? ""}
         />
         <FieldError field="amount" />

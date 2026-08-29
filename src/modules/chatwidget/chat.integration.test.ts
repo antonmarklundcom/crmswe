@@ -98,6 +98,7 @@ describe.skipIf(!hasDb)("chat widget (MySQL integration)", () => {
       role: "admin",
       impersonatorUserId: null,
       accessStatus: "active",
+      currency: "SEK",
     };
     elsewhere = { ...ctx, tenantId: other!.id };
 

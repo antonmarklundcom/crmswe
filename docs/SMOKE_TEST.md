@@ -1,7 +1,7 @@
 # Smoke-test checklist
 
-Manual verification to run after every production deploy (PLAN.md §10 1H
-#7). Each section maps to a phase's exit criteria — see PLAN.md for the
+Manual verification to run after every production deploy (VENDERCRM-PLAN.md §10 1H
+#7). Each section maps to a phase's exit criteria — see VENDERCRM-PLAN.md for the
 full context on any item. Use the owner's real tenant/WhatsApp number for
 this, not a throwaway one, since 1D's inbound/outbound checks need a real
 Meta connection.

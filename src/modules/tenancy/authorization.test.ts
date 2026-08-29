@@ -216,7 +216,7 @@ const adminOnlyActions: Array<{
   {
     name: "pipeline: createPipelineAction",
     service: () => pipelines.createPipelineWithDefaultStages,
-    call: () => pipelineActions.createPipelineAction(form({ name: "Ventas" })),
+    call: () => pipelineActions.createPipelineAction(form({ name: "Försäljning" })),
   },
   {
     name: "products: createProductAction",

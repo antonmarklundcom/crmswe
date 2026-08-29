@@ -14,7 +14,7 @@ const ELEMENTOR_PAYLOAD = {
   form: { id: "a1b2c3", name: "Formulario de contacto" },
   fields: {
     nombre: { id: "nombre", type: "text", title: "Nombre", value: "Ana Giménez" },
-    telefono: { id: "telefono", type: "tel", title: "Teléfono", value: "0981 123-456" },
+    telefono: { id: "telefono", type: "tel", title: "Teléfono", value: "070-123 45 67" },
     email: { id: "email", type: "email", title: "Correo", value: "ana@example.com" },
     mensaje: { id: "mensaje", type: "textarea", title: "Mensaje", value: "Quiero un presupuesto" },
   },
@@ -29,7 +29,7 @@ const WIX_PAYLOAD = {
     formName: "Contacto",
     submissions: [
       { label: "Nombre", fieldName: "first_name", fieldValue: "Carlos Ruiz" },
-      { label: "Teléfono", fieldName: "phone", fieldValue: "+595981222333" },
+      { label: "Teléfono", fieldName: "phone", fieldValue: "+46702223333" },
       { label: "Correo", fieldName: "email", fieldValue: "carlos@example.com" },
     ],
     submissionTime: "2026-08-12T10:00:00Z",
@@ -39,7 +39,7 @@ const WIX_PAYLOAD = {
 const ZAPIER_PAYLOAD = {
   event: "form.submission",
   payload: {
-    contact: { full_name: "Marta López", phone_number: "0971 555 444" },
+    contact: { full_name: "Marta López", phone_number: "072-555 44 33" },
     answers: [
       { question: "¿Qué necesitás?", answer: "Instalación eléctrica" },
       { question: "¿Cuándo?", answer: "Esta semana" },
@@ -141,7 +141,7 @@ describe.skipIf(!hasDb)("webhook ingest lane", () => {
     const captures = await hooks.listHookCaptures(ctxA, siteId);
     expect(captures).toHaveLength(1);
     expect((captures[0].payload as typeof ELEMENTOR_PAYLOAD).fields.telefono.value).toBe(
-      "0981 123-456",
+      "070-123 45 67",
     );
 
     // Capture mode is not ingest: no contact, no submission.
@@ -184,8 +184,8 @@ describe.skipIf(!hasDb)("webhook ingest lane", () => {
       .where(eq(schema.contacts.id, outcome.result.result.contactId));
     expect(contact.name).toBe("Ana Giménez");
     expect(contact.email).toBe("ana@example.com");
-    // Paraguayan local format, spaces and dashes and all, normalized to E.164.
-    expect(contact.phone).toBe("+595981123456");
+    // Swedish local format, spaces and dashes and all, normalized to E.164.
+    expect(contact.phone).toBe("+46701234567");
 
     // Per-site routing still comes from the CRM, never the payload (§5.1).
     const deals = await listDealsForPipeline(ctxA, pipelineAId);
@@ -220,7 +220,7 @@ describe.skipIf(!hasDb)("webhook ingest lane", () => {
       .from(schema.contacts)
       .where(eq(schema.contacts.id, outcome.result.result.contactId));
     expect(contact.name).toBe("Carlos Ruiz");
-    expect(contact.phone).toBe("+595981222333");
+    expect(contact.phone).toBe("+46702223333");
   });
 
   it("maps a Zapier payload with a nested contact object and an answers array", async () => {
@@ -239,7 +239,7 @@ describe.skipIf(!hasDb)("webhook ingest lane", () => {
       .from(schema.contacts)
       .where(eq(schema.contacts.id, outcome.result.result.contactId));
     expect(contact.name).toBe("Marta López");
-    expect(contact.phone).toBe("+595971555444");
+    expect(contact.phone).toBe("+46725554433");
   });
 
   it("maps a flat generic form-builder payload", async () => {

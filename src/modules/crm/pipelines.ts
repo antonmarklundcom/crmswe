@@ -15,16 +15,16 @@ const DEFAULT_STAGES: Array<{
   isWon?: boolean;
   isLost?: boolean;
 }> = [
-  { name: "Nuevo contacto", color: "#64748b" },
-  { name: "Contactado", color: "#3b82f6" },
-  { name: "Propuesta enviada", color: "#f59e0b" },
-  { name: "Negociación", color: "#a855f7" },
-  { name: "Ganado", color: "#22c55e", isWon: true },
-  { name: "Perdido", color: "#ef4444", isLost: true },
+  { name: "Ny kontakt", color: "#64748b" },
+  { name: "Kontaktad", color: "#3b82f6" },
+  { name: "Offert skickad", color: "#f59e0b" },
+  { name: "Förhandling", color: "#a855f7" },
+  { name: "Vunnen", color: "#22c55e", isWon: true },
+  { name: "Förlorad", color: "#ef4444", isLost: true },
 ];
 
 export async function seedDefaultPipeline(ctx: TenantContext) {
-  return createPipelineWithDefaultStages(ctx, "Ventas");
+  return createPipelineWithDefaultStages(ctx, "Försäljning");
 }
 
 // A tenant running several sales motions (§10 1R #1 — dental leads, property

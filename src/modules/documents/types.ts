@@ -1,8 +1,12 @@
-// Shared types for non-fiscal documents (PLAN.md §10 1Q). Kept free of the
+// Shared types for fakturor (PLAN.md §10 1Q, plan.md §1.5). Kept free of the
 // db client so the pure helpers below can be unit-tested without a
 // configured environment.
-
-export const DOCUMENT_TYPES = ["nota_venta"] as const;
+//
+// `kreditfaktura` is a document type rather than a status (plan.md §1.6): an
+// issued faktura is never edited, so a correction is a new document that
+// references the original. O2 builds the flow; the type exists from O1 so the
+// sequence, the schema and this union agree from the start.
+export const DOCUMENT_TYPES = ["faktura", "kreditfaktura"] as const;
 export type DocumentType = (typeof DOCUMENT_TYPES)[number];
 
 export type DocumentStatus = "draft" | "issued" | "void";

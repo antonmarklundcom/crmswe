@@ -1,6 +1,6 @@
 # MySQL backup verification — Hostinger
 
-PLAN.md §10 1H #5. Mostly a runbook — Hostinger's managed MySQL backups are
+VENDERCRM-PLAN.md §10 1H #5. Mostly a runbook — Hostinger's managed MySQL backups are
 a hosting-panel feature, not something this app's code controls, so taking
 and restoring a backup is done by hand. The part that *is* automated is the
 judgement call at the end: `npm run verify-restore` (§2) decides whether a

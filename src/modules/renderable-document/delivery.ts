@@ -6,7 +6,7 @@ import { sendDocument } from "@/modules/whatsapp/send";
 
 // Delivery, shared by every document a tenant sends a customer (PLAN.md
 // §13 H9). Quotes and notas de venta had the same fifty lines twice, and
-// SIFEN (§9) would have made it three times.
+// a third fiscal document type will make it three (plan.md §5.2).
 //
 // The two halves are deliberately separate: storing a PDF must succeed for
 // the document to exist at all, while WhatsApp failing is an *expected*

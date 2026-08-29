@@ -1,7 +1,8 @@
 # VenderCRM
 
-WhatsApp-first multi-tenant sales CRM for Paraguay. See `PLAN.md` for the
-full architecture and build plan.
+Multi-tenant sales CRM. `plan.md` is the build plan for this (Swedish) edition;
+`docs/VENDERCRM-PLAN.md` is the inherited architecture spec it builds on and is
+what the `PLAN.md §…` citations in the source refer to.
 
 ## Getting started
 
@@ -29,4 +30,4 @@ The job queue worker starts in-process automatically (via
 ## Deploy on Vercel
 
 Not applicable — this project targets Hostinger managed Node.js hosting per
-`PLAN.md` §2.1.
+`docs/VENDERCRM-PLAN.md` §2.1.

@@ -3,10 +3,10 @@
 import { useActionState, useState } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import { Button } from "@/components/ui/button";
-import { parseMinorUnits, previewTotals } from "@/lib/money";
+import { formatMoneyInput, parseMoneyInput, parseQuantity, previewTotals } from "@/lib/money";
 import { useEchoGeneration } from "@/lib/use-echo-generation";
 import { createQuoteAction, type QuoteFormState } from "./actions";
-import { formatNumber } from "@/lib/i18n/format";
+import { formatMoney } from "@/lib/i18n/format";
 import { Input, Select, Textarea } from "@/components/ui/form-fields";
 
 // Declared here, not in actions.ts: a "use server" module may only export
@@ -35,9 +35,11 @@ export type BuilderLabels = {
 };
 
 // Amounts are held as raw strings, not numbers: the inputs are
-// inputMode="numeric" rather than type="number" (see the fields below), so
+// inputMode="decimal" rather than type="number" (see the fields below), so
 // what the user typed is what gets posted, and the server is the only thing
-// that decides whether it's valid.
+// that decides whether it's valid. The string is a *major-unit* amount —
+// "1 495,50" — which parseMoneyInput turns into öre on both sides (plan.md
+// §1.2).
 type Line = { key: number; productId: string; description: string; qty: string; unitPrice: string };
 
 let nextKey = 1;
@@ -47,10 +49,13 @@ export function QuoteBuilder({
   contacts,
   products,
   labels,
+  currency,
 }: {
   contacts: Contact[];
   products: Product[];
   labels: BuilderLabels;
+  /** The tenant's currency — decides how many decimals an amount may carry. */
+  currency: string;
 }) {
   const t = useTranslations("app.quotes");
   const [lines, setLines] = useState<Line[]>([blankLine()]);
@@ -68,20 +73,22 @@ export function QuoteBuilder({
     const product = products.find((p) => p.id === productId);
     update(key, {
       productId,
-      ...(product ? { description: product.name, unitPrice: String(product.unitPrice) } : {}),
+      ...(product
+        ? { description: product.name, unitPrice: formatMoneyInput(product.unitPrice, currency) }
+        : {}),
     });
   }
 
   // The preview parses the same strings the server will, and goes blank
   // wherever the server would refuse the value — a displayed total is either
   // the one that will be stored or nothing at all.
-  const totals = previewTotals(lines, discount);
+  const totals = previewTotals(lines, discount, currency);
   const locale = useLocale();
-  const fmt = (n: number) => formatNumber(n, locale);
+  const fmt = (n: number) => formatMoney(n, currency, locale);
   const blank = "—";
   function lineTotal(line: Line) {
-    const qty = parseMinorUnits(line.qty);
-    const unitPrice = parseMinorUnits(line.unitPrice);
+    const qty = parseQuantity(line.qty);
+    const unitPrice = parseMoneyInput(line.unitPrice, currency);
     if (qty === null || qty < 1 || unitPrice === null || unitPrice < 0) return blank;
     return fmt(qty * unitPrice);
   }
@@ -164,7 +171,7 @@ export function QuoteBuilder({
               {labels.unitPrice}
               <input
                 name="unitPrice"
-                inputMode="numeric"
+                inputMode="decimal"
                 value={line.unitPrice}
                 onChange={(e) => update(line.key, { unitPrice: e.target.value })}
                 className="rounded-md border px-2 py-1"
@@ -200,7 +207,7 @@ export function QuoteBuilder({
           {labels.discount}
           <Input
             name="discount"
-            inputMode="numeric"
+            inputMode="decimal"
             value={discount}
             onChange={(e) => setDiscount(e.target.value)}
             className="px-3 py-2"

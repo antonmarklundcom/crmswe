@@ -100,7 +100,7 @@
       "subtitle": "Dagens läge: öppna affärer, obesvarade meddelanden och offerter på gång.",
       "stats": {
         "openDeals": "Öppna affärer",
-        "openDealsHint": "{value} PYG i potten",
+        "openDealsHint": "{value} i potten",
         "unread": "Olästa meddelanden",
         "unreadHint": "{count, plural, =0 {Inga konversationer väntar} one {i # konversation} other {i # konversationer}}",
         "pendingQuotes": "Väntande offerter",
@@ -179,7 +179,7 @@
       "dealTitle": "Titel",
       "contact": "Kontakt",
       "stage": "Steg",
-      "value": "Värde (PYG)",
+      "value": "Värde ({currency})",
       "createDeal": "Skapa affär",
       "switcherLabel": "Välj pipeline",
       "newPipelineTitle": "Ny pipeline",
@@ -321,7 +321,7 @@
       "createTitle": "Ny produkt",
       "name": "Namn",
       "description": "Beskrivning",
-      "unitPrice": "Styckpris (PYG)",
+      "unitPrice": "Styckpris ({currency})",
       "inactive": "inaktiv",
       "activate": "Aktivera",
       "deactivate": "Avaktivera",
@@ -350,7 +350,7 @@
         "errorReasons": {
           "nameMissing": "Inget namn",
           "unitPriceInvalid": "Ogiltigt enhetspris",
-          "currencyInvalid": "Ogiltig valuta (3 bokstäver, t.ex. PYG)",
+          "currencyInvalid": "Ogiltig valuta (3 bokstäver, t.ex. SEK)",
           "activeInvalid": "Ogiltigt värde för is_active",
           "duplicateInFile": "Namnet upprepas i filen",
           "failed": "Kunde inte spara"
@@ -1563,7 +1563,7 @@
       "accessStatus": "Åtkomst",
       "createTitle": "Ny prenumeration",
       "recordPaymentTitle": "Registrera betalning",
-      "amount": "Belopp (PYG)",
+      "amount": "Belopp ({currency})",
       "method": "Metod",
       "methodValues": {
         "transfer": "Banköverföring",
@@ -1587,7 +1587,7 @@
       "createTitle": "Ny plan",
       "name": "Namn",
       "durationMonths": "Löptid (månader)",
-      "price": "Pris (PYG)",
+      "price": "Pris ({currency})",
       "active": "Aktiv",
       "errors": {
         "nameRequired": "Ge planen ett namn.",

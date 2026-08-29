@@ -12,8 +12,12 @@ import type { DocumentType } from "./types";
 // take the same number. The unique index on (tenant_id, number) is the
 // backstop if that ever fails.
 
+// Only the *default* for a tenant's first document of a type — the prefix
+// then lives on the tenant's own sequence row and can be changed there
+// (plan.md §1.13). An existing series never has its prefix rewritten.
 const DEFAULT_PREFIX: Record<DocumentType, string> = {
-  nota_venta: "NV",
+  faktura: "FA",
+  kreditfaktura: "KF",
 };
 
 export const formatDocumentNumber = formatSequenceNumber;

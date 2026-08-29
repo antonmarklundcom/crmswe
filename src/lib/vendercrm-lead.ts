@@ -10,12 +10,12 @@ import { CRM_URL } from "@/lib/site-config";
  * shows up on our own site first, and the site row gives per-site lead
  * reporting for free.
  *
- * The key must be `VENDERCRM_API_KEY` with no `NEXT_PUBLIC_` prefix — a
+ * The key must be `CRMSWE_API_KEY` with no `NEXT_PUBLIC_` prefix — a
  * prefixed name is inlined into the client bundle and lets anyone write into
  * the pipeline.
  */
 
-const CRM_ENDPOINT = `${process.env.VENDERCRM_URL ?? CRM_URL}/api/v1/leads`;
+const CRM_ENDPOINT = `${process.env.CRMSWE_URL ?? CRM_URL}/api/v1/leads`;
 
 export type Lead = {
   phone: string;
@@ -71,9 +71,9 @@ export type SendLeadResult = { ok: boolean; status: number };
  * always thank them, even when the CRM is down.
  */
 export async function sendLead(lead: Lead): Promise<SendLeadResult> {
-  const apiKey = process.env.VENDERCRM_API_KEY;
+  const apiKey = process.env.CRMSWE_API_KEY;
   if (!apiKey) {
-    console.error("VenderCRM lead skipped: VENDERCRM_API_KEY is not set");
+    console.error("VenderCRM lead skipped: CRMSWE_API_KEY is not set");
     return { ok: false, status: 0 };
   }
 

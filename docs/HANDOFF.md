@@ -113,7 +113,7 @@ npx tsx --env-file=.env scripts/smoke-storage.ts
 Runs put → read-back → sign → fetch the signed URL → delete → confirm gone.
 Run it once on `local` today. Run it again the day you cut `STORAGE_DRIVER=s3`
 over to Cloudflare R2 — same command, no changes. Until then WhatsApp media
-sits on Hostinger disk, which PLAN.md §2.1 says to treat as non-durable.
+sits on Hostinger disk, which VENDERCRM-PLAN.md §2.1 says to treat as non-durable.
 
 ### 1.4 URLs to click through
 
@@ -173,7 +173,7 @@ admin-only things are not merely hidden but refused.**
   where that agent is logged in. The live session must be dead on the very
   next request, not at the next login.
 
-### 1.6 Your dogfooding day (PLAN.md §10 1R exit criterion)
+### 1.6 Your dogfooding day (VENDERCRM-PLAN.md §10 1R exit criterion)
 
 The bar is one full working day on the three sites — dentista, tasacion, pozo
 — where a lead arrives from a live site into the right pipeline, gets WhatsApp
@@ -185,7 +185,7 @@ to leave the app; that list is the next phase's spec.
 
 ## Part 1.7 — What changed in the 1V bug hunt (nothing for you to do)
 
-The bug hunt Part 2 used to schedule has been run and merged (PLAN.md §10
+The bug hunt Part 2 used to schedule has been run and merged (VENDERCRM-PLAN.md §10
 1V). Nothing in it needs an operator action; it is listed here so the
 behaviour change isn't a surprise during the dogfooding day.
 
@@ -227,7 +227,7 @@ it. That is the session's input.
 > running the §10 1R dogfooding day today: real leads from dentista,
 > tasacion and pozo into the live app, WhatsApp follow-up in the inbox, and
 > a nota de venta issued and paid — without opening a terminal or another
-> tab. Read PLAN.md §10 1R (the exit criterion), §10 1S/1T/1U/1V for the
+> tab. Read VENDERCRM-PLAN.md §10 1R (the exit criterion), §10 1S/1T/1U/1V for the
 > right size of task, and §13 for the conventions.
 >
 > Your job today is not to build a phase. It is to sit next to a live run:
@@ -242,7 +242,7 @@ it. That is the session's input.
 >   coding around my complaint.
 >
 > Keep a running list of everything I report, in the order I report it, and
-> at the end of the day write it into PLAN.md as the next phase's spec —
+> at the end of the day write it into VENDERCRM-PLAN.md as the next phase's spec —
 > ordered by what actually blocked the day, not by size, the way §10 1R is
 > ordered. That list is the real output; the fixes are a side effect.
 >
@@ -258,7 +258,7 @@ it. That is the session's input.
 
 > VenderCRM (antonmarklundcom/vendercrm). I tried the §1.1 deploy and it
 > failed. Here is what I ran and what came back: <paste>. Read
-> docs/DEPLOY.md and PLAN.md §2.1 first — the Hostinger constraints there
+> docs/DEPLOY.md and VENDERCRM-PLAN.md §2.1 first — the Hostinger constraints there
 > are the reason the procedure looks the way it does, and the failure is
 > more likely to be one of those than something new. Diagnose before
 > changing anything, and tell me whether the fix belongs in the app, in the
@@ -270,14 +270,14 @@ Worth one short session. §13 exists because Fable read the whole repo once;
 every wave it produced has now merged, and nothing has re-read the result.
 
 > VenderCRM (antonmarklundcom/vendercrm), `main` at the 1V merge. You wrote
-> PLAN.md §13 after a full-repo review; every batch in it (H1–H9) has since
+> VENDERCRM-PLAN.md §13 after a full-repo review; every batch in it (H1–H9) has since
 > merged, plus §10 1R–1V. Re-read the repo and answer three things:
 >
 > 1. **What did §13 miss?** Not what it deferred on purpose (§13.1 lists
 >    that) — what a reader looking at the whole thing fresh would now flag.
 > 2. **What did the batches break or half-finish?** Nine waves of change
 >    landed against a spec written before any of them; say where the code
->    and PLAN.md have drifted apart.
+>    and VENDERCRM-PLAN.md have drifted apart.
 > 3. **What is the riskiest hour in Part 1 of docs/HANDOFF.md**, and is the
 >    procedure written for it good enough? Specifically: nine migrations
 >    (`0010`→`0018`) applied to a live database whose backups have never
@@ -294,7 +294,7 @@ every wave it produced has now merged, and nothing has re-read the result.
 > `src/lib/http/client-ip.ts` counting from the right, `TRUSTED_PROXY_HOPS`
 > env, procedure in docs/DEPLOY.md §10. #52 wired inbox conversation
 > ownership — `AssigneePicker`, agent-accessible, guarded by an active-member
-> check. Read PLAN.md §10 1R/1S/1T/1U and §13 first for the conventions and
+> check. Read VENDERCRM-PLAN.md §10 1R/1S/1T/1U and §13 first for the conventions and
 > for recent examples of the right size of task.
 >
 > Hunt for real bugs in three paths and fix what you find, with a regression

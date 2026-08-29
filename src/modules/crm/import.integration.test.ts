@@ -44,6 +44,7 @@ describe.skipIf(!hasDb)("contact import (MySQL integration)", () => {
       role: "admin",
       impersonatorUserId: null,
       accessStatus: "active",
+      currency: "SEK",
     };
   });
 

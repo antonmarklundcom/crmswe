@@ -28,11 +28,11 @@ export type PdfLineItem = {
 
 export type PdfTotalsRow = {
   label: string;
-  /** Pre-formatted, because a negative row prints as "-PYG 150.000" rather
-   * than negating the number. */
+  /** Pre-formatted, because a discount row prints as "-1 500,00 kr" — a
+   * minus sign in front of a formatted amount, not a negated number. */
   value: string;
-  /** `grand` is the bold total line; `balance` is the ruled row a nota de
-   * venta closes with. */
+  /** `grand` is the bold total line; `balance` is the ruled row a faktura
+   * closes with. */
   kind?: "row" | "grand" | "balance";
   valueColor?: string;
 };

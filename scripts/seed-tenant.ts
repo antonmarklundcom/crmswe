@@ -18,7 +18,7 @@ import { seedDefaultPipeline, listPipelines } from "@/modules/crm/pipelines";
 // No PII is hardcoded here: everything comes from env vars or CLI args.
 //
 // Usage (env vars):
-//   TENANT_NAME="Acme SRL" TENANT_SLUG=acme TENANT_ADMIN_EMAIL=admin@acme.com \
+//   TENANT_NAME="Acme AB" TENANT_SLUG=acme TENANT_ADMIN_EMAIL=admin@acme.se \
 //   TENANT_ADMIN_PASSWORD=... TENANT_ADMIN_NAME="Admin Name" \
 //   npx tsx scripts/seed-tenant.ts
 //
@@ -66,9 +66,9 @@ async function main() {
     console.log(`Tenant created: ${tenant.slug} (${tenant.id})`);
   }
 
-  // Same as the superadmin "crear empresa" action: a tenant with no pipeline
-  // at all can't create a deal, so seed the default "Ventas" pipeline here
-  // too (idempotent — only seeds if the tenant has none yet).
+  // Same as the superadmin create-company action: a tenant with no pipeline
+  // at all can't create a deal, so seed the default "Försäljning" pipeline
+  // here too (idempotent — only seeds if the tenant has none yet).
   const tenantCtx = await buildSystemTenantContext(tenant.id);
   if (tenantCtx) {
     const existingPipelines = await listPipelines(tenantCtx);

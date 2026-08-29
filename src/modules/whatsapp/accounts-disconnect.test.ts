@@ -33,6 +33,7 @@ describe.skipIf(!hasDb)("disconnectAccount (MySQL integration)", () => {
       role: "admin",
       impersonatorUserId: null,
       accessStatus: "active",
+      currency: "SEK",
     };
   }
 

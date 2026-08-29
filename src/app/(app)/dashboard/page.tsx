@@ -10,7 +10,13 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
-import { DEFAULT_TIMEZONE, formatDateTime, formatNumber, formatTime } from "@/lib/i18n/format";
+import {
+  DEFAULT_TIMEZONE,
+  formatDateTime,
+  formatMoney,
+  formatNumber,
+  formatTime,
+} from "@/lib/i18n/format";
 
 import { requireTenantContext } from "@/modules/tenancy/context";
 import { getTenant } from "@/modules/tenancy/tenants";
@@ -173,7 +179,7 @@ export default async function DashboardPage() {
           label={t("stats.openDeals")}
           value={formatNumberL(stats.openDeals)}
           hint={t("stats.openDealsHint", {
-            value: formatNumberL(stats.openDealsValuePyg),
+            value: formatMoney(stats.openDealsValue, stats.currency, locale),
           })}
           href="/pipeline"
         />

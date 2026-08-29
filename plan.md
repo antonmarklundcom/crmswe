@@ -356,6 +356,25 @@ manual steps. STOP — no further phases.
 - **2026-08-28 — plan:** Repo created as full-history copy of vendercrm@`680aa79`.
   plan.md + prompts/ committed; inherited spec moved to `docs/VENDERCRM-PLAN.md`
   happens in O1 (first commit). Next: phase O1 (`prompts/opus-1-foundation.md`).
+- **2026-08-29 — O1 (money & schema foundation):** `PLAN.md` →
+  `docs/VENDERCRM-PLAN.md`; `src/modules/sifen/` deleted, its boundary-test
+  discipline moved to `src/lib/se/`; package/env/CI renamed to `crmswe`.
+  Money is öre: `formatMoney` now renders real currency amounts via Intl
+  (`12 500,00 kr`), a single `parseMoneyInput`/`moneyAmountSchema` pair is the
+  only way a typed amount becomes minor units, and every format/parse/aggregate
+  path is listed and ticked off in `docs/ORE-AUDIT.md`. Tenant currency is a
+  column on `tenants` and rides on `TenantContext`; `sv`, `Europe/Stockholm`
+  and `SE` are the defaults. Migration `0025_swedish_foundation` carries the
+  complete Swedish schema delta — org.nr and företagsuppgifter, per-tenant
+  `vat_rates` (seeded, with source + validity), moms columns on products and
+  both line tables, faktura/kreditfaktura type with OCR, delivery date, credit
+  reference and a persisted moms summary. `src/lib/se/identity.ts` validates
+  org.nr/personnummer/bankgiro/plusgiro and generates OCR numbers.
+  Deviations: `due_at` serves as the plan's `due_date`; existing sequence
+  prefixes are not rewritten (see KNOWN-ISSUES O1-3, O1-4).
+  Next: O2 (`prompts/opus-2-moms-faktura.md`) — the columns it needs already
+  exist; start at `src/lib/se/` for the moms math and
+  `src/modules/documents/` for the faktura itself.
 
 ## 10. Backlog
 

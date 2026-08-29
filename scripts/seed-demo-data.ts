@@ -9,26 +9,30 @@ import { createTask } from "@/modules/crm/tasks";
 // realistic-looking demo data for UI screenshots. Not idempotent — safe to
 // run once against a fresh seeded tenant.
 
+// Swedish demo tenant (plan.md §5.1.7). Phone numbers are E.164 Swedish
+// mobiles in the 46 70-123 4xxx range and every email is @example.com, which
+// is reserved for exactly this by RFC 2606 — no real person's contact details
+// end up in a screenshot.
 const CONTACTS = [
-  { name: "Laura Gonzalez", phone: "+595981234001", email: "laura.gonzalez@example.com", source: "WhatsApp" },
-  { name: "Diego Fernandez", phone: "+595981234002", email: "diego.fernandez@example.com", source: "Website" },
-  { name: "Marcela Ruiz", phone: "+595981234003", email: "marcela.ruiz@example.com", source: "Referral" },
-  { name: "Hugo Benitez", phone: "+595981234004", email: "hugo.benitez@example.com", source: "WhatsApp" },
-  { name: "Sofia Cabrera", phone: "+595981234005", email: "sofia.cabrera@example.com", source: "Facebook Ads" },
-  { name: "Ramon Duarte", phone: "+595981234006", email: "ramon.duarte@example.com", source: "WhatsApp" },
-  { name: "Valentina Ortiz", phone: "+595981234007", email: "valentina.ortiz@example.com", source: "Website" },
-  { name: "Ariel Ayala", phone: "+595981234008", email: "ariel.ayala@example.com", source: "Referral" },
+  { name: "Anna Lindqvist", phone: "+46701234001", email: "anna.lindqvist@example.com", source: "Webbformulär" },
+  { name: "Erik Sandberg", phone: "+46701234002", email: "erik.sandberg@example.com", source: "Webbplats" },
+  { name: "Maria Öberg", phone: "+46701234003", email: "maria.oberg@example.com", source: "Rekommendation" },
+  { name: "Johan Hedlund", phone: "+46701234004", email: "johan.hedlund@example.com", source: "Google" },
+  { name: "Sofia Ahlgren", phone: "+46701234005", email: "sofia.ahlgren@example.com", source: "Facebook Ads" },
+  { name: "Per Nyström", phone: "+46701234006", email: "per.nystrom@example.com", source: "Webbformulär" },
+  { name: "Elin Wikström", phone: "+46701234007", email: "elin.wikstrom@example.com", source: "Webbplats" },
+  { name: "Karl Sjöberg", phone: "+46701234008", email: "karl.sjoberg@example.com", source: "Rekommendation" },
 ];
 
 const DEAL_TITLES = [
-  "Paquete premium - Sofa 3 cuerpos",
-  "Instalacion aire acondicionado",
-  "Consultoria contable mensual",
-  "Reforma cocina completa",
-  "Plan anual mantenimiento",
-  "Venta lote Barrio San Roque",
-  "Servicio flete mudanza",
-  "Diseno web + branding",
+  "Serviceavtal kontorsstädning",
+  "Installation luftvärmepump",
+  "Löpande bokföring, månadsvis",
+  "Totalrenovering kök",
+  "Årligt underhållsavtal",
+  "Utbyte av tak, villa",
+  "Flyttjänst inkl. magasinering",
+  "Webbplats + varumärkespaket",
 ];
 
 async function main() {
@@ -62,8 +66,9 @@ async function main() {
       pipelineId: pipeline.id,
       stageId: stage.id,
       title: DEAL_TITLES[i]!,
-      value: Math.round(500000 + Math.random() * 9500000),
-      currency: "PYG",
+      // Öre (plan.md §1.2): 5 000–100 000 kr, rounded to whole kronor so the
+      // demo screens show believable amounts rather than 47 831,17 kr.
+      value: Math.round(5000 + Math.random() * 95000) * 100,
     });
     console.log(`Deal: ${DEAL_TITLES[i]} -> ${deal?.id}`);
   }
@@ -71,7 +76,7 @@ async function main() {
   const firstContact = contacts[0];
   if (firstContact) {
     await createTask(ctx, {
-      title: "Llamar para confirmar propuesta",
+      title: "Ring och stäm av offerten",
       contactId: firstContact.id,
       dueAt: new Date(Date.now() + 2 * 24 * 3600 * 1000),
     });

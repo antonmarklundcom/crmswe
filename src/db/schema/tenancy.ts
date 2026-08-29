@@ -28,10 +28,36 @@ export const tenants = mysqlTable(
     })
       .notNull()
       .default("trial"),
-    locale: varchar("locale", { length: 10 }).notNull().default("es"),
+    locale: varchar("locale", { length: 10 }).notNull().default("sv"),
     timezone: varchar("timezone", { length: 60 })
       .notNull()
-      .default("America/Asuncion"),
+      .default("Europe/Stockholm"),
+    /**
+     * The tenant's own currency (plan.md §1.3). Every service that creates a
+     * priced row defaults to it, and every amount stored anywhere in this
+     * tenant's data is minor units of it — öre for SEK. A typed column rather
+     * than a settings key because it decides how numbers are read, not how
+     * they look.
+     */
+    currency: char("currency", { length: 3 }).notNull().default("SEK"),
+    // --- Företagsuppgifter (plan.md §2). Typed columns rather than settings
+    // JSON: these print on every faktura, are searched, and two of them are
+    // identifiers a validator has an opinion about. All nullable, because a
+    // trial tenant has not filled them in yet and must still be able to work.
+    /** Canonical 10 digits, no hyphen — format with lib/se/identity. */
+    orgNr: varchar("org_nr", { length: 12 }),
+    /** Usually SE + org.nr + 01, but stored rather than derived: group
+     * registrations and foreign registrations exist. */
+    momsRegNr: varchar("moms_reg_nr", { length: 20 }),
+    bankgiro: varchar("bankgiro", { length: 20 }),
+    plusgiro: varchar("plusgiro", { length: 20 }),
+    /** "Godkänd för F-skatt" — printed on the faktura when true. */
+    fskatt: boolean("f_skatt").notNull().default(false),
+    /** Default betalvillkor in days; 30 is the Swedish B2B norm, and it is a
+     * default here rather than a constant in the invoice code so a tenant can
+     * change it. */
+    paymentTermsDays: int("payment_terms_days").notNull().default(30),
+    invoiceFooter: text("invoice_footer"),
     settings: json("settings").notNull().default({}),
     createdAt: datetime("created_at")
       .notNull()
@@ -163,7 +189,8 @@ export const plans = mysqlTable("plans", {
   name: varchar("name", { length: 100 }).notNull(),
   // 3, 6, or 12 months — enforced by zod in the service layer (§1.2 prepay-only).
   durationMonths: int("duration_months").notNull(),
-  // BIGINT minor units; PYG has 0 decimals so this is guaraníes as-is (§2.3).
+  // BIGINT minor units of the platform's own billing currency — öre for SEK
+  // (plan.md §1.2).
   price: bigint("price", { mode: "number" }).notNull(),
   limits: json("limits").notNull().default({}),
   features: json("features").notNull().default({ factura_electronica: "coming_soon" }),
@@ -206,7 +233,7 @@ export const payments = mysqlTable(
     id: char("id", { length: 26 }).primaryKey(),
     subscriptionId: char("subscription_id", { length: 26 }).notNull(),
     amount: bigint("amount", { mode: "number" }).notNull(),
-    currency: char("currency", { length: 3 }).notNull().default("PYG"),
+    currency: char("currency", { length: 3 }).notNull().default("SEK"),
     method: varchar("method", {
       length: 20,
       enum: ["transfer", "cash", "other"],

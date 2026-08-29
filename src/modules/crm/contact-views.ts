@@ -57,7 +57,7 @@ export async function deleteContactView(ctx: TenantContext, viewId: string): Pro
   const [view] = await tenantDb(ctx).select(contactViews, eq(contactViews.id, viewId)).limit(1);
   if (!view) return;
   if (ctx.role !== "admin" && view.createdByUserId !== ctx.userId) {
-    throw new Error("No podés borrar una vista que guardó otra persona");
+    throw new Error("Du kan inte ta bort en vy som en annan person har sparat");
   }
 
   await tenantDb(ctx).delete(contactViews, eq(contactViews.id, viewId));

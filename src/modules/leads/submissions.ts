@@ -114,7 +114,7 @@ export async function recordLeadSubmission(
       source: input.source,
       ownerUserId: defaults.ownerUserId ?? undefined,
     });
-    if (!contact) throw new Error("No se pudo crear el contacto");
+    if (!contact) throw new Error("Det gick inte att skapa kontakten");
 
     // First-touch attribution is stamped only on creation, never on a
     // returning contact — that's what makes it first-touch (§5.1).

@@ -50,7 +50,7 @@ export async function createSite(
   // The site's first key. Keys live in their own table since §5.2 so a site
   // can hold two at once; a brand-new site simply starts with one.
   const issued = await issueApiKey(ctx, id, "inicial");
-  if (!issued.ok) throw new Error("No se pudo emitir la clave del sitio");
+  if (!issued.ok) throw new Error("Det gick inte att utfärda sidans nyckel");
 
   return { id, apiKey: issued.plaintext };
 }

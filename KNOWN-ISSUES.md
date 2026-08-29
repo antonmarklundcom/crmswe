@@ -5,44 +5,6 @@ instead of stopping a phase. Each entry says who should pick it up.
 
 ## Open
 
-### S2-1 — Sites guide's hosted-form example still shows a Spanish placeholder slug
-`src/app/(app)/sites/page.tsx:326` builds the "no backend" iframe example URL
-as `` `${env.APP_URL}/f/${tenant?.slug ?? "tu-empresa"}/contacto` `` —
-`SiteGuide.tsx` itself was fully translated in S1, but this one call site,
-which supplies the *example* tenant slug and form slug when the current
-tenant has none, was missed. Out of S2's own hard limit (marketing pages +
-components + i18n marketing namespace only), so left alone here rather than
-edited. *Owner: whoever next touches `src/app/(app)/sites/`, or S3 at the
-latest.*
-
-### S1-2 — The marketing namespace ships in every page's hydration payload, not just marketing pages *(Paraguay-content urgency closed in S2)*
-`src/app/layout.tsx` wraps every route in one `<NextIntlClientProvider>`
-with no `messages` prop, so next-intl serialises the *entire* resolved
-locale's JSON (every namespace) into the client bundle of every page —
-`/login`, `/dashboard`, `/pipeline`, all of it — not only the marketing
-pages that actually read the `marketing` namespace. This was flagged in S1
-because it meant Paraguay-flavoured marketing copy sat in view-source on
-every authenticated page; S2's full marketing rewrite removes that content,
-so the specific branding concern is gone. The underlying inefficiency is
-not: every page's client bundle still carries the whole `marketing`
-namespace (FAQ text, form copy, the lot) it never reads. Two ways to close
-it properly: scope `NextIntlClientProvider`'s `messages` per route group (root layout
-sends only shared + auth namespaces, `(marketing)` layout adds `marketing`)
-removes the over-fetch itself and is worth doing on its own merits
-independent of branding. *Owner: whoever touches `src/app/layout.tsx` or
-`src/i18n/request.ts` next — S2 or S3 are the natural points.*
-
-### O3-5 — Turning WhatsApp off does not cancel already-queued sends
-The outbound guard sits in `queueOutboundMessage`, so nothing new is queued
-once a tenant switches the channel off. A message queued *before* the switch
-is already a `whatsapp.send` job and still goes out when the worker picks it
-up. The window is seconds to minutes and the message was authorised while
-the channel was on, so draining it is arguably the correct behaviour rather
-than a leak — but it is not what "off" reads like. Closing it means the job
-handler re-checking the flag before it calls the Graph API.
-*Owner: none — recorded as a deliberate edge. Fix if a tenant ever toggles
-the channel as a kill switch rather than as configuration.*
-
 ### O3-1 — `sv-SE` date pickers are a request, not a guarantee
 `<html lang>` now carries the full BCP-47 tag (`sv-SE`), which is the
 standards-correct way to tell a browser how to draw a native
@@ -62,16 +24,11 @@ every tenant's WhatsApp accounts. It is deliberately untouched: the flag is
 tenant's setting. It is invisible to tenant users either way (superadmin
 only), so it is a wart on Anton's own console rather than a leak. If the
 Swedish product never runs WhatsApp for anybody, the whole surface can go.
+**Revisited (2026-08-29):** still not a quick fix — the page also carries
+the platform-wide dead/stuck job queue view (`queueDead`/`queueStuck`),
+which has nothing to do with WhatsApp and is worth keeping regardless of
+the channel's fate. Removing or hiding the page would cost that too.
 *Owner: S3, if it is still pointless by then.*
-
-### O3-3 — Two WhatsApp template-language defaults still say `es`
-`modules/automations/actions.ts` and the flow editor default a WhatsApp
-message template's language code to `"es"`. Both sit inside the WhatsApp
-surface, which is hidden by default (§5.3.1), so they are unreachable in the
-Swedish product as shipped. Left alone deliberately: changing them buys
-nothing while the channel is off and adds a conflict to every vendercrm
-cherry-pick through those files (plan.md §1.1). *Owner: whoever first turns
-the channel on for a Swedish tenant.*
 
 ### O3-4 — Anonymisation does not scrub quote and document notes
 `anonymizeContact` leaves the free-text `notes` on quotes and documents
@@ -161,12 +118,6 @@ Real statutory validity dates should be entered per tenant before the product
 is used for real invoicing (plan.md §4.11). *Owner: whoever does the pre-launch
 fiscal review; S3 at the latest.*
 
-### O1-2 — Spanish strings still in thrown service errors *(mostly closed in O2)*
-`modules/documents/documents.ts` and `modules/quotes/quotes.ts` now throw
-stable codes (`document_not_draft`, `quote_needs_items`, …), which the actions
-map to message keys. What is left is `modules/tenancy/context.ts`:
-`"Se requiere rol de administrador"`. *Owner: S1.*
-
 ### O1-3 — `documents.due_at` serves as the plan's `due_date`
 plan.md §5.1.5 lists `due_date` among the new document columns, but `due_at`
 already existed and already means förfallodatum. A second column would be two
@@ -223,3 +174,37 @@ fine. Two traps: `NODE_ENV=development` in `.env` makes `next build` fail
 while prerendering `/404`, and `pkill -f "next start"` matches its own shell
 — kill `next-server` instead.
 *Owner: none — context for future sessions.*
+
+## Closed
+
+Fixed in a Sonnet pass on 2026-08-29 (verified against MariaDB per O1-6/O2-6,
+`npx tsc --noEmit`, `next build`, and the full `vitest` suite — 730 passing,
+same pre-existing DB-unavailable and env-secret failures before and after):
+
+- **S2-1** — Sites guide's example URL used the Spanish placeholder
+  `tu-empresa`/`contacto`; now `mitt-företag`/`kontakt`.
+- **S1-2** — `src/app/layout.tsx` now passes `NextIntlClientProvider` only
+  the namespaces a Client Component actually reads (`common`, `auth`, `app`,
+  `superadmin`, `errors`), instead of the whole resolved locale. `marketing`,
+  `pdf`, `email`, `audit`, `public` and `tenancy` are server-only and no
+  longer ship to the browser on every page.
+- **O3-3** — The two WhatsApp template-language defaults (`modules/automations/actions.ts`,
+  the flow editor) now default to `"sv"` instead of `"es"`.
+- **O3-5** — `deliverQueuedMessage` (the `whatsapp.send` job handler) now
+  re-checks the tenant's WhatsApp flag before calling the Graph API, not
+  just at enqueue time, and fails the message rather than sending it if the
+  channel was switched off in between. Covered by a new test in
+  `feature.test.ts`.
+- **O1-2** — `modules/tenancy/context.ts`'s `"Se requiere rol de administrador"`
+  is now `"Admin role required"`, matching its English sibling in the same
+  function.
+- Also found and fixed, same class as O1-2 but not previously tracked:
+  Spanish strings thrown from `modules/whatsapp/send.ts` (the 24h-window
+  error, both call sites), `modules/leads/submissions.ts`,
+  `modules/sites/sites.ts`, and `modules/crm/contact-views.ts`.
+
+Reviewed and deliberately left open (not quick fixes — see the entries
+above): **O3-2** (WhatsApp-health console also hosts unrelated platform job
+monitoring), **O2-1** (embedding a Unicode PDF font needs a font/licensing
+decision), and everything gated on a real business or fiscal-review decision
+(O1-1, O2-3, O2-4, O2-5, O3-4).

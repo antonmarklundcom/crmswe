@@ -38,6 +38,17 @@ app cannot referee the edge cases (a foreign buyer, an exempt seller) well
 enough to be the authority on what is required. *Owner: whoever does the
 pre-launch fiscal review; revisit if real tenants ship incomplete invoices.*
 
+### O2-5 — Early invoices get a very short OCR number
+`generateOcrNumber` strips leading zeros before adding the length and check
+digits, so `FA-000001` produces the OCR `0141` — four digits, valid under
+Bankgirot's hård kontroll and correctly rejected by a bank if mistyped, but
+much shorter than the references Swedish businesses usually send. A tenant may
+also expect to recognise the invoice number inside the OCR, which they cannot
+at this length. Changing it means picking a minimum reference width and is a
+decision about what tenants' banks expect, not a bug in the algorithm — the
+generator and its tests are O1's and behave as documented.
+*Owner: whoever does the pre-launch fiscal review; S3 at the latest.*
+
 ### O2-4 — Partial kreditfaktura is not supported
 `createCreditNote` reverses a faktura in full and refuses a second credit
 against the same one. Crediting only some lines, or only part of an amount, is

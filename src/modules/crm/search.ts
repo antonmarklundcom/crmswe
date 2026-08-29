@@ -1,6 +1,8 @@
 import { inArray, like, or, sql } from "drizzle-orm";
 import { contacts, conversations, deals, documents, quotes } from "@/db/schema";
 import { formatMoney } from "@/lib/i18n/format";
+import { DEFAULT_LOCALE } from "@/lib/i18n/locales";
+import { getTranslator } from "@/lib/i18n/translator";
 import { escapeLike } from "@/lib/sql-like";
 import { normalizePhone, type CountryCode } from "@/lib/phone";
 import type { TenantContext } from "@/modules/tenancy/context";
@@ -52,7 +54,7 @@ export async function searchTenant(
   ctx: TenantContext,
   rawQuery: string,
   defaultCountry?: CountryCode,
-  locale = "es",
+  locale: string = DEFAULT_LOCALE,
 ): Promise<SearchResults> {
   const query = rawQuery.trim();
   if (query.length < 2) return { query, hits: [] };
@@ -89,6 +91,12 @@ export async function searchTenant(
     : [];
 
   const money = (amount: number, currency: string) => formatMoney(amount, currency, locale);
+  // Offert and faktura amounts are netto everywhere in the app, so a bare
+  // figure beside an invoice number would read as what the customer owes —
+  // which is the brutto. Same convention, and same suffix, as the contact
+  // timeline (plan.md §5.2 exit criterion).
+  const t = await getTranslator(locale, "app.documents");
+  const exclVat = t("exclVat");
 
   const hits: SearchHit[] = [
     ...contactRows.map((row) => ({
@@ -112,14 +120,14 @@ export async function searchTenant(
       kind: "quote" as const,
       id: row.id,
       title: row.number,
-      subtitle: money(row.total, row.currency),
+      subtitle: `${money(row.total, row.currency)} ${exclVat}`,
       href: `/quotes/${row.id}`,
     })),
     ...documentRows.map((row) => ({
       kind: "document" as const,
       id: row.id,
       title: row.number,
-      subtitle: money(row.total, row.currency),
+      subtitle: `${money(row.total, row.currency)} ${exclVat}`,
       href: `/documents/${row.id}`,
     })),
     ...conversationRows.flatMap((row) => {

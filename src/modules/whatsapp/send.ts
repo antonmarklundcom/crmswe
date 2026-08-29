@@ -5,6 +5,7 @@ import { newId } from "@/lib/ids";
 import { enqueue } from "@/lib/queue";
 import { buildSystemTenantContext, type TenantContext } from "@/modules/tenancy/context";
 import { tenantDb } from "@/modules/tenancy/db";
+import { whatsappEnabledFor } from "./feature";
 import { getAccount, getDecryptedAccessToken } from "./accounts";
 import { GRAPH_API_BASE } from "./graph";
 
@@ -114,6 +115,22 @@ async function queueOutboundMessage(
     graphPayload: Record<string, unknown>;
   },
 ) {
+  // The outbound half of the channel switch (plan.md §5.3.1). O3 closed the
+  // inbound side — the webhook stops ingesting — but this is the door that
+  // matters *after* a tenant turns WhatsApp off: nothing in the UI can reach
+  // it any more, and yet an automation node, a booking reminder or an AI
+  // auto-reply still holds a conversation id from before and would happily
+  // keep messaging that customer.
+  //
+  // `sendText` looked safe because it needs an open 24-hour window, which
+  // closes on its own once inbound stops. `sendTemplate` has no such
+  // requirement, so a template could go out indefinitely.
+  //
+  // Checked here rather than in the three public functions above, because
+  // this is the single point every outbound message passes through — a
+  // fourth send helper added later gets the guard for free.
+  if (!(await whatsappEnabledFor(ctx))) throw new Error("whatsapp_disabled");
+
   const messageId = newId();
   await tenantDb(ctx)
     .insert(messages)

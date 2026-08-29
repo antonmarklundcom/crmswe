@@ -5,6 +5,17 @@ instead of stopping a phase. Each entry says who should pick it up.
 
 ## Open
 
+### O3-5 — Turning WhatsApp off does not cancel already-queued sends
+The outbound guard sits in `queueOutboundMessage`, so nothing new is queued
+once a tenant switches the channel off. A message queued *before* the switch
+is already a `whatsapp.send` job and still goes out when the worker picks it
+up. The window is seconds to minutes and the message was authorised while
+the channel was on, so draining it is arguably the correct behaviour rather
+than a leak — but it is not what "off" reads like. Closing it means the job
+handler re-checking the flag before it calls the Graph API.
+*Owner: none — recorded as a deliberate edge. Fix if a tenant ever toggles
+the channel as a kill switch rather than as configuration.*
+
 ### O3-1 — `sv-SE` date pickers are a request, not a guarantee
 `<html lang>` now carries the full BCP-47 tag (`sv-SE`), which is the
 standards-correct way to tell a browser how to draw a native

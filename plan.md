@@ -554,6 +554,62 @@ manual steps. STOP — no further phases.
   spawned with `source_url` set to this repo (or verify inheritance
   actually attaches the clone) before trusting the prompt alone.
 
+- **2026-08-29 — S3 (deploy & launch checks):** PR pending. §7's Hostinger
+  slot, domain, MySQL access and Resend domain verification are all still
+  unset in this environment — exactly the "☐ Anton" state §7 already
+  recorded — so no production deploy happened; per §4.4 that is the one
+  valid blocker, and this phase did everything possible short of it, per
+  its own phase-prompt rule.
+  Local MariaDB (O1-6 precedent) verified the whole stack: 742 tests green,
+  lint/typecheck/build clean, and a full local smoke pass against the real
+  production build (`next build` + `next start`) — login, WhatsApp-off 404s
+  on `/inbox`/`/whatsapp`, a mixed-rate (25%/12%) offert issued to a
+  faktura with correct PDF and OCR, the e-post log-driver fallback (no
+  Resend configured) printing the working public link instead of emailing
+  it, `/api/v1/leads` end-to-end (201 fresh, 200 idempotent replay, 401
+  wrong key), `/api/cron/tick` auth, and `npm run smoke-storage`'s full
+  put/sign/serve/delete cycle including the HTTP leg.
+  That local pass found and fixed two real, deploy-blocking bugs neither
+  the unit suite nor CI could have caught, because CI's own `ci.yml` sets
+  every optional secret to a dummy value and never exercises the blank
+  case a real optional deploy var actually needs to survive:
+  `src/lib/config/env.ts`'s `.optional()` fields only treated `undefined`
+  as unset, not `""` — and hPanel's env var UI (like a blank `KEY=` line in
+  `.env`) produces `""`, so every documented-optional var (WhatsApp,
+  Resend, AI, Sentry) crashed the build the moment it was left blank
+  exactly as `.env.example` says it can be. Fixed with one
+  `blankToUndefined` normalization before the zod parse, covered by a new
+  `env.test.ts` case. `site-config.ts`'s `APEX_HOST`/`APP_HOST` and
+  `vendercrm-lead.ts`'s `CRMSWE_URL` had the identical bug one level up —
+  reading `process.env` directly with `??`, which doesn't catch `""`
+  either — so a blank `APEX_HOST` produced `SITE_URL = "https://"` and
+  crashed `new URL()` in every server component that reads it, and a blank
+  `CRMSWE_URL` silently broke the marketing site's own lead-capture
+  dogfood call. Both switched to `||`. Generated fresh
+  `APP_ENCRYPTION_KEY`/`BETTER_AUTH_SECRET`/`CRON_SECRET` for this
+  deployment (never vendercrm's, per plan.md §7) — not committed; handed to
+  Anton alongside the closing report for pasting into hPanel.
+  `docs/DEPLOY.md` gained a §0 covering every delta this brand needs that
+  the inherited vendercrm runbook didn't have: the new `APEX_HOST`/
+  `APP_HOST`/`CRMSWE_API_KEY`/`CRMSWE_URL` vars were missing from its env
+  checklist entirely, and its Meta-webhook section read as a required setup
+  step when WhatsApp is now per-tenant opt-in, default off — both fixed,
+  and §9's post-deploy checklist and `docs/SMOKE_TEST.md` §2/§4 (still
+  "send the quote via WhatsApp") updated to match the e-post-first reality.
+  Left alone, deliberately: **KNOWN-ISSUES S2-1** (sites guide's Spanish
+  placeholder slug) — real but outside this phase's deployment/env/docs/
+  smoke hard limit; **O2-1/O2-5/O1-1/O3-2** — each needs a schema/money/
+  moms change or a business decision (Unicode PDF font, OCR reference
+  length, real Skatteverket rate dates, whether to keep the superadmin
+  WhatsApp console) that S3's hard limits forbid and that KNOWN-ISSUES
+  already correctly assigns to "the pre-launch fiscal/business review," not
+  to a build phase guessing on Anton's behalf.
+  Next: none — this was the last phase in the table. A real Hostinger
+  deploy needs a fresh session (or this one resumed) once Anton supplies
+  §7's inputs; that session should read this entry and §0 of
+  `docs/DEPLOY.md` first, then follow the rest of that doc's existing
+  steps unchanged.
+
 ## 10. Backlog
 
 - ROT/RUT line types (config-driven rates/caps with validity dates; personnummer

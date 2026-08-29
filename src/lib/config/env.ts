@@ -110,6 +110,21 @@ const envSchema = z
 
 export type Env = z.infer<typeof envSchema>;
 
+// Hosting UIs (Hostinger's env var panel included) and a blank `KEY=` line
+// in .env both produce an empty string, not an absent key — but every
+// `.optional()` field above only treats `undefined` as "not set", so an
+// empty string fails its `.min(1)`/`.email()`/`.url()` check instead of
+// falling through to "unconfigured". That turned every documented-optional
+// var (WhatsApp, Resend, AI, Sentry) into a boot-time failure the moment
+// someone left it blank exactly as the docs said they could. Normalize
+// blank strings to undefined before validating so "empty" and "absent"
+// mean the same thing here, matching every optional field's own doc comment.
+export function blankToUndefined(source: NodeJS.ProcessEnv): Record<string, string | undefined> {
+  return Object.fromEntries(
+    Object.entries(source).map(([key, value]) => [key, value === "" ? undefined : value]),
+  );
+}
+
 // Validated once at module load — any code that imports this triggers a fast
 // boot-time failure on misconfiguration instead of a runtime surprise later.
-export const env: Env = envSchema.parse(process.env);
+export const env: Env = envSchema.parse(blankToUndefined(process.env));

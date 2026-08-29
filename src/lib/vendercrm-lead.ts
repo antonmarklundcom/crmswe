@@ -15,7 +15,11 @@ import { CRM_URL } from "@/lib/site-config";
  * the pipeline.
  */
 
-const CRM_ENDPOINT = `${process.env.CRMSWE_URL ?? CRM_URL}/api/v1/leads`;
+// `||`, not `??` — see site-config.ts's own APEX_HOST/APP_HOST comment: a
+// blank `CRMSWE_URL=` line (or Hostinger's env panel) sets "", not absent,
+// and `??` would leave the endpoint as the bare path "/api/v1/leads" with
+// no host, breaking the marketing site's own lead capture.
+const CRM_ENDPOINT = `${process.env.CRMSWE_URL || CRM_URL}/api/v1/leads`;
 
 export type Lead = {
   phone: string;

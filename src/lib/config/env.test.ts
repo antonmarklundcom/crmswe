@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
+import { blankToUndefined } from "./env";
 
 // The full env module runs its zod parse at import time against
 // process.env, so it can't be re-imported per-test with different inputs —
@@ -30,6 +31,26 @@ const s3RequirementSchema = z
       }
     }
   });
+
+describe("blankToUndefined", () => {
+  // Hostinger's env var panel and a blank `KEY=` line in .env both produce
+  // "", not an absent key. Every optional() field in envSchema only treats
+  // undefined as unset, so this normalization is what makes the documented
+  // "leave it blank" story in .env.example actually true at boot.
+  it("turns empty-string values into undefined and leaves the rest alone", () => {
+    const result = blankToUndefined({
+      RESEND_API_KEY: "",
+      RESEND_FROM_EMAIL: "",
+      DATABASE_URL: "mysql://user:pass@localhost:3306/crmswe",
+      NODE_ENV: "production",
+    } as NodeJS.ProcessEnv);
+
+    expect(result.RESEND_API_KEY).toBeUndefined();
+    expect(result.RESEND_FROM_EMAIL).toBeUndefined();
+    expect(result.DATABASE_URL).toBe("mysql://user:pass@localhost:3306/crmswe");
+    expect(result.NODE_ENV).toBe("production");
+  });
+});
 
 describe("storage env validation", () => {
   it("allows local driver with no S3 vars set", () => {

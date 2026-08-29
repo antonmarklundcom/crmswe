@@ -2,9 +2,10 @@
 
 Manual verification to run after every production deploy (VENDERCRM-PLAN.md §10 1H
 #7). Each section maps to a phase's exit criteria — see VENDERCRM-PLAN.md for the
-full context on any item. Use the owner's real tenant/WhatsApp number for
-this, not a throwaway one, since 1D's inbound/outbound checks need a real
-Meta connection.
+full context on any item. Use the owner's real tenant for this, not a
+throwaway one. §2 (WhatsApp) only applies to a tenant that has switched the
+channel on (plan.md §1.7, §5.3.1) and needs a real Meta connection; every
+other section runs against the ordinary e-post-first product.
 
 ## 0. Basics
 
@@ -32,7 +33,12 @@ Meta connection.
       its detail page (1S)
 - [ ] As an agent (not admin), neither page shows the delete section (1S)
 
-## 2. WhatsApp (1D exit)
+## 2. WhatsApp (1D exit) — only if a tenant has the channel on
+
+This edition ships WhatsApp behind a per-tenant flag, default off (plan.md
+§1.7, §5.3.1) — e-post is the primary channel (§4 below covers it) and the
+ordinary Swedish tenant never touches this section. Run it only for a tenant
+that has deliberately switched the flag on.
 
 - [ ] Send an inbound WhatsApp message to the connected number — it
       appears in the Inbox within a few seconds
@@ -56,15 +62,22 @@ Meta connection.
       (try posting with one site's key, confirm the deal lands only in
       that site's configured routing)
 
-## 4. Quotes (1F exit)
+## 4. Quotes and faktura (offert/faktura — plan.md §6.2/§6.3, §5.2 exit)
 
-- [ ] Create a quote for a real contact, add at least one catalog item
-      and one free-text item
-- [ ] Send the quote via WhatsApp — the contact receives a PDF document
-- [ ] Open the quote's public link (`/q/[token]`) in a private/incognito
+- [ ] Create an offert for a real contact, add at least one catalog item
+      and one free-text item, mixing at least two momssatser
+- [ ] Send the offert — e-post carries the public link and PDF
+      (`src/modules/quotes/delivery.ts`); with `RESEND_API_KEY` unset the
+      log driver prints the link instead of emailing it — confirm that link
+      works too, not just a live send
+- [ ] Open the offert's public link (`/q/[token]`) in a private/incognito
       window — renders without login, shows correct totals/branding
-- [ ] Download the PDF from the public link directly — opens correctly
-- [ ] Hammer the public quote view or PDF route repeatedly — confirm a
+- [ ] Download the PDF from the public link directly — opens correctly,
+      per-rate momssummering matches the offert
+- [ ] Convert the offert to a faktura, issue it, and repeat the public-link
+      and PDF checks at `/d/[token]` — OCR/bankgiro block present, sequence
+      number is unbroken
+- [ ] Hammer the public quote/faktura view or PDF route repeatedly — confirm a
       429 eventually appears (rate limiting, 1H #2)
 
 ## 5. Automations (1G exit)
@@ -113,7 +126,7 @@ moving is not.
 - [ ] Reply to a conversation in `/inbox` — the composer stays visible with
       the keyboard open
 - [ ] "Add to home screen" installs the app: it opens standalone (no
-      browser chrome), with the VenderCRM icon and the dark theme colour
+      browser chrome), with the CRM Swe icon and the dark theme colour
 - [ ] On the marketing host: `/robots.txt` lists the sitemap and disallows
       `/api/`, `/q/`, `/d/`, `/f/`; `/sitemap.xml` lists the four pages
 

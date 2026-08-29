@@ -84,7 +84,7 @@ describe.skipIf(!hasDb)("quotes (MySQL)", () => {
     await pool.end();
   });
 
-  it("numbers quotes sequentially per tenant, starting at COT-000001", async () => {
+  it("numbers offerter sequentially per tenant, starting at OFF-000001", async () => {
     const first = await createQuote(ctxA, {
       contactId: contactAId,
       items: [{ description: "Implante", qty: 1, unitPrice: 2500000 }],
@@ -94,8 +94,8 @@ describe.skipIf(!hasDb)("quotes (MySQL)", () => {
       items: [{ description: "Limpieza", qty: 1, unitPrice: 300000 }],
     });
 
-    expect(first!.number).toBe("COT-000001");
-    expect(second!.number).toBe("COT-000002");
+    expect(first!.number).toBe("OFF-000001");
+    expect(second!.number).toBe("OFF-000002");
   });
 
   it("each tenant has its own sequence — tenant B also starts at 1", async () => {
@@ -103,7 +103,7 @@ describe.skipIf(!hasDb)("quotes (MySQL)", () => {
       contactId: contactBId,
       items: [{ description: "Cemento", qty: 10, unitPrice: 45000 }],
     });
-    expect(quoteB!.number).toBe("COT-000001");
+    expect(quoteB!.number).toBe("OFF-000001");
   });
 
   it("concurrent quote creation never reuses a number (the reason numbering is transactional)", async () => {

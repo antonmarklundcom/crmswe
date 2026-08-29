@@ -51,8 +51,8 @@ describe("paymentStateOf / balanceOf", () => {
 
 describe("formatDocumentNumber", () => {
   it("zero-pads to six digits behind the type prefix", () => {
-    expect(formatDocumentNumber("NV", 1)).toBe("NV-000001");
-    expect(formatDocumentNumber("NV", 123456)).toBe("NV-123456");
+    expect(formatDocumentNumber("FA", 1)).toBe("FA-000001");
+    expect(formatDocumentNumber("KF", 123456)).toBe("KF-123456");
   });
 });
 
@@ -92,7 +92,7 @@ describe.skipIf(!hasDb)("documents (MySQL)", () => {
 
     const contact = await createContact(ctxA, {
       name: "Cliente NV",
-      phone: `+59598${Math.floor(1_000_000 + Math.random() * 8_999_999)}`,
+      phone: `+4670${Math.floor(1_000_000 + Math.random() * 8_999_999)}`,
     });
     contactA = contact!.id;
   });
@@ -105,21 +105,21 @@ describe.skipIf(!hasDb)("documents (MySQL)", () => {
 
   const lines = [{ description: "Instalación split 12k", qty: 1, unitPrice: 2_500_000 }];
 
-  it("numbers per tenant, starting each tenant at NV-000001", async () => {
+  it("numbers per tenant, starting each tenant at FA-000001", async () => {
     const a1 = await mod.createDocument(ctxA, { contactId: contactA, items: lines });
     const a2 = await mod.createDocument(ctxA, { contactId: contactA, items: lines });
-    expect(a1!.number).toBe("NV-000001");
-    expect(a2!.number).toBe("NV-000002");
+    expect(a1!.number).toBe("FA-000001");
+    expect(a2!.number).toBe("FA-000002");
 
     const { createContact } = await import("@/modules/crm/contacts");
     const contactB = await createContact(ctxB, {
       name: "Otro",
-      phone: `+59598${Math.floor(1_000_000 + Math.random() * 8_999_999)}`,
+      phone: `+4670${Math.floor(1_000_000 + Math.random() * 8_999_999)}`,
     });
     const b1 = await mod.createDocument(ctxB, { contactId: contactB!.id, items: lines });
-    // Sequences are per tenant — B's first document is its own NV-000001,
+    // Sequences are per tenant — B's first document is its own FA-000001,
     // not a continuation of A's run.
-    expect(b1!.number).toBe("NV-000001");
+    expect(b1!.number).toBe("FA-000001");
   });
 
   it("allows editing a draft and refuses every edit once issued", async () => {
@@ -242,7 +242,7 @@ describe.skipIf(!hasDb)("documents (MySQL)", () => {
 
     const contact = await createContact(ctxA, {
       name: "Cliente Timeline",
-      phone: `+59598${Math.floor(1_000_000 + Math.random() * 8_999_999)}`,
+      phone: `+4670${Math.floor(1_000_000 + Math.random() * 8_999_999)}`,
     });
     const document = await mod.createDocument(ctxA, {
       contactId: contact!.id,

@@ -18,8 +18,8 @@ export function documentDate(value: Date, locale: string): string {
   return formatDate(value, locale, { dateStyle: "medium" });
 }
 
-/** Per-tenant sequential numbers are zero-padded to six digits — COT-000123,
- * NV-000045 — across every document type (§8, §10 1Q). */
+/** Per-tenant sequential numbers are zero-padded to six digits — OFF-000123,
+ * FA-000045 — across every document type (§8, §10 1Q). */
 export const SEQUENCE_PAD = 6;
 
 export function formatSequenceNumber(prefix: string, value: number): string {

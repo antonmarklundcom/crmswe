@@ -20,8 +20,12 @@
 // Placeholder domain until Anton supplies the real one (plan.md §7). Reads
 // from env first so a real deploy only needs env vars set, never a code
 // change or redeploy of this file.
-export const APEX_HOST = process.env.APEX_HOST ?? "crmswe.se";
-export const APP_HOST = process.env.APP_HOST ?? `crm.${APEX_HOST}`;
+// `||`, not `??`: Hostinger's env var panel (and a blank `APEX_HOST=` line
+// in .env) sets the var to "", not leaves it absent, and "" is not nullish —
+// `??` would carry the empty string through into `https://` and crash `new
+// URL()` in every server component that reads SITE_URL/CRM_URL.
+export const APEX_HOST = process.env.APEX_HOST || "crmswe.se";
+export const APP_HOST = process.env.APP_HOST || `crm.${APEX_HOST}`;
 
 export const SITE_URL = `https://${APEX_HOST}`;
 export const CRM_URL = `https://${APP_HOST}`;

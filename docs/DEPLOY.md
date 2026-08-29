@@ -1,9 +1,42 @@
 # Deploy runbook — Hostinger
 
-VenderCRM runs as a single Next.js app on Hostinger's managed Node.js hosting
+CRM Swe runs as a single Next.js app on Hostinger's managed Node.js hosting
 (VENDERCRM-PLAN.md §2.1: one process, no Redis, no separate worker dyno — the job
 queue worker starts in-process from `instrumentation.ts`). This doc covers a
-first deploy and every routine redeploy after it.
+first deploy and every routine redeploy after it. It is the inherited
+vendercrm runbook plus the deltas this Swedish edition needs (§0).
+
+## 0. Deltas for this brand (plan.md §6.3, §7)
+
+- **Brand host env vars** — `APEX_HOST`/`APP_HOST` (site-config.ts) are new
+  since S1 and not part of the original vendercrm setup: set them to the real
+  `.se` domain once Anton supplies it (plan.md §7). Until then the app boots
+  fine on the `crmswe.se` code default, which is fine for a first deploy on
+  the bare Hostinger subdomain but wrong for anything customer-facing.
+- **Renamed env vars** (O1 repo hygiene) — this app reads `CRMSWE_API_KEY` /
+  `CRMSWE_URL` for the marketing site's own lead-capture call into
+  `/api/v1/leads` (`src/lib/vendercrm-lead.ts`); the old `VENDERCRM_*` names
+  no longer do anything. `CRMSWE_API_KEY` is the site API key created under
+  *Sitios* for the marketing site's own row on the owner's tenant (chicken-
+  and-egg: seed the tenant and its site first, then set this var and
+  redeploy).
+- **WhatsApp is opt-in, not part of a first deploy.** Unlike vendercrm, this
+  edition ships with the channel hidden behind a per-tenant flag, default off
+  (plan.md §1.7, §5.3.1) — §4 below ("Point Meta's webhook at the app") only
+  applies once some tenant actually turns the channel on, which is not
+  expected for the initial Swedish launch. `WHATSAPP_APP_SECRET` /
+  `WHATSAPP_WEBHOOK_VERIFY_TOKEN` can stay unset; the webhook route answers
+  503 rather than blocking boot.
+- **Blank optional env vars are safe** (fixed in phase S3) — hPanel's env var
+  UI, like a blank `KEY=` line in `.env`, sets the value to `""`, not leaves
+  it absent. Before this phase every `.optional()` var in
+  `src/lib/config/env.ts` (WhatsApp, Resend, AI, Sentry) rejected `""` and
+  crashed the build the moment someone left it blank exactly as this doc says
+  they could; `APEX_HOST`/`APP_HOST`/`CRMSWE_URL` had the same bug reading
+  `process.env` directly (`??` doesn't catch `""`, so a blank `APEX_HOST` was
+  producing `https://` and crashing `new URL()` in every server component
+  that reads `SITE_URL`/`CRM_URL`). Both are fixed now — leaving any of these
+  blank in hPanel behaves exactly as documented.
 
 ## 1. One-time setup
 
@@ -47,8 +80,16 @@ first deploy and every routine redeploy after it.
      cron job set up in §5
    - `BETTER_AUTH_SECRET` — >=32 chars, generate the same way as the
      encryption key
-   - `WHATSAPP_APP_SECRET`, `WHATSAPP_WEBHOOK_VERIFY_TOKEN` — from the Meta
-     developer app (VENDERCRM-PLAN.md §6.1)
+   - `APEX_HOST`, `APP_HOST` — the real `.se` domain once Anton supplies it
+     (plan.md §7, §0 above); optional, defaults to the `crmswe.se` code
+     placeholder while unset.
+   - `CRMSWE_API_KEY`, `CRMSWE_URL` — the marketing site's own site API key
+     for its `/api/v1/leads` dogfood call (§0 above); optional, but no lead
+     is recorded from the marketing site's own contact form without it.
+   - `WHATSAPP_APP_SECRET`, `WHATSAPP_WEBHOOK_VERIFY_TOKEN` — optional in
+     this edition (§0 above); only needed once some tenant turns the
+     per-tenant WhatsApp flag on. From the Meta developer app when that
+     happens (VENDERCRM-PLAN.md §6.1)
    - `NEXT_PUBLIC_SENTRY_DSN`, `SENTRY_DSN`, `SENTRY_ENVIRONMENT=production` —
      optional; leave unset to run without error tracking
    - `SENTRY_ORG`, `SENTRY_PROJECT`, `SENTRY_AUTH_TOKEN` — optional, only
@@ -100,7 +141,10 @@ installed Node version under `/opt/alt/`).
 
 ## 4. Point Meta's webhook at the app
 
-Required before inbound WhatsApp works at all — outbound sending needs only
+**Skip this for a first Swedish deploy** — WhatsApp is a per-tenant opt-in
+flag, default off (§0 above), and the ordinary launch has no Meta app at all.
+Come back to this section only once some tenant actually turns the channel
+on. Required before inbound WhatsApp works at all — outbound sending needs only
 the per-tenant token, but nothing arrives in the Inbox until this is set.
 One endpoint serves every tenant; Meta routes by `phone_number_id`
 (VENDERCRM-PLAN.md §6.3), so this is configured once per Meta app, not per tenant.
@@ -282,7 +326,8 @@ directly is equivalent.
 - [ ] Login works with real (not seed-default) admin credentials
 - [ ] `docs/SMOKE_TEST.md` passes
 - [ ] `/api/cron/tick` returns 401 without the header and 200 with it
-- [ ] Meta webhook shows as verified and subscribed to `messages` (§4)
+- [ ] Meta webhook shows as verified and subscribed to `messages` (§4) — only
+      if some tenant has turned the WhatsApp flag on; skip otherwise
 - [ ] Sentry (if configured) shows the deploy's release/environment
 
 ## 10. Confirming `TRUSTED_PROXY_HOPS`

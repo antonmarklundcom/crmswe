@@ -3,8 +3,13 @@
 import { useActionState, useState } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import { Button } from "@/components/ui/button";
-import { formatMoneyInput, parseMoneyInput, parseQuantity } from "@/lib/money";
-import { computeDocumentMoms, formatRateLabel } from "@/lib/se/moms";
+import {
+  formatMoneyInput,
+  parseMoneyInput,
+  parseQuantity,
+  previewTotals,
+} from "@/lib/money";
+import { formatRateLabel } from "@/lib/se/moms";
 import { useEchoGeneration } from "@/lib/use-echo-generation";
 import { createQuoteAction, type QuoteFormState } from "./actions";
 import { formatMoney } from "@/lib/i18n/format";
@@ -118,23 +123,8 @@ export function QuoteBuilder({
   // values, so the offert quotes exactly what the faktura will charge — down
   // to the öre-level rounding. It goes blank wherever the server would refuse
   // a value rather than showing a total the saved offert won't match.
-  const totals = previewTotals();
+  const totals = previewTotals(lines, discount, currency);
 
-  function previewTotals() {
-    const parsed = parseMoneyInput(discount.trim() || "0", currency);
-    if (parsed === null || parsed < 0) return null;
-
-    const items: Array<{ lineTotal: number; vatRateBps: number }> = [];
-    for (const line of lines) {
-      if (line.description.trim().length === 0) continue;
-      const qty = parseQuantity(line.qty);
-      const unitPrice = parseMoneyInput(line.unitPrice, currency);
-      if (qty === null || qty < 1 || unitPrice === null || unitPrice < 0) return null;
-      items.push({ lineTotal: qty * unitPrice, vatRateBps: Number(line.vatRateBps) || 0 });
-    }
-    if (items.length === 0) return null;
-    return computeDocumentMoms(items, parsed);
-  }
   const locale = useLocale();
   const fmt = (n: number) => formatMoney(n, currency, locale);
   const blank = "—";

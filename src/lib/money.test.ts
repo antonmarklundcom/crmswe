@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import {
-  computeLineTotals,
   currencyMinorUnitDigits,
   formatMoneyInput,
   minorUnitsToDecimalString,
@@ -8,6 +7,7 @@ import {
   parseQuantity,
   previewTotals,
 } from "./money";
+import { computeDocumentMoms } from "@/lib/se/moms";
 
 // The builders post raw strings and the server recomputes from them. Since
 // plan.md §1.2 amounts are minor units — öre for SEK — so what the user types
@@ -111,23 +111,40 @@ describe("parseQuantity", () => {
 });
 
 describe("previewTotals", () => {
-  const line = (over: Partial<{ description: string; qty: string; unitPrice: string }> = {}) => ({
+  const line = (
+    over: Partial<{ description: string; qty: string; unitPrice: string; vatRateBps: string }> = {},
+  ) => ({
     description: "Konsultation",
     qty: "2",
     unitPrice: "1500",
+    vatRateBps: "2500",
     ...over,
   });
 
-  it("matches what the server computes from the same values", () => {
+  it("matches what the server will compute from the same values", () => {
     const preview = previewTotals([line()], "500", "SEK");
+    // The builder runs the *same* engine the service runs, so the preview is
+    // the stored document's arithmetic, not an approximation of it.
     expect(preview).toEqual(
-      computeLineTotals(
-        [{ productId: undefined, description: "Konsultation", qty: 2, unitPrice: 150000 }],
-        50000,
-      ),
+      computeDocumentMoms([{ lineTotal: 300000, vatRateBps: 2500 }], 50000),
     );
-    // 2 × 1 500,00 kr − 500,00 kr = 2 500,00 kr, held as öre.
-    expect(preview!.total).toBe(250000);
+    // 2 × 1 500,00 kr − 500,00 kr = 2 500,00 kr netto, + 625,00 kr moms.
+    expect(preview!.net).toBe(250000);
+    expect(preview!.vatTotal).toBe(62500);
+    expect(preview!.gross).toBe(312500);
+  });
+
+  it("prices each line at its own momssats", () => {
+    const preview = previewTotals(
+      [line({ vatRateBps: "2500" }), line({ vatRateBps: "600" })],
+      "0",
+      "SEK",
+    );
+    expect(preview!.summary).toEqual([
+      { rateBps: 2500, base: 300000, vat: 75000 },
+      { rateBps: 600, base: 300000, vat: 18000 },
+    ]);
+    expect(preview!.net + preview!.vatTotal).toBe(preview!.gross);
   });
 
   it("ignores untouched blank rows, as the server does", () => {
@@ -145,9 +162,15 @@ describe("previewTotals", () => {
     expect(previewTotals([line({ qty: "1.5" })], "0", "SEK")).toBeNull();
     expect(previewTotals([line({ unitPrice: "-1" })], "0", "SEK")).toBeNull();
     expect(previewTotals([line()], "abc", "SEK")).toBeNull();
+    // An empty builder has nothing to price.
+    expect(previewTotals([], "0", "SEK")).toBeNull();
+    expect(previewTotals([line({ description: "   " })], "0", "SEK")).toBeNull();
   });
 
   it("clamps an over-large discount instead of going negative", () => {
-    expect(previewTotals([line({ qty: "1", unitPrice: "10" })], "50", "SEK")!.total).toBe(0);
+    const preview = previewTotals([line({ qty: "1", unitPrice: "10" })], "50", "SEK");
+    expect(preview!.net).toBe(0);
+    expect(preview!.vatTotal).toBe(0);
+    expect(preview!.gross).toBe(0);
   });
 });

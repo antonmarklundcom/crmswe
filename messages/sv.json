@@ -645,7 +645,7 @@
       "subtotal": "Delsumma",
       "total": "Totalt",
       "createQuote": "Skapa offert",
-      "sendWhatsapp": "Skicka via WhatsApp",
+      "sendToCustomer": "Skicka till kunden",
       "publicLink": "Publik länk",
       "downloadPdf": "Ladda ner PDF",
       "statusValues": {
@@ -777,7 +777,8 @@
         "creditFailed": "Kreditfakturan kunde inte skapas. Kontrollera att fakturan är utfärdad och inte redan krediterad.",
         "unknown": "Vi kunde inte spara. Försök igen."
       },
-      "exclVat": "exkl. moms"
+      "exclVat": "exkl. moms",
+      "sendReminder": "Skicka påminnelse"
     },
     "settings": {
       "title": "Inställningar",
@@ -868,7 +869,15 @@
         "off": "Av",
         "enable": "Slå på",
         "disable": "Stäng av"
-      }
+      },
+      "emailSenderTitle": "Avsändare för e-post till kunder",
+      "emailSenderIntro": "Offerter, fakturor och påminnelser skickas med e-post. Här bestämmer du vad kunden ser som avsändare och vart svaren går.",
+      "emailFromName": "Avsändarnamn",
+      "emailReplyTo": "Svara till",
+      "emailReplyToHelp": "Hit går kundens svar. Lämnas det tomt går svaren till plattformens adress och når dig inte.",
+      "emailFromEmail": "Egen avsändaradress (avancerat)",
+      "emailFromEmailHelp": "Lämna tomt om du inte vet. Adressen måste ligga på en domän som är verifierad hos vår e-postleverantör (SPF och DKIM) — annars studsar fakturan eller hamnar i skräpposten. Utan egen adress skickas posten från plattformen med ditt företagsnamn som avsändare, vilket fungerar för de allra flesta.",
+      "emailSettingsInvalid": "Kontrollera e-postadresserna."
     },
     "automations": {
       "title": "Automationer",
@@ -2261,6 +2270,40 @@
       "appointmentsSubject": "Du har {count} bokning(ar) idag",
       "appointmentsBody": "I din kalender de närmaste 24 timmarna: {count} bokning(ar).",
       "allDay": "Heldag"
+    },
+    "quote": {
+      "subject": "Offert {number} från {tenant}",
+      "title": "Offert {number}",
+      "body": "Hej {name}! Här är din offert från {tenant} på {amount} inklusive moms. Klicka nedan för att läsa hela offerten och ladda ner den som PDF.",
+      "validUntil": "Offerten gäller till och med {date}.",
+      "cta": "Öppna offerten",
+      "fallback": "Fungerar inte knappen? Kopiera den här länken till webbläsaren: {url}"
+    },
+    "invoice": {
+      "subject": "Faktura {number} från {tenant}",
+      "creditSubject": "Kreditfaktura {number} från {tenant}",
+      "title": "Faktura {number}",
+      "creditTitle": "Kreditfaktura {number}",
+      "body": "Hej {name}! Här är din faktura från {tenant} på {amount}. Klicka nedan för att läsa den och ladda ner den som PDF.",
+      "creditBody": "Hej {name}! Här är en kreditfaktura från {tenant} på {amount}, som krediterar faktura {credits}.",
+      "dueAt": "Förfallodatum: {date}.",
+      "payment": "Betala till {account} och ange OCR-nummer {ocr}.",
+      "paymentNoOcr": "Betala till {account}.",
+      "cta": "Öppna fakturan",
+      "fallback": "Fungerar inte knappen? Kopiera den här länken till webbläsaren: {url}"
+    },
+    "paymentReminder": {
+      "subject": "Påminnelse: faktura {number} förfaller {date}",
+      "overdueSubject": "Påminnelse: faktura {number} har förfallit",
+      "title": "Påminnelse om faktura {number}",
+      "body": "Hej {name}! Vi har ännu inte registrerat någon betalning för faktura {number} från {tenant}. Utestående belopp är {amount}.",
+      "dueAt": "Fakturan förfaller {date}.",
+      "overdue": "Fakturan förföll {date}.",
+      "payment": "Betala till {account} och ange OCR-nummer {ocr}.",
+      "paymentNoOcr": "Betala till {account}.",
+      "crossed": "Har du redan betalat? Då kan du bortse från det här meddelandet.",
+      "cta": "Öppna fakturan",
+      "fallback": "Fungerar inte knappen? Kopiera den här länken till webbläsaren: {url}"
     }
   },
   "pdf": {

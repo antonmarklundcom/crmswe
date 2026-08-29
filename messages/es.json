@@ -583,7 +583,15 @@
         "off": "Desactivados",
         "enable": "Activar",
         "disable": "Desactivar"
-      }
+      },
+      "emailSenderTitle": "Remitente del correo a clientes",
+      "emailSenderIntro": "Los presupuestos, facturas y recordatorios salen por correo. Acá definís qué ve el cliente como remitente y adónde llegan las respuestas.",
+      "emailFromName": "Nombre del remitente",
+      "emailReplyTo": "Responder a",
+      "emailReplyToHelp": "Adonde llega la respuesta del cliente. Si lo dejás vacío, las respuestas van a la dirección de la plataforma y nunca te llegan.",
+      "emailFromEmail": "Dirección propia de remitente (avanzado)",
+      "emailFromEmailHelp": "Dejalo vacío si no estás seguro. La dirección tiene que estar en un dominio verificado con nuestro proveedor de correo (SPF y DKIM); si no, la factura rebota o cae en spam. Sin eso, el correo sale desde la plataforma con el nombre de tu empresa, que sirve para casi todos.",
+      "emailSettingsInvalid": "Revisá las direcciones de correo."
     },
     "whatsapp": {
       "title": "WhatsApp",
@@ -933,7 +941,7 @@
       "subtotal": "Subtotal",
       "total": "Total",
       "createQuote": "Crear presupuesto",
-      "sendWhatsapp": "Enviar por WhatsApp",
+      "sendToCustomer": "Enviar al cliente",
       "publicLink": "Enlace público",
       "downloadPdf": "Descargar PDF",
       "statusValues": {
@@ -1065,7 +1073,8 @@
         "creditFailed": "No se pudo crear la nota de crédito. Verificá que la factura esté emitida y no acreditada ya.",
         "unknown": "No pudimos guardar. Probá de nuevo."
       },
-      "exclVat": "sin IVA"
+      "exclVat": "sin IVA",
+      "sendReminder": "Enviar recordatorio"
     },
     "automations": {
       "title": "Automatizaciones",
@@ -2261,6 +2270,40 @@
       "appointmentsSubject": "Tenés {count} cita(s) para hoy",
       "appointmentsBody": "En tu agenda para las próximas 24 horas: {count} cita(s).",
       "allDay": "Todo el día"
+    },
+    "quote": {
+      "subject": "Presupuesto {number} de {tenant}",
+      "title": "Presupuesto {number}",
+      "body": "¡Hola {name}! Este es tu presupuesto de {tenant} por {amount} con IVA incluido. Abrilo abajo para leerlo completo y descargarlo en PDF.",
+      "validUntil": "El presupuesto vale hasta el {date}.",
+      "cta": "Abrir el presupuesto",
+      "fallback": "¿No funciona el botón? Copiá este enlace en tu navegador: {url}"
+    },
+    "invoice": {
+      "subject": "Factura {number} de {tenant}",
+      "creditSubject": "Nota de crédito {number} de {tenant}",
+      "title": "Factura {number}",
+      "creditTitle": "Nota de crédito {number}",
+      "body": "¡Hola {name}! Esta es tu factura de {tenant} por {amount}. Abrila abajo para leerla y descargarla en PDF.",
+      "creditBody": "¡Hola {name}! Esta es una nota de crédito de {tenant} por {amount}, que acredita la factura {credits}.",
+      "dueAt": "Vencimiento: {date}.",
+      "payment": "Pagá a {account} indicando la referencia {ocr}.",
+      "paymentNoOcr": "Pagá a {account}.",
+      "cta": "Abrir la factura",
+      "fallback": "¿No funciona el botón? Copiá este enlace en tu navegador: {url}"
+    },
+    "paymentReminder": {
+      "subject": "Recordatorio: la factura {number} vence el {date}",
+      "overdueSubject": "Recordatorio: la factura {number} está vencida",
+      "title": "Recordatorio de la factura {number}",
+      "body": "¡Hola {name}! Todavía no registramos el pago de la factura {number} de {tenant}. El saldo pendiente es {amount}.",
+      "dueAt": "La factura vence el {date}.",
+      "overdue": "La factura venció el {date}.",
+      "payment": "Pagá a {account} indicando la referencia {ocr}.",
+      "paymentNoOcr": "Pagá a {account}.",
+      "crossed": "¿Ya pagaste? Entonces ignorá este mensaje.",
+      "cta": "Abrir la factura",
+      "fallback": "¿No funciona el botón? Copiá este enlace en tu navegador: {url}"
     }
   },
   "pdf": {

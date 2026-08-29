@@ -54,7 +54,7 @@ export async function GET(request: Request) {
 
     for (const admin of admins) {
       const sent = await sendEmail({ to: admin.email, subject, html });
-      if (sent) emailsSent += 1;
+      if (sent.sent) emailsSent += 1;
     }
 
     // Marked regardless of whether the mail actually left: email is optional

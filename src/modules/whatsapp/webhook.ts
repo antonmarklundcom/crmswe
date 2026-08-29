@@ -22,8 +22,14 @@ import { advancesMessageStatus, type MessageStatus } from "./message-status";
 // file) runs as a job, off the request path.
 
 
-/** Step 1: HMAC-SHA256 over the *raw* request body, app-secret keyed. */
+/** Step 1: HMAC-SHA256 over the *raw* request body, app-secret keyed.
+ *
+ * No secret configured means no signature can be verified, which means
+ * nothing is accepted. Fail closed, never open: an unsigned-but-trusted
+ * webhook would let anyone who finds the URL write messages into any
+ * tenant's inbox. */
 export function verifySignature(rawBody: string, signatureHeader: string | null): boolean {
+  if (!env.WHATSAPP_APP_SECRET) return false;
   if (!signatureHeader?.startsWith("sha256=")) return false;
 
   const expected = createHmac("sha256", env.WHATSAPP_APP_SECRET).update(rawBody).digest("hex");

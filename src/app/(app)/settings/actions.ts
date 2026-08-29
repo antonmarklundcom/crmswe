@@ -10,6 +10,7 @@ import {
   updateTenantDefaultCountry,
   updateTenantReviewLink,
   updateTenantWhatsappEnabled,
+  updateTenantEmailSettings,
   regenerateContactsFeedToken,
   updateTenantAiSettings,
   type BusinessHours,
@@ -164,6 +165,53 @@ export async function updateReviewLinkAction(
 
   try {
     await updateTenantReviewLink(ctx, parsed.data);
+  } catch {
+    return { error: "unknown", saved: false, values };
+  }
+
+  revalidatePath("/settings");
+  return { error: null, saved: true, values };
+}
+
+/**
+ * Who a customer sees an offert or faktura arriving from (plan.md §5.3.2).
+ *
+ * `fromEmail` is validated as an address but *not* verified as a sending
+ * domain — this app cannot know what a tenant has published SPF and DKIM
+ * for, and Resend refuses the send at delivery time if the domain is not
+ * verified there. The field's help text is where that is said; a valid-
+ * looking address that silently bounces is the failure mode to warn about,
+ * and `sendEmail` reports the provider's refusal rather than swallowing it.
+ */
+const emailSettingsSchema = z.object({
+  fromName: z.string().max(200).optional(),
+  fromEmail: z.email().optional().or(z.literal("")),
+  replyTo: z.email().optional().or(z.literal("")),
+});
+
+export async function updateEmailSettingsAction(
+  _prevState: SettingsFormState,
+  formData: FormData,
+): Promise<SettingsFormState> {
+  const ctx = await requireTenantAdmin();
+  const values = submitted(formData);
+  const parsed = emailSettingsSchema.safeParse({
+    fromName: formData.get("fromName") || undefined,
+    fromEmail: formData.get("fromEmail") || undefined,
+    replyTo: formData.get("replyTo") || undefined,
+  });
+  if (!parsed.success) {
+    return { error: "emailSettingsInvalid", saved: false, values };
+  }
+
+  try {
+    await updateTenantEmailSettings(ctx, {
+      // An emptied field means "clear this", which is what puts the sender
+      // back to the platform default — not "leave whatever was there".
+      fromName: parsed.data.fromName ?? "",
+      fromEmail: parsed.data.fromEmail ?? "",
+      replyTo: parsed.data.replyTo ?? "",
+    });
   } catch {
     return { error: "unknown", saved: false, values };
   }

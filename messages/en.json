@@ -645,7 +645,7 @@
       "subtotal": "Subtotal",
       "total": "Total",
       "createQuote": "Create quote",
-      "sendWhatsapp": "Send over WhatsApp",
+      "sendToCustomer": "Send to the customer",
       "publicLink": "Public link",
       "downloadPdf": "Download PDF",
       "statusValues": {
@@ -777,7 +777,8 @@
         "creditFailed": "The credit note could not be created. Check that the invoice is issued and not already credited.",
         "unknown": "We couldn't save that. Try again."
       },
-      "exclVat": "excl. VAT"
+      "exclVat": "excl. VAT",
+      "sendReminder": "Send a reminder"
     },
     "settings": {
       "title": "Settings",
@@ -868,7 +869,15 @@
         "off": "Off",
         "enable": "Turn on",
         "disable": "Turn off"
-      }
+      },
+      "emailSenderTitle": "Sender for customer email",
+      "emailSenderIntro": "Quotes, invoices and reminders go out by email. This decides what the customer sees as the sender, and where their replies go.",
+      "emailFromName": "Sender name",
+      "emailReplyTo": "Reply to",
+      "emailReplyToHelp": "Where the customer's reply lands. Left blank, replies go to the platform address and never reach you.",
+      "emailFromEmail": "Your own sender address (advanced)",
+      "emailFromEmailHelp": "Leave this blank if you are unsure. The address must be on a domain verified with our email provider (SPF and DKIM) — otherwise the invoice bounces or lands in spam. Without one, mail is sent from the platform under your company name, which works for almost everyone.",
+      "emailSettingsInvalid": "Check the email addresses."
     },
     "automations": {
       "title": "Automations",
@@ -2261,6 +2270,40 @@
       "appointmentsSubject": "You have {count} appointment(s) today",
       "appointmentsBody": "On your calendar for the next 24 hours: {count} appointment(s).",
       "allDay": "All day"
+    },
+    "quote": {
+      "subject": "Quote {number} from {tenant}",
+      "title": "Quote {number}",
+      "body": "Hi {name}! Here is your quote from {tenant} for {amount} including VAT. Open it below to read it in full and download it as a PDF.",
+      "validUntil": "This quote is valid until {date}.",
+      "cta": "Open the quote",
+      "fallback": "Button not working? Copy this link into your browser: {url}"
+    },
+    "invoice": {
+      "subject": "Invoice {number} from {tenant}",
+      "creditSubject": "Credit note {number} from {tenant}",
+      "title": "Invoice {number}",
+      "creditTitle": "Credit note {number}",
+      "body": "Hi {name}! Here is your invoice from {tenant} for {amount}. Open it below to read it and download it as a PDF.",
+      "creditBody": "Hi {name}! Here is a credit note from {tenant} for {amount}, crediting invoice {credits}.",
+      "dueAt": "Due date: {date}.",
+      "payment": "Pay to {account} using reference {ocr}.",
+      "paymentNoOcr": "Pay to {account}.",
+      "cta": "Open the invoice",
+      "fallback": "Button not working? Copy this link into your browser: {url}"
+    },
+    "paymentReminder": {
+      "subject": "Reminder: invoice {number} is due {date}",
+      "overdueSubject": "Reminder: invoice {number} is overdue",
+      "title": "Reminder about invoice {number}",
+      "body": "Hi {name}! We have not registered a payment for invoice {number} from {tenant}. The outstanding amount is {amount}.",
+      "dueAt": "The invoice is due {date}.",
+      "overdue": "The invoice was due {date}.",
+      "payment": "Pay to {account} using reference {ocr}.",
+      "paymentNoOcr": "Pay to {account}.",
+      "crossed": "Already paid? Then please ignore this message.",
+      "cta": "Open the invoice",
+      "fallback": "Button not working? Copy this link into your browser: {url}"
     }
   },
   "pdf": {

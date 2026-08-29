@@ -38,10 +38,15 @@ const envSchema = z
     BETTER_AUTH_SECRET: z
       .string()
       .min(32, "BETTER_AUTH_SECRET must be at least 32 characters"),
-    WHATSAPP_APP_SECRET: z.string().min(1, "WHATSAPP_APP_SECRET is required"),
-    WHATSAPP_WEBHOOK_VERIFY_TOKEN: z
-      .string()
-      .min(1, "WHATSAPP_WEBHOOK_VERIFY_TOKEN is required"),
+    // Optional since O3 (plan.md §5.3.1). WhatsApp is off unless a tenant
+    // switches it on, so the ordinary Swedish deployment has no Meta app at
+    // all — and requiring credentials for a channel the product hides by
+    // default would be a missing env that blocks, which §4.5 forbids. Unset,
+    // the webhook route answers 503: it will not echo a verification
+    // challenge it has no token to check, and will not accept a payload
+    // whose signature it cannot verify. Nothing else reads them.
+    WHATSAPP_APP_SECRET: z.string().min(1).optional(),
+    WHATSAPP_WEBHOOK_VERIFY_TOKEN: z.string().min(1).optional(),
     // Transactional email (PLAN.md §10 1M). Optional, same pattern as Sentry
     // in next.config.ts: absent means email sending no-ops (logs instead of
     // throwing) rather than the app refusing to boot. Lets every environment

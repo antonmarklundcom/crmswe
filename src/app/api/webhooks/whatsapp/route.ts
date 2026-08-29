@@ -12,7 +12,21 @@ import { verifySignature, persistRawEvent } from "@/modules/whatsapp/webhook";
 // expects the challenge echoed verbatim), so this route does not use the
 // JSON guards in lib/api/guards — its "credential" is the signature check
 // below, not a header a guard could read.
+// Both handlers refuse outright when the platform has no Meta app configured
+// (plan.md §5.3.1 made those envs optional). 503 rather than 403/401: the
+// request was not rejected on its merits, this deployment simply has no
+// WhatsApp — and telling Meta "service unavailable" is the honest answer,
+// which also keeps a misconfigured deployment distinguishable in the logs
+// from a genuinely bad signature.
+function whatsappConfigured(): boolean {
+  return !!env.WHATSAPP_APP_SECRET && !!env.WHATSAPP_WEBHOOK_VERIFY_TOKEN;
+}
+
 export async function GET(request: Request) {
+  if (!whatsappConfigured()) {
+    return new NextResponse("WhatsApp is not configured", { status: 503 });
+  }
+
   const url = new URL(request.url);
   const mode = url.searchParams.get("hub.mode");
   const token = url.searchParams.get("hub.verify_token");
@@ -25,6 +39,10 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  if (!whatsappConfigured()) {
+    return new NextResponse("WhatsApp is not configured", { status: 503 });
+  }
+
   const rawBody = await request.text();
   const signature = request.headers.get("x-hub-signature-256");
 

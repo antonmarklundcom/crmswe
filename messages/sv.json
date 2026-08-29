@@ -546,7 +546,18 @@
           "nameTaken": "Det finns redan en vy med det namnet",
           "unknown": "Vyn kunde inte sparas"
         }
-      }
+      },
+      "gdprTitle": "Registerutdrag (GDPR)",
+      "gdprExportHint": "Laddar ner allt ditt företag lagrar om den här kontakten som en JSON-fil, att skicka vidare till personen som begärt utdraget. Nedladdningen loggas i händelseloggen.",
+      "gdprExport": "Ladda ner registerutdrag",
+      "anonymizeTitle": "Anonymisera kontakten",
+      "anonymizeHint": "Tar bort namn, telefon, e-post, org.nr, adress och anteckningar, samt innehållet i meddelanden, formulärsvar och bokningssvar. Går inte att ångra.",
+      "anonymizeRetention": "Utställda fakturor raderas inte och kundadressen på dem ändras inte: bokföringslagen kräver att räkenskapsinformation sparas i sju år, och GDPR:s rätt till radering viker för det. Kontakten finns kvar, avidentifierad, så att fakturorna fortfarande hänger ihop.",
+      "anonymizeConfirmLabel": "Skriv {word} för att bekräfta",
+      "anonymizeConfirmMissing": "Skriv {word} i rutan för att bekräfta.",
+      "anonymize": "Anonymisera",
+      "anonymizeDone": "Kontakten är anonymiserad. Utställda fakturor är orörda.",
+      "anonymizeFailed": "Kunde inte anonymisera kontakten."
     },
     "inbox": {
       "title": "Inkorg",

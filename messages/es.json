@@ -346,7 +346,18 @@
           "nameTaken": "Ya existe una vista con ese nombre",
           "unknown": "No se pudo guardar la vista"
         }
-      }
+      },
+      "gdprTitle": "Informe de datos (GDPR)",
+      "gdprExportHint": "Descarga todo lo que tu empresa guarda sobre este contacto en un archivo JSON, para reenviárselo a quien lo pidió. La descarga queda registrada en el historial.",
+      "gdprExport": "Descargar informe de datos",
+      "anonymizeTitle": "Anonimizar el contacto",
+      "anonymizeHint": "Borra nombre, teléfono, correo, org.nr, dirección y notas, junto con el contenido de los mensajes, las respuestas de formularios y las de reservas. No se puede deshacer.",
+      "anonymizeRetention": "Las facturas emitidas no se borran y la dirección del comprador impresa en ellas no cambia: la bokföringslagen sueca exige conservar la información contable siete años, y el derecho de supresión del GDPR cede ante eso. El contacto queda, sin identificar, para que las facturas sigan teniendo sentido.",
+      "anonymizeConfirmLabel": "Escribí {word} para confirmar",
+      "anonymizeConfirmMissing": "Escribí {word} en el campo para confirmar.",
+      "anonymize": "Anonimizar",
+      "anonymizeDone": "El contacto quedó anonimizado. Las facturas emitidas están intactas.",
+      "anonymizeFailed": "No se pudo anonimizar el contacto."
     },
     "pipeline": {
       "title": "Pipeline",

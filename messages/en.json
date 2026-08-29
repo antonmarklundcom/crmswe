@@ -546,7 +546,18 @@
           "nameTaken": "A view with that name already exists",
           "unknown": "The view couldn't be saved"
         }
-      }
+      },
+      "gdprTitle": "Data export (GDPR)",
+      "gdprExportHint": "Downloads everything your company holds about this contact as a JSON file, to forward to the person who asked for it. The download is recorded in the audit log.",
+      "gdprExport": "Download data export",
+      "anonymizeTitle": "Anonymise the contact",
+      "anonymizeHint": "Removes name, phone, email, org.nr, address and notes, along with the content of messages, form answers and booking answers. Cannot be undone.",
+      "anonymizeRetention": "Issued invoices are not deleted and the buyer address printed on them is not changed: bokföringslagen requires accounting records to be kept for seven years, and the GDPR right to erasure yields to that. The contact stays, de-identified, so the invoices still hang together.",
+      "anonymizeConfirmLabel": "Type {word} to confirm",
+      "anonymizeConfirmMissing": "Type {word} in the box to confirm.",
+      "anonymize": "Anonymise",
+      "anonymizeDone": "The contact has been anonymised. Issued invoices are untouched.",
+      "anonymizeFailed": "Could not anonymise the contact."
     },
     "inbox": {
       "title": "Inbox",

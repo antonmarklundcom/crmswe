@@ -639,14 +639,6 @@
 .mk-section--ink .mk-btn--ghost {
   border-color: color-mix(in srgb, var(--mk-base) 30%, transparent);
 }
-/* WhatsApp green lives ONLY inside the glyph — never as a fill. */
-.mk-btn--wa {
-  background: var(--mk-ink);
-  color: var(--mk-base);
-}
-.mk-btn--wa svg {
-  fill: #25d366;
-}
 .mk-cta-pair {
   display: flex;
   flex-wrap: wrap;
@@ -868,6 +860,59 @@
 }
 .mk-notice p:last-child {
   margin-bottom: 0;
+}
+
+/* ---- GDPR-granular cookie consent (plan.md §6.2) ---- */
+.mk-consent {
+  position: fixed;
+  left: var(--mk-s-4);
+  right: var(--mk-s-4);
+  bottom: var(--mk-s-4);
+  z-index: 2147483000;
+  max-width: 640px;
+  margin: 0 auto;
+  background: var(--mk-surface);
+  border: 1px solid var(--mk-hairline);
+  border-radius: var(--mk-r-md);
+  box-shadow: var(--mk-shadow-2);
+  padding: var(--mk-s-6);
+}
+.mk-consent p {
+  margin-bottom: var(--mk-s-4);
+  font-size: var(--mk-t--1);
+}
+.mk-consent__option {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--mk-s-3);
+  margin-bottom: var(--mk-s-3);
+  font-size: var(--mk-t--1);
+}
+.mk-consent__option input {
+  margin-top: 3px;
+  accent-color: var(--mk-accent);
+}
+.mk-consent__option span {
+  color: var(--mk-ink-70);
+}
+.mk-consent__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--mk-s-3);
+  margin-top: var(--mk-s-4);
+}
+.mk-consent .mk-btn {
+  min-height: 40px;
+  font-size: var(--mk-t--1);
+}
+.mk-consent-settings {
+  background: none;
+  border: 0;
+  padding: 0;
+  color: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+  font: inherit;
 }
 
 .mk :focus-visible {

@@ -6,7 +6,7 @@ import { CtaPair } from "./cta";
 // conversation is), not a placeholder for a photo that isn't there yet.
 //
 // No entrance animation on any of this: it is above the fold, and animating
-// it delays LCP and reads slow on a Paraguayan mobile connection.
+// it delays LCP and reads slow on a mobile connection.
 
 export function Hero({
   eyebrow,
@@ -27,7 +27,7 @@ export function Hero({
   asideTitle: string;
   asideBody: string;
   asideNote: string;
-  cta: { primaryLabel: string; whatsappLabel: string; whatsappPrefill: string };
+  cta: { primaryLabel: string };
 }) {
   return (
     <section className="mk-section" aria-labelledby="mk-hero-title">
@@ -42,12 +42,7 @@ export function Hero({
               <li key={point}>{point}</li>
             ))}
           </ul>
-          <CtaPair
-            primaryLabel={cta.primaryLabel}
-            whatsappLabel={cta.whatsappLabel}
-            whatsappPrefill={cta.whatsappPrefill}
-            location="hero"
-          />
+          <CtaPair primaryLabel={cta.primaryLabel} location="hero" />
         </div>
 
         <aside className="mk-card mk-card--raised">

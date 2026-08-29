@@ -21,7 +21,7 @@ export function CtaBand({
   body: string;
   panelTitle: string;
   panelItems: string[];
-  cta: { primaryLabel: string; whatsappLabel: string; whatsappPrefill: string };
+  cta: { primaryLabel: string };
 }) {
   return (
     <>
@@ -40,12 +40,7 @@ export function CtaBand({
           <Eyebrow>{eyebrow}</Eyebrow>
           <h2 id="mk-closing-title">{title}</h2>
           <Lead>{body}</Lead>
-          <CtaPair
-            primaryLabel={cta.primaryLabel}
-            whatsappLabel={cta.whatsappLabel}
-            whatsappPrefill={cta.whatsappPrefill}
-            location="cierre"
-          />
+          <CtaPair primaryLabel={cta.primaryLabel} location="cierre" />
         </div>
       </section>
     </>

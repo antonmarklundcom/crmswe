@@ -64,13 +64,13 @@ describe("isPublicPath, host-aware", () => {
     expect(isPublicPath("/dashboard", crm)).toBe(false);
     expect(isPublicPath("/pipeline", crm)).toBe(false);
     expect(isPublicPath("/tenants", crm)).toBe(false);
-    expect(isPublicPath("/metodo", crm)).toBe(false);
+    expect(isPublicPath("/sa-funkar-det", crm)).toBe(false);
     expect(isPublicPath("/login", crm)).toBe(true);
     expect(isPublicPath("/", crm)).toBe(true);
   });
 
   it("opens every marketing route on the apex host", () => {
-    for (const path of ["/", "/metodo", "/contacto", "/nosotros", "/soluciones/clinicas"]) {
+    for (const path of ["/", "/sa-funkar-det", "/kontakt", "/om-oss", "/soluciones/clinicas"]) {
       expect(isPublicPath(path, apex)).toBe(true);
     }
   });
@@ -93,7 +93,7 @@ describe("isPublicPath, host-aware", () => {
 
   it("treats localhost and preview hostnames as marketing hosts", () => {
     // Matches the host check page.tsx has always used: only crm.* is the app.
-    expect(isPublicPath("/metodo", "localhost:3000")).toBe(true);
+    expect(isPublicPath("/sa-funkar-det", "localhost:3000")).toBe(true);
     expect(isPublicPath("/dashboard", "srv123.hostingersite.com")).toBe(true);
   });
 
@@ -116,8 +116,8 @@ describe("isAppHost", () => {
 
 describe("resolveHostRedirect", () => {
   it("301s www to the apex, preserving path and query", () => {
-    expect(resolveHostRedirect(`www.${APEX_HOST}`, "/metodo", "?utm_source=ads")).toEqual({
-      url: `https://${APEX_HOST}/metodo?utm_source=ads`,
+    expect(resolveHostRedirect(`www.${APEX_HOST}`, "/sa-funkar-det", "?utm_source=ads")).toEqual({
+      url: `https://${APEX_HOST}/sa-funkar-det?utm_source=ads`,
       status: 301,
     });
   });
@@ -132,7 +132,7 @@ describe("resolveHostRedirect", () => {
   });
 
   it("leaves marketing paths on the apex alone", () => {
-    for (const path of ["/", "/metodo", "/contacto", "/nosotros"]) {
+    for (const path of ["/", "/sa-funkar-det", "/kontakt", "/om-oss"]) {
       expect(resolveHostRedirect(APEX_HOST, path)).toBeNull();
     }
   });

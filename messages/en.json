@@ -1782,390 +1782,378 @@
   "marketing": {
     "nav": {
       "home": "Home",
-      "metodo": "Method",
-      "nosotros": "About",
-      "contacto": "Contact",
-      "login": "Sign in",
+      "saFunkarDet": "How it works",
+      "omOss": "About us",
+      "kontakt": "Contact",
+      "login": "Log in",
       "skipToContent": "Skip to content",
       "menu": "Menu"
     },
     "cta": {
-      "primary": "Book your diagnostic",
-      "whatsapp": "Message us on WhatsApp",
-      "secondary": "See how we work",
-      "waPrefill": "Hi, I came from clientes.com.py and I'd like to book a diagnostic."
+      "primary": "Book a walkthrough"
     },
     "ribbon": {
-      "monthly": "Month to month, no lock-in",
-      "measured": "Everything measured: you know what each enquiry cost",
-      "ownData": "The contact database is yours",
-      "region": "Asunción and Greater Asunción",
-      "ruc": "Tax ID {ruc}"
+      "monthly": "Month to month, no lock-in period",
+      "measured": "You see exactly what happens to every lead",
+      "ownData": "The contact list is yours — export it whenever you like",
+      "orgNr": "Org. no. {orgNr}"
+    },
+    "cookie": {
+      "body": "We use necessary cookies to make the site work. With your consent, we also use cookies to see where leads come from.",
+      "necessaryLabel": "Necessary (always on)",
+      "analyticsLabel": "Marketing & attribution",
+      "saveLabel": "Save choices",
+      "acceptAllLabel": "Accept all",
+      "settingsLabel": "Cookie settings"
     },
     "home": {
       "meta": {
-        "title": "More customers for your company | clientes.com.py",
-        "description": "We help established Paraguayan companies win more customers with an orderly sales process: lead capture, follow-up and measurement."
+        "title": "CRM with quotes and invoicing for Swedish small businesses | CRM Swe",
+        "description": "Capture leads, send quotes and invoices without losing a single enquiry. Built for Swedish small businesses — email-first, GDPR from the ground up."
       },
       "hero": {
-        "eyebrow": "Commercial growth in Paraguay",
-        "title": "More customers. An orderly sales process.",
-        "lead": "We help established Paraguayan companies win more customers — with a system, not with luck.",
-        "body": "If you already have a product that works and customers who come back, the ceiling is almost never demand. It's that lead capture depends on whoever has time that week.",
+        "eyebrow": "CRM for Swedish small businesses",
+        "title": "Leads in. Quote out. Invoice paid.",
+        "lead": "A CRM that captures enquiries, sends quotes and invoices — and keeps track of what's still waiting for a reply.",
+        "body": "Most small businesses don't lose customers because demand is low. They lose them between systems: an enquiry sitting in an inbox, a quote nobody follows up on, an invoice that gets forgotten.",
         "points": [
-          "An enquiry channel that doesn't shut down when the team is busy",
-          "Follow-up that happens either way, whoever is on shift",
-          "Clear numbers: how many enquiries came in and how many closed"
+          "Every enquiry in one place, wherever it came from",
+          "Quotes and invoices with VAT calculated correctly, every time",
+          "Reminders that make sure nothing falls through the cracks"
         ],
         "asideTitle": "How it starts",
-        "asideBody": "A 30-minute diagnostic conversation. We look at where your customers come from today, what gets lost along the way, and what can be put in order first.",
-        "asideNote": "Free and with no commitment. If we can't see how to help you, we'll say so on the same call."
+        "asideBody": "Book a short walkthrough and we'll show you how CRM Swe works for your business specifically — lead capture, quotes, invoicing and what's already built in.",
+        "asideNote": "Free and with no obligation."
       },
       "problem": {
         "eyebrow": "The starting point",
-        "title": "You're not short of customers. You're short of a process.",
-        "body": "Most of the companies we work with have no product or market problem. They have enquiries arriving through five different places, quotes that never get an answer, and no way to know what worked last month.",
-        "bodyTwo": "That isn't fixed with more advertising. It's fixed by putting what already comes in in order, and adding lead capture on top of a base that holds.",
-        "symptomsTitle": "You can see it in concrete things",
+        "title": "It isn't more customers you need. It's a process.",
+        "body": "Most businesses we talk to have neither a product problem nor a marketing problem. They have enquiries coming in from several directions, quotes that never get a reply, and invoices sent too late.",
+        "bodyTwo": "More marketing doesn't fix that. Organising what's already coming in does — with lead capture built on top of a foundation that holds.",
+        "symptomsTitle": "It shows up in concrete ways",
         "symptoms": [
-          "Enquiries arriving on WhatsApp, by phone, on Instagram and through the form, with no single list",
-          "Quotes that were sent and never touched again",
-          "Salespeople starting each month from zero, not knowing who to pick back up",
-          "Good months and bad months with no clear explanation why"
+          "Enquiries by email, phone and form, with no shared list",
+          "Sent quotes nobody follows up on",
+          "Invoices written after the fact, sometimes miscalculated",
+          "No one knows how many enquiries became deals last month"
         ]
       },
       "services": {
-        "eyebrow": "Services",
-        "title": "What we do",
-        "lead": "It all points at the same thing: enquiries come in, and you can handle them. We choose the channels during the diagnostic, not before.",
+        "eyebrow": "Features",
+        "title": "Everything between first contact and a paid invoice",
+        "lead": "One system, not five loose threads. You choose what you use — the foundation is there from day one.",
         "items": [
           {
-            "name": "Google Ads",
-            "body": "Show up exactly when someone searches for what you sell. Search, Performance Max and remarketing."
+            "name": "Lead capture",
+            "body": "A form on your website, chat, or manual entry — every enquiry lands in the same pipeline."
           },
           {
-            "name": "Meta Ads",
-            "body": "Facebook and Instagram campaigns aimed at people who buy, not people who scroll. Creative, targeting and weekly optimisation."
+            "name": "Pipeline & follow-up",
+            "body": "See where every deal stands, who owns it, and what's waiting for a reply."
           },
           {
-            "name": "SEO",
-            "body": "Local and national rankings, so people find you without paying for every click."
+            "name": "Quotes",
+            "body": "Send a quote with the right VAT per line, straight from an enquiry."
           },
           {
-            "name": "Websites",
-            "body": "Fast pages, built for mobile and for converting into WhatsApp. Not digital brochures."
+            "name": "Invoicing",
+            "body": "Invoice with OCR and bankgiro, email-first — nothing to print."
           },
           {
-            "name": "Social media and content",
-            "body": "A presence that supports the sale: content with intent and a calendar that is actually kept, not posting for the sake of it."
+            "name": "Automations",
+            "body": "Follow-up emails, payment reminders and internal notifications run themselves."
           },
           {
-            "name": "AI automation",
-            "body": "An immediate answer to every enquiry and automatic WhatsApp follow-up, so nothing depends on who has time that afternoon."
+            "name": "GDPR from the ground up",
+            "body": "Export or erase a contact's data in a few clicks, with the books left intact."
           }
         ],
-        "fineprint": "You pay the ad spend yourself, directly to Google or Meta. It never goes through us, and you always see what it was spent on."
+        "fineprint": "You own your data. Export contacts and deals whenever you like — no lock-in."
       },
       "method": {
-        "eyebrow": "The method",
-        "title": "Four stages, in this order",
-        "lead": "We don't start with advertising. We start by understanding where your customers come from today and what is being lost.",
-        "linkLabel": "See the full method",
+        "eyebrow": "The flow",
+        "title": "Four steps, in this order",
+        "lead": "From first contact to a paid invoice — without anything falling through the cracks.",
         "steps": [
           {
-            "title": "Diagnostic",
-            "body": "We look at your current channels, your sales cycle, and what happens to an enquiry from the moment it arrives until it closes."
-          },
-          {
-            "title": "Lead capture",
-            "body": "We put the presence and the entry points in order so an interested person can contact you without friction."
+            "title": "Lead in",
+            "body": "An enquiry comes in through a form, chat, or manual entry — and lands straight in the right pipeline."
           },
           {
             "title": "Follow-up",
-            "body": "Every enquiry is recorded and assigned, with reminders of its own. Nothing depends on anyone's memory."
+            "body": "Every deal gets an owner and stays visible in the pipeline until it's won or lost."
           },
           {
-            "title": "Measurement",
-            "body": "How many enquiries came in, from where, how many closed. That's what decides what to repeat next month."
+            "title": "Quote out",
+            "body": "The quote goes out with the right VAT per line and a link the customer can approve directly."
+          },
+          {
+            "title": "Invoice paid",
+            "body": "An approved quote becomes an invoice in one click — with OCR, bankgiro and reminders if it isn't paid on time."
           }
-        ]
+        ],
+        "linkLabel": "See the whole flow"
       },
       "verticals": {
-        "eyebrow": "Who we work with",
-        "title": "Sectors where the method is already proven",
-        "lead": "Companies with a validated offer and their own team, where growth gets stuck in capture and follow-up, not in the product.",
+        "eyebrow": "Who it's for",
+        "title": "Built for businesses that quote and invoice regularly",
+        "lead": "If you take in enquiries and need to keep track of quotes, invoices and follow-up, CRM Swe fits.",
         "items": [
           {
-            "name": "Clinics and practices",
-            "body": "Patients who ask on WhatsApp after hours, and appointments lost because nobody answered in time."
+            "name": "Tradespeople & installers",
+            "body": "Enquiries in, quote out, invoice when the job's done — no paper trail."
           },
           {
-            "name": "Construction companies",
-            "body": "Projects and quotes with long cycles, where follow-up decides who ends up signing."
+            "name": "Consultants & service businesses",
+            "body": "Keep track of which deals are waiting for a reply and invoice ongoing work."
           },
           {
-            "name": "Real estate agencies",
-            "body": "Enquiries and viewings arriving from several portals and ending up with no owner and no record."
-          },
-          {
-            "name": "Professional services",
-            "body": "Firms and consultancies that grow by referral and want a second channel that doesn't depend on it."
-          },
-          {
-            "name": "B2B companies",
-            "body": "Sales with several people deciding, where losing the thread costs months."
+            "name": "Other small businesses",
+            "body": "Anyone who sends quotes and invoices customers benefits from one shared place for it."
           }
         ]
       },
       "statement": {
-        "text": "A system that doesn't depend on who's on shift.",
-        "sub": "That's what separates a good month from a good year."
+        "text": "Nothing should fall through the cracks.",
+        "sub": "One system, the whole way, from first enquiry to paid invoice."
       },
       "closing": {
-        "eyebrow": "The next step",
-        "title": "Let's start with the diagnostic",
-        "body": "Half an hour, free. You leave with a clear picture of where work is being lost, whether you work with us or not.",
-        "panelTitle": "What we need from you",
+        "eyebrow": "Get started",
+        "title": "Book a walkthrough, no obligation",
+        "body": "We'll show you how CRM Swe handles leads, quotes and invoicing for your business.",
+        "panelTitle": "What you get",
         "panelItems": [
-          "Where your customers come from today",
-          "How many people sell on your team",
-          "What happens to an enquiry once it arrives"
+          "A walkthrough of the whole flow, from lead to paid invoice",
+          "A straight answer on whether it fits how you work",
+          "No lock-in period, no card details to book"
         ]
       }
     },
-    "metodo": {
+    "saFunkarDet": {
       "meta": {
-        "title": "Our method for winning more customers | clientes.com.py",
-        "description": "Diagnostic, lead capture, follow-up and measurement: the four stages we use to put customer acquisition in order at Paraguayan companies."
+        "title": "How it works | CRM Swe",
+        "description": "From first enquiry to a paid invoice — see how CRM Swe fits together, step by step."
       },
       "header": {
-        "eyebrow": "The method",
-        "title": "How we work",
-        "lead": "A fixed order, four stages, and one rule: we don't add lead capture on top of a process that is still losing enquiries.",
-        "body": "What follows is literally what we do, in the order we do it. No stage is optional: each one exists because the next doesn't work without it."
+        "eyebrow": "How it works",
+        "title": "Four steps, in this order",
+        "lead": "We don't start with the feature list. We start with what actually happens to an enquiry, from the moment it arrives until the invoice is paid.",
+        "body": "Every step stays in the system — you can always see where a deal or an invoice stands, and who did what."
       },
       "steps": {
-        "eyebrow": "The four stages",
-        "title": "Diagnostic, capture, follow-up, measurement",
+        "eyebrow": "The flow in detail",
+        "title": "From enquiry to paid invoice",
         "items": [
           {
-            "title": "Diagnostic",
-            "lead": "Understand before touching anything.",
-            "body": "We look at where your customers come from today, how long your sales cycle takes, and what happens to an enquiry from arrival to close or loss. There is almost always a leak nobody was watching.",
+            "title": "1. Lead in",
+            "lead": "Every enquiry lands in the same place, wherever it came from.",
+            "body": "A form on your website, the chat widget, or a manual entry — it all lands in the same pipeline with the contact details already filled in.",
             "points": [
-              "A map of current channels and the real volume of enquiries",
-              "The full journey of an enquiry, point by point",
-              "Where work is being lost today, with concrete examples"
+              "Form, chat, or manual entry",
+              "Automatic routing to the right pipeline",
+              "Nothing sitting in an inbox, forgotten"
             ]
           },
           {
-            "title": "Lead capture",
-            "lead": "Whoever wants to contact you, can.",
-            "body": "We put the presence and entry points in order: the page, the form, the WhatsApp number, the Google listing. The goal isn't more traffic, it's that the interested person who already exists doesn't fall through.",
+            "title": "2. Follow-up",
+            "lead": "A deal always has an owner and a next step.",
+            "body": "The pipeline shows where every deal stands. Reminders make sure a quote waiting for a reply doesn't go quiet on its own.",
             "points": [
-              "Clear points of contact and one way in",
-              "Forms that land in a list, not in a stray inbox",
-              "WhatsApp as an entry channel, with a record of what comes in"
+              "A clear owner per deal",
+              "Reminders on unanswered quotes",
+              "Full history on the contact record"
             ]
           },
           {
-            "title": "Follow-up",
-            "lead": "Nothing depends on anyone's memory.",
-            "body": "Every enquiry is recorded, with an owner and a next action. Quotes that were sent come back up on their own when it's time. This is where most of the work being lost today is recovered.",
+            "title": "3. Quote out",
+            "lead": "The quote is ready in minutes, with VAT calculated correctly per line.",
+            "body": "Prices are entered excluding VAT, the customer sees net, VAT and gross clearly broken down, and a link lets the quote be approved directly.",
             "points": [
-              "One single list of enquiries, each with an owner",
-              "Follow-up reminders that appear without anyone entering them",
-              "A history of every conversation, available to the whole team"
+              "VAT rate per line, never just on the total",
+              "The quote goes out as an email with a link",
+              "Approved directly by the customer, nothing to print"
             ]
           },
           {
-            "title": "Measurement",
-            "lead": "Decide with numbers, not impressions.",
-            "body": "How many enquiries came in, through which channel, how many converted and how long they took. That's what decides what gets repeated next month and what gets cut.",
+            "title": "4. Invoice paid",
+            "lead": "An approved quote becomes an invoice in one click.",
+            "body": "The invoice gets an OCR number and bankgiro details automatically, is emailed to the customer, and a payment reminder goes out if it isn't paid on time.",
             "points": [
-              "Enquiries by channel and by month",
-              "Close rate and average cycle time",
-              "A regular review with decisions, not just reports"
+              "OCR and bankgiro on every invoice",
+              "Email-first — nothing to print",
+              "A reminder if the invoice isn't paid on time"
             ]
           }
         ]
       },
       "included": {
         "eyebrow": "What's included",
-        "title": "What's left running",
-        "lead": "The work ends when your team can keep it going without us standing over them.",
+        "title": "Already in place when you start",
+        "lead": "No add-on module to buy for anything tied to quotes and invoicing.",
         "items": [
           {
-            "title": "The platform",
-            "body": "It includes the platform where your team sees every enquiry and every follow-up. It's ours, it's called clientes.com.py, and it isn't software you have to go and buy separately."
+            "title": "VAT calculated correctly",
+            "body": "25, 12, 6 and 0 percent — per line, never guessed."
           },
           {
-            "title": "The written process",
-            "body": "Who handles what, how fast an answer goes out, and when a quote gets picked back up. Short and usable, not a manual nobody opens."
+            "title": "GDPR",
+            "body": "Export or erase a contact's data, with the books left intact."
           },
           {
-            "title": "The trained team",
-            "body": "We stay with the people who sell until the process runs by itself. A tool nobody uses has changed nothing."
+            "title": "Swedish calendar",
+            "body": "ISO week numbers, a Swedish week start, the right time zone."
+          },
+          {
+            "title": "Email from your own sender",
+            "body": "The customer sees your company's name in their inbox, not a generic system."
           }
         ]
       },
       "statement": {
-        "text": "The method is the product.",
-        "sub": "The tools come afterwards, and they're whichever ones are needed."
+        "text": "The system catches up to you, not the other way round.",
+        "sub": "No new process to teach — just what you already do, in one place."
       },
       "faq": {
-        "eyebrow": "Frequently asked",
-        "title": "What people usually ask us",
+        "eyebrow": "Common questions",
+        "title": "Before you start",
         "items": [
           {
-            "q": "How long until results show?",
-            "a": "Orderly follow-up usually shows something within the first few weeks, because it recovers enquiries you already had. New lead capture takes longer and depends on your sector's sales cycle."
+            "q": "What does it cost?",
+            "a": "Pricing is in kr/month excl. VAT — get in touch and we'll tell you what fits your size and usage."
           },
           {
-            "q": "Do you work with companies that are just starting?",
-            "a": "No. We work with companies that already have customers, a team and an offer that works. If you're still validating what to sell, we're not the right partner and we'll tell you so."
+            "q": "Is there a lock-in period?",
+            "a": "No. Cancel any time, month to month."
           },
           {
-            "q": "Do we have to change the tools we already use?",
-            "a": "Only what needs changing. If something already works, it stays. What can't stay is an enquiry going unrecorded."
+            "q": "Which channel do you use for quotes and invoices?",
+            "a": "Email is the primary channel. Quotes, invoices and payment reminders go straight to the customer's inbox, with a link they can open without installing anything."
           },
           {
-            "q": "How much does it cost?",
-            "a": "It depends on the scope, and it comes out of the diagnostic. We'd rather give you a number we can stand behind than a price list that looks nothing like your case."
+            "q": "What happens to our data if we leave?",
+            "a": "You own your contacts and deals. Export whenever you like, and GDPR erasure is built in."
+          },
+          {
+            "q": "Can we import our existing customers?",
+            "a": "Yes, contacts can be imported from a file. Get in touch and we'll help with that."
           }
         ]
       }
     },
-    "nosotros": {
+    "omOss": {
       "meta": {
-        "title": "Who we are | clientes.com.py",
-        "description": "A team focused on the commercial growth of established Paraguayan companies: why Paraguay, why these sectors, and how we work."
+        "title": "About us | CRM Swe",
+        "description": "Why CRM Swe exists, and what we think a CRM for Swedish small businesses should do."
       },
       "header": {
-        "eyebrow": "About",
-        "title": "Who's behind this",
-        "lead": "We're a small team working with established Paraguayan companies, at the point where growth stops being a matter of effort and becomes a matter of process."
+        "eyebrow": "About us",
+        "title": "Built for how Swedish small businesses actually work",
+        "lead": "Not a generic CRM translated into Swedish — a system where VAT, invoicing and GDPR are the foundation, not an add-on."
       },
       "story": {
-        "eyebrow": "Why this",
-        "title": "Why Paraguay and why these sectors",
-        "body": "Paraguay has a great many solid companies — clinics with years behind them, construction firms with steady work, practices with their own client base — that grew through referrals and good work. That growth works until it stops scaling.",
-        "bodyTwo": "The next jump is almost never a campaign. It's stopping the loss of enquiries and being able to repeat what already works. That is exactly what we do, and it's why we work with companies that already have something, not with projects that are just starting.",
-        "bodyThree": "We build what we use, first: the platform your team follows each enquiry in is developed by us. When something doesn't work, there's nobody to pass you on to."
+        "eyebrow": "Why",
+        "title": "Most CRMs are built for sales teams, not for invoicing",
+        "body": "Most CRM tools handle pipeline and contacts well — and stop there. Quoting and invoicing happen in a different system, often with a bookkeeper finding out about it afterwards.",
+        "bodyTwo": "CRM Swe is built the other way round: lead capture, quotes and invoicing in the same system, with VAT calculated correctly from the start and GDPR built in, not bolted on.",
+        "bodyThree": "The result is that nothing needs entering twice, and you always see the whole way from first contact to a paid invoice."
       },
       "principles": {
-        "eyebrow": "How we work",
-        "title": "Three things we don't negotiate",
-        "lead": "This isn't a list of values for the wall. They're the three rules that have cost us money to hold to most often.",
+        "eyebrow": "What we believe",
+        "title": "Three things we don't compromise on",
+        "lead": "This is what decides what we build, in this order.",
         "items": [
           {
-            "title": "We say no",
-            "body": "If the diagnostic shows we can't move the needle, we tell you right there. A badly taken client costs more than it brings in."
+            "title": "The VAT has to be right",
+            "body": "The correct rate per line, never a guess on the total — that's the foundation of a legal invoice, not a detail."
           },
           {
-            "title": "Numbers before opinions",
-            "body": "Everything we propose has to be measurable. If it can't be measured, it's an idea, not a recommendation."
+            "title": "Your data is yours",
+            "body": "Export and erasure should be simple, not something you have to ask for."
           },
           {
-            "title": "It has to keep working without us",
-            "body": "The goal is for your team to keep the process going on its own. A permanent dependency would be comfortable for us and bad for you."
+            "title": "Email-first",
+            "body": "The customer should be able to get their quote and invoice without installing anything."
           }
         ]
       },
       "statement": {
-        "text": "We work with few companies at a time.",
-        "sub": "It's the only way to get properly inside each one's business."
+        "text": "One system, the whole way.",
+        "sub": "From first enquiry to a booked invoice."
       }
     },
-    "contacto": {
+    "kontakt": {
       "meta": {
-        "title": "Book your diagnostic | clientes.com.py",
-        "description": "Tell us about your company and we'll arrange a free 30-minute diagnostic conversation to see where work is being lost."
+        "title": "Contact | CRM Swe",
+        "description": "Book a short walkthrough of CRM Swe — no obligation, no card details."
       },
       "header": {
         "eyebrow": "Contact",
-        "title": "Let's book the diagnostic",
-        "lead": "Tell us briefly about your company and we'll arrange a 30-minute conversation. Free and with no commitment."
-      },
-      "form": {
-        "name": "Full name",
-        "company": "Company",
-        "phone": "Phone or WhatsApp",
-        "phonePlaceholder": "0981 123 456",
-        "phoneHint": "It's the fastest way to arrange things. We message before we call.",
-        "email": "Email",
-        "emailOptional": "Email (optional)",
-        "sector": "Sector",
-        "sectorPlaceholder": "Choose an option",
-        "sectorOptions": [
-          "Clinic or practice",
-          "Construction company",
-          "Real estate agency",
-          "Professional services",
-          "B2B company",
-          "Other"
-        ],
-        "message": "Tell us briefly what you want to solve",
-        "messageOptional": "Tell us briefly what you want to solve (optional)",
-        "submit": "Send and arrange",
-        "submitting": "Sending…",
-        "privacy": "We use your details only to contact you about this enquiry.",
-        "honeypotLabel": "Leave this field empty"
-      },
-      "success": {
-        "title": "We received your enquiry",
-        "body": "We'll write to you within the next working hours to arrange a time. If you'd rather move faster, message us directly on WhatsApp.",
-        "backLabel": "Back to the home page"
-      },
-      "errors": {
-        "phone": "We need a phone number to arrange things. Check the number and try again.",
-        "generic": "We couldn't send your enquiry. Try again or message us on WhatsApp."
+        "title": "Book a walkthrough",
+        "lead": "Tell us a little about your business and we'll get back to you with a time."
       },
       "aside": {
-        "title": "What happens next",
+        "title": "How it works",
         "steps": [
-          "We write to arrange a day and time",
-          "We talk for 30 minutes about your current situation",
-          "You leave with a clear picture, whether we work together or not"
+          "We read your enquiry",
+          "We get back to you within one business day",
+          "We book a short walkthrough, online or by phone"
         ],
-        "pricingTitle": "About pricing",
-        "pricingBody": "Tailored, based on the diagnostic. We'd rather give you a number we can stand behind than a list that looks nothing like your case.",
-        "whatsappTitle": "I'd rather write now",
-        "whatsappBody": "If you want to get the conversation going, message us and we'll reply during working hours."
+        "pricingTitle": "Pricing",
+        "pricingBody": "Kr/month excl. VAT, based on size and usage — get in touch and we'll give you a proposal that fits."
+      },
+      "success": {
+        "title": "Thanks, we'll be in touch",
+        "body": "Your enquiry has been received. We'll get back to you within one business day.",
+        "backLabel": "Back to the homepage"
+      },
+      "errors": {
+        "phone": "Enter a phone number so we can reach you."
+      },
+      "form": {
+        "name": "Name",
+        "company": "Company",
+        "phone": "Phone",
+        "phonePlaceholder": "070-123 45 67",
+        "phoneHint": "We'll call or text to book a time.",
+        "emailOptional": "Email (optional)",
+        "sector": "Industry",
+        "sectorPlaceholder": "Choose an industry",
+        "sectorOptions": [
+          "Trades & construction",
+          "Consulting & advisory",
+          "Retail & e-commerce",
+          "Service business",
+          "Other"
+        ],
+        "messageOptional": "Message (optional)",
+        "submit": "Send",
+        "privacy": "Your details are only used to contact you about this enquiry.",
+        "honeypotLabel": "Leave this field empty"
       },
       "faq": {
-        "title": "Before you write",
+        "title": "Common questions about getting started",
         "items": [
           {
-            "q": "How much do I have to invest in advertising?",
-            "a": "It depends on the sector and the area. In the first conversation we give you a realistic range for your case, before you spend a single guaraní. And if we think investing isn't right for you yet, we'll say so there."
+            "q": "How long does it take to get started?",
+            "a": "We book a walkthrough within one business day. Your account can be up and running the same week."
           },
           {
-            "q": "Do you tie me into a long contract?",
-            "a": "No. We work month to month. If the work doesn't pay off, you leave with no penalty."
+            "q": "Do we need to install anything?",
+            "a": "No, CRM Swe runs in the browser. Your customers don't need to install anything to see a quote or invoice."
           },
           {
-            "q": "Are the contacts mine?",
-            "a": "Yes. They go into your own account, with your data. If we stop working together, the database stays with you."
-          },
-          {
-            "q": "Does the first conversation cost anything?",
-            "a": "No. It's a 30-minute diagnostic conversation, free and with no commitment."
-          },
-          {
-            "q": "Do you work outside Asunción?",
-            "a": "Yes. Most of the work is remote, so location isn't an obstacle."
+            "q": "Can we try it before deciding?",
+            "a": "Yes, we'll show you the system with your own data during the walkthrough."
           }
         ]
       }
     },
     "footer": {
-      "tagline": "We help established Paraguayan companies win more customers, with an orderly sales process.",
-      "siteTitle": "The site",
+      "tagline": "CRM with quotes and invoicing for Swedish small businesses.",
+      "siteTitle": "Sitemap",
       "contactTitle": "Contact",
-      "loginNote": "Already a client?",
-      "rights": "All rights reserved.",
-      "madeIn": "Made in Paraguay"
+      "loginNote": "Already a customer?",
+      "rights": "All rights reserved."
     }
   },
   "errors": {

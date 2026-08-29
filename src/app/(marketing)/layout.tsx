@@ -4,7 +4,9 @@ import Script from "next/script";
 import { getTranslations } from "next-intl/server";
 import { MarketingHeader } from "@/components/marketing/header";
 import { MarketingFooter } from "@/components/marketing/footer";
-import { CRM_URL, SITE_URL, siteConfig } from "@/lib/site-config";
+import { CookieConsentBanner, ConsentGatedScripts } from "@/components/marketing/cookie-consent";
+import { JsonLd } from "@/components/marketing/json-ld";
+import { SITE_URL, siteConfig } from "@/lib/site-config";
 
 // The marketing chrome, kept entirely separate from the app chrome. The `.mk`
 // wrapper is what scopes the marketing design tokens (globals.css) — nothing
@@ -23,8 +25,9 @@ const newsreader = Newsreader({
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   // No `template` here on purpose: every marketing page writes its own full
-  // title, brand included, so the title that ships is exactly the one in
-  // messages/es.json and nothing appends a second brand to it.
+  // title, brand included, so the title that ships is exactly the one each
+  // page's own `generateMetadata` returns and nothing appends a second brand
+  // to it.
   title: siteConfig.name,
 };
 
@@ -34,9 +37,18 @@ export default async function MarketingLayout({
   children: React.ReactNode;
 }) {
   const t = await getTranslations("marketing.nav");
+  const tc = await getTranslations("marketing.cookie");
 
   return (
     <div className={`mk ${newsreader.variable}`}>
+      <JsonLd
+        data={{
+          "@context": "https://schema.org",
+          "@type": "Organization",
+          name: siteConfig.name,
+          url: SITE_URL,
+        }}
+      />
       <a href="#contenido" className="mk-skip">
         {t("skipToContent")}
       </a>
@@ -44,18 +56,24 @@ export default async function MarketingLayout({
       <main id="contenido">{children}</main>
       <MarketingFooter />
 
-      {/* First-touch attribution: stores the first utm / gclid / fbclid the
-          visitor ever arrived with in a 90-day cookie, read server-side by the
-          contact action. Without it every lead looks like direct traffic. */}
-      <Script src={`${CRM_URL}/vc-attribution.js`} strategy="afterInteractive" />
-      {/* Scroll reveal, sticky-header state. Reduced-motion guard is inside. */}
+      {/* Scroll reveal, sticky-header state. Reduced-motion guard is inside.
+          Pure UI motion — no cookies, no tracking, so it loads unconditionally. */}
       <Script src="/mk-motion.js" strategy="afterInteractive" />
-      {/* Analytics shim: ~350 bytes, loads nothing, pushes every data-ev click
-          into dataLayer so GA4/GTM/Plausible can be switched on later with one
-          paste and no markup changes. */}
-      <Script id="mk-analytics-shim" strategy="afterInteractive">
-        {`(function(){window.dataLayer=window.dataLayer||[];document.addEventListener('click',function(e){var t=e.target.closest&&e.target.closest('[data-ev]');if(!t)return;window.dataLayer.push({event:t.dataset.ev,ev_loc:t.dataset.evLoc||'',page_path:location.pathname,site:location.hostname});},true);})();`}
-      </Script>
+
+      {/* GDPR-granular consent (plan.md §6.2): the two non-essential scripts
+          (attribution + analytics shim) load only once a visitor has opted
+          in, never before. */}
+      <ConsentGatedScripts />
+      <CookieConsentBanner
+        copy={{
+          body: tc("body"),
+          necessaryLabel: tc("necessaryLabel"),
+          analyticsLabel: tc("analyticsLabel"),
+          saveLabel: tc("saveLabel"),
+          acceptAllLabel: tc("acceptAllLabel"),
+          settingsLabel: tc("settingsLabel"),
+        }}
+      />
     </div>
   );
 }

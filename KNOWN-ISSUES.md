@@ -5,44 +5,28 @@ instead of stopping a phase. Each entry says who should pick it up.
 
 ## Open
 
-### S1-1 — The marketing site is still describing a different business
-`messages/{sv,en}.json`'s `marketing` namespace (nav through FAQ — everything
-under `/`, `/metodo`, `/nosotros`, `/contacto`) is the inherited content
-wholesale: a Paraguayan ad agency selling Google Ads/Meta Ads/SEO/AI-automation
-services, not "CRM Swe" the product. It is not a branding sweep away from
-correct — the positioning, the services list, the FAQ, all of it describes a
-different business. This is deliberately left untouched here rather than
-mechanically find-and-replaced, because plan.md §6.1's own exit grep only
-carves out "deliberate legacy handling" and this doesn't quite fit that
-label — it fits §6.2 instead: S2 rewrites `src/app/(marketing)/` and
-`src/components/marketing/` wholesale, including renaming these routes
-(`/metodo` → `/sa-funkar-det`, `/nosotros` → `/om-oss`, `/contacto` →
-`/kontakt`) and the messages content underneath them. A mechanical sweep now
-would be thrown away by that rewrite and risks shipping confused
-half-Swedish-half-Paraguay copy in between. What S1 *did* fix in the same
-namespace: the two literal `contact.ruc` → `contact.orgNr` reads in
-`page.tsx`/`contacto/page.tsx` needed for the file to compile after
-`site-config.ts`'s field rename — those are plumbing, not copy.
-*Owner: S2 (plan.md §6.2) — this is that phase's actual assignment, not a
-deferred cleanup.*
+### S2-1 — Sites guide's hosted-form example still shows a Spanish placeholder slug
+`src/app/(app)/sites/page.tsx:326` builds the "no backend" iframe example URL
+as `` `${env.APP_URL}/f/${tenant?.slug ?? "tu-empresa"}/contacto` `` —
+`SiteGuide.tsx` itself was fully translated in S1, but this one call site,
+which supplies the *example* tenant slug and form slug when the current
+tenant has none, was missed. Out of S2's own hard limit (marketing pages +
+components + i18n marketing namespace only), so left alone here rather than
+edited. *Owner: whoever next touches `src/app/(app)/sites/`, or S3 at the
+latest.*
 
-### S1-2 — The marketing namespace ships in every page's hydration payload, not just marketing pages
+### S1-2 — The marketing namespace ships in every page's hydration payload, not just marketing pages *(Paraguay-content urgency closed in S2)*
 `src/app/layout.tsx` wraps every route in one `<NextIntlClientProvider>`
 with no `messages` prop, so next-intl serialises the *entire* resolved
 locale's JSON (every namespace) into the client bundle of every page —
 `/login`, `/dashboard`, `/pipeline`, all of it — not only the marketing
-pages that actually read the `marketing` namespace. Confirmed by a real
-walkthrough: `curl localhost:3100/login | grep clientes.com.py` matches,
-inside the embedded JSON blob, on a page that renders none of that text.
-Nothing here is rendered or visible in the UI — a person browsing the app
-sees no Spanish, no Paraguay references, on any authenticated page (verified
-via a seeded tenant + curl session against the built app) — but it *is* in
-view-source on every page, which is not what "no Spanish or Paraguay
-artifacts" should mean if read literally at the HTML-source level rather
-than the rendered-UI level this phase's own walkthrough checked. Two
-independent fixes, either one closes it: S2 finishing the marketing rewrite
-(S1-1) removes the Paraguay content from the payload regardless of scope;
-scoping `NextIntlClientProvider`'s `messages` per route group (root layout
+pages that actually read the `marketing` namespace. This was flagged in S1
+because it meant Paraguay-flavoured marketing copy sat in view-source on
+every authenticated page; S2's full marketing rewrite removes that content,
+so the specific branding concern is gone. The underlying inefficiency is
+not: every page's client bundle still carries the whole `marketing`
+namespace (FAQ text, form copy, the lot) it never reads. Two ways to close
+it properly: scope `NextIntlClientProvider`'s `messages` per route group (root layout
 sends only shared + auth namespaces, `(marketing)` layout adds `marketing`)
 removes the over-fetch itself and is worth doing on its own merits
 independent of branding. *Owner: whoever touches `src/app/layout.tsx` or

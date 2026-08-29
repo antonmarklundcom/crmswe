@@ -1782,390 +1782,378 @@
   "marketing": {
     "nav": {
       "home": "Start",
-      "metodo": "Metod",
-      "nosotros": "Om oss",
-      "contacto": "Kontakt",
+      "saFunkarDet": "Så funkar det",
+      "omOss": "Om oss",
+      "kontakt": "Kontakt",
       "login": "Logga in",
       "skipToContent": "Till innehållet",
       "menu": "Meny"
     },
     "cta": {
-      "primary": "Boka din genomlysning",
-      "whatsapp": "Skriv till oss på WhatsApp",
-      "secondary": "Se hur vi arbetar",
-      "waPrefill": "Hej, jag kommer från clientes.com.py och vill boka en genomlysning."
+      "primary": "Boka en genomgång"
     },
     "ribbon": {
       "monthly": "Månad för månad, ingen bindningstid",
-      "measured": "Allt mäts: du vet vad varje förfrågan kostade",
-      "ownData": "Kontaktregistret är ditt",
-      "region": "Asunción och Stor-Asunción",
-      "ruc": "Org.nr {ruc}"
+      "measured": "Du ser exakt vad som händer med varje lead",
+      "ownData": "Kontaktregistret är ditt — exportera när du vill",
+      "orgNr": "Org.nr {orgNr}"
+    },
+    "cookie": {
+      "body": "Vi använder nödvändiga cookies för att sidan ska fungera. Med ditt godkännande använder vi också cookies för att se varifrån leads kommer.",
+      "necessaryLabel": "Nödvändiga (alltid på)",
+      "analyticsLabel": "Marknadsföring & attribution",
+      "saveLabel": "Spara val",
+      "acceptAllLabel": "Acceptera alla",
+      "settingsLabel": "Cookie-inställningar"
     },
     "home": {
       "meta": {
-        "title": "Fler kunder till ditt företag | clientes.com.py",
-        "description": "Vi hjälper etablerade paraguayanska företag att få fler kunder med en ordnad säljprocess: leadfångst, uppföljning och mätning."
+        "title": "CRM med offert och faktura för svenska småföretag | CRM Swe",
+        "description": "Samla leads, skicka offert och faktura utan att tappa bort en enda förfrågan. Byggt för svenska småföretag — e-post-first, GDPR från grunden."
       },
       "hero": {
-        "eyebrow": "Kommersiell tillväxt i Paraguay",
-        "title": "Fler kunder. En ordnad säljprocess.",
-        "lead": "Vi hjälper redan etablerade paraguayanska företag att få fler kunder — med ett system, inte med tur.",
-        "body": "Har du redan en produkt som fungerar och kunder som återkommer är taket sällan efterfrågan. Det är att leadfångsten hänger på vem som råkar ha tid den veckan.",
+        "eyebrow": "CRM för svenska småföretag",
+        "title": "Leads in. Offert ut. Faktura betald.",
+        "lead": "Ett CRM som samlar in förfrågningar, skickar offert och faktura — och håller reda på vad som väntar på svar.",
+        "body": "De flesta småföretag tappar inte kunder för att de saknar efterfrågan. De tappar dem mellan systemen: en förfrågan i mejlkorgen, en offert ingen följer upp, en faktura som glöms bort.",
         "points": [
-          "En förfrågningskanal som inte stängs av när teamet har fullt upp",
-          "Uppföljning som sker ändå, oavsett vem som är i tjänst",
-          "Tydliga siffror: hur många förfrågningar kom in och hur många stängdes"
+          "Alla förfrågningar på ett ställe, oavsett varifrån de kom",
+          "Offert och faktura med moms rätt räknat, varje gång",
+          "Påminnelser som ser till att ingenting glöms bort"
         ],
         "asideTitle": "Så börjar det",
-        "asideBody": "Ett genomlysningssamtal på 30 minuter. Vi går igenom var dina kunder kommer ifrån i dag, vad som tappas på vägen och vad som kan ordnas först.",
-        "asideNote": "Kostnadsfritt och utan förpliktelser. Ser vi inte hur vi kan hjälpa dig säger vi det direkt i samtalet."
+        "asideBody": "Boka en kort genomgång så visar vi hur CRM Swe fungerar för just ditt företag — leadfångst, offert, faktura och vad som redan finns i systemet.",
+        "asideNote": "Kostnadsfritt och utan förpliktelser."
       },
       "problem": {
         "eyebrow": "Utgångsläget",
-        "title": "Det är inte kunder du saknar. Det är en process.",
-        "body": "De flesta företag vi arbetar med har varken ett produkt- eller marknadsproblem. De har förfrågningar som kommer in från fem olika håll, offerter som aldrig får svar och inget sätt att veta vad som fungerade förra månaden.",
-        "bodyTwo": "Det löses inte med mer annonsering. Det löses genom att ordna det som redan kommer in, och lägga leadfångst ovanpå en grund som håller.",
+        "title": "Det är inte fler kunder du behöver. Det är en process.",
+        "body": "De flesta företag vi pratar med har varken ett produkt- eller marknadsföringsproblem. De har förfrågningar som kommer in från flera håll, offerter som aldrig får svar och fakturor som skickas för sent.",
+        "bodyTwo": "Det löses inte med mer marknadsföring. Det löses genom att ordna det som redan kommer in — och lägga leadfångst ovanpå en grund som håller.",
         "symptomsTitle": "Det märks i konkreta saker",
         "symptoms": [
-          "Förfrågningar via WhatsApp, telefon, Instagram och formuläret, utan en enda lista",
-          "Skickade offerter som ingen rör igen",
-          "Säljare som börjar varje månad från noll, utan att veta vem de ska ta upp igen",
-          "Bra och dåliga månader utan någon tydlig förklaring till varför"
+          "Förfrågningar via mejl, telefon och formulär, utan en gemensam lista",
+          "Skickade offerter som ingen följer upp",
+          "Fakturor som skrivs i efterhand, ibland fel räknade",
+          "Ingen som vet hur många förfrågningar som blev affärer förra månaden"
         ]
       },
       "services": {
-        "eyebrow": "Tjänster",
-        "title": "Vad vi gör",
-        "lead": "Allt pekar åt samma håll: att förfrågningar kommer in och att du hinner ta hand om dem. Vi väljer kanaler i genomlysningen, inte innan.",
+        "eyebrow": "Funktioner",
+        "title": "Allt mellan första kontakten och betald faktura",
+        "lead": "Ett system, inte fem lösa trådar. Du väljer vad du använder — grunden finns där från dag ett.",
         "items": [
           {
-            "name": "Google Ads",
-            "body": "Synas precis när någon söker efter det du säljer. Sök, Performance Max och remarketing."
+            "name": "Leadfångst",
+            "body": "Formulär på din webbplats, chatt eller manuell inmatning — varje förfrågan hamnar i samma pipeline."
           },
           {
-            "name": "Meta Ads",
-            "body": "Kampanjer på Facebook och Instagram riktade mot dem som köper, inte mot dem som skrollar. Kreativ, målgrupper och veckovis optimering."
+            "name": "Pipeline & uppföljning",
+            "body": "Se var varje affär står, vem som äger den och vad som väntar på svar."
           },
           {
-            "name": "SEO",
-            "body": "Lokal och nationell synlighet så att du hittas utan att betala för varje klick."
+            "name": "Offert",
+            "body": "Skicka offert med rätt moms per rad, direkt från en förfrågan."
           },
           {
-            "name": "Webbplatser",
-            "body": "Snabba sidor, byggda för mobil och för att konvertera till WhatsApp. Inte digitala broschyrer."
+            "name": "Faktura",
+            "body": "Fakturera med OCR och bankgiro, e-post-first — inget behöver skrivas ut."
           },
           {
-            "name": "Sociala medier och innehåll",
-            "body": "En närvaro som bär försäljningen: innehåll med avsikt och en kalender som faktiskt följs, inte publicering för publiceringens skull."
+            "name": "Automationer",
+            "body": "Uppföljningsmejl, betalningspåminnelser och interna aviseringar sköter sig själva."
           },
           {
-            "name": "AI-automation",
-            "body": "Omedelbart svar på varje förfrågan och automatisk uppföljning via WhatsApp, så att inget hänger på vem som har tid den eftermiddagen."
+            "name": "GDPR från grunden",
+            "body": "Exportera eller radera en kontakts uppgifter med några klick, med bokföringen intakt."
           }
         ],
-        "fineprint": "Annonsbudgeten betalar du själv, direkt till Google eller Meta. Den går aldrig genom oss, och du ser alltid vad den gick till."
+        "fineprint": "Du äger dina uppgifter. Exportera kontakter och affärer när du vill — inget inlåsning."
       },
       "method": {
-        "eyebrow": "Metoden",
-        "title": "Fyra steg, i den här ordningen",
-        "lead": "Vi börjar inte med annonseringen. Vi börjar med att förstå var dina kunder kommer ifrån i dag och vad som tappas.",
-        "linkLabel": "Se hela metoden",
+        "eyebrow": "Flödet",
+        "title": "Fyra steg, i den ordningen",
+        "lead": "Från första kontakt till betald faktura — utan att något faller mellan stolarna.",
         "steps": [
           {
-            "title": "Genomlysning",
-            "body": "Vi tittar på dina nuvarande kanaler, din säljcykel och vad som händer med en förfrågan från att den kommer in tills den stängs."
-          },
-          {
-            "title": "Leadfångst",
-            "body": "Vi ordnar närvaron och ingångarna så att en intresserad person kan kontakta dig utan friktion."
+            "title": "Lead in",
+            "body": "En förfrågan kommer in via formulär, chatt eller manuellt — och hamnar direkt i rätt pipeline."
           },
           {
             "title": "Uppföljning",
-            "body": "Varje förfrågan registreras och får en ansvarig, med egna påminnelser. Inget hänger på någons minne."
+            "body": "Varje affär får en ansvarig och syns i pipeline tills den är vunnen eller förlorad."
           },
           {
-            "title": "Mätning",
-            "body": "Hur många förfrågningar kom in, varifrån, hur många stängdes. Utifrån det avgörs vad som ska upprepas nästa månad."
+            "title": "Offert ut",
+            "body": "Offerten skickas med rätt moms per rad och en länk kunden kan godkänna direkt."
+          },
+          {
+            "title": "Faktura betald",
+            "body": "Godkänd offert blir faktura med ett klick — med OCR, bankgiro och påminnelser om den inte betalas i tid."
           }
-        ]
+        ],
+        "linkLabel": "Se hela flödet"
       },
       "verticals": {
-        "eyebrow": "Vilka vi arbetar med",
-        "title": "Branscher där metoden redan är prövad",
-        "lead": "Företag med ett validerat erbjudande och eget team, där tillväxten fastnar i leadfångst och uppföljning, inte i produkten.",
+        "eyebrow": "Vem det passar för",
+        "title": "Byggt för företag som skickar offert och fakturerar löpande",
+        "lead": "Om ni tar in förfrågningar och behöver hålla koll på offert, faktura och uppföljning, passar CRM Swe.",
         "items": [
           {
-            "name": "Kliniker och mottagningar",
-            "body": "Patienter som hör av sig på WhatsApp utanför öppettiderna, och tider som går förlorade för att ingen svarade i tid."
+            "name": "Hantverkare & installatörer",
+            "body": "Förfrågningar in, offert ut, faktura när jobbet är klart — utan papperslappar."
           },
           {
-            "name": "Byggföretag",
-            "body": "Projekt och offerter med långa cykler, där uppföljningen avgör vem som till slut skriver på."
+            "name": "Konsulter & tjänsteföretag",
+            "body": "Håll koll på vilka affärer som väntar på svar och fakturera löpande uppdrag."
           },
           {
-            "name": "Fastighetsmäklare",
-            "body": "Förfrågningar och visningar som kommer in från flera portaler och slutar utan ansvarig och utan spår."
-          },
-          {
-            "name": "Professionella tjänster",
-            "body": "Byråer och konsulter som växer på rekommendation och vill ha en andra kanal som inte hänger på den."
-          },
-          {
-            "name": "B2B-företag",
-            "body": "Försäljning där flera personer beslutar, och att tappa tråden kostar månader."
+            "name": "Övriga småföretag",
+            "body": "Alla som skickar offert och fakturerar kunder har nytta av en gemensam plats för det."
           }
         ]
       },
       "statement": {
-        "text": "Ett system som inte hänger på vem som är i tjänst.",
-        "sub": "Det är det som skiljer en bra månad från ett bra år."
+        "text": "Ingenting ska falla mellan stolarna.",
+        "sub": "Ett system för hela vägen, från första förfrågan till betald faktura."
       },
       "closing": {
-        "eyebrow": "Nästa steg",
-        "title": "Låt oss börja med genomlysningen",
-        "body": "En halvtimme, kostnadsfritt. Du går därifrån med en tydlig bild av var arbete tappas, oavsett om du jobbar med oss eller inte.",
-        "panelTitle": "Vad vi behöver från dig",
+        "eyebrow": "Kom igång",
+        "title": "Boka en genomgång, utan förpliktelser",
+        "body": "Vi visar hur CRM Swe hanterar leads, offert och faktura för just ditt företag.",
+        "panelTitle": "Det här får du",
         "panelItems": [
-          "Var dina kunder kommer ifrån i dag",
-          "Hur många som säljer i ditt team",
-          "Vad som händer med en förfrågan när den kommit in"
+          "En genomgång av hela flödet, från lead till betald faktura",
+          "Svar på om det passar ert sätt att jobba",
+          "Ingen bindningstid, inget betalkort för att boka"
         ]
       }
     },
-    "metodo": {
+    "saFunkarDet": {
       "meta": {
-        "title": "Vår metod för att få fler kunder | clientes.com.py",
-        "description": "Genomlysning, leadfångst, uppföljning och mätning: de fyra stegen vi använder för att ordna kundanskaffningen hos paraguayanska företag."
+        "title": "Så funkar det | CRM Swe",
+        "description": "Från första förfrågan till betald faktura — se hur CRM Swe hänger ihop, steg för steg."
       },
       "header": {
-        "eyebrow": "Metoden",
-        "title": "Så arbetar vi",
-        "lead": "En fast ordning, fyra steg och en regel: vi lägger inte leadfångst ovanpå en process som fortfarande tappar förfrågningar.",
-        "body": "Det som följer är bokstavligen vad vi gör, i den ordning vi gör det. Inget steg är valfritt: varje steg finns för att nästa inte fungerar utan det."
+        "eyebrow": "Så funkar det",
+        "title": "Fyra steg, i den här ordningen",
+        "lead": "Vi börjar inte med funktionerna. Vi börjar med vad som faktiskt händer med en förfrågan, från att den kommer in tills fakturan är betald.",
+        "body": "Varje steg finns kvar i systemet — du kan alltid se var en affär eller en faktura står, och vem som gjorde vad."
       },
       "steps": {
-        "eyebrow": "De fyra stegen",
-        "title": "Genomlysning, leadfångst, uppföljning, mätning",
+        "eyebrow": "Flödet i detalj",
+        "title": "Från förfrågan till betald faktura",
         "items": [
           {
-            "title": "Genomlysning",
-            "lead": "Förstå innan något rörs.",
-            "body": "Vi går igenom var dina kunder kommer ifrån i dag, hur lång din säljcykel är och vad som händer med en förfrågan från att den kommer in tills den stängs eller tappas. Nästan alltid dyker det upp ett läckage som ingen tittade på.",
+            "title": "1. Lead in",
+            "lead": "Varje förfrågan hamnar på samma plats, oavsett var den kom ifrån.",
+            "body": "Ett formulär på din webbplats, chatten eller en manuell inmatning — allt landar i samma pipeline med kontaktuppgifter redan ifyllda.",
             "points": [
-              "Karta över nuvarande kanaler och den faktiska volymen förfrågningar",
-              "Hela resan för en förfrågan, punkt för punkt",
-              "Var arbete tappas i dag, med konkreta exempel"
+              "Formulär, chatt eller manuell inmatning",
+              "Automatisk koppling till rätt pipeline",
+              "Inget som hamnar i en mejlkorg och glöms bort"
             ]
           },
           {
-            "title": "Leadfångst",
-            "lead": "Den som vill kontakta dig ska kunna göra det.",
-            "body": "Vi ordnar närvaron och ingångarna: sidan, formuläret, WhatsApp-numret, Google-profilen. Målet är inte mer trafik, utan att den intresserade som redan finns inte faller mellan stolarna.",
+            "title": "2. Uppföljning",
+            "lead": "En affär har alltid en ansvarig och ett nästa steg.",
+            "body": "Pipeline visar var varje affär står. Påminnelser ser till att en offert som väntar på svar inte tystnar av sig själv.",
             "points": [
-              "Tydliga kontaktvägar och ett sätt in",
-              "Formulär som hamnar i en lista, inte i en lös inkorg",
-              "WhatsApp som ingång, med spår av det som kommer in"
+              "Tydlig ägare per affär",
+              "Påminnelser om obesvarade offerter",
+              "Full historik i kontaktkortet"
             ]
           },
           {
-            "title": "Uppföljning",
-            "lead": "Inget hänger på någons minne.",
-            "body": "Varje förfrågan registreras, med en ansvarig och en nästa åtgärd. Skickade offerter dyker upp igen av sig själva när det är dags. Det är här den största delen av det arbete som i dag tappas hämtas hem.",
+            "title": "3. Offert ut",
+            "lead": "Offerten är klar på minuter, med moms rätträknad per rad.",
+            "body": "Priser anges exklusive moms, kunden ser netto, moms och brutto tydligt uppdelat, och en länk gör att offerten kan godkännas direkt.",
             "points": [
-              "En enda lista över förfrågningar, var och en med en ansvarig",
-              "Uppföljningspåminnelser som dyker upp utan att någon lägger in dem",
-              "Historik för varje konversation, tillgänglig för hela teamet"
+              "Momssats per rad, aldrig bara på totalen",
+              "Offerten skickas som e-post med länk",
+              "Godkänns direkt av kunden, ingen utskrift"
             ]
           },
           {
-            "title": "Mätning",
-            "lead": "Besluta med siffror, inte med känsla.",
-            "body": "Hur många förfrågningar som kom in, via vilken kanal, hur många som konverterade och hur lång tid de tog. Utifrån det avgörs vad som upprepas nästa månad och vad som stryks.",
+            "title": "4. Faktura betald",
+            "lead": "En godkänd offert blir faktura med ett klick.",
+            "body": "Fakturan får OCR-nummer och bankgiro automatiskt, mejlas till kunden, och en betalningspåminnelse går ut om den inte betalas i tid.",
             "points": [
-              "Förfrågningar per kanal och per månad",
-              "Avslutsgrad och genomsnittlig cykeltid",
-              "En återkommande genomgång med beslut, inte bara rapporter"
+              "OCR och bankgiro på varje faktura",
+              "E-post-first — inget att skriva ut",
+              "Påminnelse om fakturan inte betalas i tid"
             ]
           }
         ]
       },
       "included": {
-        "eyebrow": "Vad som ingår",
-        "title": "Det som blir kvar och fungerar",
-        "lead": "Arbetet är klart när ditt team kan hålla igång det utan att vi står bredvid.",
+        "eyebrow": "Det ingår",
+        "title": "Redan på plats när du börjar",
+        "lead": "Ingen tilläggsmodul att köpa till för det som hör ihop med offert och faktura.",
         "items": [
           {
-            "title": "Plattformen",
-            "body": "Plattformen där ditt team ser varje förfrågan och varje uppföljning ingår. Den är vår, heter clientes.com.py, och är inget du behöver köpa separat."
+            "title": "Moms rätträknad",
+            "body": "25, 12, 6 och 0 procent — per rad, aldrig gissat."
           },
           {
-            "title": "Den skrivna processen",
-            "body": "Vem som tar hand om vad, hur snabbt svar går ut och när en offert tas upp igen. Kort och användbart, inte en manual som ingen öppnar."
+            "title": "GDPR",
+            "body": "Export och radering av en kontakts uppgifter, med bokföringen intakt."
           },
           {
-            "title": "Det upplärda teamet",
-            "body": "Vi följer med de som säljer tills processen går av sig själv. Ett verktyg som ingen använder har inte förändrat något."
+            "title": "Svensk kalender",
+            "body": "ISO-veckonummer och svensk veckostart, rätt tidszon."
+          },
+          {
+            "title": "E-post från din avsändare",
+            "body": "Kunden ser ditt företagsnamn i inkorgen, inte ett generiskt system."
           }
         ]
       },
       "statement": {
-        "text": "Metoden är produkten.",
-        "sub": "Verktygen kommer sedan, och blir de som behövs."
+        "text": "Systemet kommer ikapp dig, inte tvärtom.",
+        "sub": "Ingen ny process att lära ut — bara det du redan gör, på ett ställe."
       },
       "faq": {
         "eyebrow": "Vanliga frågor",
-        "title": "Det vi oftast får frågor om",
+        "title": "Innan ni börjar",
         "items": [
           {
-            "q": "Hur lång tid tar det innan man ser resultat?",
-            "a": "Ordnad uppföljning brukar visa något redan de första veckorna, eftersom den hämtar hem förfrågningar du redan hade. Ny leadfångst tar längre tid och beror på säljcykeln i din bransch."
-          },
-          {
-            "q": "Arbetar ni med företag som precis har startat?",
-            "a": "Nej. Vi arbetar med företag som redan har kunder, ett team och ett erbjudande som fungerar. Håller du fortfarande på att validera vad du ska sälja är vi fel partner, och det säger vi."
-          },
-          {
-            "q": "Måste vi byta de verktyg vi redan använder?",
-            "a": "Bara det som behöver bytas. Fungerar något redan får det vara kvar. Det som inte kan vara kvar är en förfrågan som inte registreras."
-          },
-          {
             "q": "Vad kostar det?",
-            "a": "Det beror på omfattningen och kommer ut ur genomlysningen. Vi ger hellre en siffra vi kan stå för än en prislista som inte liknar ditt fall."
+            "a": "Prissättning i kr/mån exkl. moms — hör av dig så berättar vi vad som passar er storlek och användning."
+          },
+          {
+            "q": "Är det bindningstid?",
+            "a": "Nej. Uppsägning löpande, månad för månad."
+          },
+          {
+            "q": "Vilken kanal använder ni för offert och faktura?",
+            "a": "E-post är huvudkanalen. Offert, faktura och betalningspåminnelser går direkt till kundens inkorg, med en länk de kan öppna utan att installera något."
+          },
+          {
+            "q": "Vad händer med våra uppgifter om vi slutar?",
+            "a": "Ni äger era kontakter och affärer. Exportera när ni vill, och GDPR-radering finns inbyggd."
+          },
+          {
+            "q": "Kan vi importera våra befintliga kunder?",
+            "a": "Ja, kontakter går att importera från fil. Hör av dig så hjälper vi till med det."
           }
         ]
       }
     },
-    "nosotros": {
+    "omOss": {
       "meta": {
-        "title": "Vilka vi är | clientes.com.py",
-        "description": "Ett team inriktat på kommersiell tillväxt hos etablerade paraguayanska företag: varför Paraguay, varför dessa branscher och hur vi arbetar."
+        "title": "Om oss | CRM Swe",
+        "description": "Varför CRM Swe finns, och vad vi tycker ett CRM för svenska småföretag ska göra."
       },
       "header": {
         "eyebrow": "Om oss",
-        "title": "Vilka som står bakom",
-        "lead": "Vi är ett litet team som arbetar med etablerade paraguayanska företag, vid punkten där tillväxt slutar handla om ansträngning och börjar handla om process."
+        "title": "Byggt för hur svenska småföretag faktiskt jobbar",
+        "lead": "Inte ett generellt CRM översatt till svenska — ett system där moms, faktura och GDPR är grunden, inte ett tillägg."
       },
       "story": {
-        "eyebrow": "Varför det här",
-        "title": "Varför Paraguay och varför dessa branscher",
-        "body": "I Paraguay finns väldigt många stabila företag — kliniker med lång erfarenhet, byggföretag med jämn orderingång, byråer med egen kundstock — som vuxit på rekommendation och gott arbete. Den tillväxten fungerar tills den slutar skala.",
-        "bodyTwo": "Nästa kliv är nästan aldrig en kampanj. Det är att sluta tappa förfrågningar och kunna upprepa det som redan fungerar. Det är precis vad vi gör, och därför arbetar vi med företag som redan har något, inte med projekt som precis startat.",
-        "bodyThree": "Vi bygger själva det vi använder: plattformen där ditt team följer varje förfrågan har vi utvecklat. När något inte fungerar finns det ingen att skicka dig vidare till."
+        "eyebrow": "Varför",
+        "title": "De flesta CRM-system är byggda för säljteam, inte för fakturering",
+        "body": "De flesta CRM-verktyg hanterar pipeline och kontakter bra — men stannar där. Offert och faktura sker i ett annat system, ofta med en bokförare som får reda på det i efterhand.",
+        "bodyTwo": "CRM Swe är byggt tvärtom: leadfångst, offert och faktura i samma system, med momsen rätträknad från början och GDPR inbyggt, inte påklistrat.",
+        "bodyThree": "Resultatet är att ingenting behöver dubbelregistreras, och att du alltid ser hela vägen från första kontakt till betald faktura."
       },
       "principles": {
-        "eyebrow": "Så arbetar vi",
-        "title": "Tre saker vi inte förhandlar om",
-        "lead": "Det här är ingen värdegrund för väggen. Det är de tre regler som oftast kostat oss pengar att hålla fast vid.",
+        "eyebrow": "Vad vi tycker",
+        "title": "Tre saker vi inte kompromissar med",
+        "lead": "Det här styr vad vi bygger, i den ordningen.",
         "items": [
           {
-            "title": "Vi säger nej",
-            "body": "Ser vi i genomlysningen att vi inte kan flytta nålen säger vi det direkt. En felaktigt antagen kund kostar mer än den ger."
+            "title": "Momsen ska stämma",
+            "body": "Rätt sats per rad, aldrig en gissning på totalen — det är grunden för att en faktura ska vara laglig, inte en detalj."
           },
           {
-            "title": "Siffror före åsikter",
-            "body": "Allt vi föreslår måste gå att mäta. Går det inte att mäta är det en idé, inte en rekommendation."
+            "title": "Dina uppgifter är dina",
+            "body": "Export och radering ska vara enkla, inte något du behöver be om."
           },
           {
-            "title": "Det ska fungera utan oss",
-            "body": "Målet är att ditt team håller igång processen på egen hand. Ett permanent beroende vore bekvämt för oss och dåligt för dig."
+            "title": "E-post-first",
+            "body": "Kunden ska kunna få sin offert och faktura utan att behöva installera något."
           }
         ]
       },
       "statement": {
-        "text": "Vi arbetar med få företag åt gången.",
-        "sub": "Det är enda sättet att komma in på riktigt i varje verksamhet."
+        "text": "Ett system, hela vägen.",
+        "sub": "Från första förfrågan till bokförd faktura."
       }
     },
-    "contacto": {
+    "kontakt": {
       "meta": {
-        "title": "Boka din genomlysning | clientes.com.py",
-        "description": "Berätta om ditt företag så bokar vi ett kostnadsfritt genomlysningssamtal på 30 minuter för att se var arbete tappas."
+        "title": "Kontakt | CRM Swe",
+        "description": "Boka en kort genomgång av CRM Swe — inga förpliktelser, inget betalkort."
       },
       "header": {
         "eyebrow": "Kontakt",
-        "title": "Låt oss boka genomlysningen",
-        "lead": "Berätta kort om ditt företag så bokar vi ett samtal på 30 minuter. Kostnadsfritt och utan förpliktelser."
-      },
-      "form": {
-        "name": "För- och efternamn",
-        "company": "Företag",
-        "phone": "Telefon eller WhatsApp",
-        "phonePlaceholder": "0981 123 456",
-        "phoneHint": "Det är snabbaste sättet att boka. Vi skriver innan vi ringer.",
-        "email": "E-post",
-        "emailOptional": "E-post (frivilligt)",
-        "sector": "Bransch",
-        "sectorPlaceholder": "Välj ett alternativ",
-        "sectorOptions": [
-          "Klinik eller mottagning",
-          "Byggföretag",
-          "Fastighetsmäklare",
-          "Professionella tjänster",
-          "B2B-företag",
-          "Annat"
-        ],
-        "message": "Berätta kort vad du vill lösa",
-        "messageOptional": "Berätta kort vad du vill lösa (frivilligt)",
-        "submit": "Skicka och boka",
-        "submitting": "Skickar…",
-        "privacy": "Vi använder dina uppgifter enbart för att kontakta dig om den här förfrågan.",
-        "honeypotLabel": "Lämna det här fältet tomt"
-      },
-      "success": {
-        "title": "Vi har tagit emot din förfrågan",
-        "body": "Vi hör av oss under kommande arbetstimmar för att boka en tid. Vill du snabba på det, skriv direkt till oss på WhatsApp.",
-        "backLabel": "Till startsidan"
-      },
-      "errors": {
-        "phone": "Vi behöver ett telefonnummer för att kunna boka. Kontrollera numret och försök igen.",
-        "generic": "Vi kunde inte skicka din förfrågan. Försök igen eller skriv till oss på WhatsApp."
+        "title": "Boka en genomgång",
+        "lead": "Berätta lite om ert företag så återkommer vi med ett förslag på tid."
       },
       "aside": {
-        "title": "Vad som händer sedan",
+        "title": "Så går det till",
         "steps": [
-          "Vi hör av oss för att boka dag och tid",
-          "Vi pratar i 30 minuter om ditt nuläge",
-          "Du får en tydlig bild, oavsett om vi jobbar ihop eller inte"
+          "Vi läser din förfrågan",
+          "Vi hör av oss inom en arbetsdag",
+          "Vi bokar en kort genomgång, digitalt eller på telefon"
         ],
-        "pricingTitle": "Om priser",
-        "pricingBody": "Skräddarsytt utifrån genomlysningen. Vi ger hellre en siffra vi kan stå för än en lista som inte liknar ditt fall.",
-        "whatsappTitle": "Jag skriver hellre nu",
-        "whatsappBody": "Vill du dra igång samtalet direkt, skriv till oss så svarar vi under arbetstid."
+        "pricingTitle": "Prissättning",
+        "pricingBody": "Kr/mån exkl. moms, utifrån storlek och användning — hör av dig så får du ett förslag som passar er."
+      },
+      "success": {
+        "title": "Tack, vi hör av oss",
+        "body": "Din förfrågan är mottagen. Vi återkommer inom en arbetsdag.",
+        "backLabel": "Tillbaka till startsidan"
+      },
+      "errors": {
+        "phone": "Ange ett telefonnummer så vi kan nå dig."
+      },
+      "form": {
+        "name": "Namn",
+        "company": "Företag",
+        "phone": "Telefon",
+        "phonePlaceholder": "070-123 45 67",
+        "phoneHint": "Vi ringer eller sms:ar för att boka en tid.",
+        "emailOptional": "E-post (valfritt)",
+        "sector": "Bransch",
+        "sectorPlaceholder": "Välj bransch",
+        "sectorOptions": [
+          "Hantverk & bygg",
+          "Konsult & rådgivning",
+          "Handel & e-handel",
+          "Tjänsteföretag",
+          "Övrigt"
+        ],
+        "messageOptional": "Meddelande (valfritt)",
+        "submit": "Skicka",
+        "privacy": "Dina uppgifter används bara för att kontakta dig om den här förfrågan.",
+        "honeypotLabel": "Lämna det här fältet tomt"
       },
       "faq": {
-        "title": "Innan du skriver",
+        "title": "Vanliga frågor om att komma igång",
         "items": [
           {
-            "q": "Hur mycket måste jag investera i annonsering?",
-            "a": "Det beror på bransch och område. I första samtalet ger vi dig ett realistiskt spann för ditt fall, innan du lagt en enda guaraní. Och tror vi att det ännu inte lönar sig för dig att investera säger vi det då."
+            "q": "Hur lång tid tar det att komma igång?",
+            "a": "Vi bokar en genomgång inom en arbetsdag. Kontot kan vara igång samma vecka."
           },
           {
-            "q": "Binder ni upp mig i ett långt avtal?",
-            "a": "Nej. Vi arbetar månad för månad. Ger arbetet inget lämnar du utan avgift."
+            "q": "Behöver vi installera något?",
+            "a": "Nej, CRM Swe körs i webbläsaren. Dina kunder behöver inte installera något för att se offert eller faktura."
           },
           {
-            "q": "Är kontakterna mina?",
-            "a": "Ja. De hamnar i ditt eget konto, med dina uppgifter. Slutar vi jobba ihop stannar registret hos dig."
-          },
-          {
-            "q": "Kostar det första samtalet något?",
-            "a": "Nej. Det är ett genomlysningssamtal på 30 minuter, kostnadsfritt och utan förpliktelser."
-          },
-          {
-            "q": "Arbetar ni utanför Asunción?",
-            "a": "Ja. Det mesta av arbetet sker på distans, så platsen är inget hinder."
+            "q": "Kan vi testa innan vi bestämmer oss?",
+            "a": "Ja, vi visar systemet med er egen data under genomgången."
           }
         ]
       }
     },
     "footer": {
-      "tagline": "Vi hjälper etablerade paraguayanska företag att få fler kunder, med en ordnad säljprocess.",
-      "siteTitle": "Webbplatsen",
+      "tagline": "CRM med offert och faktura för svenska småföretag.",
+      "siteTitle": "Sidkarta",
       "contactTitle": "Kontakt",
-      "loginNote": "Är du kund?",
-      "rights": "Alla rättigheter förbehållna.",
-      "madeIn": "Gjort i Paraguay"
+      "loginNote": "Redan kund?",
+      "rights": "Alla rättigheter förbehållna."
     }
   },
   "errors": {

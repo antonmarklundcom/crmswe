@@ -1782,390 +1782,378 @@
   "marketing": {
     "nav": {
       "home": "Inicio",
-      "metodo": "Método",
-      "nosotros": "Nosotros",
-      "contacto": "Contacto",
-      "login": "Ingresar",
+      "saFunkarDet": "Cómo funciona",
+      "omOss": "Nosotros",
+      "kontakt": "Contacto",
+      "login": "Iniciar sesión",
       "skipToContent": "Ir al contenido",
       "menu": "Menú"
     },
     "cta": {
-      "primary": "Agendá tu diagnóstico",
-      "whatsapp": "Escribinos por WhatsApp",
-      "secondary": "Ver cómo trabajamos",
-      "waPrefill": "Hola, vengo de clientes.com.py y quiero agendar un diagnóstico."
+      "primary": "Agendar una demostración"
     },
     "ribbon": {
-      "monthly": "Mes a mes, sin permanencia obligatoria",
-      "measured": "Todo medido: sabés qué costó cada consulta",
-      "ownData": "La base de contactos es tuya",
-      "region": "Asunción y Gran Asunción",
-      "ruc": "RUC {ruc}"
+      "monthly": "Mes a mes, sin permanencia",
+      "measured": "Ves exactamente qué pasa con cada lead",
+      "ownData": "El registro de contactos es tuyo — expórtalo cuando quieras",
+      "orgNr": "N.º de empresa {orgNr}"
+    },
+    "cookie": {
+      "body": "Usamos cookies necesarias para que el sitio funcione. Con tu consentimiento, también usamos cookies para saber de dónde vienen los leads.",
+      "necessaryLabel": "Necesarias (siempre activas)",
+      "analyticsLabel": "Marketing y atribución",
+      "saveLabel": "Guardar preferencias",
+      "acceptAllLabel": "Aceptar todas",
+      "settingsLabel": "Preferencias de cookies"
     },
     "home": {
       "meta": {
-        "title": "Más clientes para tu empresa | clientes.com.py",
-        "description": "Ayudamos a empresas paraguayas establecidas a conseguir más clientes con un proceso de ventas ordenado: captación, seguimiento y medición."
+        "title": "CRM con presupuestos y facturación para pequeñas empresas suecas | CRM Swe",
+        "description": "Capturá leads, enviá presupuestos y facturas sin perder ni una consulta. Pensado para pequeñas empresas suecas — primero por correo, con GDPR desde la base."
       },
       "hero": {
-        "eyebrow": "Crecimiento comercial en Paraguay",
-        "title": "Más clientes. Un proceso de ventas ordenado.",
-        "lead": "Ayudamos a empresas paraguayas ya establecidas a conseguir más clientes — con un sistema, no con suerte.",
-        "body": "Si ya tenés un producto que funciona y clientes que vuelven, el techo casi nunca es la demanda. Es que la captación depende de quién tenga tiempo esa semana.",
+        "eyebrow": "CRM para pequeñas empresas suecas",
+        "title": "Leads que entran. Presupuesto que sale. Factura pagada.",
+        "lead": "Un CRM que capta consultas, envía presupuestos y facturas — y no pierde de vista lo que sigue esperando respuesta.",
+        "body": "La mayoría de las pequeñas empresas no pierden clientes por falta de demanda. Los pierden entre sistemas: una consulta que queda en la casilla de correo, un presupuesto que nadie sigue, una factura que se olvida.",
         "points": [
-          "Un canal de consultas que no se apaga cuando el equipo está ocupado",
-          "Seguimiento que ocurre igual, esté quien esté de turno",
-          "Números claros: cuántas consultas entraron y cuántas se cerraron"
+          "Todas las consultas en un solo lugar, sin importar de dónde vinieron",
+          "Presupuestos y facturas con el IVA bien calculado, siempre",
+          "Recordatorios que evitan que algo se pierda"
         ],
-        "asideTitle": "Cómo empieza",
-        "asideBody": "Una conversación de diagnóstico de 30 minutos. Revisamos de dónde vienen hoy tus clientes, qué se pierde en el camino y qué se puede ordenar primero.",
-        "asideNote": "Sin costo y sin compromiso. Si no vemos con qué ayudarte, te lo decimos en la misma llamada."
+        "asideTitle": "Así empieza",
+        "asideBody": "Agendá una demostración corta y te mostramos cómo funciona CRM Swe para tu empresa — captación de leads, presupuestos, facturas y lo que ya viene incluido.",
+        "asideNote": "Gratis y sin compromiso."
       },
       "problem": {
         "eyebrow": "El punto de partida",
         "title": "No te faltan clientes. Te falta un proceso.",
-        "body": "La mayoría de las empresas con las que trabajamos no tienen un problema de producto ni de mercado. Tienen consultas que llegan por cinco lugares distintos, presupuestos que quedan sin respuesta y ninguna forma de saber qué funcionó el mes pasado.",
-        "bodyTwo": "Eso no se arregla con más publicidad. Se arregla ordenando lo que ya entra y agregando captación encima de una base que aguanta.",
+        "body": "La mayoría de las empresas con las que hablamos no tienen un problema de producto ni de marketing. Tienen consultas que llegan por varios lados, presupuestos que nunca reciben respuesta y facturas que se envían tarde.",
+        "bodyTwo": "Eso no se soluciona con más marketing. Se soluciona ordenando lo que ya está entrando — y poniendo la captación de leads sobre una base que aguanta.",
         "symptomsTitle": "Se nota en cosas concretas",
         "symptoms": [
-          "Consultas que llegan por WhatsApp, teléfono, Instagram y el formulario, sin una sola lista",
+          "Consultas por correo, teléfono y formulario, sin una lista en común",
           "Presupuestos enviados que nadie vuelve a tocar",
-          "Vendedores que arrancan cada mes desde cero, sin saber a quién retomar",
-          "Meses buenos y meses malos sin una explicación clara de por qué"
+          "Facturas escritas después, a veces mal calculadas",
+          "Nadie sabe cuántas consultas se convirtieron en negocio el mes pasado"
         ]
       },
       "services": {
-        "eyebrow": "Servicios",
-        "title": "Qué hacemos",
-        "lead": "Todo apunta a lo mismo: que entren consultas y que puedas atenderlas. Elegimos los canales en el diagnóstico, no antes.",
+        "eyebrow": "Funciones",
+        "title": "Todo entre el primer contacto y la factura cobrada",
+        "lead": "Un sistema, no cinco hilos sueltos. Vos elegís qué usar — la base ya está desde el día uno.",
         "items": [
           {
-            "name": "Google Ads",
-            "body": "Aparecé justo cuando alguien busca lo que vendés. Búsqueda, Performance Max y remarketing."
+            "name": "Captación de leads",
+            "body": "Formulario en tu sitio, chat o carga manual — cada consulta llega al mismo pipeline."
           },
           {
-            "name": "Meta Ads",
-            "body": "Campañas en Facebook e Instagram apuntadas a quien compra, no a quien mira. Creativos, segmentación y optimización semanal."
+            "name": "Pipeline y seguimiento",
+            "body": "Mirá en qué etapa está cada negocio, quién lo tiene a cargo y qué espera respuesta."
           },
           {
-            "name": "SEO",
-            "body": "Posicionamiento local y nacional para que te encuentren sin pagar por cada clic."
+            "name": "Presupuesto",
+            "body": "Enviá un presupuesto con el IVA correcto por línea, directo desde una consulta."
           },
           {
-            "name": "Sitios web",
-            "body": "Páginas rápidas, pensadas para móvil y para convertir en WhatsApp. No folletos digitales."
+            "name": "Factura",
+            "body": "Facturá con OCR y bankgiro, primero por correo — nada para imprimir."
           },
           {
-            "name": "Redes sociales y contenido",
-            "body": "Presencia que sostiene la venta: contenido con intención y un calendario que se cumple, no publicar por publicar."
+            "name": "Automatizaciones",
+            "body": "Correos de seguimiento, recordatorios de pago y avisos internos se manejan solos."
           },
           {
-            "name": "Automatización con IA",
-            "body": "Respuesta inmediata a cada consulta y seguimiento automático por WhatsApp, para que nada dependa de quién tenga tiempo esa tarde."
+            "name": "GDPR desde la base",
+            "body": "Exportá o eliminá los datos de un contacto en unos clics, sin tocar la contabilidad."
           }
         ],
-        "fineprint": "La inversión publicitaria la pagás vos, directo a Google o a Meta. Nunca pasa por nosotros y siempre ves en qué se gastó."
+        "fineprint": "Tus datos son tuyos. Exportá contactos y negocios cuando quieras — sin atarte a nada."
       },
       "method": {
-        "eyebrow": "El método",
-        "title": "Cuatro etapas, en este orden",
-        "lead": "No empezamos por la publicidad. Empezamos por entender de dónde vienen tus clientes hoy y qué se está perdiendo.",
-        "linkLabel": "Ver el método completo",
+        "eyebrow": "El flujo",
+        "title": "Cuatro pasos, en este orden",
+        "lead": "Del primer contacto a la factura cobrada — sin que nada se pierda en el camino.",
         "steps": [
           {
-            "title": "Diagnóstico",
-            "body": "Miramos tus canales actuales, tu ciclo de venta y qué pasa con una consulta desde que entra hasta que se cierra."
-          },
-          {
-            "title": "Captación",
-            "body": "Ordenamos la presencia y los puntos de entrada para que una persona interesada pueda contactarte sin fricción."
+            "title": "Lead que entra",
+            "body": "Una consulta llega por formulario, chat o carga manual — y va directo al pipeline correcto."
           },
           {
             "title": "Seguimiento",
-            "body": "Cada consulta queda registrada y asignada, con recordatorios propios. Nada depende de la memoria de alguien."
+            "body": "Cada negocio tiene un responsable y queda visible en el pipeline hasta ganarse o perderse."
           },
           {
-            "title": "Medición",
-            "body": "Cuántas consultas entraron, de dónde, cuántas se cerraron. Con eso se decide qué repetir el mes siguiente."
+            "title": "Presupuesto que sale",
+            "body": "El presupuesto se envía con el IVA correcto por línea y un enlace que el cliente puede aprobar directamente."
+          },
+          {
+            "title": "Factura cobrada",
+            "body": "Un presupuesto aprobado se convierte en factura con un clic — con OCR, bankgiro y recordatorios si no se paga a tiempo."
           }
-        ]
+        ],
+        "linkLabel": "Ver el flujo completo"
       },
       "verticals": {
-        "eyebrow": "Con quiénes trabajamos",
-        "title": "Rubros donde el método ya está probado",
-        "lead": "Empresas con oferta validada y equipo propio, donde el crecimiento se traba en la captación y el seguimiento, no en el producto.",
+        "eyebrow": "Para quién es",
+        "title": "Pensado para empresas que presupuestan y facturan seguido",
+        "lead": "Si recibís consultas y necesitás controlar presupuestos, facturas y seguimiento, CRM Swe te sirve.",
         "items": [
           {
-            "name": "Clínicas y consultorios",
-            "body": "Pacientes que consultan por WhatsApp fuera de horario y turnos que se pierden por no responder a tiempo."
+            "name": "Oficios e instaladores",
+            "body": "Consultas que entran, presupuesto que sale, factura al terminar el trabajo — sin papeles sueltos."
           },
           {
-            "name": "Constructoras",
-            "body": "Obras y presupuestos con ciclos largos, donde el seguimiento define quién termina firmando."
+            "name": "Consultores y empresas de servicios",
+            "body": "Controlá qué negocios esperan respuesta y facturá el trabajo continuo."
           },
           {
-            "name": "Inmobiliarias",
-            "body": "Consultas y visitas que llegan por varios portales y terminan sin dueño ni registro."
-          },
-          {
-            "name": "Servicios profesionales",
-            "body": "Estudios y consultoras que crecen por referencia y quieren un segundo canal que no dependa de eso."
-          },
-          {
-            "name": "Empresas B2B",
-            "body": "Ventas con varias personas decidiendo, donde perder el hilo cuesta meses."
+            "name": "Otras pequeñas empresas",
+            "body": "Cualquiera que presupueste y facture a sus clientes se beneficia de tener todo en un solo lugar."
           }
         ]
       },
       "statement": {
-        "text": "Un sistema que no depende de quién esté de turno.",
-        "sub": "Eso es lo que separa un buen mes de un buen año."
+        "text": "Nada debería perderse en el camino.",
+        "sub": "Un sistema para todo el recorrido, desde la primera consulta hasta la factura cobrada."
       },
       "closing": {
-        "eyebrow": "El siguiente paso",
-        "title": "Empecemos por el diagnóstico",
-        "body": "Media hora, sin costo. Salís con un panorama claro de dónde se está perdiendo trabajo, trabajes con nosotros o no.",
-        "panelTitle": "Qué necesitamos de vos",
+        "eyebrow": "Empezar",
+        "title": "Agendá una demostración, sin compromiso",
+        "body": "Te mostramos cómo CRM Swe maneja leads, presupuestos y facturación para tu empresa.",
+        "panelTitle": "Esto es lo que te llevás",
         "panelItems": [
-          "De dónde vienen hoy tus clientes",
-          "Cuántas personas venden en tu equipo",
-          "Qué pasa con una consulta desde que entra"
+          "Un recorrido por todo el flujo, del lead a la factura cobrada",
+          "Una respuesta clara sobre si se ajusta a tu forma de trabajar",
+          "Sin permanencia, sin tarjeta para agendar"
         ]
       }
     },
-    "metodo": {
+    "saFunkarDet": {
       "meta": {
-        "title": "Nuestro método para conseguir más clientes | clientes.com.py",
-        "description": "Diagnóstico, captación, seguimiento y medición: las cuatro etapas con las que ordenamos la captación de clientes en empresas paraguayas."
+        "title": "Cómo funciona | CRM Swe",
+        "description": "De la primera consulta a la factura cobrada — mirá cómo encaja CRM Swe, paso a paso."
       },
       "header": {
-        "eyebrow": "El método",
-        "title": "Cómo trabajamos",
-        "lead": "Un orden fijo, cuatro etapas, y una regla: no agregamos captación encima de un proceso que todavía pierde consultas.",
-        "body": "Lo que sigue es literalmente lo que hacemos, en el orden en que lo hacemos. No hay una etapa opcional: cada una existe porque la siguiente no funciona sin ella."
+        "eyebrow": "Cómo funciona",
+        "title": "Cuatro pasos, en este orden",
+        "lead": "No empezamos por la lista de funciones. Empezamos por lo que realmente pasa con una consulta, desde que llega hasta que la factura está pagada.",
+        "body": "Cada paso queda registrado en el sistema — siempre podés ver en qué etapa está un negocio o una factura, y quién hizo qué."
       },
       "steps": {
-        "eyebrow": "Las cuatro etapas",
-        "title": "Diagnóstico, captación, seguimiento, medición",
+        "eyebrow": "El flujo en detalle",
+        "title": "De la consulta a la factura cobrada",
         "items": [
           {
-            "title": "Diagnóstico",
-            "lead": "Entender antes de tocar nada.",
-            "body": "Revisamos de dónde vienen tus clientes hoy, cuánto tarda tu ciclo de venta y qué pasa con una consulta desde que entra hasta que se cierra o se pierde. Casi siempre aparece una fuga que nadie estaba mirando.",
+            "title": "1. Lead que entra",
+            "lead": "Cada consulta llega al mismo lugar, sin importar de dónde vino.",
+            "body": "Un formulario en tu sitio, el chat o una carga manual — todo llega al mismo pipeline con los datos de contacto ya cargados.",
             "points": [
-              "Mapa de canales actuales y volumen real de consultas",
-              "Recorrido completo de una consulta, punto por punto",
-              "Dónde se pierde trabajo hoy, con ejemplos concretos"
+              "Formulario, chat o carga manual",
+              "Se enruta solo al pipeline correcto",
+              "Nada queda en una casilla de correo, olvidado"
             ]
           },
           {
-            "title": "Captación",
-            "lead": "Que quien te quiere contactar, pueda.",
-            "body": "Ordenamos la presencia y los puntos de entrada: la página, el formulario, el número de WhatsApp, la ficha de Google. El objetivo no es más tráfico, es que el interesado que ya existe no se caiga en el camino.",
+            "title": "2. Seguimiento",
+            "lead": "Un negocio siempre tiene un responsable y un próximo paso.",
+            "body": "El pipeline muestra en qué etapa está cada negocio. Los recordatorios evitan que un presupuesto sin respuesta quede en silencio.",
             "points": [
-              "Puntos de contacto claros y una sola forma de entrar",
-              "Formularios que llegan a una lista, no a un correo suelto",
-              "WhatsApp como canal de entrada, con registro de lo que llega"
+              "Un responsable claro por negocio",
+              "Recordatorios de presupuestos sin respuesta",
+              "Historial completo en la ficha del contacto"
             ]
           },
           {
-            "title": "Seguimiento",
-            "lead": "Nada depende de la memoria de alguien.",
-            "body": "Cada consulta queda registrada, con un responsable y una próxima acción. Los presupuestos enviados vuelven a aparecer solos cuando toca retomarlos. Acá es donde se recupera la mayor parte del trabajo que hoy se pierde.",
+            "title": "3. Presupuesto que sale",
+            "lead": "El presupuesto queda listo en minutos, con el IVA bien calculado por línea.",
+            "body": "Los precios se cargan sin IVA, el cliente ve el neto, el IVA y el total bien separados, y un enlace permite aprobar el presupuesto directamente.",
             "points": [
-              "Una lista única de consultas, con responsable asignado",
-              "Recordatorios de seguimiento que aparecen sin que nadie los cargue",
-              "Historial de cada conversación, disponible para todo el equipo"
+              "Tasa de IVA por línea, nunca solo sobre el total",
+              "El presupuesto se envía por correo con un enlace",
+              "El cliente lo aprueba directo, nada para imprimir"
             ]
           },
           {
-            "title": "Medición",
-            "lead": "Decidir con números, no con impresiones.",
-            "body": "Cuántas consultas entraron, por qué canal, cuántas se convirtieron y cuánto tardaron. Con eso se decide qué se repite el mes siguiente y qué se corta.",
+            "title": "4. Factura cobrada",
+            "lead": "Un presupuesto aprobado se convierte en factura con un clic.",
+            "body": "La factura recibe número OCR y datos de bankgiro automáticamente, se envía por correo al cliente, y sale un recordatorio de pago si no se paga a tiempo.",
             "points": [
-              "Consultas por canal y por mes",
-              "Tasa de cierre y tiempo promedio de ciclo",
-              "Una revisión periódica con decisiones, no solo reportes"
+              "OCR y bankgiro en cada factura",
+              "Primero por correo — nada para imprimir",
+              "Recordatorio si la factura no se paga a tiempo"
             ]
           }
         ]
       },
       "included": {
         "eyebrow": "Qué incluye",
-        "title": "Lo que queda funcionando",
-        "lead": "El trabajo termina cuando tu equipo puede sostenerlo sin nosotros encima.",
+        "title": "Ya está listo cuando empezás",
+        "lead": "Sin módulos adicionales para comprar por algo relacionado con presupuestos y facturación.",
         "items": [
           {
-            "title": "La plataforma",
-            "body": "Incluye la plataforma donde tu equipo ve cada consulta y cada seguimiento. Es nuestra, se llama clientes.com.py, y no es un software que tenés que ir a comprar aparte."
+            "title": "IVA bien calculado",
+            "body": "25, 12, 6 y 0 por ciento — por línea, nunca a ojo."
           },
           {
-            "title": "El proceso escrito",
-            "body": "Quién atiende qué, en cuánto tiempo se responde y cuándo se retoma un presupuesto. Corto y usable, no un manual que nadie abre."
+            "title": "GDPR",
+            "body": "Exportación y eliminación de los datos de un contacto, sin tocar la contabilidad."
           },
           {
-            "title": "El equipo entrenado",
-            "body": "Acompañamos a las personas que venden hasta que el proceso corre solo. Una herramienta que nadie usa no cambió nada."
+            "title": "Calendario sueco",
+            "body": "Números de semana ISO, inicio de semana sueco, la zona horaria correcta."
+          },
+          {
+            "title": "Correo desde tu propio remitente",
+            "body": "El cliente ve el nombre de tu empresa en su bandeja, no un sistema genérico."
           }
         ]
       },
       "statement": {
-        "text": "El método es el producto.",
-        "sub": "Las herramientas vienen después, y son las que hagan falta."
+        "text": "El sistema se adapta a vos, no al revés.",
+        "sub": "Ningún proceso nuevo que aprender — solo lo que ya hacés, en un solo lugar."
       },
       "faq": {
         "eyebrow": "Preguntas frecuentes",
-        "title": "Lo que suelen preguntarnos",
+        "title": "Antes de empezar",
         "items": [
           {
-            "q": "¿En cuánto tiempo se ven resultados?",
-            "a": "El seguimiento ordenado suele mostrar algo en las primeras semanas, porque recupera consultas que ya tenías. La captación nueva tarda más y depende del ciclo de venta de tu rubro."
-          },
-          {
-            "q": "¿Trabajan con empresas que recién arrancan?",
-            "a": "No. Trabajamos con empresas que ya tienen clientes, equipo y una oferta que funciona. Si todavía estás validando qué vender, no somos el socio indicado y te lo vamos a decir."
-          },
-          {
-            "q": "¿Tenemos que cambiar las herramientas que ya usamos?",
-            "a": "Solo lo que haga falta. Si ya tenés algo que funciona, se queda. Lo que no puede quedarse es una consulta sin registrar."
-          },
-          {
             "q": "¿Cuánto cuesta?",
-            "a": "Depende del alcance, y sale del diagnóstico. Preferimos decirte un número que podamos sostener antes que una lista de precios que no se parece a tu caso."
+            "a": "El precio es en kr/mes sin IVA — escribinos y te contamos qué se ajusta a tu tamaño y uso."
+          },
+          {
+            "q": "¿Hay permanencia?",
+            "a": "No. Cancelás cuando quieras, mes a mes."
+          },
+          {
+            "q": "¿Qué canal usan para presupuestos y facturas?",
+            "a": "El correo es el canal principal. Presupuestos, facturas y recordatorios de pago llegan directo a la bandeja del cliente, con un enlace que pueden abrir sin instalar nada."
+          },
+          {
+            "q": "¿Qué pasa con nuestros datos si nos vamos?",
+            "a": "Ustedes son dueños de sus contactos y negocios. Exportan cuando quieran, y la eliminación GDPR viene incluida."
+          },
+          {
+            "q": "¿Podemos importar nuestros clientes actuales?",
+            "a": "Sí, los contactos se pueden importar desde un archivo. Escribinos y te ayudamos con eso."
           }
         ]
       }
     },
-    "nosotros": {
+    "omOss": {
       "meta": {
-        "title": "Quiénes somos | clientes.com.py",
-        "description": "Un equipo enfocado en el crecimiento comercial de empresas paraguayas establecidas: por qué Paraguay, por qué estos rubros y cómo trabajamos."
+        "title": "Nosotros | CRM Swe",
+        "description": "Por qué existe CRM Swe, y qué creemos que debería hacer un CRM para pequeñas empresas suecas."
       },
       "header": {
         "eyebrow": "Nosotros",
-        "title": "Quiénes estamos detrás",
-        "lead": "Somos un equipo chico que trabaja con empresas paraguayas establecidas, en el punto donde el crecimiento deja de ser cuestión de esfuerzo y pasa a ser cuestión de proceso."
+        "title": "Pensado para cómo trabajan realmente las pequeñas empresas suecas",
+        "lead": "No es un CRM genérico traducido al sueco — es un sistema donde el IVA, la factura y el GDPR son la base, no un agregado."
       },
       "story": {
-        "eyebrow": "Por qué esto",
-        "title": "Por qué Paraguay y por qué estos rubros",
-        "body": "En Paraguay hay muchísimas empresas sólidas — clínicas con años de trayectoria, constructoras con obra constante, estudios con cartera propia — que crecieron por referencia y buen trabajo. Ese crecimiento funciona hasta que deja de escalar.",
-        "bodyTwo": "El salto siguiente casi nunca es una campaña. Es dejar de perder consultas y poder repetir lo que ya funciona. Eso es exactamente lo que hacemos, y es la razón por la que trabajamos con empresas que ya tienen algo, no con proyectos que están arrancando.",
-        "bodyThree": "Somos primeros en construir lo que usamos: la plataforma con la que tu equipo sigue cada consulta la desarrollamos nosotros. Cuando algo no funciona, no hay a quién derivarte."
+        "eyebrow": "Por qué",
+        "title": "La mayoría de los CRM están pensados para equipos de ventas, no para facturar",
+        "body": "La mayoría de las herramientas de CRM manejan bien el pipeline y los contactos — pero ahí se quedan. El presupuesto y la factura pasan por otro sistema, muchas veces con un contador que se entera después.",
+        "bodyTwo": "CRM Swe está pensado al revés: captación de leads, presupuesto y factura en el mismo sistema, con el IVA bien calculado desde el principio y el GDPR incorporado, no agregado después.",
+        "bodyThree": "El resultado es que nada hay que cargar dos veces, y siempre ves todo el recorrido desde el primer contacto hasta la factura cobrada."
       },
       "principles": {
-        "eyebrow": "Cómo trabajamos",
-        "title": "Tres cosas que no negociamos",
-        "lead": "No es una lista de valores para la pared. Son las tres reglas que más veces nos costaron plata sostener.",
+        "eyebrow": "Lo que pensamos",
+        "title": "Tres cosas en las que no negociamos",
+        "lead": "Esto es lo que define lo que construimos, en este orden.",
         "items": [
           {
-            "title": "Decimos que no",
-            "body": "Si en el diagnóstico vemos que no podemos mover la aguja, te lo decimos ahí. Un cliente mal tomado cuesta más de lo que deja."
+            "title": "El IVA tiene que estar bien",
+            "body": "La tasa correcta por línea, nunca una estimación sobre el total — es la base de que una factura sea legal, no un detalle."
           },
           {
-            "title": "Números antes que opiniones",
-            "body": "Todo lo que proponemos tiene que poder medirse. Si no se puede medir, es una idea, no una recomendación."
+            "title": "Tus datos son tuyos",
+            "body": "Exportar y eliminar tiene que ser simple, no algo que tengas que pedir."
           },
           {
-            "title": "Que quede funcionando sin nosotros",
-            "body": "El objetivo es que tu equipo sostenga el proceso solo. Una dependencia permanente sería cómoda para nosotros y mala para vos."
+            "title": "Primero por correo",
+            "body": "El cliente tiene que poder recibir su presupuesto y factura sin instalar nada."
           }
         ]
       },
       "statement": {
-        "text": "Trabajamos con pocas empresas a la vez.",
-        "sub": "Es la única forma de meternos de verdad en el negocio de cada una."
+        "text": "Un sistema, todo el recorrido.",
+        "sub": "Desde la primera consulta hasta la factura contabilizada."
       }
     },
-    "contacto": {
+    "kontakt": {
       "meta": {
-        "title": "Agendá tu diagnóstico | clientes.com.py",
-        "description": "Contanos de tu empresa y coordinamos una conversación de diagnóstico de 30 minutos, sin costo, para ver dónde se está perdiendo trabajo."
+        "title": "Contacto | CRM Swe",
+        "description": "Agendá una demostración corta de CRM Swe — sin compromiso, sin tarjeta."
       },
       "header": {
         "eyebrow": "Contacto",
-        "title": "Agendemos el diagnóstico",
-        "lead": "Contanos brevemente de tu empresa y coordinamos una conversación de 30 minutos. Sin costo y sin compromiso."
+        "title": "Agendá una demostración",
+        "lead": "Contanos un poco sobre tu empresa y te proponemos un horario."
       },
-      "form": {
-        "name": "Nombre y apellido",
-        "company": "Empresa",
-        "phone": "Teléfono o WhatsApp",
-        "phonePlaceholder": "0981 123 456",
-        "phoneHint": "Es la forma más rápida de coordinar. Te escribimos antes de llamarte.",
-        "email": "Correo electrónico",
-        "emailOptional": "Correo electrónico (opcional)",
-        "sector": "Rubro",
-        "sectorPlaceholder": "Elegí una opción",
-        "sectorOptions": [
-          "Clínica o consultorio",
-          "Constructora",
-          "Inmobiliaria",
-          "Servicios profesionales",
-          "Empresa B2B",
-          "Otro"
+      "aside": {
+        "title": "Así funciona",
+        "steps": [
+          "Leemos tu consulta",
+          "Te respondemos dentro de un día hábil",
+          "Agendamos una demostración corta, virtual o por teléfono"
         ],
-        "message": "Contanos brevemente qué querés resolver",
-        "messageOptional": "Contanos brevemente qué querés resolver (opcional)",
-        "submit": "Enviar y coordinar",
-        "submitting": "Enviando…",
-        "privacy": "Usamos tus datos únicamente para contactarte por esta consulta.",
-        "honeypotLabel": "Dejá este campo vacío"
+        "pricingTitle": "Precio",
+        "pricingBody": "Kr/mes sin IVA, según el tamaño y el uso — escribinos y te damos una propuesta que se ajuste."
       },
       "success": {
-        "title": "Recibimos tu consulta",
-        "body": "Te vamos a escribir dentro de las próximas horas hábiles para coordinar el horario. Si preferís adelantarlo, escribinos directamente por WhatsApp.",
+        "title": "Gracias, te contactamos pronto",
+        "body": "Recibimos tu consulta. Te respondemos dentro de un día hábil.",
         "backLabel": "Volver al inicio"
       },
       "errors": {
-        "phone": "Necesitamos un teléfono para poder coordinar. Revisá el número e intentá de nuevo.",
-        "generic": "No pudimos enviar tu consulta. Probá de nuevo o escribinos por WhatsApp."
+        "phone": "Ingresá un número de teléfono para poder contactarte."
       },
-      "aside": {
-        "title": "Qué pasa después",
-        "steps": [
-          "Te escribimos para coordinar día y horario",
-          "Conversamos 30 minutos sobre tu situación actual",
-          "Te dejamos un panorama claro, trabajemos juntos o no"
+      "form": {
+        "name": "Nombre",
+        "company": "Empresa",
+        "phone": "Teléfono",
+        "phonePlaceholder": "070-123 45 67",
+        "phoneHint": "Te llamamos o escribimos para agendar un horario.",
+        "emailOptional": "Correo (opcional)",
+        "sector": "Rubro",
+        "sectorPlaceholder": "Elegí un rubro",
+        "sectorOptions": [
+          "Oficios y construcción",
+          "Consultoría y asesoría",
+          "Comercio y e-commerce",
+          "Empresa de servicios",
+          "Otro"
         ],
-        "pricingTitle": "Sobre los precios",
-        "pricingBody": "A medida, según diagnóstico. Preferimos decirte un número que podamos sostener antes que una lista que no se parece a tu caso.",
-        "whatsappTitle": "Prefiero escribir ahora",
-        "whatsappBody": "Si querés adelantar la conversación, escribinos y te respondemos en horario laboral."
+        "messageOptional": "Mensaje (opcional)",
+        "submit": "Enviar",
+        "privacy": "Tus datos solo se usan para contactarte sobre esta consulta.",
+        "honeypotLabel": "Dejá este campo vacío"
       },
       "faq": {
-        "title": "Antes de escribirnos",
+        "title": "Preguntas frecuentes sobre empezar",
         "items": [
           {
-            "q": "¿Cuánto tengo que invertir en publicidad?",
-            "a": "Depende del rubro y de la zona. En la primera conversación te damos un rango realista para tu caso, antes de que gastes un guaraní. Y si creemos que todavía no te conviene invertir, te lo decimos ahí."
+            "q": "¿Cuánto tarda en arrancar?",
+            "a": "Agendamos una demostración dentro de un día hábil. La cuenta puede estar lista la misma semana."
           },
           {
-            "q": "¿Me atan a un contrato largo?",
-            "a": "No. Trabajamos mes a mes. Si el trabajo no rinde, te vas sin penalidad."
+            "q": "¿Necesitamos instalar algo?",
+            "a": "No, CRM Swe funciona en el navegador. Tus clientes no necesitan instalar nada para ver un presupuesto o factura."
           },
           {
-            "q": "¿Los contactos son míos?",
-            "a": "Sí. Entran a tu propia cuenta, con tus datos. Si dejamos de trabajar juntos, la base queda con vos."
-          },
-          {
-            "q": "¿La primera conversación tiene costo?",
-            "a": "No. Es una conversación de diagnóstico de 30 minutos, sin costo y sin compromiso."
-          },
-          {
-            "q": "¿Trabajan fuera de Asunción?",
-            "a": "Sí. La mayor parte del trabajo es remoto, así que la ubicación no es un impedimento."
+            "q": "¿Podemos probarlo antes de decidir?",
+            "a": "Sí, te mostramos el sistema con tus propios datos durante la demostración."
           }
         ]
       }
     },
     "footer": {
-      "tagline": "Ayudamos a empresas paraguayas establecidas a conseguir más clientes, con un proceso de ventas ordenado.",
-      "siteTitle": "El sitio",
+      "tagline": "CRM con presupuestos y facturación para pequeñas empresas suecas.",
+      "siteTitle": "Mapa del sitio",
       "contactTitle": "Contacto",
-      "loginNote": "¿Sos cliente?",
-      "rights": "Todos los derechos reservados.",
-      "madeIn": "Hecho en Paraguay"
+      "loginNote": "¿Ya sos cliente?",
+      "rights": "Todos los derechos reservados."
     }
   },
   "errors": {

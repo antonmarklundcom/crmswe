@@ -502,6 +502,58 @@ manual steps. STOP — no further phases.
   `src/app/(marketing)/`; it is effectively S2's real starting brief, not a
   footnote.
 
+- **2026-08-29 — S2 (Swedish marketing site):** PR #6. Full rewrite of
+  `src/app/(marketing)/` + `src/components/marketing/`: routes renamed
+  `/metodo`→`/sa-funkar-det`, `/nosotros`→`/om-oss`, `/contacto`→`/kontakt`
+  (old paths kept as redirects — indexable public URLs, same reasoning as
+  S1's `/gracias`→`/tack`); the `messages` namespace keys renamed to match
+  (`marketing.saFunkarDet`/`omOss`/`kontakt`) and rewritten in full —
+  positioning "leads in, offert ut, faktura betald", e-post-first, du-form,
+  no fabricated prices or customer counts (pricing is "kr/mån exkl. moms",
+  no number — real tiers aren't decided per plan.md §8). Closes
+  **KNOWN-ISSUES S1-1** entirely.
+  `messages/es.json` needed the same key rename to keep the locale-parity
+  test green (`src/i18n/messages.test.ts` enforces exact key parity across
+  all three locales) — S1's "leave es.json untouched" precedent only ever
+  covered *value* edits, not a route/key restructuring, so es got a full
+  Spanish translation of the same new content rather than staying on the
+  old ad-agency copy under mismatched keys.
+  WhatsApp CTA plumbing removed from marketing entirely (`CtaPair` is a
+  single button now; `WhatsAppLink`/`WhatsAppGlyph` deleted) rather than
+  left conditionally-hidden — plan.md §6.2 says "never mentioned," not
+  "hidden while unconfigured." Caught and fixed one instance of my own
+  copy actually naming WhatsApp in a FAQ answer before it shipped.
+  GDPR-granular cookie consent shipped as a real two-category banner
+  (`components/marketing/cookie-consent.tsx`): necessary always-on,
+  marketing/attribution unchecked by default, a footer link reopens it.
+  The two non-essential scripts (`vc-attribution.js`, the analytics click
+  shim) now load only after consent — previously unconditional.
+  `web-design-system` (named in plan.md §6.2) is not actually an installed
+  skill in this account despite being referenced by `nextjs-national-lead-gen`
+  as its pairing; proceeded with that skill's own §4 design-pattern menu and
+  the app's existing `.mk` design tokens instead, noted here rather than
+  blocking on it.
+  Verified for real, not just read: a seeded tenant + a site record +
+  Playwright driving the actual `/kontakt` form end-to-end confirmed a
+  contact *and* a deal land in the tenant's default pipeline — the exit
+  criterion is "creates a contact + deal end-to-end," and only a live
+  submission proves that, not a code read. Zero console errors on all four
+  routes. Added JSON-LD (Organization sitewide, SoftwareApplication on `/`,
+  FAQPage on `/sa-funkar-det` and `/kontakt`) per the lead-gen skill's SEO
+  checklist. Found and left two things for later, documented: the
+  `NextIntlClientProvider` over-fetch (KNOWN-ISSUES S1-2, its branding
+  urgency now closed since the payload is accurate Swedish copy) and one
+  missed `tu-empresa`/`contacto` placeholder in `sites/page.tsx` outside
+  this phase's hard limit (KNOWN-ISSUES S2-1).
+  741 tests green against local MariaDB, typecheck/lint/build clean.
+  Next: S3 (`prompts/sonnet-3-deploy.md`) — same model, no switch. The
+  handoff to S2 itself hit a real bug worth recording: `create_session`
+  without a `source_url` does not carry over the parent's repo checkout,
+  even within the same `environment_id` — the child session landed in a
+  genuinely empty environment and correctly refused to guess. S3 should be
+  spawned with `source_url` set to this repo (or verify inheritance
+  actually attaches the clone) before trusting the prompt alone.
+
 ## 10. Backlog
 
 - ROT/RUT line types (config-driven rates/caps with validity dates; personnummer

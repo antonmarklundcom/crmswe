@@ -11,7 +11,8 @@ import { MethodRail, type MethodStep } from "@/components/marketing/method-steps
 import { VerticalCards, type VerticalItem } from "@/components/marketing/vertical-cards";
 import { Statement } from "@/components/marketing/statement";
 import { CtaBand } from "@/components/marketing/cta-band";
-import { contact } from "@/lib/site-config";
+import { JsonLd } from "@/components/marketing/json-ld";
+import { contact, SITE_URL, siteConfig } from "@/lib/site-config";
 
 // Same Node app answers both the apex marketing domain and the crm.*
 // subdomain (parked domain, shared document root — see hPanel Domains).
@@ -47,18 +48,25 @@ export default async function Home() {
   }
 
   const t = await getTranslations("marketing");
-  const cta = {
-    primaryLabel: t("cta.primary"),
-    whatsappLabel: t("cta.whatsapp"),
-    whatsappPrefill: t("cta.waPrefill"),
-  };
+  const cta = { primaryLabel: t("cta.primary") };
 
-  // Section → pattern map (web-design-system step 2), no two consecutive
-  // sections sharing a pattern:
+  // Section → pattern map (nextjs-national-lead-gen skill §4), no two
+  // consecutive sections sharing a pattern:
   //   hero P1 · ribbon P8 · problem P4 · services hairline rail
   //   method P5 · verticals P3 · statement P9 · closing overlap + ink band
   return (
     <>
+      <JsonLd
+        data={{
+          "@context": "https://schema.org",
+          "@type": "SoftwareApplication",
+          name: siteConfig.name,
+          url: SITE_URL,
+          applicationCategory: "BusinessApplication",
+          operatingSystem: "Web",
+          description: t("home.meta.description"),
+        }}
+      />
       <Hero
         eyebrow={t("home.hero.eyebrow")}
         title={t("home.hero.title")}
@@ -77,7 +85,7 @@ export default async function Home() {
           t("ribbon.measured"),
           t("ribbon.ownData"),
           // Only once the owner has supplied it (site-config TODO).
-          ...(contact.orgNr ? [t("ribbon.ruc", { ruc: contact.orgNr })] : []),
+          ...(contact.orgNr ? [t("ribbon.orgNr", { orgNr: contact.orgNr })] : []),
         ]}
       />
 
@@ -103,7 +111,7 @@ export default async function Home() {
         title={t("home.method.title")}
         lead={t("home.method.lead")}
         steps={t.raw("home.method.steps") as MethodStep[]}
-        link={{ href: "/metodo", label: t("home.method.linkLabel") }}
+        link={{ href: "/sa-funkar-det", label: t("home.method.linkLabel") }}
       />
 
       <VerticalCards

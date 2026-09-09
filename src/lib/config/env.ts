@@ -25,6 +25,14 @@ const envSchema = z
     S3_REGION: z.string().default("auto"),
     CRON_SECRET: z.string().min(1, "CRON_SECRET is required"),
     /**
+     * Where the rate-limit windows live (PLAN.md §14 I1 #1). Unset means
+     * MySQL everywhere except tests, which default to the in-memory driver
+     * so a unit test needs no database. Set it to `memory` only to debug the
+     * limiter itself — a production process on `memory` counts per process
+     * and forgets everything on deploy.
+     */
+    RATE_LIMIT_DRIVER: z.enum(["mysql", "memory"]).optional(),
+    /**
      * How many reverse proxies sit in front of this app. Decides which
      * `x-forwarded-for` entry lib/http/client-ip trusts, counting from the
      * right — see that module and docs/DEPLOY.md §10. 1 is Hostinger's
@@ -47,6 +55,17 @@ const envSchema = z
     // whose signature it cannot verify. Nothing else reads them.
     WHATSAPP_APP_SECRET: z.string().min(1).optional(),
     WHATSAPP_WEBHOOK_VERIFY_TOKEN: z.string().min(1).optional(),
+    /**
+     * Meta Graph API version the WhatsApp module calls (PLAN.md §14 I2 #2).
+     * Defaults to the version this app was built against; overridable so a
+     * retirement can be answered with an env change and a restart instead of
+     * a deploy. modules/whatsapp/graph.ts documents when each version is due
+     * for review, and the superadmin health page warns once that date passes.
+     */
+    WHATSAPP_GRAPH_API_VERSION: z
+      .string()
+      .regex(/^v\d+\.\d+$/, "WHATSAPP_GRAPH_API_VERSION must look like v21.0")
+      .default("v21.0"),
     // Transactional email (PLAN.md §10 1M). Optional, same pattern as Sentry
     // in next.config.ts: absent means email sending no-ops (logs instead of
     // throwing) rather than the app refusing to boot. Lets every environment
@@ -55,23 +74,69 @@ const envSchema = z
     // on-screen copy link until it's configured.
     RESEND_API_KEY: z.string().min(1).optional(),
     RESEND_FROM_EMAIL: z.string().email().optional(),
+    /**
+     * The default sending tier's subdomain (PLAN.md §15.1) — e.g.
+     * `mail.clientes.com.py`, deliberately not the apex, so the platform's
+     * own mail and a tenant's booking reminders never share reputation with
+     * the marketing site. Unset means `senderFor(ctx)` falls back to
+     * `RESEND_FROM_EMAIL` exactly as before this phase — no tenant sees a
+     * different address until this is set.
+     */
+    EMAIL_DEFAULT_DOMAIN: z.string().min(1).optional(),
     // AI auto-reply (PLAN.md §10 1O). Provider-neutral by the same shape as
     // STORAGE_DRIVER: one env picks the driver, the driver's own key is
     // required only when it's the selected one. `none` is the default and
     // means the ai_reply action node skips with a reason instead of the app
     // refusing to boot — an unconfigured tenant must still be able to run
     // every other automation.
+    // Google Calendar busy-read (plan-booking.md §5.4). Optional by the same
+    // rule as Resend and the AI drivers: absent means the feature no-ops —
+    // the connect button says it isn't configured and slot generation runs
+    // with no Google busy windows — rather than the app refusing to boot.
+    GOOGLE_CLIENT_ID: z.string().min(1).optional(),
+    GOOGLE_CLIENT_SECRET: z.string().min(1).optional(),
+    // Web push (PLAN.md §15.5 J2, §15.8 P2). One VAPID keypair for the whole
+    // platform, generated once by `npm run generate-vapid`. Optional by the
+    // same rule as Resend and Sentry: unset means the feature is *hidden*
+    // rather than broken — no "activar notificaciones" control renders, the
+    // subscribe route answers 404, and `push.send` jobs no-op. The public key
+    // is not a secret (every subscribing browser receives it); it lives here
+    // rather than in NEXT_PUBLIC_ so a deploy cannot end up with the two
+    // halves of one keypair out of step, and the pages that need it pass it
+    // down as a prop.
+    WEB_PUSH_PUBLIC_KEY: z.string().min(1).optional(),
+    WEB_PUSH_PRIVATE_KEY: z.string().min(1).optional(),
+    /** `mailto:` or `https:` contact the push services can complain to. */
+    WEB_PUSH_SUBJECT: z
+      .string()
+      .regex(/^(mailto:|https:\/\/)/, "WEB_PUSH_SUBJECT must be a mailto: or https:// URL")
+      .optional(),
     AI_DRIVER: z.enum(["none", "openai", "gemini"]).default("none"),
     OPENAI_API_KEY: z.string().min(1).optional(),
     GEMINI_API_KEY: z.string().min(1).optional(),
     /** Overrides the driver's default model. Optional — see lib/ai/*.ts. */
     AI_MODEL: z.string().min(1).optional(),
     /**
+     * Overrides the driver's default *audio* model (PLAN.md §17.3 P9).
+     * Separate from AI_MODEL because transcription is a different model on
+     * OpenAI (`gpt-4o-mini-transcribe`) even when the chat model is set, and
+     * because §15.7 item 3 leaves the provider choice open on price.
+     */
+    AI_TRANSCRIBE_MODEL: z.string().min(1).optional(),
+    /**
      * Overrides the driver's API base URL. Needed for OpenAI-compatible
      * gateways (Azure OpenAI, a self-hosted proxy) and for pointing a
      * staging deploy at a stub instead of a billable endpoint.
      */
     AI_BASE_URL: z.string().url().optional(),
+    /**
+     * The phone number the Claude Ops test lead is created with (PLAN.md
+     * §18.3). Fixed rather than caller-supplied — a test lead is a fixture —
+     * and env-driven so the owner can point it at a number he actually
+     * watches. The contact and its deal are deleted when he approves the
+     * site, so this number never accumulates rows.
+     */
+    OPS_TEST_PHONE: z.string().min(6).max(30).default("+46700000000"),
   })
   .superRefine((value, ctx) => {
     if (value.STORAGE_DRIVER === "s3") {

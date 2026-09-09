@@ -152,6 +152,33 @@ export const messages = mysqlTable(
     body: text("body"),
     mediaId: varchar("media_id", { length: 200 }),
     storageKey: varchar("storage_key", { length: 500 }),
+    /**
+     * What Meta said the attachment is (e.g. `audio/ogg; codecs=opus`).
+     * Stored because `StorageAdapter.get` returns bytes only, and the
+     * transcription call has to tell the provider what it is sending —
+     * re-asking the Graph API is not an option, the media URL has expired
+     * by then (§6.3 rule 3).
+     */
+    mediaMimeType: varchar("media_mime_type", { length: 120 }),
+    /**
+     * Voice-note transcription (PLAN.md §15.3 Lane A, §17.3 P9). Null for
+     * every non-audio message and for audio received while no AI driver was
+     * configured — the feature is opt-in and absent, never half-applied.
+     */
+    transcript: text("transcript"),
+    transcriptStatus: varchar("transcript_status", {
+      length: 10,
+      // pending — enqueued, not answered yet
+      // done    — text in `transcript`
+      // failed  — the provider call errored after its retries
+      // skipped — too long, too large, or over the tenant's daily AI cap
+      enum: ["pending", "done", "failed", "skipped"],
+    }),
+    transcriptModel: varchar("transcript_model", { length: 100 }),
+    transcriptAt: datetime("transcript_at"),
+    /** Why a `failed`/`skipped` row is what it is — shown to the rep as one
+     * line under the audio, so "no transcript" is never unexplained. */
+    transcriptError: varchar("transcript_error", { length: 500 }),
     status: varchar("status", {
       length: 20,
       enum: ["queued", "sent", "delivered", "read", "failed"],
@@ -172,6 +199,49 @@ export const messages = mysqlTable(
     index("messages_tenant_id_idx").on(table.tenantId),
     index("messages_conversation_id_idx").on(table.conversationId),
     uniqueIndex("messages_wa_message_id_idx").on(table.waMessageId),
+  ],
+);
+
+// Tenant-level canned responses (PLAN.md §15.5 J2 inbox half, §15.8 P3).
+// `{{contacto.nombre}}`-style variables are resolved at send time in
+// modules/whatsapp/quick-replies.ts — this table stores the template only.
+export const quickReplies = mysqlTable(
+  "quick_replies",
+  {
+    id: char("id", { length: 26 }).primaryKey(),
+    tenantId: char("tenant_id", { length: 26 }).notNull(),
+    name: varchar("name", { length: 100 }).notNull(),
+    body: text("body").notNull(),
+    createdAt: datetime("created_at")
+      .notNull()
+      .default(sql`CURRENT_TIMESTAMP`),
+    updatedAt: datetime("updated_at")
+      .notNull()
+      .default(sql`CURRENT_TIMESTAMP`),
+  },
+  (table) => [index("quick_replies_tenant_id_idx").on(table.tenantId)],
+);
+
+// Internal notes on a conversation (§15.8 P3): rendered inline in the thread
+// but never sent — no `messages` row, no `wa_message_id`, invisible to the
+// customer. Also surfaced on the contact timeline (modules/crm/timeline.ts).
+export const conversationNotes = mysqlTable(
+  "conversation_notes",
+  {
+    id: char("id", { length: 26 }).primaryKey(),
+    tenantId: char("tenant_id", { length: 26 }).notNull(),
+    conversationId: char("conversation_id", { length: 26 }).notNull(),
+    contactId: char("contact_id", { length: 26 }).notNull(),
+    authorUserId: char("author_user_id", { length: 26 }).notNull(),
+    body: text("body").notNull(),
+    createdAt: datetime("created_at")
+      .notNull()
+      .default(sql`CURRENT_TIMESTAMP`),
+  },
+  (table) => [
+    index("conversation_notes_tenant_id_idx").on(table.tenantId),
+    index("conversation_notes_conversation_id_idx").on(table.conversationId),
+    index("conversation_notes_contact_id_idx").on(table.contactId),
   ],
 );
 

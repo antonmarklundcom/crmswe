@@ -17,7 +17,8 @@
       "submit": "Logga in",
       "error": "Fel e-post eller lösenord",
       "forgotPassword": "Glömt lösenordet?",
-      "rateLimited": "För många försök. Vänta några minuter och försök igen."
+      "rateLimited": "För många försök. Vänta några minuter och försök igen.",
+      "installApp": "Installera app"
     },
     "acceptInvite": {
       "title": "Acceptera inbjudan",
@@ -91,7 +92,11 @@
       "calendar": "Kalender",
       "reports": "Rapporter",
       "booking": "Bokningar",
-      "chat": "Webbchatt"
+      "chat": "Webbchatt",
+      "companies": "Företag",
+      "contracts": "Avtal",
+      "negocio": "Företagsminne",
+      "onboarding": "Bransch"
     },
     "dashboard": {
       "title": "Översikt för {tenant}",
@@ -162,6 +167,75 @@
         "title": "Dagens kalender",
         "viewAll": "Öppna kalendern",
         "allDay": "Heldag"
+      },
+      "hoy": {
+        "title": "Idag",
+        "empty": "Inget akut just nu. Bra jobbat.",
+        "digest": {
+          "title": "Du har {count, plural, one {# sak} other {# saker}} kvar idag"
+        },
+        "unread_conversation": {
+          "title": "{name} väntar på svar",
+          "subtitle": "Inget svar på {minutes, plural, one {# minut} other {# minuter}}",
+          "action": "Öppna konversation"
+        },
+        "overdue_task": {
+          "title": "{title}",
+          "subtitle": "{name} · försenad med {days, plural, one {# dag} other {# dagar}}",
+          "action": "Visa kontakt"
+        },
+        "upcoming_booking": {
+          "title": "Bokning med {name}",
+          "subtitle": "Om {hours, plural, one {# timme} other {# timmar}}, ingen påminnelse skickad",
+          "action": "Visa bokning"
+        },
+        "unreplied_quote": {
+          "title": "Offert {number} utan svar",
+          "subtitle": "Skickad för {days, plural, one {# dag} other {# dagar}} sedan",
+          "action": "Visa offert"
+        },
+        "stale_deal": {
+          "title": "{title}",
+          "subtitle": "{days, plural, one {# dag} other {# dagar}} i samma steg",
+          "action": "Visa affär"
+        },
+        "lead_without_deal": {
+          "title": "{name} saknar fortfarande affär",
+          "subtitle": "Kom in för {hours, plural, one {# timme} other {# timmar}} sedan",
+          "action": "Visa kontakt"
+        },
+        "voice": {
+          "intro": "Du har {count, plural, one {# sak} other {# saker}} kvar idag:",
+          "empty": "Inget brådskande just nu. Bra jobbat."
+        },
+        "memory_incomplete": {
+          "title": "Företagets minne är ofullständigt",
+          "subtitle": "{pct}% klart — assistenten svarar bättre med mer data",
+          "action": "Komplettera minnet"
+        },
+        "fact_review_due": {
+          "title": "{count, plural, one {Ett faktum} other {# fakta}} att granska",
+          "subtitle": "Har passerat sitt granskningsdatum",
+          "action": "Granska"
+        },
+        "promo_expired": {
+          "title": "{count, plural, one {En utgången kampanj} other {# utgångna kampanjer}} är fortfarande bekräftad",
+          "subtitle": "Assistenten kan fortfarande erbjuda den",
+          "action": "Granska"
+        }
+      },
+      "briefing": {
+        "title": "Veckans briefing",
+        "notificationTitle": "Din veckobriefing är klar",
+        "viewAll": "Se alla briefingar",
+        "listTitle": "Veckobriefingar",
+        "empty": "Ingen briefing ännu. Den första kommer på måndag.",
+        "recommendationsTitle": "Rekommendationer",
+        "weekOf": "Veckan från {date}",
+        "sourceValues": {
+          "ai": "AI-genererad",
+          "template": "Automatisk"
+        }
       }
     },
     "pipeline": {
@@ -194,7 +268,9 @@
       "moveFailed": "Vi kunde inte flytta affären. Den återgick till föregående steg.",
       "showClosed": "Visa {count} stängda",
       "hideClosed": "Dölj stängda",
-      "editStages": "Redigera steg"
+      "editStages": "Redigera steg",
+      "daysInStage": "{count} dagar i det här steget",
+      "stale": "Stillastående"
     },
     "calendar": {
       "title": "Kalender",
@@ -268,7 +344,41 @@
       },
       "turnstileSite": "Botskydd med den här webbplatsens nycklar",
       "turnstileNone": "Inget extra skydd",
-      "turnstileSave": "Spara"
+      "turnstileSave": "Spara",
+      "editFields": "Redigera fält",
+      "editor": {
+        "title": "Fält för {name}",
+        "locked": "Detta formulär har redan svar: befintliga fält kan fortfarande redigeras, men deras nyckel kan inte ändras.",
+        "label": "Etikett",
+        "type": "Typ",
+        "required": "Obligatoriskt",
+        "mapTo": "Spara i anpassat fält",
+        "mapToNone": "— spara inte —",
+        "options": "Alternativ (kommaseparerade)",
+        "moveUp": "Flytta upp",
+        "moveDown": "Flytta ner",
+        "remove": "Ta bort",
+        "addField": "Lägg till fält",
+        "save": "Spara fält",
+        "types": {
+          "text": "Text",
+          "phone": "Telefon",
+          "email": "E-post",
+          "select": "Rullista",
+          "textarea": "Lång text",
+          "checkbox": "Kryssruta",
+          "date": "Datum"
+        },
+        "errors": {
+          "invalid": "Kontrollera fälten: viss data är ogiltig.",
+          "duplicate_key": "Två fält kan inte dela samma nyckel. Ändra en av etiketterna.",
+          "select_needs_options": "En rullista behöver minst ett alternativ.",
+          "map_to_unknown": "Det anpassade fältet finns inte.",
+          "phone_required": "Formuläret behöver exakt ett obligatoriskt telefonfält.",
+          "key_immutable": "Detta formulär har redan svar: ett befintligt fälts nyckel kan inte ändras. Ta bort det och lägg till ett nytt om du behöver en annan typ.",
+          "unknown": "Det gick inte att spara. Försök igen."
+        }
+      }
     },
     "users": {
       "title": "Team",
@@ -414,7 +524,9 @@
         "conversacion": "Konversation",
         "actividad": "Aktivitet",
         "datos": "Uppgifter",
-        "tareas": "Uppgifter att göra"
+        "tareas": "Uppgifter att göra",
+        "contratos": "Avtal",
+        "fusionar": "Slå ihop"
       },
       "searchLabel": "Sök",
       "tag": "Tagg",
@@ -559,7 +671,45 @@
       "anonymizeConfirmMissing": "Skriv {word} i rutan för att bekräfta.",
       "anonymize": "Anonymisera",
       "anonymizeDone": "Kontakten är anonymiserad. Utställda fakturor är orörda.",
-      "anonymizeFailed": "Kunde inte anonymisera kontakten."
+      "anonymizeFailed": "Kunde inte anonymisera kontakten.",
+      "company": {
+        "title": "Företag",
+        "none": "Inget företag",
+        "save": "Spara"
+      },
+      "merge": {
+        "intro": "Slå ihop den här kontakten med en annan som är samma person. Den här kontakten behåller sin identitet, telefonnummer och historik; den andra tas bort vid bekräftelse. Går inte att ångra.",
+        "otherContact": "Slå ihop med",
+        "chooseContact": "Välj den andra kontakten",
+        "keepThis": "Den här kontakten",
+        "keepOther": "Den andra",
+        "countsWillMove": "Affärer, offerter, dokument, konversationer, uppgifter och allt annat på den andra kontakten flyttas till den här.",
+        "confirm": "Slå ihop kontakter",
+        "warning": "Den här åtgärden går inte att ångra.",
+        "adminOnly": "Bara en administratör kan slå ihop kontakter.",
+        "errors": {
+          "invalid": "Kunde inte slå ihop. Kontrollera uppgifterna och försök igen.",
+          "sameContact": "Du kan inte slå ihop en kontakt med sig själv.",
+          "notFound": "En av de två kontakterna hittades inte."
+        }
+      },
+      "duplicates": {
+        "title": "Möjliga dubbletter",
+        "empty": "Inga möjliga dubbletter hittades.",
+        "reasonEmail": "Samma e-post",
+        "reasonNameAndPhone": "Samma namn och liknande telefonnummer",
+        "review": "Granska"
+      },
+      "timelineConversationNote": "Intern anteckning",
+      "customFieldsTitle": "Anpassade fält",
+      "customFieldsSave": "Spara fält",
+      "manageCustomFields": "Hantera anpassade fält",
+      "customFilterLabel": "Anpassat fält",
+      "customFilterNone": "Inget",
+      "customFilterOperator": "Villkor",
+      "customFilterEquals": "Är lika med",
+      "customFilterContains": "Innehåller",
+      "customFilterValue": "Värde"
     },
     "inbox": {
       "title": "Inkorg",
@@ -600,9 +750,56 @@
         "aiWindowClosed": "Kunde inte skicka: 24-timmarsfönstret stängdes medan utkastet väntade.",
         "aiConversationDisabled": "Kunde inte skicka: AI är avstängt i den här konversationen.",
         "aiOptedOut": "Kunde inte skicka: kontakten har bett att inte få fler meddelanden.",
-        "aiSendFailed": "Utkastet kunde inte skickas. Försök igen."
+        "aiSendFailed": "Utkastet kunde inte skickas. Försök igen.",
+        "noSlots": "Inga lediga tider de närmaste dagarna.",
+        "bookingTypeRequired": "Välj en tjänst att erbjuda."
       },
-      "actionFailed": "Vi kunde inte slutföra åtgärden. Försök igen."
+      "actionFailed": "Vi kunde inte slutföra åtgärden. Försök igen.",
+      "offerSlots": "Erbjud tider",
+      "offerSlotsSent": "Skickade {count} tider",
+      "filter": {
+        "all": "Alla",
+        "mine": "Mina",
+        "unassigned": "Otilldelade",
+        "unread": "Olästa"
+      },
+      "searchPlaceholder": "Sök på namn, telefon eller meddelande…",
+      "channelWhatsapp": "WhatsApp",
+      "channelWebchat": "Webbchatt",
+      "unknownContact": "Besökare",
+      "markUnread": "Markera som oläst",
+      "addNote": "Lägg till anteckning",
+      "notePlaceholder": "Skriv en intern anteckning (skickas inte till kunden)…",
+      "saveNote": "Spara anteckning",
+      "noteRequired": "Skriv något innan du sparar anteckningen.",
+      "noteAuthor": "Anteckning från {name}",
+      "quickReplyName": "Namn",
+      "quickReplyBody": "Meddelande",
+      "quickReplyBodyHint": "Du kan inkludera kontaktens namn automatiskt i meddelandet.",
+      "quickReplyCreate": "Skapa snabbsvar",
+      "quickReplyInvalid": "Fyll i namn och meddelande.",
+      "quickRepliesTitle": "Snabbsvar",
+      "quickRepliesIntro": "Sparade meddelanden som ditt team kan infoga genom att skriva \"/\" i konversationen.",
+      "quickReplySave": "Spara",
+      "quickReplyDelete": "Ta bort",
+      "quickRepliesEmpty": "Inga snabbsvar än.",
+      "manageQuickReplies": "Hantera snabbsvar",
+      "optoutConfirm": "Den här kontakten bad om att inte få fler meddelanden (taggad \"optout\"). Skicka ändå?",
+      "optoutConfirmSend": "Skicka ändå",
+      "audio": {
+        "label": "Röstmeddelande",
+        "pending": "Transkriberar röstmeddelandet…",
+        "failed": "Röstmeddelandet kunde inte transkriberas",
+        "skipped": "Röstmeddelande utan transkription",
+        "reason": {
+          "too_large": "ljudet är för stort",
+          "tenant_daily_cap": "den dagliga AI-gränsen nåddes",
+          "ai_not_configured": "transkribering är inte aktiverad",
+          "no_media": "ljudet kunde inte hämtas",
+          "not_audio": "meddelandet är inte ljud",
+          "provider": "leverantören svarade inte"
+        }
+      }
     },
     "whatsapp": {
       "title": "WhatsApp",
@@ -630,6 +827,17 @@
         "phoneNumberIdRequired": "Ange Phone Number ID.",
         "accessTokenRequired": "Ange åtkomsttoken.",
         "unknown": "Vi kunde inte ansluta numret. Försök igen."
+      },
+      "bookingTemplatesTitle": "Bokningsmallar",
+      "bookingTemplatesHelp": "Meta måste godkänna de här mallarna i ditt eget konto innan aviseringar kan nå kunder som aldrig har skrivit till dig. Fram till dess går aviseringarna via e-post.",
+      "submitBookingTemplates": "Skicka mallar till Meta",
+      "bookingTemplateStatus": {
+        "APPROVED": "Godkänd",
+        "PENDING": "Under granskning",
+        "REJECTED": "Avvisad",
+        "PAUSED": "Pausad",
+        "DISABLED": "Inaktiverad",
+        "MISSING": "Inte skickad"
       }
     },
     "quotes": {
@@ -681,7 +889,12 @@
       },
       "vatRate": "Momssats",
       "net": "Beskattningsunderlag",
-      "vatTotal": "Moms"
+      "vatTotal": "Moms",
+      "sendEmail": "Skicka via e-post",
+      "sendEmailNoContactEmail": "Kontakten har ingen e-postadress.",
+      "duplicateExpired": "Duplicera som nytt utkast",
+      "decisionAcceptedBy": "Godkänd av {name}",
+      "decisionRejectedBy": "Avvisad av {name}"
     },
     "documents": {
       "title": "Fakturor",
@@ -791,7 +1004,11 @@
         "unknown": "Vi kunde inte spara. Försök igen."
       },
       "exclVat": "exkl. moms",
-      "sendReminder": "Skicka påminnelse"
+      "sendReminder": "Skicka påminnelse",
+      "sendEmail": "Skicka via e-post",
+      "sendEmailNoContactEmail": "Kontakten har ingen e-postadress.",
+      "viewReceipt": "Kvitto",
+      "sendReceiptWhatsapp": "Skicka kvitto via WhatsApp"
     },
     "settings": {
       "title": "Inställningar",
@@ -867,7 +1084,8 @@
         "reviewLinkInvalid": "Länken ser inte giltig ut.",
         "aiLimitInvalid": "Gränsen är inte ett giltigt tal.",
         "aiHandoffKeywordRequired": "Ange ett ord som lämnar över till en människa.",
-        "unknown": "Vi kunde inte spara. Försök igen."
+        "unknown": "Vi kunde inte spara. Försök igen.",
+        "coachPhoneInvalid": "Ange ett giltigt telefonnummer."
       },
       "language": {
         "title": "Språk",
@@ -890,7 +1108,85 @@
       "emailReplyToHelp": "Hit går kundens svar. Lämnas det tomt går svaren till plattformens adress och når dig inte.",
       "emailFromEmail": "Egen avsändaradress (avancerat)",
       "emailFromEmailHelp": "Lämna tomt om du inte vet. Adressen måste ligga på en domän som är verifierad hos vår e-postleverantör (SPF och DKIM) — annars studsar fakturan eller hamnar i skräpposten. Utan egen adress skickas posten från plattformen med ditt företagsnamn som avsändare, vilket fungerar för de allra flesta.",
-      "emailSettingsInvalid": "Kontrollera e-postadresserna."
+      "emailSettingsInvalid": "Kontrollera e-postadresserna.",
+      "aiBusinessProfileIntro": "Om företaget, ton och öppettider fylls nu i under företagsminnet.",
+      "aiBusinessProfileLink": "Gå till Företagsminne",
+      "theme": {
+        "title": "Utseende",
+        "intro": "Välj hur appen ser ut för dig. Det ändrar inte vad dina kollegor ser eller vad dina kunder får.",
+        "label": "Utseende",
+        "save": "Spara",
+        "toggle": "Byt utseende",
+        "options": {
+          "system": "Följ systemet",
+          "light": "Ljust",
+          "dark": "Mörkt"
+        }
+      },
+      "installApp": {
+        "title": "Installera app",
+        "intro": "Installera VenderCRM på din Android-telefon för att öppna den som en app, utan webbläsaren.",
+        "button": "Installera app"
+      },
+      "aiBookingEnabled": "Låt assistenten erbjuda tider",
+      "aiBookingEnabledHelp": "Assistenten visar bara lediga tider; kunden bokar genom att trycka på ett alternativ, aldrig assistenten.",
+      "gcal": {
+        "title": "Google Calendar",
+        "intro": "Koppla din kalender så slutar systemet erbjuda tider när du redan är upptagen. Den läser bara din tillgänglighet: den skriver aldrig till eller ändrar något i din Google Calendar.",
+        "notConfigured": "Google Calendar är inte konfigurerat i den här installationen än.",
+        "connect": "Koppla min kalender",
+        "disconnect": "Koppla från",
+        "connected": "Kalender kopplad",
+        "lastRead": "senast läst {when}",
+        "status": {
+          "error": "Det gick inte att läsa kalendern.",
+          "revoked": "Åtkomsten återkallades: koppla den igen."
+        }
+      },
+      "push": {
+        "title": "Aviseringar i mobilen",
+        "intro": "Slå på aviseringar på varje enhet där du vill ha dem. Allt som skickas som avisering finns också i klockan.",
+        "unsupported": "Den här webbläsaren stöder inte aviseringar. På iPhone: lägg till appen på hemskärmen och öppna den därifrån.",
+        "blocked": "Du har blockerat aviseringar för den här sidan. Ändra det i webbläsarens inställningar och försök igen.",
+        "active": "På för den här enheten",
+        "inactive": "Av för den här enheten",
+        "enable": "Slå på för den här enheten",
+        "disable": "Stäng av för den här enheten",
+        "failed": "Vi kunde inte slå på det. Försök igen.",
+        "devices": "{count, plural, =0 {Inga aktiva enheter} one {# aktiv enhet} other {# aktiva enheter}}",
+        "kindsTitle": "Vilka aviseringar du vill ha",
+        "kindsNote": "Detta gäller alla dina enheter. Det du stänger av här visas ändå i klockan.",
+        "save": "Spara",
+        "kinds": {
+          "inbound_message": "Nya kundmeddelanden",
+          "assignment": "När en konversation tilldelas mig",
+          "task_due": "Uppgifter och bokningar för dagen",
+          "automation": "Aviseringar från automationer"
+        }
+      },
+      "email": {
+        "emailTitle": "E-postidentitet",
+        "emailIntro": "Vilken adress det här företagets e-post skickas från (offerter, fakturor, påminnelser).",
+        "contactEmailLabel": "Kontakt-e-post (tar emot svar)",
+        "contactEmailSave": "Spara",
+        "domainsTitle": "Egen domän",
+        "domainsIntro": "Verifiera din egen domän så att e-post skickas från ditt-företag.se istället för standardadressen.",
+        "addDomainLabel": "Domän",
+        "addDomainAction": "Verifiera domän",
+        "domainStatusValues": {
+          "pending": "Väntar på verifiering",
+          "verified": "Verifierad",
+          "failed": "Verifiering misslyckades"
+        },
+        "dnsRecordsIntro": "Lägg till dessa poster hos din DNS-leverantör:",
+        "retryVerification": "Försök verifiera igen",
+        "removeDomain": "Ta bort",
+        "resendNotConfigured": "Att skicka från egen domän är inte konfigurerat på den här plattformen än.",
+        "fromLocalPartLabel": "Avsändarens användarnamn (före @)",
+        "fromLocalPartSave": "Spara"
+      },
+      "coachPhoneTitle": "Ditt nummer för assistenten",
+      "coachPhoneIntro": "Din personliga telefon. Skicka ett röstmeddelande till ditt WhatsApp Business-nummer och fråga vad du har idag, så svarar den med dina öppna punkter. Lämna tomt för att stänga av."
     },
     "automations": {
       "title": "Automationer",
@@ -917,7 +1213,19 @@
         "lead_received": "Lead mottaget (webbplats eller formulär)",
         "deal_stage_changed": "Affären bytte steg",
         "contact_created": "Kontakt skapad",
-        "tag_added": "Tagg tillagd"
+        "tag_added": "Tagg tillagd",
+        "booking_created": "Bokning skapad",
+        "booking_cancelled": "Bokning avbokad",
+        "booking_no_show": "Uteblev från bokningen",
+        "booking_completed": "Bokning genomförd",
+        "chat_lead_captured": "Lead fångad i webbchatten",
+        "quote_sent": "Offert skickad",
+        "quote_accepted": "Offert accepterad",
+        "document_sent": "Säljnota skickad",
+        "document_paid": "Säljnota betald",
+        "deal_won": "Affär vunnen",
+        "deal_lost": "Affär förlorad",
+        "contract_accepted": "Avtal accepterat"
       },
       "statusValues": {
         "draft": "Utkast",
@@ -957,7 +1265,15 @@
           "wait_duration": "Vänta",
           "wait_for_reply": "Vänta på svar",
           "ai_reply": "Svara med AI",
-          "send_review_request": "Be om en Google-recension"
+          "send_review_request": "Be om en Google-recension",
+          "offer_slots": "Erbjud tider",
+          "create_task": "Skapa uppgift",
+          "notify_user": "Meddela en användare",
+          "send_email": "Skicka e-post",
+          "deal_value": "Affärens värde?",
+          "lead_source": "Leadets källa?",
+          "site": "Vilken sajt?",
+          "contact_field": "Kontaktfält?"
         },
         "fields": {
           "text": "Text",
@@ -975,10 +1291,45 @@
           "aiModeSend": "Skicka automatiskt",
           "aiModeHint": "Automatisk sändning måste också vara påslagen för hela kontot under Inställningar. Så länge kontot står i utkastläge skapar den här noden utkast.",
           "reviewTextPlaceholder": "Tack för ditt köp! Lämna gärna en recension: {tag}",
-          "reviewTextHint": "Lämnar du fältet tomt skickas ett standardmeddelande med länken. Ange recensionslänken under Inställningar."
+          "reviewTextHint": "Lämnar du fältet tomt skickas ett standardmeddelande med länken. Ange recensionslänken under Inställningar.",
+          "taskTitle": "Uppgiftens rubrik",
+          "dueInHours": "Förfaller om (timmar)",
+          "assignee": "Ansvarig",
+          "assigneeDealOwner": "Affärens ansvariga",
+          "assigneeContactOwner": "Kontaktens ansvariga",
+          "assigneeSpecific": "En viss användare",
+          "notifyTitle": "Aviseringens rubrik",
+          "notifyBody": "Aviseringens text",
+          "subject": "Ämne",
+          "emailBody": "Meddelande",
+          "emailHint": "Skickas till kontaktens e-post. Saknas e-post hoppas steget över och loggas.",
+          "bookingTypeId": "Boknings-ID",
+          "operator": "Jämförelse",
+          "operatorGte": "Större än eller lika med",
+          "operatorLt": "Mindre än",
+          "operatorEquals": "Är lika med",
+          "operatorContains": "Innehåller",
+          "amount": "Belopp",
+          "leadSource": "Källa",
+          "siteId": "Sajt-ID",
+          "fieldKey": "Fält",
+          "fieldValue": "Värde"
         },
         "mobileReadOnly": "Den visuella redigeraren behöver en större skärm. På mobilen kan du läsa flödet; för att redigera det, öppna det på en dator.",
         "mobileEmpty": "Flödet har inga steg ännu."
+      },
+      "runDetailTitle": "Körningens detaljer",
+      "stepsTitle": "Steg",
+      "noSteps": "Den här körningen har inga steg än",
+      "stepWhen": "När",
+      "stepNode": "Nod",
+      "stepStatus": "Resultat",
+      "stepDetail": "Detalj",
+      "backToFlow": "Tillbaka till flödet",
+      "stepStatusValues": {
+        "ok": "Utfört",
+        "skipped": "Överhoppat",
+        "failed": "Misslyckades"
       }
     },
     "sites": {
@@ -1230,7 +1581,11 @@
         "quotes": "offerter",
         "documents": "försäljningsnotor",
         "submissions": "inkomna leads"
-      }
+      },
+      "whatsapp": "WhatsApp",
+      "whatsappGreeting": "Hej! Jag skriver angående {deal}.",
+      "expectedCloseAt": "Förväntat avslut",
+      "save": "Spara"
     },
     "stages": {
       "title": "Steg",
@@ -1254,7 +1609,8 @@
         "notEmpty": "Går inte att ta bort: steget innehåller fortfarande affärer. Flytta dem först.",
         "lastStage": "Går inte att ta bort pipelinens enda steg.",
         "notFound": "Vi hittade inte steget."
-      }
+      },
+      "staleAfterDays": "Stillastående efter (dagar)"
     },
     "business": {
       "switcherTitle": "Företag",
@@ -1291,7 +1647,33 @@
         "open": "Öppna",
         "messages": "Meddelanden",
         "tasks": "Uppgifter",
-        "empty": "Ingen data för den här perioden ännu."
+        "empty": "Ingen data för den här perioden ännu.",
+        "opened": "Öppnade i perioden",
+        "lost": "Förlorade",
+        "responseMedian": "Svarstid (median)",
+        "stage": "Steg",
+        "reachedOrPast": "Nådde eller passerade",
+        "bucket": "Intervall",
+        "conversations": "Konversationer"
+      },
+      "customRange": "Anpassat intervall",
+      "from": "Från",
+      "to": "Till",
+      "apply": "Tillämpa",
+      "pipeline": "Pipeline",
+      "agent": "Säljare",
+      "allPipelines": "Alla pipelines",
+      "allAgents": "Alla säljare",
+      "vsPrevious": "jämfört med föregående period",
+      "exportCsv": "Exportera CSV",
+      "stageConversionTitle": "Stegtratt",
+      "stageConversionHint": "Välj en pipeline för att se dess stegtratt.",
+      "responseDistributionTitle": "Fördelning av svarstid",
+      "responseBuckets": {
+        "under15m": "Under 15 min",
+        "15mTo1h": "15 min till 1 timme",
+        "1hTo24h": "1 till 24 timmar",
+        "over24h": "Över 24 timmar"
       }
     },
     "booking": {
@@ -1441,7 +1823,74 @@
           "invalidQuestion": "Kolla frågorna: någon är ofullständig, eller två delar nyckel.",
           "notFound": "Bokningstypen finns inte längre."
         }
-      }
+      },
+      "share": {
+        "title": "Dela bokningssidan",
+        "embedTitle": "Bädda in på din webbplats",
+        "embedHelp": "Klistra in detta före </body>. Lägg till data-inline=\"#selector\" för att visa formuläret i ett element i stället för bakom en flytande knapp.",
+        "qrPageTitle": "QR till bokningssidan",
+        "qrWhatsappTitle": "QR till ditt WhatsApp",
+        "qrWhatsappMissing": "Anslut ett WhatsApp-nummer för att få en QR som öppnar chatten.",
+        "whatsappGreeting": "Hej! Jag vill boka {type}.",
+        "downloadSvg": "Ladda ner SVG",
+        "downloadPng": "Ladda ner PNG"
+      },
+      "whatsappGreeting": "Hej! Jag skriver angående din tid {when}.",
+      "statusPendingDeposit": "Väntar på handpenning",
+      "deliveryTitle": "Aviseringar till kunden",
+      "deliveryEmpty": "Ingen avisering har skickats än",
+      "deliveryNever": "Inga aviseringar",
+      "deliveryKind": {
+        "confirmation": "Bekräftelse",
+        "reminder": "Påminnelse",
+        "cancellation": "Avbokning",
+        "reschedule": "Ombokning",
+        "deposit_request": "Begäran om handpenning",
+        "review_request": "Begäran om omdöme"
+      },
+      "deliveryChannel": {
+        "wa_template": "WhatsApp (mall)",
+        "wa_freeform": "WhatsApp",
+        "email": "E-post",
+        "none": "Ingen kanal"
+      },
+      "deliveryStatus": {
+        "queued": "I kö",
+        "sent": "Skickad",
+        "delivered": "Levererad",
+        "read": "Läst",
+        "failed": "Misslyckades",
+        "skipped": "Kunde inte avisera"
+      },
+      "deliveryDetail": {
+        "no_channel": "Kontakten har varken WhatsApp eller e-postadress.",
+        "template_not_approved_and_window_closed": "Meta har inte godkänt mallen än och 24-timmarsfönstret är stängt.",
+        "email_not_delivered": "E-posten gick inte ut: kontrollera Resend-konfigurationen.",
+        "booking_context_missing": "Bokningen saknar uppgifter.",
+        "booking_not_found": "Bokningen finns inte längre.",
+        "tenant_not_found": "Företaget finns inte längre."
+      },
+      "capacityTitle": "Platser och handpenning",
+      "capacityHelp": "För klasser, banor eller allt där fler än en person får plats samtidigt — och för att be om handpenning innan bokningen bekräftas.",
+      "capacity": "Platser per tid",
+      "capacityFieldHelp": "1 är det vanliga: en person per tid. Sätt 12 för en klass med tolv.",
+      "depositAmount": "Handpenning (₲)",
+      "depositAmountHelp": "Lämna tomt om du inte tar handpenning. Med ett belopp står bokningen som väntande tills du bekräftar kvittot.",
+      "depositExpiry": "Minuter att betala",
+      "depositExpiryHelp": "Kommer handpenningen inte in inom den tiden släpps tiden automatiskt.",
+      "allowMultiService": "Erbjud tilläggstjänster på den publika sidan",
+      "servicesTitle": "Tilläggstjänster",
+      "servicesHelp": "Tillval kunden kan kryssa i: de förlänger tiden och sparas på bokningen.",
+      "servicesEmpty": "Inga tilläggstjänster än",
+      "servicesDisabledHint": "De visas inte: slå på \\u201cErbjud tilläggstjänster\\u201d ovan.",
+      "serviceName": "Namn",
+      "serviceExtraDuration": "+ minuter",
+      "serviceExtraPrice": "+ pris (₲)",
+      "serviceAdd": "Lägg till",
+      "serviceRemove": "Ta bort",
+      "confirmDeposit": "Bekräfta handpenning",
+      "rejectDeposit": "Kom aldrig",
+      "partySize": "{count} personer"
     },
     "chat": {
       "title": "Webbchatt",
@@ -1528,6 +1977,277 @@
         "siteRequired": "Välj en webbplats.",
         "exists": "Webbplatsen har redan en widget."
       }
+    },
+    "memory": {
+      "title": "Företagets minne",
+      "intro": "Allt din assistent vet: vad ni gör, öppettider, priser, villkor och de vanligaste frågorna. Det är det enda AI:n får använda när den svarar, på WhatsApp och i webbchatten.",
+      "adminOnly": "Bara administratörer kan se den här sidan",
+      "completionTitle": "Minnet {pct} % ifyllt",
+      "checklist": {
+        "hours": "Lägg in era öppettider",
+        "address": "Lägg in adressen",
+        "about": "Beskriv på en rad vad företaget gör",
+        "faqs": "Lägg in minst 3 vanliga frågor",
+        "cancellation": "Skriv er avbokningspolicy",
+        "payment": "Ange vilka betalsätt ni tar emot",
+        "tone": "Välj hur assistenten ska låta",
+        "neverPromise": "Skriv vad den aldrig får lova"
+      },
+      "profileTitle": "Företagsuppgifter",
+      "displayName": "Företagsnamn",
+      "legalName": "Juridiskt namn",
+      "ruc": "Org.nr",
+      "about": "Vad vi gör",
+      "aboutHint": "En eller två meningar, som du skulle berätta för en ny kund.",
+      "audience": "Vilka vi hjälper",
+      "differentiators": "Vad som skiljer oss",
+      "tone": "Tonläge",
+      "toneNone": "Inte valt",
+      "tones": {
+        "cercano": "Nära",
+        "formal": "Formellt",
+        "directo": "Rakt"
+      },
+      "toneNote": "Anteckning om tonläget",
+      "website": "Webbplats",
+      "address": "Adress",
+      "mapsUrl": "Google Maps-länk",
+      "paymentMethods": "Betalsätt",
+      "paymentMethodsHint": "Separerade med komma: kontant, överföring, kort.",
+      "neverPromise": "Lova aldrig",
+      "neverPromiseHint": "Fasta priser, leveranstider, rabatter: sådant assistenten inte får utlova.",
+      "kinds": {
+        "faq": "Vanliga frågor",
+        "service": "Tjänster och priser",
+        "policy": "Villkor",
+        "location": "Plats och öppettider",
+        "contact": "Kontakt",
+        "promo": "Kampanjer",
+        "note": "Interna anteckningar"
+      },
+      "kindHints": {
+        "faq": "De 5 frågor ni får oftast, besvarade som ni skulle svara.",
+        "service": "Det ni säljer, med pris och tidsåtgång när ni har dem.",
+        "policy": "Handpenning, avbokning, betalning, garanti.",
+        "location": "Var ni finns och när ni har öppet, med era egna ord.",
+        "contact": "Telefon, e-post och vem kunden kan fråga efter.",
+        "promo": "Erbjudanden med datum: utanför datumen nämner assistenten dem inte.",
+        "note": "Bara för teamet. Sägs aldrig till en kund."
+      },
+      "empty": "Inget inlagt här än.",
+      "addFact": "Lägg till",
+      "factTitle": "Rubrik",
+      "factBody": "Detalj",
+      "tags": "Etiketter",
+      "price": "Pris (Gs)",
+      "priceFrom": "Det är ett från-pris",
+      "durationMinutes": "Tidsåtgång (minuter)",
+      "validFrom": "Gäller från",
+      "validUntil": "Gäller till",
+      "topic": "Ämne",
+      "topics": {
+        "cancellation": "Avbokning",
+        "deposit": "Handpenning",
+        "payment": "Betalning",
+        "warranty": "Garanti",
+        "other": "Övrigt"
+      },
+      "visibility": "Synlighet",
+      "visibilityHint": "Interna uppgifter når aldrig en kund: de utelämnas ur varje automatiskt svar.",
+      "visibilityCustomer": "Kunden får veta",
+      "visibilityInternal": "Endast teamet",
+      "internalBadge": "Internt",
+      "unconfirmedBadge": "Obekräftat",
+      "aiSuggested": "Föreslaget av AI",
+      "confirm": "Bekräfta",
+      "edit": "Ändra",
+      "delete": "Ta bort",
+      "deleteConfirm": "Ta bort uppgiften ur minnet?",
+      "errors": {
+        "invalid": "Kontrollera uppgifterna",
+        "notFound": "Vi hittade inte uppgiften",
+        "unknown": "Det gick inte att spara. Försök igen."
+      },
+      "importar": {
+        "title": "Importera till minnet",
+        "intro": "Klistra in text, ladda upp en PDF eller ange en länk — en assistent läser innehållet och föreslår fakta att granska här.",
+        "back": "Tillbaka till minnet",
+        "pasteLabel": "Klistra in text",
+        "pasteButton": "Extrahera från den här texten",
+        "pdfLabel": "Ladda upp en PDF",
+        "pdfButton": "Extrahera från den här PDF:en",
+        "urlLabel": "Klistra in en länk",
+        "urlPlaceholder": "https://din-sida.se/tjanster",
+        "urlButton": "Extrahera från den här länken",
+        "resultOk": "{count} fakta föreslogs. Granska dem nedan, i minnet.",
+        "resultOkZero": "Inga tydliga fakta hittades i det innehållet.",
+        "errors": {
+          "ai_unavailable": "Ingen AI-assistent är konfigurerad än.",
+          "daily_cap_reached": "Din plans dagliga AI-gräns har nåtts. Försök igen imorgon.",
+          "extraction_failed": "Vi kunde inte läsa det innehållet. Försök igen.",
+          "no_text": "Vi hittade ingen text att läsa där.",
+          "fetch_failed": "Vi kunde inte nå den länken.",
+          "pdf_no_text_layer": "Den PDF:en är en skannad bild — den har ingen text att läsa.",
+          "empty": "Skriv eller ladda upp något först."
+        }
+      }
+    },
+    "companies": {
+      "title": "Företag",
+      "intro": "Kontona bakom dina kontakter: org.nr, telefon och delade anteckningar, plus vilka som jobbar där och vilka affärer som är öppna.",
+      "emptyTitle": "Inga företag än",
+      "emptyBody": "Lägg till ett företag för att gruppera kontakterna som jobbar där och se deras affärer på ett ställe.",
+      "createTitle": "Nytt företag",
+      "editTitle": "Redigera företag",
+      "save": "Spara",
+      "name": "Namn",
+      "ruc": "Org.nr",
+      "phone": "Telefon",
+      "email": "E-post",
+      "address": "Adress",
+      "notes": "Anteckningar",
+      "table": {
+        "name": "Namn",
+        "contacts": "Kontakter",
+        "openDeals": "Öppna affärer"
+      },
+      "contactsTitle": "Kontakter",
+      "contactsEmpty": "Inga kontakter på detta företag än",
+      "dealsTitle": "Affärer",
+      "dealsEmpty": "Inga affärer för detta företag än",
+      "delete": "Ta bort företag",
+      "deleteConfirm": "Ta bort detta företag? Det går inte att ångra.",
+      "deleteBlocked": "Kan inte ta bort: har fortfarande kontakter.",
+      "errors": {
+        "invalid": "Kontrollera fälten: namn krävs.",
+        "nameTaken": "Du har redan ett företag med det namnet."
+      }
+    },
+    "contracts": {
+      "title": "Avtal",
+      "intro": "Skapa ett avtal från en mall, skicka det via WhatsApp eller e-post, och kunden godkänner det med ett klick från mobilen.",
+      "emptyTitle": "Inga avtal ännu",
+      "emptyBody": "Välj en kontakt och en mall för att skapa det första avtalet.",
+      "createTitle": "Nytt avtal",
+      "needContact": "Du behöver minst en kontakt först.",
+      "goToContacts": "Gå till kontakter",
+      "needTemplate": "Du behöver minst en aktiv mall först.",
+      "manageTemplates": "Hantera mallar",
+      "number": "Nummer",
+      "contact": "Kontakt",
+      "template": "Mall",
+      "status": "Status",
+      "statusValues": {
+        "draft": "Utkast",
+        "sent": "Skickat",
+        "accepted": "Godkänt",
+        "declined": "Avböjt",
+        "voided": "Ogiltigförklarat"
+      },
+      "sendWhatsapp": "Skicka via WhatsApp",
+      "sendEmail": "Skicka via e-post",
+      "publicLink": "Offentlig länk",
+      "downloadPdf": "Ladda ner PDF",
+      "decisionAccepted": "Kunden godkände avtalet.",
+      "decisionDeclined": "Kunden avböjde avtalet.",
+      "voidTitle": "Ogiltigförklara",
+      "voidReason": "Anledning",
+      "voidWarning": "Att ogiltigförklara ett avtal är permanent.",
+      "voidAction": "Ogiltigförklara avtal",
+      "voidedNotice": "Ogiltigförklarat: {reason}",
+      "templatesTitle": "Avtalsmallar",
+      "templatesIntro": "Skriv innehållet i vanlig text. Använd # för en rubrik och en tom rad för att separera stycken. Tillgängliga variabler, inom dubbla klamrar: contacto.nombre, contacto.telefono, contacto.email.",
+      "templateName": "Namn",
+      "templateBody": "Innehåll",
+      "templateBodyHint": "Vanlig text — ingen Markdown eller HTML. # Rubrik för ett avsnitt, tom rad mellan stycken.",
+      "templateActive": "Aktiv",
+      "templateSave": "Spara ändringar",
+      "templateCreate": "Skapa mall",
+      "errors": {
+        "invalid": "Kunde inte spara. Kontrollera uppgifterna och försök igen.",
+        "unknownVariable": "Mallen använder en okänd variabel"
+      }
+    },
+    "onboarding": {
+      "title": "Ställ in din bransch",
+      "adminOnly": "Bara administratörer kan se den här sidan",
+      "intro": "Välj vad ditt företag gör så lämnar vi tjänster, tider och pipeline klara för att börja ta emot bokningar.",
+      "apply": "Använd den här branschen",
+      "previewServices": "Tjänster:",
+      "previewResources": "Resurser:",
+      "previewStages": "Pipeline:",
+      "previewFlows": "Automationer:",
+      "previewCapacity": "{count} platser",
+      "alreadyApplied": "Du har redan tillämpat branschen \\u201c{name}\\u201d.",
+      "alreadyAppliedHelp": "Du kan tillämpa en annan när du vill: den läggs till det du har och ersätter aldrig något.",
+      "additiveNote": "Att tillämpa en bransch lägger bara till tjänster, resurser, steg och etiketter. Den tar aldrig bort eller ändrar det du redan konfigurerat.",
+      "assistant": {
+        "cta": "Ställ in med assistenten",
+        "intro": "Vi ställer några frågor och bygger inställningarna åt dig. Du kan hoppa över vilken som helst.",
+        "pickerLink": "Välj en bransch utan assistenten",
+        "skip": "Hoppa över",
+        "continueButton": "Fortsätt",
+        "stepOf": "Fråga {current} av {total}",
+        "topics": {
+          "about": "Vad gör ditt företag, och för vem?",
+          "contactToday": "Hur når kunder dig idag?",
+          "hoursAddress": "Vilka är dina öppettider och din adress?",
+          "servicesPrices": "Vilka tjänster erbjuder du och till vilket pris? Hoppa över om du vill lägga till dem senare.",
+          "policies": "Hur hanterar du handpenning, avbokning och betalningar?",
+          "faqs": "Vilka är de 5 vanligaste frågorna kunder ställer? Skriv varje fråga som ett eget stycke, med svaret under.",
+          "tone": "Hur ska assistenten låta: nära, formell eller direkt?",
+          "neverPromise": "Vad ska assistenten aldrig lova?"
+        },
+        "generating": "Bygger din plan…",
+        "aiUnavailable": "Ingen AI-assistent är konfigurerad än. Välj en bransch manuellt nedan.",
+        "generationFailed": "Vi kunde inte generera planen automatiskt. Välj en bransch manuellt nedan.",
+        "dailyCapReached": "Din plans dagliga AI-gräns har nåtts. Försök igen imorgon eller välj en bransch manuellt.",
+        "previewTitle": "Det här skapar vi — och inget du redan har tas bort",
+        "previewQuickReplies": "Snabbsvar:",
+        "applyPlan": "Tillämpa den här planen",
+        "startOver": "Börja om",
+        "appliedTitle": "Klart! Vi tillämpade din plan.",
+        "retry": "Försök igen"
+      }
+    },
+    "notifications": {
+      "title": "Aviseringar",
+      "empty": "Du har inga aviseringar",
+      "markAllRead": "Markera alla som lästa"
+    },
+    "push": {
+      "bannerTitle": "Slå på aviseringar",
+      "bannerBody": "Få en avisering i mobilen när ett meddelande kommer in.",
+      "bannerEnable": "Slå på",
+      "bannerDismiss": "Stäng",
+      "inboundFallbackTitle": "Nytt meddelande",
+      "inboundNoText": "De skickade en fil",
+      "assignedTitle": "Du har tilldelats en konversation",
+      "assignedBody": "Du sköter nu {contact}.",
+      "taskDueTitle": "Din dag",
+      "taskDueBody": "{tasks, plural, =0 {Inga uppgifter} one {# uppgift} other {# uppgifter}} · {appointments, plural, =0 {inga bokningar} one {# bokning} other {# bokningar}}"
+    },
+    "customFields": {
+      "title": "Anpassade fält",
+      "intro": "Din egen data på varje kontakt — typen och nyckeln kan inte ändras när fältet väl är skapat.",
+      "backToContacts": "Tillbaka till kontakter",
+      "labelLabel": "Etikett",
+      "typeLabel": "Typ",
+      "typeValues": {
+        "text": "Text",
+        "number": "Nummer",
+        "date": "Datum",
+        "select": "Lista",
+        "phone": "Telefon"
+      },
+      "optionsLabel": "Alternativ (kommaseparerade, endast typ lista)",
+      "requiredLabel": "Obligatoriskt",
+      "showOnCardLabel": "Visa på pipeline-kortet",
+      "create": "Skapa fält",
+      "delete": "Ta bort",
+      "keyTaken": "Ett fält med den nyckeln finns redan.",
+      "adminOnly": "Den här sektionen är endast för administratörer.",
+      "empty": "Inga anpassade fält än."
     }
   },
   "superadmin": {
@@ -1538,7 +2258,8 @@
       "superadmin": "Superadministratör",
       "audit": "Granskningslogg",
       "users": "Användare",
-      "overview": "Översikt"
+      "overview": "Översikt",
+      "claudeOps": "Claude Ops"
     },
     "tenantUsers": {
       "title": "Företagets användare",
@@ -1610,7 +2331,8 @@
         "slugTaken": "Det finns redan ett företag med den sluggen.",
         "unknown": "Vi kunde inte skapa företaget. Försök igen."
       },
-      "slugPlaceholder": "Skapas från namnet; du kan ändra det"
+      "slugPlaceholder": "Skapas från namnet; du kan ändra det",
+      "configureWithAi": "Ställ in med AI"
     },
     "subscriptions": {
       "title": "Prenumeration",
@@ -1674,7 +2396,9 @@
       "clearError": "Markera som löst",
       "retryTenantJobs": "Försök igen med {count} utskick",
       "sendFailures": "Misslyckade utskick",
-      "noSendFailures": "Inga utskick har misslyckats nyligen."
+      "noSendFailures": "Inga utskick har misslyckats nyligen.",
+      "graphVersionPastReview": "Metas API-version {version} har passerat sitt granskningsdatum ({date}). Meta pensionerar gamla versioner, och när det sker slutar WhatsApp fungera för alla företag. Kontrollera aktuell version och uppdatera WHATSAPP_GRAPH_API_VERSION.",
+      "graphVersionUndocumented": "Metas API-version {version} saknar dokumenterat granskningsdatum. Notera ett i modules/whatsapp/graph.ts så att den här sidan kan varna i tid."
     },
     "users": {
       "title": "Användare",
@@ -1776,6 +2500,90 @@
         "phoneNumberIdRequired": "Ange Phone Number ID.",
         "accessTokenRequired": "Ange åtkomsttoken.",
         "unknown": "Kunde inte ansluta numret. Försök igen."
+      }
+    },
+    "ops": {
+      "title": "Claude Ops",
+      "intro": "Lämna en sats sajter till en Claude Code-session, se vad den etablerar och godkänn varje sajt innan den går live. Inget här skapar en sajt för hand — det gör sessionen, via ops-API:et, och varje anrop hamnar i loggen nedan.",
+      "noTokenIntro": "Det finns ingen ops-token än. Skapa en nedan och klistra in den, tillsammans med URL:en, i miljön på datorn där Claude Code-sessionen körs.",
+      "states": {
+        "pending": "Ej påbörjad",
+        "running": "Pågår",
+        "needsInput": "Behöver ditt svar",
+        "failed": "Misslyckades",
+        "awaitingApproval": "Väntar på godkännande",
+        "live": "Live"
+      },
+      "token": {
+        "title": "Sessionens token",
+        "createLabel": "Etikett",
+        "createPlaceholder": "Etikett (t.ex. \"Antons dator\")",
+        "createSubmit": "Skapa token",
+        "revealTitle": "Token skapad",
+        "revealHint": "Visas bara en gång. Kopiera den och klistra in den i sessionens miljö som VCRM_OPS_TOKEN — den sparas inte för att visas igen.",
+        "copy": "Kopiera",
+        "copied": "Kopierad",
+        "prefix": "Prefix",
+        "lastUsed": "Senast använd",
+        "calls": "Anrop",
+        "never": "aldrig",
+        "allowlist": "Tillåtna företag",
+        "allowlistNone": "inga — kan bara skapa nya företag",
+        "revoke": "Återkalla",
+        "revoked": "Återkallad",
+        "errorInvalid": "Ge token en etikett.",
+        "noneYet": "Inga tokens än."
+      },
+      "batch": {
+        "select": "Sats",
+        "newBatch": "Ny sats",
+        "newBatchPlaceholder": "Satsens titel",
+        "newBatchSubmit": "Skapa",
+        "noBatches": "Inga satser än.",
+        "pickOne": "Välj en sats för att se dess rader."
+      },
+      "worksheet": {
+        "tabSites": "Sajter",
+        "tabPaste": "Klistra in lista",
+        "colDomain": "Domän",
+        "colCompany": "Företag",
+        "colPipeline": "Pipeline",
+        "colSteps": "Steg",
+        "colState": "Status",
+        "openSite": "Öppna företag",
+        "review": "Granska",
+        "emptyRows": "Sessionen har inte skrivit några rader för denna sats än.",
+        "provisioned": "Vad Claude etablerade",
+        "credentials": "Uppgifter för den här sajten",
+        "rawDetails": "Inklistrad text",
+        "gateNote": "Godkännande aktiverar sajten och tar bort testleadet. Fram till dess accepterar sajten bara sessionens testlead. Avvisning skickar tillbaka raden till Claude med din notering.",
+        "approve": "Godkänn och gå live",
+        "reject": "Avvisa med notering",
+        "rejectPlaceholder": "Vad saknas eller är fel",
+        "rejectSubmit": "Skicka",
+        "newTenant": "nytt företag",
+        "intakeHint": "Satsen sparar exakt det du skriver här. Sessionen läser det via ops-API:et och skriver en rad per domän på fliken Sajter.",
+        "intakeSave": "Spara text",
+        "intakePlaceholder": "domän.se   Företagets namn   tags: exempel"
+      },
+      "needsYou": {
+        "title": "Behöver dig",
+        "empty": "Inget väntar just nu."
+      },
+      "log": {
+        "title": "Etableringslogg",
+        "when": "När",
+        "action": "Åtgärd",
+        "object": "Objekt",
+        "via": "Via",
+        "empty": "Inga poster än.",
+        "filterBatch": "Denna sats",
+        "filterFailures": "Endast fel",
+        "filterAll": "Alla Claude Ops",
+        "openFull": "Öppna i granskningslogg"
+      },
+      "common": {
+        "cancel": "Avbryt"
       }
     }
   },
@@ -2305,6 +3113,11 @@
       "crossed": "Har du redan betalat? Då kan du bortse från det här meddelandet.",
       "cta": "Öppna fakturan",
       "fallback": "Fungerar inte knappen? Kopiera den här länken till webbläsaren: {url}"
+    },
+    "weeklyBriefing": {
+      "subject": "{business}s veckobriefing",
+      "title": "Din veckobriefing",
+      "cta": "Se hela briefingen"
     }
   },
   "pdf": {
@@ -2322,7 +3135,9 @@
       "caption": "Offert",
       "vat": "Moms",
       "net": "Beskattningsunderlag",
-      "vatTotal": "Moms"
+      "vatTotal": "Moms",
+      "paymentMethods": "Betalningssätt:",
+      "depositPolicy": "Handpenning:"
     },
     "faktura": {
       "title": "FAKTURA",
@@ -2363,7 +3178,41 @@
         "paid": "BETALD",
         "void": "MAKULERAD"
       },
-      "caption": "Faktura"
+      "caption": "Faktura",
+      "paymentMethods": "Betalningssätt:",
+      "depositPolicy": "Handpenning:"
+    },
+    "recibo": {
+      "title": "Kvitto",
+      "client": "Mottaget från",
+      "description": "Beskrivning",
+      "total": "Totalt",
+      "againstDocument": "Avser",
+      "disclaimer": "Det här kvittot är inte ett skattedokument.",
+      "method": {
+        "transfer": "Överföring",
+        "cash": "Kontant",
+        "card": "Kort",
+        "check": "Check",
+        "other": "Annat"
+      }
+    },
+    "contract": {
+      "title": "AVTAL",
+      "client": "Kund",
+      "legalNotice": "Enkel elektronisk signatur enligt eIDAS (EU) 910/2014 — inte en kvalificerad elektronisk signatur.",
+      "footer": "Icke-skattemässigt dokument",
+      "caption": "Avtal",
+      "acceptancePageTitle": "Godkännanderegistrering",
+      "decisionLabel": "Beslut",
+      "decisionValues": {
+        "accepted": "Godkänt",
+        "declined": "Avböjt"
+      },
+      "nameLabel": "Namn",
+      "dateLabel": "Datum",
+      "ipLabel": "IP-adress",
+      "userAgentLabel": "Webbläsare"
     }
   },
   "public": {
@@ -2384,7 +3233,26 @@
       "footer": "Icke-fiskalt dokument · Elektronisk fakturering kommer snart",
       "vat": "Moms",
       "net": "Beskattningsunderlag",
-      "vatTotal": "Moms"
+      "vatTotal": "Moms",
+      "decisionPrompt": "Vad vill du göra med den här offerten?",
+      "decisionNameLabel": "Ditt namn",
+      "decisionNamePlaceholder": "Fullständigt namn",
+      "decisionCommentLabel": "Kommentar (valfritt)",
+      "decisionCommentPlaceholder": "Något att tillägga...",
+      "decisionAccept": "Acceptera",
+      "decisionReject": "Avvisa",
+      "decisionAcceptedGeneric": "Klart! Vi registrerade ditt godkännande.",
+      "decisionRejectedGeneric": "Klart, vi registrerade ditt svar.",
+      "decisionAccepted": "Godkänd av {name}",
+      "decisionRejected": "Avvisad av {name}",
+      "decisionErrors": {
+        "nameRequired": "Skriv ditt namn innan du fortsätter.",
+        "rateLimited": "För många förfrågningar. Försök igen om en stund.",
+        "alreadyDecided": "Den här offerten har redan besvarats.",
+        "notSent": "Den här offerten har inte skickats än.",
+        "expired": "Den här offerten har gått ut. Be avsändaren om en ny.",
+        "invalid": "Vi kunde inte behandla ditt svar. Försök igen."
+      }
     },
     "document": {
       "title": "Faktura",
@@ -2467,7 +3335,14 @@
       "locationInPerson": "På plats",
       "locationPhone": "Per telefon",
       "locationVideo": "Videosamtal",
-      "locationWhatsapp": "På WhatsApp"
+      "locationWhatsapp": "På WhatsApp",
+      "statusPendingDeposit": "Väntar på handpenning",
+      "servicesTitle": "Vill du lägga till något?",
+      "partySize": "Hur många personer?",
+      "seatsRemaining": "{count} kvar",
+      "depositTitle": "Reserverad — handpenning saknas",
+      "depositBody": "För att bekräfta behöver vi en handpenning på {amount}. Vi skickar uppgifterna via WhatsApp — skicka kvittot så är det klart.",
+      "errorPartyTooLarge": "Det är fler personer än den här tiden rymmer. Prova med färre."
     },
     "chat": {
       "title": "Chatt",
@@ -2484,6 +3359,46 @@
       "error": "Vi kunde inte skicka ditt meddelande. Försök igen.",
       "rateLimited": "Du skriver väldigt snabbt. Vänta ett ögonblick.",
       "offline": "Ingen är online just nu, men lämna dina uppgifter så återkommer vi."
+    },
+    "unsubscribe": {
+      "title": "Klart — du har avanmält dig",
+      "body": "{name}, du kommer inte längre få automatiska e-postmeddelanden från det här företaget."
+    },
+    "receipt": {
+      "title": "Kvitto",
+      "client": "Mottaget från",
+      "againstDocument": "Avser",
+      "total": "Totalt mottaget",
+      "downloadPdf": "Ladda ner PDF",
+      "disclaimer": "Det här kvittot är inte ett skattedokument.",
+      "method": {
+        "transfer": "Överföring",
+        "cash": "Kontant",
+        "card": "Kort",
+        "check": "Check",
+        "other": "Annat"
+      }
+    },
+    "contract": {
+      "title": "Avtal",
+      "downloadPdf": "Ladda ner PDF",
+      "legalNotice": "Det här dokumentet godkänns med en enkel elektronisk signatur, enligt eIDAS (EU) 910/2014 — inte en kvalificerad elektronisk signatur.",
+      "decisionPrompt": "Godkänner du det här avtalet?",
+      "decisionNameLabel": "Ditt namn",
+      "decisionNamePlaceholder": "För- och efternamn",
+      "decisionAccept": "Godkänn",
+      "decisionDecline": "Avböj",
+      "decisionAcceptedGeneric": "Klart! Vi har registrerat ditt godkännande.",
+      "decisionDeclinedGeneric": "Klart, vi har registrerat ditt svar.",
+      "decisionAccepted": "Godkänt av {name}",
+      "decisionDeclined": "Avböjt av {name}",
+      "decisionErrors": {
+        "nameRequired": "Skriv ditt namn innan du fortsätter.",
+        "rateLimited": "För många förfrågningar. Försök igen om en stund.",
+        "alreadyDecided": "Det här avtalet har redan besvarats.",
+        "notSent": "Det här avtalet har inte skickats än.",
+        "invalid": "Vi kunde inte behandla ditt svar. Försök igen."
+      }
     }
   }
 }

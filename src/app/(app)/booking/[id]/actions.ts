@@ -2,8 +2,10 @@
 
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
+import { createService, deleteService, toggleService } from "@/modules/booking/services";
 import { requireTenantAdmin } from "@/modules/tenancy/context";
 import { slugify } from "@/lib/slug";
+import { parseMoneyInput } from "@/lib/money";
 import {
   bookingQuestionSchema,
   getBookingType,
@@ -24,41 +26,62 @@ export type FormState = { error: string | null; saved: boolean; values: Record<s
 
 const empty: FormState = { error: null, saved: false, values: {} };
 
-const settingsSchema = z.object({
-  name: z.string().min(1).max(200),
-  slug: z.string().max(100),
-  description: z.string().max(2000),
-  isActive: z.boolean(),
-  color: z.string().max(20),
+const settingsSchema = (currency: string) =>
+  z.object({
+    name: z.string().min(1).max(200),
+    slug: z.string().max(100),
+    description: z.string().max(2000),
+    isActive: z.boolean(),
+    color: z.string().max(20),
 
-  durationMinutes: z.coerce.number().int().min(1).max(60 * 12),
-  bufferBeforeMinutes: z.coerce.number().int().min(0).max(60 * 12),
-  bufferAfterMinutes: z.coerce.number().int().min(0).max(60 * 12),
-  // Blank means "same as the duration", which is what the column's NULL
-  // already means — so an empty field is not an error.
-  slotIncrementMinutes: z.coerce.number().int().min(1).max(60 * 12).nullable(),
-  minNoticeMinutes: z.coerce.number().int().min(0).max(60 * 24 * 365),
-  maxAdvanceDays: z.coerce.number().int().min(1).max(730),
-  maxPerDay: z.coerce.number().int().min(1).max(500).nullable(),
+    durationMinutes: z.coerce.number().int().min(1).max(60 * 12),
+    bufferBeforeMinutes: z.coerce.number().int().min(0).max(60 * 12),
+    bufferAfterMinutes: z.coerce.number().int().min(0).max(60 * 12),
+    // Blank means "same as the duration", which is what the column's NULL
+    // already means — so an empty field is not an error.
+    slotIncrementMinutes: z.coerce.number().int().min(1).max(60 * 12).nullable(),
+    minNoticeMinutes: z.coerce.number().int().min(0).max(60 * 24 * 365),
+    maxAdvanceDays: z.coerce.number().int().min(1).max(730),
+    maxPerDay: z.coerce.number().int().min(1).max(500).nullable(),
+    capacity: z.coerce.number().int().min(1).max(500),
+    // Minor units (öre for SEK, plan.md §1.2), same as every other amount in
+    // the app — never a plain coerced int, which would store what the admin
+    // typed in kronor as öre (a 100x error). Blank means no deposit.
+    depositAmount: z
+      .string()
+      .trim()
+      .optional()
+      .transform((raw, ctx) => {
+        if (!raw) return null;
+        const value = parseMoneyInput(raw, currency);
+        if (value === null || value < 0) {
+          ctx.addIssue({ code: "custom", message: "invalidAmount" });
+          return z.NEVER;
+        }
+        return value;
+      }),
+    allowMultiService: z.boolean(),
 
-  assignment: z.enum(["any", "round_robin"]),
-  locationMode: z.enum(["in_person", "phone", "video", "whatsapp"]),
-  locationDetail: z.string().max(500),
+    assignment: z.enum(["any", "round_robin"]),
+    locationMode: z.enum(["in_person", "phone", "video", "whatsapp"]),
+    locationDetail: z.string().max(500),
 
-  createDeal: z.boolean(),
-  defaultPipelineId: z.string().max(26),
-  defaultStageId: z.string().max(26),
-  defaultOwnerUserId: z.string().max(26),
-  defaultTagIds: z.array(z.string().max(26)).max(20),
+    createDeal: z.boolean(),
+    defaultPipelineId: z.string().max(26),
+    defaultStageId: z.string().max(26),
+    defaultOwnerUserId: z.string().max(26),
+    defaultTagIds: z.array(z.string().max(26)).max(20),
 
-  turnstileSiteId: z.string().max(26),
-  requireTurnstile: z.boolean(),
-  // 0 is "no reminder", which resolveBookingTypeSettings already reads as
-  // deliberate rather than as an unset field.
-  reminderMinutes: z.coerce.number().int().min(0).max(60 * 24 * 30),
-  cancellationCutoffMinutes: z.coerce.number().int().min(0).max(60 * 24 * 30),
-  confirmationMessage: z.string().max(2000),
-});
+    turnstileSiteId: z.string().max(26),
+    requireTurnstile: z.boolean(),
+    // 0 is "no reminder", which resolveBookingTypeSettings already reads as
+    // deliberate rather than as an unset field.
+    reminderMinutes: z.coerce.number().int().min(0).max(60 * 24 * 30),
+    cancellationCutoffMinutes: z.coerce.number().int().min(0).max(60 * 24 * 30),
+    /** How long an unpaid deposit holds its slot before the job releases it. */
+    depositExpiryMinutes: z.coerce.number().int().min(5).max(60 * 24 * 7),
+    confirmationMessage: z.string().max(2000),
+  });
 
 function optionalNumber(raw: FormDataEntryValue | null): number | null {
   const value = String(raw ?? "").trim();
@@ -89,6 +112,9 @@ export async function saveBookingTypeAction(
     minNoticeMinutes: String(formData.get("minNoticeMinutes") ?? "0"),
     maxAdvanceDays: String(formData.get("maxAdvanceDays") ?? "60"),
     maxPerDay: optionalNumber(formData.get("maxPerDay")),
+    capacity: String(formData.get("capacity") ?? "1"),
+    depositAmount: String(formData.get("depositAmount") ?? ""),
+    allowMultiService: formData.get("allowMultiService") === "on",
 
     assignment: String(formData.get("assignment") ?? "any"),
     locationMode: String(formData.get("locationMode") ?? "in_person"),
@@ -104,10 +130,11 @@ export async function saveBookingTypeAction(
     requireTurnstile: formData.get("requireTurnstile") === "on",
     reminderMinutes: String(formData.get("reminderMinutes") ?? "0"),
     cancellationCutoffMinutes: String(formData.get("cancellationCutoffMinutes") ?? "120"),
+    depositExpiryMinutes: String(formData.get("depositExpiryMinutes") ?? "120"),
     confirmationMessage: String(formData.get("confirmationMessage") ?? ""),
   };
 
-  const parsed = settingsSchema.safeParse(raw);
+  const parsed = settingsSchema(ctx.currency).safeParse(raw);
   if (!parsed.success) {
     const field = String(parsed.error.issues[0]?.path[0] ?? "");
     return {
@@ -141,6 +168,9 @@ export async function saveBookingTypeAction(
     minNoticeMinutes: data.minNoticeMinutes,
     maxAdvanceDays: data.maxAdvanceDays,
     maxPerDay: data.maxPerDay,
+    capacity: data.capacity,
+    depositAmount: data.depositAmount,
+    allowMultiService: data.allowMultiService,
 
     assignment: data.assignment,
     locationMode: data.locationMode,
@@ -160,6 +190,7 @@ export async function saveBookingTypeAction(
       requireTurnstile: data.requireTurnstile,
       reminderMinutes: data.reminderMinutes,
       cancellationCutoffMinutes: data.cancellationCutoffMinutes,
+      depositExpiryMinutes: data.depositExpiryMinutes,
       confirmationMessage: data.confirmationMessage || undefined,
     },
   });
@@ -207,4 +238,48 @@ function readQuestions(
   }
 
   return { ok: true, questions };
+}
+
+// Add-on services (plan-booking.md §5.2). Separate actions rather than fields
+// on the big settings form: a list that grows and shrinks does not fit the
+// "one form, one save" shape the rest of the page has, and mixing them would
+// mean a failed validation on the duration wiping a half-typed add-on.
+
+export async function createServiceAction(bookingTypeId: string, formData: FormData) {
+  const ctx = await requireTenantAdmin();
+  const name = String(formData.get("name") ?? "").trim();
+  if (!name) return;
+
+  const rawExtraPrice = String(formData.get("extraPrice") ?? "").trim();
+
+  await createService(ctx, {
+    bookingTypeId,
+    name,
+    extraDurationMinutes: Number(formData.get("extraDurationMinutes") ?? 0) || 0,
+    // Minor units (öre for SEK, plan.md §1.2), never a plain Number() coerce
+    // — that would store what the admin typed in kronor as öre.
+    extraPrice: rawExtraPrice ? parseMoneyInput(rawExtraPrice, ctx.currency) : null,
+    sort: Number(formData.get("sort") ?? 0) || 0,
+  });
+
+  revalidatePath(`/booking/${bookingTypeId}`);
+}
+
+export async function deleteServiceAction(bookingTypeId: string, serviceId: string) {
+  const ctx = await requireTenantAdmin();
+  // Deleted, not soft-deleted: bookings snapshot their services onto the row
+  // (`bookings.services`), so removing the definition cannot rewrite what a
+  // customer was told they were buying.
+  await deleteService(ctx, serviceId);
+  revalidatePath(`/booking/${bookingTypeId}`);
+}
+
+export async function toggleServiceAction(
+  bookingTypeId: string,
+  serviceId: string,
+  isActive: boolean,
+) {
+  const ctx = await requireTenantAdmin();
+  await toggleService(ctx, serviceId, isActive);
+  revalidatePath(`/booking/${bookingTypeId}`);
 }

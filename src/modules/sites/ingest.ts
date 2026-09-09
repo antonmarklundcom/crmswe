@@ -58,17 +58,17 @@ export type IngestOutcome =
 export type IngestLane = "key" | "hook";
 
 // Per-site fixed-window limiter (see lib/rate-limit for the shared
-// implementation and its documented single-process limitation).
+// implementation, now backed by MySQL rather than process memory).
 const RATE_LIMITS: Record<IngestLane, { limit: number; windowMs: number }> = {
   key: { limit: 60, windowMs: 60_000 },
   hook: { limit: 20, windowMs: 60_000 },
 };
 
-function rateLimited(lane: IngestLane, siteId: string): boolean {
+async function rateLimited(lane: IngestLane, siteId: string): Promise<boolean> {
   const { limit, windowMs } = RATE_LIMITS[lane];
   // Separate bucket per lane: a noisy webhook must not spend the site's own
   // backend's budget.
-  return checkRateLimit(`leads:${lane}:${siteId}`, limit, windowMs).limited;
+  return (await checkRateLimit(`leads:${lane}:${siteId}`, limit, windowMs)).limited;
 }
 
 export type SiteRow = typeof sites.$inferSelect;
@@ -76,6 +76,20 @@ export type SiteRow = typeof sites.$inferSelect;
 export type IngestRequestMeta = {
   ipAddress?: string;
   userAgent?: string;
+};
+
+/**
+ * Server-side-only ingest options — deliberately a separate argument from the
+ * body, and never parsed out of a request (PLAN.md §18.1.4).
+ *
+ * `allowInactive` lets the Claude Ops test-lead step reach a site that is
+ * still inactive because it has not been approved yet. It has exactly one
+ * caller (`modules/ops/provision.ts`) and no route sets it: an inactive site
+ * stays closed to /api/v1/leads and to the webhook lane, which is what makes
+ * "inactive" mean anything.
+ */
+export type IngestOptions = {
+  allowInactive?: boolean;
 };
 
 export async function ingestLead(
@@ -104,8 +118,9 @@ export async function ingestLeadForSite(
   rawBody: unknown,
   meta: IngestRequestMeta = {},
   lane: IngestLane = "key",
+  options: IngestOptions = {},
 ): Promise<IngestOutcome> {
-  const outcome = await runIngest(site, rawBody, meta, lane);
+  const outcome = await runIngest(site, rawBody, meta, lane, options);
 
   // Per-site health (§5.2). Recorded here, around the single engine, so both
   // lanes are covered by one call site and no failure path can forget. Never
@@ -130,10 +145,13 @@ async function runIngest(
   rawBody: unknown,
   meta: IngestRequestMeta,
   lane: IngestLane,
+  options: IngestOptions,
 ): Promise<IngestOutcome> {
-  if (!site.isActive) return { ok: false, status: 403, error: "Site is inactive" };
+  if (!site.isActive && !options.allowInactive) {
+    return { ok: false, status: 403, error: "Site is inactive" };
+  }
 
-  if (rateLimited(lane, site.id)) {
+  if (await rateLimited(lane, site.id)) {
     return { ok: false, status: 429, error: "Rate limit exceeded" };
   }
 

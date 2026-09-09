@@ -12,9 +12,26 @@ import {
   voidDocument,
   recordPayment,
   deletePayment,
+  getDocument,
 } from "@/modules/documents/documents";
-import { sendDocumentToContact, sendPaymentReminder } from "@/modules/documents/delivery";
+import {
+  sendDocumentToContact,
+  sendPaymentReminder,
+  generateDocumentPdf,
+  publicDocumentUrl,
+} from "@/modules/documents/delivery";
 import { moneyAmountSchema } from "@/lib/money-schema";
+import {
+  getOrCreateReceipt,
+  publicReceiptUrl,
+  publicReceiptPdfUrl,
+  generateReceiptPdf,
+} from "@/modules/documents/receipts";
+import { sendDocumentOverWhatsapp, storeDocumentPdf } from "@/modules/renderable-document/delivery";
+import { getTranslator } from "@/lib/i18n/translator";
+import { sendLinkEmail } from "@/lib/email/document-delivery";
+import { createActivity } from "@/modules/crm/activities";
+import { getTenant } from "@/modules/tenancy/tenants";
 
 // Amounts arrive as the user typed them — "1 495,50" — and become öre here
 // (plan.md §1.2). Built per request because how many decimals an amount may
@@ -302,6 +319,46 @@ export async function sendPaymentReminderAction(formData: FormData) {
   revalidatePath(`/documents/${parsed.data}`);
 }
 
+/** "Skicka som e-post" (PLAN.md §15.1, §15.8 P4) — same shape as
+ *  sendQuoteByEmailAction: the public link and PDF, no status/activity type
+ *  owned by modules/documents (P6's Owns column). */
+export async function sendDocumentByEmailAction(formData: FormData) {
+  const ctx = await requireTenantContext();
+  const parsed = z.string().min(1).safeParse(formData.get("documentId"));
+  if (!parsed.success) return;
+
+  const document = await getDocument(ctx, parsed.data);
+  if (!document) return;
+
+  const [pdf, tenant] = await Promise.all([
+    generateDocumentPdf(ctx, document.id),
+    getTenant(ctx.tenantId),
+  ]);
+  const t = await getTranslator(tenant?.locale, "pdf.faktura");
+  const url = publicDocumentUrl(document.publicToken);
+
+  const result = await sendLinkEmail(ctx, {
+    contactId: document.contactId,
+    subject: `${t("caption")} ${document.number}`,
+    lines: [`${t("caption")} ${document.number}.`],
+    linkLabel: url,
+    linkUrl: url,
+    attachment: { filename: `${document.number}.pdf`, content: pdf },
+  });
+
+  if (result.sent) {
+    await createActivity(ctx, {
+      contactId: document.contactId,
+      dealId: document.dealId ?? undefined,
+      type: "system",
+      payload: { kind: "document_emailed", documentId: document.id, number: document.number },
+      userId: ctx.userId,
+    });
+  }
+
+  revalidatePath(`/documents/${parsed.data}`);
+}
+
 const recordPaymentSchema = (currency: string) =>
   z.object({
     documentId: z.string().min(1),
@@ -381,4 +438,49 @@ export async function deletePaymentAction(formData: FormData) {
   if (!parsed.success) return;
   await deletePayment(ctx, parsed.data.documentId, parsed.data.paymentId);
   revalidatePath(`/documents/${parsed.data.documentId}`);
+}
+
+/** "Recibo" beside a payment (PLAN.md §15.2, §15.8 P6) — assigns the
+ *  number/token on first visit, then sends the rep straight to the public
+ *  page (the same one a customer would see if handed the link). */
+export async function viewReceiptAction(formData: FormData) {
+  const ctx = await requireTenantContext();
+  const paymentId = String(formData.get("paymentId") ?? "");
+  if (!paymentId) return;
+
+  const receipt = await getOrCreateReceipt(ctx, paymentId);
+  if (!receipt) return;
+
+  redirect(publicReceiptUrl(receipt.token));
+}
+
+/** "Enviar por WhatsApp" on the receipt — reuses sendDocumentOverWhatsapp,
+ *  same as the quote and nota de venta sends. No status to advance (a
+ *  receipt has none); a failed send just leaves the public link as the
+ *  fallback, same as everywhere else this helper is used. */
+export async function sendReceiptOverWhatsappAction(formData: FormData) {
+  const ctx = await requireTenantContext();
+  const paymentId = String(formData.get("paymentId") ?? "");
+  const documentId = String(formData.get("documentId") ?? "");
+  if (!paymentId || !documentId) return;
+
+  const receipt = await getOrCreateReceipt(ctx, paymentId);
+  const document = await getDocument(ctx, documentId);
+  if (!receipt || !document) return;
+
+  const [pdf, tenant] = await Promise.all([
+    generateReceiptPdf(ctx, paymentId),
+    getTenant(ctx.tenantId),
+  ]);
+  const t = await getTranslator(tenant?.locale, "pdf.recibo");
+  await storeDocumentPdf(ctx, { kind: "receipts", id: paymentId, pdf });
+
+  await sendDocumentOverWhatsapp(ctx, {
+    contactId: document.contactId,
+    link: publicReceiptPdfUrl(receipt.token),
+    filename: `${receipt.number}.pdf`,
+    caption: `${t("title")} ${receipt.number}`,
+  });
+
+  revalidatePath(`/documents/${documentId}`);
 }

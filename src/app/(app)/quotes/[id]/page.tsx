@@ -4,10 +4,17 @@ import { getTranslations } from "next-intl/server";
 import { requireTenantContext } from "@/modules/tenancy/context";
 import { getQuote, listQuoteItems, quoteMoms } from "@/modules/quotes/quotes";
 import { publicQuoteUrl } from "@/modules/quotes/delivery";
+import { getQuoteDecision } from "@/modules/quotes/public";
 import { getDocumentByQuote } from "@/modules/documents/documents";
 import { getContact } from "@/modules/crm/contacts";
 import { Button } from "@/components/ui/button";
-import { sendQuoteAction, setQuoteStatusAction, convertQuoteToDocumentAction } from "../actions";
+import {
+  sendQuoteAction,
+  sendQuoteByEmailAction,
+  setQuoteStatusAction,
+  convertQuoteToDocumentAction,
+  duplicateQuoteAction,
+} from "../actions";
 import { formatMoney } from "@/lib/i18n/format";
 import { getLocale } from "next-intl/server";
 
@@ -21,14 +28,16 @@ export default async function QuoteDetailPage({
   const t = await getTranslations("app.quotes");
   const locale = await getLocale();
   const td = await getTranslations("app.documents");
+  const tc = await getTranslations("app.contracts");
 
   const quote = await getQuote(ctx, id);
   if (!quote) notFound();
 
-  const [items, contact, existingDocument] = await Promise.all([
+  const [items, contact, existingDocument, decision] = await Promise.all([
     listQuoteItems(ctx, quote.id),
     getContact(ctx, quote.contactId),
     getDocumentByQuote(ctx, quote.id),
+    getQuoteDecision(quote.id, ctx.tenantId),
   ]);
 
   // Computed on read, like everywhere else an offert's moms is shown: it
@@ -49,11 +58,32 @@ export default async function QuoteDetailPage({
           <p className="text-sm text-muted-foreground">
             {t(`statusValues.${quote.status}` as "statusValues.draft")}
           </p>
+          {decision && (
+            <p className="text-sm text-muted-foreground">
+              {t(
+                decision.decision === "accepted"
+                  ? "decisionAcceptedBy"
+                  : "decisionRejectedBy",
+                { name: decision.name },
+              )}
+              {decision.comment ? ` — "${decision.comment}"` : ""}
+            </p>
+          )}
         </div>
-        <form action={sendQuoteAction}>
-          <input type="hidden" name="quoteId" value={quote.id} />
-          <Button type="submit">{t("sendToCustomer")}</Button>
-        </form>
+        <div className="flex gap-2">
+          <form action={sendQuoteAction}>
+            <input type="hidden" name="quoteId" value={quote.id} />
+            <Button type="submit">{t("sendWhatsapp")}</Button>
+          </form>
+          {contact?.email && (
+            <form action={sendQuoteByEmailAction}>
+              <input type="hidden" name="quoteId" value={quote.id} />
+              <Button type="submit" variant="outline">
+                {t("sendEmail")}
+              </Button>
+            </form>
+          )}
+        </div>
       </header>
 
       <div className="overflow-x-auto">
@@ -118,6 +148,17 @@ export default async function QuoteDetailPage({
         </a>
       </section>
 
+      {quote.status === "expired" && (
+        <section>
+          <form action={duplicateQuoteAction}>
+            <input type="hidden" name="quoteId" value={quote.id} />
+            <Button type="submit" size="sm" variant="outline">
+              {t("duplicateExpired")}
+            </Button>
+          </form>
+        </section>
+      )}
+
       <section className="flex flex-wrap items-center gap-2">
         {(["accepted", "rejected"] as const).map((status) => (
           <form key={status} action={setQuoteStatusAction}>
@@ -144,6 +185,13 @@ export default async function QuoteDetailPage({
             </Button>
           </form>
         )}
+
+        <Link
+          href={`/contracts?contactId=${quote.contactId}&quoteId=${quote.id}#nuevo-contrato`}
+          className="text-sm underline underline-offset-4"
+        >
+          {tc("createTitle")}
+        </Link>
       </section>
     </div>
   );

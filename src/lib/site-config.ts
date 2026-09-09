@@ -1,3 +1,5 @@
+import { SITE_URL } from "@/lib/config/hosts";
+
 /**
  * Single source of truth for every launch-day detail of the Swedish
  * marketing + CRM site (plan.md §1.14, §6.1).
@@ -10,28 +12,13 @@
  *
  * Everything the owner still has to supply lives in `contact` below as an
  * explicit `null` with a TODO next to it. `null` is deliberate rather than a
- * dummy string: the components below read these through the helpers at the
- * bottom and simply omit the element when a detail is missing, so the site
- * never renders a placeholder phone number or a wa.me link pointing at a
- * number nobody owns. Filling them in is a one-file edit.
+ * dummy string: the components read these through the helpers at the bottom
+ * and simply omit the element when a detail is missing, so the site never
+ * renders a placeholder phone number or a wa.me link pointing at a number
+ * nobody owns. Filling them in is a one-file edit (PLAN.md §12).
  */
 
-// --- Infra: hosts -----------------------------------------------------
-// Placeholder domain until Anton supplies the real one (plan.md §7). Reads
-// from env first so a real deploy only needs env vars set, never a code
-// change or redeploy of this file.
-// `||`, not `??`: Hostinger's env var panel (and a blank `APEX_HOST=` line
-// in .env) sets the var to "", not leaves it absent, and "" is not nullish —
-// `??` would carry the empty string through into `https://` and crash `new
-// URL()` in every server component that reads SITE_URL/CRM_URL.
-export const APEX_HOST = process.env.APEX_HOST || "crmswe.se";
-export const APP_HOST = process.env.APP_HOST || `crm.${APEX_HOST}`;
 
-export const SITE_URL = `https://${APEX_HOST}`;
-export const CRM_URL = `https://${APP_HOST}`;
-export const CRM_LOGIN_URL = `${CRM_URL}/login`;
-
-// --- Content: brand, locale -------------------------------------------
 export const siteConfig = {
   // Placeholder brand (plan.md §1.14) until Anton supplies the real
   // name — everything brand-related flows through this one field.
@@ -40,6 +27,16 @@ export const siteConfig = {
   url: SITE_URL,
   locale: "sv-SE",
 } as const;
+
+/**
+ * Home hero background loop. TODO(owner): this points at the Higgsfield
+ * generation CDN — fine for review, but download it and serve it from
+ * /public/videos/hero-loop.mp4 before launch so the hero doesn't depend on a
+ * third party's URL staying valid indefinitely. (The sandbox this was built
+ * in couldn't reach that CDN to do the download itself — see build notes.)
+ */
+export const HERO_VIDEO_SRC =
+  "https://d8j0ntlcm91z4.cloudfront.net/user_349VrHjTFIpx9q71lpfpAXcLXvR/hf_20260905_033405_0a8f4e5a-079f-4e9c-a77c-75a2a8ffa438.mp4";
 
 export const contact = {
   // TODO(owner): WhatsApp number in international format, digits only, no "+"

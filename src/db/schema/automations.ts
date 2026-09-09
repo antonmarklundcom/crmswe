@@ -41,7 +41,20 @@ export const flows = mysqlTable(
         "booking_created",
         "booking_cancelled",
         "booking_no_show",
+        // Completed is the review-request moment (plan-booking.md §6.1): the
+        // only point at which asking for a reseña is a thank-you rather than
+        // a guess.
+        "booking_completed",
         "chat_lead_captured",
+        // Sales-document and outcome moments (PLAN.md §15.5 J1). Same
+        // widening-is-free reasoning as the booking entries above.
+        "quote_sent",
+        "quote_accepted",
+        "document_sent",
+        "document_paid",
+        "deal_won",
+        "deal_lost",
+        "contract_accepted",
       ],
     }).notNull(),
     triggerConfig: json("trigger_config").notNull().default({}),

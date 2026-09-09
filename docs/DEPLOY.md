@@ -82,7 +82,9 @@ vendercrm runbook plus the deltas this Swedish edition needs (§0).
      encryption key
    - `APEX_HOST`, `APP_HOST` — the real `.se` domain once Anton supplies it
      (plan.md §7, §0 above); optional, defaults to the `crmswe.se` code
-     placeholder while unset.
+     placeholder while unset. `middleware.ts` routes on these, so a wrong
+     value sends the marketing site and the app to each other's host
+     (PLAN.md §14 I2 #3).
    - `CRMSWE_API_KEY`, `CRMSWE_URL` — the marketing site's own site API key
      for its `/api/v1/leads` dogfood call (§0 above); optional, but no lead
      is recorded from the marketing site's own contact form without it.
@@ -90,6 +92,16 @@ vendercrm runbook plus the deltas this Swedish edition needs (§0).
      this edition (§0 above); only needed once some tenant turns the
      per-tenant WhatsApp flag on. From the Meta developer app when that
      happens (VENDERCRM-PLAN.md §6.1)
+   - `WHATSAPP_GRAPH_API_VERSION` — optional; defaults to the version the app
+     was built against. The superadmin WhatsApp health page warns once the
+     configured version is past its documented review date, which is the cue
+     to bump this rather than wait for Meta to retire it out from under every
+     tenant.
+   - `RATE_LIMIT_DRIVER` — optional; leave unset. Unset means the rate-limit
+     windows live in MySQL (PLAN.md §14 I1), which is what makes a limit
+     survive a redeploy and hold if the app is ever run as more than one
+     process. Setting it to `memory` returns to per-process counting and is
+     for debugging the limiter only.
    - `NEXT_PUBLIC_SENTRY_DSN`, `SENTRY_DSN`, `SENTRY_ENVIRONMENT=production` —
      optional; leave unset to run without error tracking
    - `SENTRY_ORG`, `SENTRY_PROJECT`, `SENTRY_AUTH_TOKEN` — optional, only

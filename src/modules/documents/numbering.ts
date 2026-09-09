@@ -4,7 +4,7 @@ import { newId } from "@/lib/ids";
 import type { TenantContext } from "@/modules/tenancy/context";
 import { tenantTransaction } from "@/modules/tenancy/db";
 import { formatSequenceNumber } from "@/modules/renderable-document/format";
-import type { DocumentType } from "./types";
+import type { NumberedDocumentType } from "./types";
 
 // Per-tenant, per-type sequential numbers (PLAN.md §10 1Q), same discipline
 // as quote numbering (§8): the counter row is locked FOR UPDATE for the
@@ -15,16 +15,22 @@ import type { DocumentType } from "./types";
 // Only the *default* for a tenant's first document of a type — the prefix
 // then lives on the tenant's own sequence row and can be changed there
 // (plan.md §1.13). An existing series never has its prefix rewritten.
-const DEFAULT_PREFIX: Record<DocumentType, string> = {
+const DEFAULT_PREFIX: Record<NumberedDocumentType, string> = {
   faktura: "FA",
   kreditfaktura: "KF",
+  // Receipts (§15.8 P6) share this same counter table, keyed by this type
+  // string — they render off `document_payments`, never `documents`.
+  recibo: "REC",
+  // Contracts (§17.2 P13) — a `contracts` row, not a `documents` one, but the
+  // same per-tenant counter table exactly as `recibo` widened it.
+  contrato: "CON",
 };
 
 export const formatDocumentNumber = formatSequenceNumber;
 
 export async function nextDocumentNumber(
   ctx: TenantContext,
-  type: DocumentType,
+  type: NumberedDocumentType,
 ): Promise<string> {
   return tenantTransaction(ctx, async (tx) => {
     const [existing] = await tx.selectForUpdate(

@@ -83,6 +83,7 @@ export type CreateStageInput = {
   color?: string;
   isWon?: boolean;
   isLost?: boolean;
+  staleAfterDays?: number | null;
 };
 
 export async function createStage(ctx: TenantContext, input: CreateStageInput) {
@@ -97,6 +98,7 @@ export async function createStage(ctx: TenantContext, input: CreateStageInput) {
       color: input.color,
       isWon: input.isWon ?? false,
       isLost: input.isLost ?? false,
+      staleAfterDays: input.staleAfterDays ?? null,
     });
   const [row] = await tenantDb(ctx).select(stages, eq(stages.id, id));
   return row ?? null;
@@ -131,6 +133,9 @@ export type UpdateStageInput = {
   color?: string | null;
   isWon?: boolean;
   isLost?: boolean;
+  /** Days a deal can sit in this stage before the board flags it stale
+   *  (PLAN.md §15.8 P5). Null/undefined = never flag. */
+  staleAfterDays?: number | null;
 };
 
 export async function updateStage(ctx: TenantContext, id: string, input: UpdateStageInput) {

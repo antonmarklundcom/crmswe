@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { clientIp } from "@/lib/http/client-ip";
 import { checkRateLimit } from "@/lib/rate-limit";
-import { SITE_URL } from "@/lib/site-config";
+import { SITE_URL } from "@/lib/config/hosts";
 import { idempotencyKey, readAttribution, sendLead } from "@/lib/vendercrm-lead";
 
 /**
@@ -43,7 +43,7 @@ export async function submitContactAction(formData: FormData) {
   const requestHeaders = await headers();
   const ip = clientIp(requestHeaders);
 
-  if (checkRateLimit(`marketing:kontakt:${ip}`, SUBMIT_LIMIT, SUBMIT_WINDOW_MS).limited) {
+  if ((await checkRateLimit(`marketing:kontakt:${ip}`, SUBMIT_LIMIT, SUBMIT_WINDOW_MS)).limited) {
     // Same answer as the honeypot: a flood gets a thank-you page and no
     // lead, rather than a signal about what tripped.
     redirect("/kontakt?skickat=1");

@@ -1,6 +1,6 @@
 import { and, eq, inArray, lt, sql } from "drizzle-orm";
 import { db } from "@/db/client";
-import { jobs, webhookEvents } from "@/db/schema";
+import { jobs, rateLimitBuckets, webhookEvents } from "@/db/schema";
 import { enqueue } from "@/lib/queue";
 import { STUCK_AFTER_MS } from "@/lib/queue/ops";
 import { reportError } from "@/lib/observability";
@@ -51,6 +51,20 @@ export async function ensureMaintenanceScheduled(): Promise<void> {
   await ensureWebhookPruningScheduled();
   await ensureChainScheduled(REAP_JOB_TYPE);
   await ensureChainScheduled(TASK_REMINDER_JOB_TYPE);
+  await ensureChainScheduled(SWEEP_RATE_LIMITS_JOB_TYPE);
+  // modules/quotes/jobs.ts's daily expiry sweep (§15.8 P6) — registered
+  // there (that module owns it), seeded here alongside every other daily
+  // chain so a fresh deploy starts it without a manual trigger.
+  const { QUOTE_EXPIRE_JOB_TYPE } = await import("@/modules/quotes/jobs");
+  await ensureChainScheduled(QUOTE_EXPIRE_JOB_TYPE);
+  // modules/coach/jobs.ts's hourly morning-digest check (§15.3 L1, §15.8
+  // P7) — same seeding as every other daily/hourly chain above.
+  const { COACH_MORNING_JOB_TYPE } = await import("@/modules/coach/jobs");
+  await ensureChainScheduled(COACH_MORNING_JOB_TYPE);
+  // modules/coach/briefing-jobs.ts's hourly Monday-briefing check (§15.3 L2,
+  // §17.2 P14) — same seeding as every other daily/hourly chain above.
+  const { COACH_WEEKLY_JOB_TYPE } = await import("@/modules/coach/briefing-jobs");
+  await ensureChainScheduled(COACH_WEEKLY_JOB_TYPE);
 }
 
 async function ensureChainScheduled(type: string): Promise<void> {
@@ -152,3 +166,36 @@ registerHandler(TASK_REMINDER_JOB_TYPE, async () => {
     runAt: new Date(Date.now() + TASK_REMINDER_INTERVAL_MS),
   });
 });
+
+
+// --- Expired rate-limit windows (PLAN.md §14 I1 #1) ---------------------
+//
+// The limiter writes one row per bucket and never deletes: a bucket whose
+// `reset_at` has passed is dead weight the moment the window ends, and the
+// buckets are keyed by IP, so a scanner alone can leave thousands behind.
+// The old in-memory limiter swept itself with a timer; the table needs the
+// same hygiene from something that outlives a single process.
+
+export const SWEEP_RATE_LIMITS_JOB_TYPE = "maintenance.sweep_rate_limits";
+const SWEEP_RATE_LIMITS_INTERVAL_MS = 60 * 60 * 1000;
+
+registerHandler(SWEEP_RATE_LIMITS_JOB_TYPE, async () => {
+  await sweepExpiredRateLimits();
+  await enqueue(
+    SWEEP_RATE_LIMITS_JOB_TYPE,
+    {},
+    { runAt: new Date(Date.now() + SWEEP_RATE_LIMITS_INTERVAL_MS) },
+  );
+});
+
+/**
+ * Deletes rate-limit rows whose window has already ended. Safe at any time:
+ * a swept row that is still being counted against simply starts a fresh
+ * window on the next request, which is what an expired window means anyway.
+ */
+export async function sweepExpiredRateLimits(now: Date = new Date()): Promise<number> {
+  const [result] = await db
+    .delete(rateLimitBuckets)
+    .where(lt(rateLimitBuckets.resetAt, now));
+  return (result as unknown as { affectedRows?: number }).affectedRows ?? 0;
+}

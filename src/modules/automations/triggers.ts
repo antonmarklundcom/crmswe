@@ -4,6 +4,9 @@ import { crmEvents } from "@/modules/crm/events";
 import { leadEvents } from "@/modules/leads/events";
 import { bookingEvents } from "@/modules/booking/events";
 import { chatEvents } from "@/modules/chatwidget/events";
+import { quoteEvents } from "@/modules/quotes/events";
+import { documentEvents } from "@/modules/documents/events";
+import { contractEvents } from "@/modules/contracts/events";
 import { whatsappEvents } from "@/modules/whatsapp/events";
 import { listActiveFlowsForTrigger } from "./flows";
 import { startRun } from "./engine";
@@ -99,6 +102,79 @@ export function registerAutomationTriggers() {
       contactId,
       data: { dealId, fromStageId, toStageId },
     });
+
+    // Won/lost is derived from where the deal landed rather than emitted by
+    // `closeDeal` (§15.5 J1). The stage flags are the definition of won and
+    // lost in this product, so a card dragged into "Ganado" on the board
+    // fires exactly what the close button fires — and one listener covers
+    // both paths instead of two emit sites that can drift.
+    const outcome = await outcomeOfStage(ctx, toStageId);
+    if (outcome) {
+      await fireTrigger({
+        tenantId,
+        triggerType: outcome === "won" ? "deal_won" : "deal_lost",
+        contactId,
+        data: { dealId, fromStageId, toStageId },
+      });
+    }
+  });
+
+  // Sales documents (§15.5 J1). Each event already carries the contact, so
+  // unlike the deal events above these need no lookup.
+  quoteEvents.on("quote.sent", async ({ tenantId, contactId, quoteId, dealId, number, total }) => {
+    await fireTrigger({
+      tenantId,
+      triggerType: "quote_sent",
+      contactId,
+      data: { quoteId, dealId, number, total },
+    });
+  });
+
+  quoteEvents.on(
+    "quote.accepted",
+    async ({ tenantId, contactId, quoteId, dealId, number, total }) => {
+      await fireTrigger({
+        tenantId,
+        triggerType: "quote_accepted",
+        contactId,
+        data: { quoteId, dealId, number, total },
+      });
+    },
+  );
+
+  documentEvents.on(
+    "document.sent",
+    async ({ tenantId, contactId, documentId, dealId, number, total }) => {
+      await fireTrigger({
+        tenantId,
+        triggerType: "document_sent",
+        contactId,
+        data: { documentId, dealId, number, total },
+      });
+    },
+  );
+
+  documentEvents.on(
+    "document.paid",
+    async ({ tenantId, contactId, documentId, dealId, number, total }) => {
+      await fireTrigger({
+        tenantId,
+        triggerType: "document_paid",
+        contactId,
+        data: { documentId, dealId, number, total },
+      });
+    },
+  );
+
+  // Contracts (§17.2 P13) — closes the `contract_accepted` entry P1 left
+  // unemitted (docs/log/p1.md "Known issues").
+  contractEvents.on("contract.accepted", async ({ tenantId, contactId, contractId, dealId, number }) => {
+    await fireTrigger({
+      tenantId,
+      triggerType: "contract_accepted",
+      contactId,
+      data: { contractId, dealId, number },
+    });
   });
 
   leadEvents.on("lead.received", async ({ tenantId, contactId, formId, siteId }) => {
@@ -159,6 +235,15 @@ export function registerAutomationTriggers() {
     });
   });
 
+  bookingEvents.on("booking.completed", async ({ tenantId, contactId, bookingId, bookingTypeId }) => {
+    await fireTrigger({
+      tenantId,
+      triggerType: "booking_completed",
+      contactId,
+      data: { bookingId, bookingTypeId },
+    });
+  });
+
   chatEvents.on("chat.captured", async ({ tenantId, contactId, widgetId, siteId }) => {
     await fireTrigger({
       tenantId,
@@ -168,28 +253,66 @@ export function registerAutomationTriggers() {
     });
   });
 
-  whatsappEvents.on("wa.message_received", async ({ tenantId, contactId, messageId }) => {
-    const ctx = await buildSystemTenantContext(tenantId);
-    if (!ctx) return;
-
-    const body = await messageBody(ctx, messageId);
-
-    // An inbound reply resumes any run parked on wait-for-reply *before*
-    // new flows are matched, so a reply advances the conversation the
-    // contact is already in rather than only starting another one.
-    const { resumeOnReply } = await import("./engine");
-    await resumeOnReply(ctx, contactId);
-
-    await maybeOptOut(ctx, contactId, body);
-    await maybeAiHandoff(ctx, contactId, body);
-
-    await fireTrigger({
-      tenantId,
-      triggerType: "wa_message_received",
-      contactId,
-      data: { messageId, body },
-    });
+  // A voice note whose transcription is still queued is handled on
+  // `wa.message_transcribed` instead (§17.3 P9) — the same work, once the
+  // message has words in it. Both paths run onInboundMessage below, so the
+  // opt-out check, the handoff keyword and every flow see the transcript
+  // rather than an empty body.
+  whatsappEvents.on("wa.message_received", async (event) => {
+    if (event.transcriptPending) return;
+    await onInboundMessage(event);
   });
+
+  whatsappEvents.on("wa.message_transcribed", async (event) => {
+    await onInboundMessage(event);
+  });
+}
+
+async function onInboundMessage({
+  tenantId,
+  contactId,
+  messageId,
+}: {
+  tenantId: string;
+  contactId: string;
+  messageId: string;
+}): Promise<void> {
+  const ctx = await buildSystemTenantContext(tenantId);
+  if (!ctx) return;
+
+  const body = await messageBody(ctx, messageId);
+
+  // An inbound reply resumes any run parked on wait-for-reply *before*
+  // new flows are matched, so a reply advances the conversation the
+  // contact is already in rather than only starting another one.
+  const { resumeOnReply } = await import("./engine");
+  await resumeOnReply(ctx, contactId);
+
+  await maybeOptOut(ctx, contactId, body);
+  await maybeAiHandoff(ctx, contactId, body);
+
+  await fireTrigger({
+    tenantId,
+    triggerType: "wa_message_received",
+    contactId,
+    data: { messageId, body },
+  });
+}
+
+/**
+ * Whether a stage is the pipeline's won or lost column. Null for an ordinary
+ * stage — most stage changes are neither, and this runs on every one of them.
+ */
+async function outcomeOfStage(
+  ctx: TenantContext,
+  stageId: string,
+): Promise<"won" | "lost" | null> {
+  const { getStage } = await import("@/modules/crm/pipelines");
+  const stage = await getStage(ctx, stageId);
+  if (!stage) return null;
+  if (stage.isWon) return "won";
+  if (stage.isLost) return "lost";
+  return null;
 }
 
 async function contactForDeal(ctx: TenantContext, dealId: string): Promise<string | null> {
@@ -198,12 +321,18 @@ async function contactForDeal(ctx: TenantContext, dealId: string): Promise<strin
   return deal?.contactId ?? null;
 }
 
+/** The text of a message — the transcript when it is a voice note (§17.3 P9)
+ *  so "BAJA" said out loud opts a contact out exactly like "BAJA"
+ *  typed, and a flow's wait-for-reply hears an audio the same way. */
 async function messageBody(ctx: TenantContext, messageId: string): Promise<string> {
   const { eq } = await import("drizzle-orm");
   const { messages } = await import("@/db/schema");
   const { tenantDb } = await import("@/modules/tenancy/db");
   const [row] = await tenantDb(ctx).select(messages, eq(messages.id, messageId));
-  return row?.body ?? "";
+  if (!row) return "";
+  const body = (row.body ?? "").trim();
+  if (body) return body;
+  return row.transcriptStatus === "done" ? (row.transcript ?? "") : "";
 }
 
 /**

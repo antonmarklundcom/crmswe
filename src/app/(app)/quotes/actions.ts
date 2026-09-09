@@ -5,9 +5,13 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireTenantContext } from "@/modules/tenancy/context";
 import { moneyAmountSchema } from "@/lib/money-schema";
-import { createQuote, setQuoteStatus } from "@/modules/quotes/quotes";
-import { sendQuote } from "@/modules/quotes/delivery";
+import { createQuote, duplicateQuote, getQuote, setQuoteStatus } from "@/modules/quotes/quotes";
+import { sendQuote, generateQuotePdf, publicQuoteUrl } from "@/modules/quotes/delivery";
 import { createDocumentFromQuote } from "@/modules/documents/documents";
+import { sendLinkEmail } from "@/lib/email/document-delivery";
+import { createActivity } from "@/modules/crm/activities";
+import { getTenant } from "@/modules/tenancy/tenants";
+import { getTranslator } from "@/lib/i18n/translator";
 
 // Amounts arrive as the user typed them — "1 495,50" — and become öre here
 // (plan.md §1.2). The schema is built per request because how many decimals
@@ -135,6 +139,49 @@ export async function sendQuoteAction(formData: FormData) {
   revalidatePath(`/quotes/${parsed.data}`);
 }
 
+/**
+ * "Enviar por email" (PLAN.md §15.1, §15.8 P4) — the quote's public link and
+ * PDF to the contact's own email address, through senderFor(ctx)'s identity.
+ * Deliberately does not touch `quotes.status` or write a `quote_sent`
+ * activity: those belong to modules/quotes (P6's Owns column). The button
+ * only renders when the contact has an email (quotes/[id]/page.tsx), so a
+ * silent no-op here is the tampered-form case, same as the other hidden-id
+ * actions in this file.
+ */
+export async function sendQuoteByEmailAction(formData: FormData) {
+  const ctx = await requireTenantContext();
+  const parsed = z.string().min(1).safeParse(formData.get("quoteId"));
+  if (!parsed.success) return;
+
+  const quote = await getQuote(ctx, parsed.data);
+  if (!quote) return;
+
+  const [pdf, tenant] = await Promise.all([generateQuotePdf(ctx, quote.id), getTenant(ctx.tenantId)]);
+  const t = await getTranslator(tenant?.locale, "pdf.quote");
+  const url = publicQuoteUrl(quote.publicToken);
+
+  const result = await sendLinkEmail(ctx, {
+    contactId: quote.contactId,
+    subject: `${t("caption")} ${quote.number}`,
+    lines: [`${t("caption")} ${quote.number}.`],
+    linkLabel: url,
+    linkUrl: url,
+    attachment: { filename: `${quote.number}.pdf`, content: pdf },
+  });
+
+  if (result.sent) {
+    await createActivity(ctx, {
+      contactId: quote.contactId,
+      dealId: quote.dealId ?? undefined,
+      type: "system",
+      payload: { kind: "quote_emailed", quoteId: quote.id, number: quote.number },
+      userId: ctx.userId,
+    });
+  }
+
+  revalidatePath(`/quotes/${parsed.data}`);
+}
+
 export async function setQuoteStatusAction(formData: FormData) {
   const ctx = await requireTenantContext();
   const parsed = z
@@ -164,4 +211,19 @@ export async function convertQuoteToDocumentAction(formData: FormData) {
 
   revalidatePath(`/quotes/${parsed.data}`);
   redirect(`/documents/${document!.id}`);
+}
+
+/** Duplicates an expired quote into a fresh draft (PLAN.md §15.5 J12,
+ *  §15.8 P6) rather than reviving the old one — prices and validity are
+ *  exactly what needed a second look before sending again. */
+export async function duplicateQuoteAction(formData: FormData) {
+  const ctx = await requireTenantContext();
+  const parsed = z.string().min(1).safeParse(formData.get("quoteId"));
+  if (!parsed.success) return;
+
+  const created = await duplicateQuote(ctx, parsed.data);
+  if (!created) return;
+
+  revalidatePath("/quotes");
+  redirect(`/quotes/${created.id}`);
 }

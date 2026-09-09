@@ -6,7 +6,8 @@ import { MarketingHeader } from "@/components/marketing/header";
 import { MarketingFooter } from "@/components/marketing/footer";
 import { CookieConsentBanner, ConsentGatedScripts } from "@/components/marketing/cookie-consent";
 import { JsonLd } from "@/components/marketing/json-ld";
-import { SITE_URL, siteConfig } from "@/lib/site-config";
+import { SITE_URL } from "@/lib/config/hosts";
+import { siteConfig } from "@/lib/site-config";
 
 // The marketing chrome, kept entirely separate from the app chrome. The `.mk`
 // wrapper is what scopes the marketing design tokens (globals.css) — nothing
@@ -40,7 +41,7 @@ export default async function MarketingLayout({
   const tc = await getTranslations("marketing.cookie");
 
   return (
-    <div className={`mk ${newsreader.variable}`}>
+    <div className={`mk theme-light ${newsreader.variable}`}>
       <JsonLd
         data={{
           "@context": "https://schema.org",

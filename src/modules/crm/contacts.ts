@@ -37,6 +37,9 @@ export type CreateContactInput = ContactBillingInput & {
   notes?: string;
   source?: string;
   ownerUserId?: string;
+  /** Custom field values, keyed by `custom_field_definitions.key`
+   *  (PLAN.md §15.8 P5). */
+  custom?: Record<string, string | number | null>;
 };
 
 export type UpdateContactInput = Partial<
@@ -110,6 +113,7 @@ export async function createContact(
       source: input.source,
       ownerUserId: input.ownerUserId,
       ...billingValues(input),
+      custom: input.custom ?? {},
     });
 
   await crmEvents.emit("contact.created", { tenantId: ctx.tenantId, contactId: id });
@@ -126,12 +130,22 @@ export async function updateContact(
   // Spread the plain fields, then let billingValues own the ones it
   // validates and canonicalizes — an unvalidated org.nr must not reach the
   // column through the generic spread.
-  const { orgNr, addressLine1, addressLine2, postalCode, city, country, ...rest } = input;
+  const { orgNr, addressLine1, addressLine2, postalCode, city, country, custom, ...rest } = input;
   const values: Partial<typeof contacts.$inferInsert> = {
     ...rest,
     ...billingValues({ orgNr, addressLine1, addressLine2, postalCode, city, country }),
   };
   if (input.phone) values.phone = normalizePhone(input.phone, defaultCountry);
+
+  // Merged, not replaced: a caller updating one custom field (the contact
+  // edit form saves the whole custom object, but an importer might only
+  // carry the columns its mapping covers) must not blank every other one
+  // that already had a value — same rule updateContact already follows for
+  // its plain fields via CSV import.
+  if (custom) {
+    const current = await getContact(ctx, id);
+    values.custom = { ...((current?.custom as Record<string, unknown>) ?? {}), ...custom };
+  }
 
   await tenantDb(ctx).update(contacts).set(values).where(eq(contacts.id, id));
   return getContact(ctx, id);

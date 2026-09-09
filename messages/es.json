@@ -17,7 +17,8 @@
       "submit": "Entrar",
       "error": "Correo o contraseña incorrectos",
       "forgotPassword": "¿Olvidaste tu contraseña?",
-      "rateLimited": "Demasiados intentos. Esperá unos minutos y probá de nuevo."
+      "rateLimited": "Demasiados intentos. Esperá unos minutos y probá de nuevo.",
+      "installApp": "Instalar app"
     },
     "acceptInvite": {
       "title": "Aceptar invitación",
@@ -91,7 +92,11 @@
       "calendar": "Agenda",
       "reports": "Informes",
       "booking": "Reservas",
-      "chat": "Chat web"
+      "chat": "Chat web",
+      "companies": "Empresas",
+      "contracts": "Contratos",
+      "negocio": "Memoria del negocio",
+      "onboarding": "Rubro"
     },
     "dashboard": {
       "title": "Panel de {tenant}",
@@ -162,6 +167,75 @@
         "title": "Hoy en la agenda",
         "viewAll": "Ver la agenda",
         "allDay": "Todo el día"
+      },
+      "hoy": {
+        "title": "Hoy",
+        "empty": "Nada urgente por ahora. Buen trabajo.",
+        "digest": {
+          "title": "Tenés {count, plural, one {# cosa} other {# cosas}} pendientes hoy"
+        },
+        "unread_conversation": {
+          "title": "{name} está esperando respuesta",
+          "subtitle": "Sin respuesta hace {minutes, plural, one {# minuto} other {# minutos}}",
+          "action": "Abrir conversación"
+        },
+        "overdue_task": {
+          "title": "{title}",
+          "subtitle": "{name} · vencida hace {days, plural, one {# día} other {# días}}",
+          "action": "Ver contacto"
+        },
+        "upcoming_booking": {
+          "title": "Turno con {name}",
+          "subtitle": "En {hours, plural, one {# hora} other {# horas}}, sin recordatorio enviado",
+          "action": "Ver turno"
+        },
+        "unreplied_quote": {
+          "title": "Presupuesto {number} sin respuesta",
+          "subtitle": "Enviado hace {days, plural, one {# día} other {# días}}",
+          "action": "Ver presupuesto"
+        },
+        "stale_deal": {
+          "title": "{title}",
+          "subtitle": "{days, plural, one {# día} other {# días}} en la misma etapa",
+          "action": "Ver negocio"
+        },
+        "lead_without_deal": {
+          "title": "{name} todavía sin negocio",
+          "subtitle": "Llegó hace {hours, plural, one {# hora} other {# horas}}",
+          "action": "Ver contacto"
+        },
+        "voice": {
+          "intro": "Tenés {count, plural, one {# cosa pendiente} other {# cosas pendientes}} hoy:",
+          "empty": "No tenés nada urgente por ahora. Buen trabajo."
+        },
+        "memory_incomplete": {
+          "title": "La memoria del negocio está incompleta",
+          "subtitle": "Completada al {pct}% — el asistente responde mejor con más datos",
+          "action": "Completar memoria"
+        },
+        "fact_review_due": {
+          "title": "{count, plural, one {Un dato} other {# datos}} para revisar",
+          "subtitle": "Pasaron su fecha de revisión",
+          "action": "Revisar"
+        },
+        "promo_expired": {
+          "title": "{count, plural, one {Una promoción vencida} other {# promociones vencidas}} sigue activa",
+          "subtitle": "El asistente podría seguir ofreciéndolas",
+          "action": "Revisar"
+        }
+      },
+      "briefing": {
+        "title": "Briefing semanal",
+        "notificationTitle": "Tu briefing semanal está listo",
+        "viewAll": "Ver todos los briefings",
+        "listTitle": "Briefings semanales",
+        "empty": "Todavía no hay un briefing. El primero llega el lunes.",
+        "recommendationsTitle": "Recomendaciones",
+        "weekOf": "Semana del {date}",
+        "sourceValues": {
+          "ai": "Generado con IA",
+          "template": "Automático"
+        }
       }
     },
     "contacts": {
@@ -212,7 +286,9 @@
         "conversacion": "Conversación",
         "actividad": "Actividad",
         "datos": "Datos",
-        "tareas": "Tareas"
+        "tareas": "Tareas",
+        "contratos": "Contratos",
+        "fusionar": "Fusionar"
       },
       "searchLabel": "Buscar",
       "tag": "Etiqueta",
@@ -357,7 +433,45 @@
       "anonymizeConfirmMissing": "Escribí {word} en el campo para confirmar.",
       "anonymize": "Anonimizar",
       "anonymizeDone": "El contacto quedó anonimizado. Las facturas emitidas están intactas.",
-      "anonymizeFailed": "No se pudo anonimizar el contacto."
+      "anonymizeFailed": "No se pudo anonimizar el contacto.",
+      "company": {
+        "title": "Empresa",
+        "none": "Sin empresa",
+        "save": "Guardar"
+      },
+      "merge": {
+        "intro": "Fusioná este contacto con otro que sea la misma persona. Este contacto conserva su identidad, su teléfono y su historial; el otro se elimina al confirmar. No se puede deshacer.",
+        "otherContact": "Fusionar con",
+        "chooseContact": "Elegí el otro contacto",
+        "keepThis": "Este contacto",
+        "keepOther": "El otro",
+        "countsWillMove": "Los negocios, presupuestos, notas de venta, conversaciones, tareas y todo lo demás del otro contacto pasan a este.",
+        "confirm": "Fusionar contactos",
+        "warning": "Esta acción no se puede deshacer.",
+        "adminOnly": "Solo un administrador puede fusionar contactos.",
+        "errors": {
+          "invalid": "No se pudo fusionar. Revisá los datos e intentá de nuevo.",
+          "sameContact": "No podés fusionar un contacto consigo mismo.",
+          "notFound": "No se encontró alguno de los dos contactos."
+        }
+      },
+      "duplicates": {
+        "title": "Posibles duplicados",
+        "empty": "No se encontraron posibles duplicados.",
+        "reasonEmail": "Mismo email",
+        "reasonNameAndPhone": "Mismo nombre y teléfono similar",
+        "review": "Revisar"
+      },
+      "timelineConversationNote": "Nota interna",
+      "customFieldsTitle": "Campos personalizados",
+      "customFieldsSave": "Guardar campos",
+      "manageCustomFields": "Gestionar campos personalizados",
+      "customFilterLabel": "Campo personalizado",
+      "customFilterNone": "Ninguno",
+      "customFilterOperator": "Condición",
+      "customFilterEquals": "Es igual a",
+      "customFilterContains": "Contiene",
+      "customFilterValue": "Valor"
     },
     "pipeline": {
       "title": "Pipeline",
@@ -389,7 +503,9 @@
       "moveFailed": "No pudimos mover la oportunidad. Se restauró su etapa anterior.",
       "showClosed": "Ver {count} cerrados",
       "hideClosed": "Ocultar cerrados",
-      "editStages": "Editar etapas"
+      "editStages": "Editar etapas",
+      "daysInStage": "{count} días en esta etapa",
+      "stale": "Estancado"
     },
     "calendar": {
       "title": "Agenda",
@@ -463,7 +579,41 @@
       },
       "turnstileSite": "Anti-bots con las claves de este sitio",
       "turnstileNone": "Sin protección extra",
-      "turnstileSave": "Guardar"
+      "turnstileSave": "Guardar",
+      "editFields": "Editar campos",
+      "editor": {
+        "title": "Campos de {name}",
+        "locked": "Este formulario ya tiene envíos: los campos existentes se pueden editar, pero su clave no se puede cambiar.",
+        "label": "Etiqueta",
+        "type": "Tipo",
+        "required": "Obligatorio",
+        "mapTo": "Guardar en campo personalizado",
+        "mapToNone": "— no guardar —",
+        "options": "Opciones (separadas por coma)",
+        "moveUp": "Subir",
+        "moveDown": "Bajar",
+        "remove": "Quitar",
+        "addField": "Agregar campo",
+        "save": "Guardar campos",
+        "types": {
+          "text": "Texto",
+          "phone": "Teléfono",
+          "email": "Correo electrónico",
+          "select": "Lista desplegable",
+          "textarea": "Texto largo",
+          "checkbox": "Casilla",
+          "date": "Fecha"
+        },
+        "errors": {
+          "invalid": "Revisá los campos: hay datos inválidos.",
+          "duplicate_key": "Dos campos no pueden tener la misma clave. Cambiá alguna etiqueta.",
+          "select_needs_options": "Una lista desplegable necesita al menos una opción.",
+          "map_to_unknown": "Ese campo personalizado no existe.",
+          "phone_required": "El formulario necesita exactamente un campo de teléfono obligatorio.",
+          "key_immutable": "Este formulario ya tiene envíos: no se puede cambiar la clave de un campo existente. Quitalo y agregá uno nuevo si necesitás otro tipo.",
+          "unknown": "No se pudo guardar. Intentá de nuevo."
+        }
+      }
     },
     "users": {
       "title": "Equipo",
@@ -581,7 +731,8 @@
         "reviewLinkInvalid": "Ese enlace no parece válido.",
         "aiLimitInvalid": "Ese límite no es un número válido.",
         "aiHandoffKeywordRequired": "Poné una palabra para pasar a un humano.",
-        "unknown": "No se pudo guardar. Intentá de nuevo."
+        "unknown": "No se pudo guardar. Intentá de nuevo.",
+        "coachPhoneInvalid": "Escribí un número de teléfono válido."
       },
       "language": {
         "title": "Idioma",
@@ -604,7 +755,85 @@
       "emailReplyToHelp": "Adonde llega la respuesta del cliente. Si lo dejás vacío, las respuestas van a la dirección de la plataforma y nunca te llegan.",
       "emailFromEmail": "Dirección propia de remitente (avanzado)",
       "emailFromEmailHelp": "Dejalo vacío si no estás seguro. La dirección tiene que estar en un dominio verificado con nuestro proveedor de correo (SPF y DKIM); si no, la factura rebota o cae en spam. Sin eso, el correo sale desde la plataforma con el nombre de tu empresa, que sirve para casi todos.",
-      "emailSettingsInvalid": "Revisá las direcciones de correo."
+      "emailSettingsInvalid": "Revisá las direcciones de correo.",
+      "aiBusinessProfileIntro": "Sobre el negocio, tono y horario ahora se completan en la memoria del negocio.",
+      "aiBusinessProfileLink": "Ir a Memoria del negocio",
+      "theme": {
+        "title": "Apariencia",
+        "intro": "Elegí cómo se ve la app para vos. No cambia lo que ven tus compañeros ni lo que reciben tus clientes.",
+        "label": "Apariencia",
+        "save": "Guardar",
+        "toggle": "Cambiar apariencia",
+        "options": {
+          "system": "Según el sistema",
+          "light": "Claro",
+          "dark": "Oscuro"
+        }
+      },
+      "installApp": {
+        "title": "Instalar app",
+        "intro": "Instalá VenderCRM en tu teléfono Android para abrirlo como una app, sin el navegador.",
+        "button": "Instalar app"
+      },
+      "aiBookingEnabled": "Dejar que el asistente ofrezca horarios",
+      "aiBookingEnabledHelp": "El asistente solo muestra los horarios libres; la reserva la hace el cliente tocando la opción, nunca el asistente.",
+      "gcal": {
+        "title": "Google Calendar",
+        "intro": "Conectá tu calendario y el sistema deja de ofrecer horarios en los que ya estás ocupado. Solo lee tu disponibilidad: no escribe ni modifica nada en tu Google Calendar.",
+        "notConfigured": "Google Calendar todavía no está configurado en esta instalación.",
+        "connect": "Conectar mi calendario",
+        "disconnect": "Desconectar",
+        "connected": "Calendario conectado",
+        "lastRead": "última lectura {when}",
+        "status": {
+          "error": "Hubo un problema al leer el calendario.",
+          "revoked": "Se revocó el acceso: volvé a conectarlo."
+        }
+      },
+      "push": {
+        "title": "Avisos en el celular",
+        "intro": "Activá los avisos en cada dispositivo donde quieras recibirlos. Todo lo que llega por aviso queda también en la campanita.",
+        "unsupported": "Este navegador no admite avisos. En iPhone, agregá la app a la pantalla de inicio y abrila desde ahí.",
+        "blocked": "Bloqueaste los avisos para este sitio. Cambialo en la configuración del navegador y volvé a intentar.",
+        "active": "Activo en este dispositivo",
+        "inactive": "Desactivado en este dispositivo",
+        "enable": "Activar en este dispositivo",
+        "disable": "Desactivar en este dispositivo",
+        "failed": "No pudimos activarlo. Probá de nuevo.",
+        "devices": "{count, plural, =0 {Ningún dispositivo activo} one {# dispositivo activo} other {# dispositivos activos}}",
+        "kindsTitle": "Qué avisos querés recibir",
+        "kindsNote": "Esto vale para todos tus dispositivos. Lo que desactivés acá igual aparece en la campanita.",
+        "save": "Guardar",
+        "kinds": {
+          "inbound_message": "Mensajes nuevos de clientes",
+          "assignment": "Cuando me asignan una conversación",
+          "task_due": "Tareas y citas del día",
+          "automation": "Avisos de automatizaciones"
+        }
+      },
+      "email": {
+        "emailTitle": "Identidad de email",
+        "emailIntro": "Desde qué dirección salen los emails de este negocio (presupuestos, facturas, recordatorios).",
+        "contactEmailLabel": "Email de contacto (recibe las respuestas)",
+        "contactEmailSave": "Guardar",
+        "domainsTitle": "Dominio propio",
+        "domainsIntro": "Verificá tu propio dominio para que los emails salgan de tu-negocio.com en vez de la dirección por defecto.",
+        "addDomainLabel": "Dominio",
+        "addDomainAction": "Verificar dominio",
+        "domainStatusValues": {
+          "pending": "Pendiente de verificación",
+          "verified": "Verificado",
+          "failed": "Verificación fallida"
+        },
+        "dnsRecordsIntro": "Agregá estos registros en tu proveedor de DNS:",
+        "retryVerification": "Reintentar verificación",
+        "removeDomain": "Eliminar",
+        "resendNotConfigured": "El envío de email por dominio propio no está configurado en esta plataforma todavía.",
+        "fromLocalPartLabel": "Nombre de usuario del remitente (antes del @)",
+        "fromLocalPartSave": "Guardar"
+      },
+      "coachPhoneTitle": "Tu número para el asistente",
+      "coachPhoneIntro": "Tu celular personal. Mandá un audio a tu número de WhatsApp Business preguntando qué tenés hoy y te responde con la lista de pendientes. Dejalo vacío para desactivarlo."
     },
     "whatsapp": {
       "title": "WhatsApp",
@@ -632,6 +861,17 @@
         "phoneNumberIdRequired": "Ingresá el Phone Number ID.",
         "accessTokenRequired": "Ingresá el token de acceso.",
         "unknown": "No se pudo conectar el número. Intentá de nuevo."
+      },
+      "bookingTemplatesTitle": "Plantillas de reservas",
+      "bookingTemplatesHelp": "Meta tiene que aprobar estas plantillas en tu propia cuenta antes de que se puedan enviar avisos a clientes que nunca te escribieron. Mientras tanto, los avisos salen por email.",
+      "submitBookingTemplates": "Enviar plantillas a Meta",
+      "bookingTemplateStatus": {
+        "APPROVED": "Aprobada",
+        "PENDING": "En revisión",
+        "REJECTED": "Rechazada",
+        "PAUSED": "Pausada",
+        "DISABLED": "Deshabilitada",
+        "MISSING": "Sin enviar"
       }
     },
     "inbox": {
@@ -673,9 +913,56 @@
         "aiWindowClosed": "No se pudo enviar: la ventana de 24 horas se cerró mientras el borrador esperaba.",
         "aiConversationDisabled": "No se pudo enviar: la IA está desactivada en esta conversación.",
         "aiOptedOut": "No se pudo enviar: este contacto pidió no recibir más mensajes.",
-        "aiSendFailed": "No se pudo enviar el borrador. Intentá de nuevo."
+        "aiSendFailed": "No se pudo enviar el borrador. Intentá de nuevo.",
+        "noSlots": "No hay horarios libres en los próximos días.",
+        "bookingTypeRequired": "Elegí un servicio para ofrecer."
       },
-      "actionFailed": "No pudimos completar la acción. Probá de nuevo."
+      "actionFailed": "No pudimos completar la acción. Probá de nuevo.",
+      "offerSlots": "Ofrecer horarios",
+      "offerSlotsSent": "Se enviaron {count} horarios",
+      "filter": {
+        "all": "Todas",
+        "mine": "Mías",
+        "unassigned": "Sin asignar",
+        "unread": "No leídas"
+      },
+      "searchPlaceholder": "Buscar por nombre, teléfono o mensaje…",
+      "channelWhatsapp": "WhatsApp",
+      "channelWebchat": "Chat web",
+      "unknownContact": "Visitante",
+      "markUnread": "Marcar como no leída",
+      "addNote": "Agregar nota",
+      "notePlaceholder": "Escribí una nota interna (no se envía al cliente)…",
+      "saveNote": "Guardar nota",
+      "noteRequired": "Escribí algo antes de guardar la nota.",
+      "noteAuthor": "Nota de {name}",
+      "quickReplyName": "Nombre",
+      "quickReplyBody": "Mensaje",
+      "quickReplyBodyHint": "Podés incluir el nombre del contacto automáticamente en el mensaje.",
+      "quickReplyCreate": "Crear respuesta rápida",
+      "quickReplyInvalid": "Completá el nombre y el mensaje.",
+      "quickRepliesTitle": "Respuestas rápidas",
+      "quickRepliesIntro": "Mensajes guardados que tu equipo puede insertar escribiendo \"/\" en la conversación.",
+      "quickReplySave": "Guardar",
+      "quickReplyDelete": "Eliminar",
+      "quickRepliesEmpty": "Todavía no hay respuestas rápidas.",
+      "manageQuickReplies": "Gestionar respuestas rápidas",
+      "optoutConfirm": "Este contacto pidió no recibir más mensajes (etiqueta \"optout\"). ¿Enviar de todos modos?",
+      "optoutConfirmSend": "Enviar igual",
+      "audio": {
+        "label": "Nota de voz",
+        "pending": "Transcribiendo la nota de voz…",
+        "failed": "No se pudo transcribir esta nota de voz",
+        "skipped": "Nota de voz sin transcripción",
+        "reason": {
+          "too_large": "el audio es demasiado grande",
+          "tenant_daily_cap": "se alcanzó el límite diario de IA",
+          "ai_not_configured": "la transcripción no está activada",
+          "no_media": "el audio no se pudo descargar",
+          "not_audio": "el mensaje no es un audio",
+          "provider": "el proveedor no respondió"
+        }
+      }
     },
     "sites": {
       "title": "Sitios",
@@ -977,7 +1264,12 @@
       },
       "vatRate": "Tipo de IVA",
       "net": "Base imponible",
-      "vatTotal": "IVA"
+      "vatTotal": "IVA",
+      "sendEmail": "Enviar por email",
+      "sendEmailNoContactEmail": "El contacto no tiene un email cargado.",
+      "duplicateExpired": "Duplicar como nuevo borrador",
+      "decisionAcceptedBy": "Aceptado por {name}",
+      "decisionRejectedBy": "Rechazado por {name}"
     },
     "documents": {
       "title": "Facturas",
@@ -1087,7 +1379,11 @@
         "unknown": "No pudimos guardar. Probá de nuevo."
       },
       "exclVat": "sin IVA",
-      "sendReminder": "Enviar recordatorio"
+      "sendReminder": "Enviar recordatorio",
+      "sendEmail": "Enviar por email",
+      "sendEmailNoContactEmail": "El contacto no tiene un email cargado.",
+      "viewReceipt": "Recibo",
+      "sendReceiptWhatsapp": "Enviar recibo por WhatsApp"
     },
     "automations": {
       "title": "Automatizaciones",
@@ -1114,7 +1410,19 @@
         "lead_received": "Lead recibido (sitio o formulario)",
         "deal_stage_changed": "Negocio cambió de etapa",
         "contact_created": "Contacto creado",
-        "tag_added": "Etiqueta agregada"
+        "tag_added": "Etiqueta agregada",
+        "booking_created": "Reserva creada",
+        "booking_cancelled": "Reserva cancelada",
+        "booking_no_show": "No se presentó a la reserva",
+        "booking_completed": "Reserva completada",
+        "chat_lead_captured": "Lead capturado en el chat web",
+        "quote_sent": "Presupuesto enviado",
+        "quote_accepted": "Presupuesto aceptado",
+        "document_sent": "Nota de venta enviada",
+        "document_paid": "Nota de venta cobrada",
+        "deal_won": "Negocio ganado",
+        "deal_lost": "Negocio perdido",
+        "contract_accepted": "Contrato aceptado"
       },
       "statusValues": {
         "draft": "Borrador",
@@ -1154,7 +1462,15 @@
           "wait_duration": "Esperar",
           "wait_for_reply": "Esperar respuesta",
           "ai_reply": "Responder con IA",
-          "send_review_request": "Pedir reseña de Google"
+          "send_review_request": "Pedir reseña de Google",
+          "offer_slots": "Ofrecer horarios",
+          "create_task": "Crear tarea",
+          "notify_user": "Avisar a un usuario",
+          "send_email": "Enviar email",
+          "deal_value": "¿Monto del negocio?",
+          "lead_source": "¿Origen del lead?",
+          "site": "¿De qué sitio vino?",
+          "contact_field": "¿Campo del contacto?"
         },
         "fields": {
           "text": "Texto",
@@ -1172,10 +1488,45 @@
           "aiModeSend": "Envío automático",
           "aiModeHint": "El envío automático también requiere activarlo para toda la cuenta en Configuración. Mientras la cuenta esté en borrador, este nodo genera borradores.",
           "reviewTextPlaceholder": "¡Gracias por tu compra! Dejanos una reseña: {tag}",
-          "reviewTextHint": "Si lo dejás vacío, se envía un mensaje predeterminado con el enlace. Configurá el enlace de reseña en Configuración."
+          "reviewTextHint": "Si lo dejás vacío, se envía un mensaje predeterminado con el enlace. Configurá el enlace de reseña en Configuración.",
+          "taskTitle": "Título de la tarea",
+          "dueInHours": "Vence en (horas)",
+          "assignee": "Responsable",
+          "assigneeDealOwner": "Responsable del negocio",
+          "assigneeContactOwner": "Responsable del contacto",
+          "assigneeSpecific": "Un usuario en particular",
+          "notifyTitle": "Título del aviso",
+          "notifyBody": "Detalle del aviso",
+          "subject": "Asunto",
+          "emailBody": "Mensaje",
+          "emailHint": "Se envía al email del contacto. Si no tiene email cargado, el paso se saltea y queda registrado.",
+          "bookingTypeId": "ID del servicio a agendar",
+          "operator": "Comparación",
+          "operatorGte": "Mayor o igual que",
+          "operatorLt": "Menor que",
+          "operatorEquals": "Es igual a",
+          "operatorContains": "Contiene",
+          "amount": "Monto",
+          "leadSource": "Origen",
+          "siteId": "ID del sitio",
+          "fieldKey": "Campo",
+          "fieldValue": "Valor"
         },
         "mobileReadOnly": "El editor visual necesita una pantalla más grande. Desde el teléfono podés ver el flujo; para editarlo, abrilo en una computadora.",
         "mobileEmpty": "Este flujo todavía no tiene pasos."
+      },
+      "runDetailTitle": "Detalle de la ejecución",
+      "stepsTitle": "Pasos",
+      "noSteps": "Esta ejecución todavía no registró pasos",
+      "stepWhen": "Cuándo",
+      "stepNode": "Nodo",
+      "stepStatus": "Resultado",
+      "stepDetail": "Detalle",
+      "backToFlow": "Volver al flujo",
+      "stepStatusValues": {
+        "ok": "Ejecutado",
+        "skipped": "Salteado",
+        "failed": "Falló"
       }
     },
     "search": {
@@ -1230,7 +1581,11 @@
         "quotes": "presupuestos",
         "documents": "notas de venta",
         "submissions": "leads recibidos"
-      }
+      },
+      "whatsapp": "WhatsApp",
+      "whatsappGreeting": "¡Hola! Te escribo por {deal}.",
+      "expectedCloseAt": "Cierre esperado",
+      "save": "Guardar"
     },
     "stages": {
       "title": "Etapas",
@@ -1254,7 +1609,8 @@
         "notEmpty": "No se puede eliminar: la etapa todavía tiene negocios. Movelos primero.",
         "lastStage": "No se puede eliminar la única etapa de la pipeline.",
         "notFound": "No encontramos la etapa."
-      }
+      },
+      "staleAfterDays": "Estancado después de (días)"
     },
     "business": {
       "switcherTitle": "Empresa",
@@ -1291,7 +1647,33 @@
         "open": "Abiertos",
         "messages": "Mensajes",
         "tasks": "Tareas",
-        "empty": "Todavía no hay datos en este período."
+        "empty": "Todavía no hay datos en este período.",
+        "opened": "Abiertos en el período",
+        "lost": "Perdidos",
+        "responseMedian": "Respuesta (mediana)",
+        "stage": "Etapa",
+        "reachedOrPast": "Llegaron o pasaron",
+        "bucket": "Rango",
+        "conversations": "Conversaciones"
+      },
+      "customRange": "Rango personalizado",
+      "from": "Desde",
+      "to": "Hasta",
+      "apply": "Aplicar",
+      "pipeline": "Pipeline",
+      "agent": "Vendedor",
+      "allPipelines": "Todos los pipelines",
+      "allAgents": "Todos los vendedores",
+      "vsPrevious": "vs. período anterior",
+      "exportCsv": "Exportar CSV",
+      "stageConversionTitle": "Embudo por etapa",
+      "stageConversionHint": "Elegí un pipeline para ver el embudo por etapa.",
+      "responseDistributionTitle": "Distribución del tiempo de respuesta",
+      "responseBuckets": {
+        "under15m": "Menos de 15 min",
+        "15mTo1h": "15 min a 1 hora",
+        "1hTo24h": "1 a 24 horas",
+        "over24h": "Más de 24 horas"
       }
     },
     "booking": {
@@ -1441,7 +1823,74 @@
           "invalidQuestion": "Revisá las preguntas: falta un dato o hay dos con la misma clave.",
           "notFound": "Ese tipo de cita ya no existe."
         }
-      }
+      },
+      "share": {
+        "title": "Compartí esta página de reservas",
+        "embedTitle": "Insertá en tu sitio",
+        "embedHelp": "Pegá esto antes de </body>. Agregá data-inline=\"#selector\" para mostrar el formulario dentro de un elemento en vez de un botón flotante.",
+        "qrPageTitle": "QR a la página de reservas",
+        "qrWhatsappTitle": "QR a tu WhatsApp",
+        "qrWhatsappMissing": "Conectá un número de WhatsApp para tener un QR que abra el chat.",
+        "whatsappGreeting": "¡Hola! Quiero reservar {type}.",
+        "downloadSvg": "Descargar SVG",
+        "downloadPng": "Descargar PNG"
+      },
+      "whatsappGreeting": "¡Hola! Te escribo por tu turno del {when}.",
+      "statusPendingDeposit": "Seña pendiente",
+      "deliveryTitle": "Avisos al cliente",
+      "deliveryEmpty": "Todavía no se envió ningún aviso",
+      "deliveryNever": "Sin avisos",
+      "deliveryKind": {
+        "confirmation": "Confirmación",
+        "reminder": "Recordatorio",
+        "cancellation": "Cancelación",
+        "reschedule": "Reprogramación",
+        "deposit_request": "Pedido de seña",
+        "review_request": "Pedido de reseña"
+      },
+      "deliveryChannel": {
+        "wa_template": "WhatsApp (plantilla)",
+        "wa_freeform": "WhatsApp",
+        "email": "Email",
+        "none": "Sin canal"
+      },
+      "deliveryStatus": {
+        "queued": "En cola",
+        "sent": "Enviado",
+        "delivered": "Entregado",
+        "read": "Leído",
+        "failed": "Falló",
+        "skipped": "No se pudo avisar"
+      },
+      "deliveryDetail": {
+        "no_channel": "El contacto no tiene WhatsApp conectado ni email.",
+        "template_not_approved_and_window_closed": "La plantilla todavía no está aprobada por Meta y la ventana de 24 horas está cerrada.",
+        "email_not_delivered": "El email no salió: revisá la configuración de Resend.",
+        "booking_context_missing": "Faltan datos de la reserva.",
+        "booking_not_found": "La reserva ya no existe.",
+        "tenant_not_found": "La empresa ya no existe."
+      },
+      "capacityTitle": "Cupo y seña",
+      "capacityHelp": "Para clases, canchas o cualquier cosa que entre más de una persona a la vez — y para pedir una seña antes de confirmar.",
+      "capacity": "Lugares por horario",
+      "capacityFieldHelp": "1 es lo normal: una persona por turno. Poné 12 para una clase de doce.",
+      "depositAmount": "Seña (₲)",
+      "depositAmountHelp": "Dejalo vacío si no pedís seña. Con un monto, la reserva queda pendiente hasta que confirmes el comprobante.",
+      "depositExpiry": "Minutos para transferir",
+      "depositExpiryHelp": "Si no llega la seña en este tiempo, el horario se libera solo.",
+      "allowMultiService": "Ofrecer servicios adicionales en la página pública",
+      "servicesTitle": "Servicios adicionales",
+      "servicesHelp": "Extras que el cliente puede sumar: alargan el turno y se guardan en la reserva.",
+      "servicesEmpty": "Todavía no hay servicios adicionales",
+      "servicesDisabledHint": "Estos servicios no se muestran: activá «Ofrecer servicios adicionales» arriba.",
+      "serviceName": "Nombre",
+      "serviceExtraDuration": "+ minutos",
+      "serviceExtraPrice": "+ precio (₲)",
+      "serviceAdd": "Agregar",
+      "serviceRemove": "Quitar",
+      "confirmDeposit": "Confirmar seña",
+      "rejectDeposit": "No llegó",
+      "partySize": "{count} personas"
     },
     "chat": {
       "title": "Chat del sitio",
@@ -1528,6 +1977,277 @@
         "siteRequired": "Elegí un sitio.",
         "exists": "Ese sitio ya tiene un widget."
       }
+    },
+    "memory": {
+      "title": "Memoria del negocio",
+      "intro": "Todo lo que tu asistente sabe: qué hacés, horarios, precios, políticas y las preguntas que más te hacen. Es lo único que la IA puede usar para responder, en WhatsApp y en el chat de tu web.",
+      "adminOnly": "Solo los administradores pueden ver esta página",
+      "completionTitle": "Memoria completa al {pct}%",
+      "checklist": {
+        "hours": "Cargá tu horario de atención",
+        "address": "Cargá la dirección",
+        "about": "Contá en una frase qué hace tu negocio",
+        "faqs": "Cargá al menos 3 preguntas frecuentes",
+        "cancellation": "Escribí tu política de cancelación",
+        "payment": "Indicá qué formas de pago aceptás",
+        "tone": "Elegí cómo querés que hable el asistente",
+        "neverPromise": "Escribí qué no debe prometer nunca"
+      },
+      "profileTitle": "Datos del negocio",
+      "displayName": "Nombre del negocio",
+      "legalName": "Razón social",
+      "ruc": "RUC",
+      "about": "Qué hacemos",
+      "aboutHint": "Una o dos frases, como se lo contarías a un cliente nuevo.",
+      "audience": "A quién atendemos",
+      "differentiators": "Qué nos diferencia",
+      "tone": "Tono",
+      "toneNone": "Sin elegir",
+      "tones": {
+        "cercano": "Cercano",
+        "formal": "Formal",
+        "directo": "Directo"
+      },
+      "toneNote": "Nota sobre el tono",
+      "website": "Sitio web",
+      "address": "Dirección",
+      "mapsUrl": "Enlace de Google Maps",
+      "paymentMethods": "Formas de pago",
+      "paymentMethodsHint": "Separadas por coma: efectivo, transferencia, tarjeta.",
+      "neverPromise": "Nunca prometas",
+      "neverPromiseHint": "Precios cerrados, plazos, descuentos: lo que el asistente no puede comprometer.",
+      "kinds": {
+        "faq": "Preguntas frecuentes",
+        "service": "Servicios y precios",
+        "policy": "Políticas",
+        "location": "Ubicación y horario",
+        "contact": "Contacto",
+        "promo": "Promociones",
+        "note": "Notas internas"
+      },
+      "kindHints": {
+        "faq": "Las 5 preguntas que más te hacen, con la respuesta que darías vos.",
+        "service": "Lo que vendés, con precio y duración si los tenés.",
+        "policy": "Señas, cancelación, pagos, garantía.",
+        "location": "Dónde estás y cuándo abrís, en tus palabras.",
+        "contact": "Teléfonos, correos y responsables que el cliente puede pedir.",
+        "promo": "Ofertas con fecha: fuera de fecha, el asistente deja de mencionarlas.",
+        "note": "Solo para tu equipo. Nunca se las decimos a un cliente."
+      },
+      "empty": "Todavía no cargaste nada acá.",
+      "addFact": "Agregar",
+      "factTitle": "Título",
+      "factBody": "Detalle",
+      "tags": "Etiquetas",
+      "price": "Precio (Gs)",
+      "priceFrom": "Es un precio desde",
+      "durationMinutes": "Duración (minutos)",
+      "validFrom": "Válida desde",
+      "validUntil": "Válida hasta",
+      "topic": "Tema",
+      "topics": {
+        "cancellation": "Cancelación",
+        "deposit": "Seña",
+        "payment": "Pago",
+        "warranty": "Garantía",
+        "other": "Otro"
+      },
+      "visibility": "Visibilidad",
+      "visibilityHint": "Lo interno nunca llega a un cliente: no entra en ninguna respuesta automática.",
+      "visibilityCustomer": "El cliente puede saberlo",
+      "visibilityInternal": "Solo para el equipo",
+      "internalBadge": "Interno",
+      "unconfirmedBadge": "Sin confirmar",
+      "aiSuggested": "Lo propuso la IA",
+      "confirm": "Confirmar",
+      "edit": "Editar",
+      "delete": "Borrar",
+      "deleteConfirm": "¿Borrar este dato de la memoria?",
+      "errors": {
+        "invalid": "Revisá los datos cargados",
+        "notFound": "No encontramos ese dato",
+        "unknown": "No pudimos guardar. Probá de nuevo."
+      },
+      "importar": {
+        "title": "Importar a la memoria",
+        "intro": "Pegá texto, subí un PDF o dale un link — un asistente lee el contenido y sugiere hechos para revisar acá.",
+        "back": "Volver a la memoria",
+        "pasteLabel": "Pegar texto",
+        "pasteButton": "Extraer de este texto",
+        "pdfLabel": "Subir un PDF",
+        "pdfButton": "Extraer de este PDF",
+        "urlLabel": "Pegar un link",
+        "urlPlaceholder": "https://tu-sitio.com/servicios",
+        "urlButton": "Extraer de este link",
+        "resultOk": "Se sugirieron {count} hechos. Revisalos abajo, en la memoria.",
+        "resultOkZero": "No se encontró ningún hecho claro en ese contenido.",
+        "errors": {
+          "ai_unavailable": "Todavía no hay un asistente de IA configurado.",
+          "daily_cap_reached": "Se alcanzó el límite diario de IA de tu plan. Probá de nuevo mañana.",
+          "extraction_failed": "No pudimos leer ese contenido. Probá de nuevo.",
+          "no_text": "No encontramos texto para leer ahí.",
+          "fetch_failed": "No pudimos acceder a ese link.",
+          "pdf_no_text_layer": "Ese PDF es una imagen escaneada — no tiene texto para leer.",
+          "empty": "Escribí o subí algo primero."
+        }
+      }
+    },
+    "companies": {
+      "title": "Empresas",
+      "intro": "Las cuentas detrás de tus contactos: núm. de organización, teléfono y notas compartidas, más quiénes trabajan ahí y qué negocios tienen abiertos.",
+      "emptyTitle": "Todavía no hay empresas",
+      "emptyBody": "Cargá una empresa para agrupar los contactos que trabajan ahí y ver sus negocios en un solo lugar.",
+      "createTitle": "Nueva empresa",
+      "editTitle": "Editar empresa",
+      "save": "Guardar",
+      "name": "Nombre",
+      "ruc": "Núm. de organización",
+      "phone": "Teléfono",
+      "email": "Correo electrónico",
+      "address": "Dirección",
+      "notes": "Notas",
+      "table": {
+        "name": "Nombre",
+        "contacts": "Contactos",
+        "openDeals": "Negocios abiertos"
+      },
+      "contactsTitle": "Contactos",
+      "contactsEmpty": "Todavía no hay contactos en esta empresa",
+      "dealsTitle": "Negocios",
+      "dealsEmpty": "Todavía no hay negocios de esta empresa",
+      "delete": "Eliminar empresa",
+      "deleteConfirm": "¿Eliminar esta empresa? Esta acción no se puede deshacer.",
+      "deleteBlocked": "No se puede eliminar: todavía tiene contactos asociados.",
+      "errors": {
+        "invalid": "Revisá los datos: el nombre es obligatorio.",
+        "nameTaken": "Ya tenés una empresa con ese nombre."
+      }
+    },
+    "contracts": {
+      "title": "Contratos",
+      "intro": "Generá un contrato desde una plantilla, mandalo por WhatsApp o email, y el cliente lo acepta con un clic desde el celular.",
+      "emptyTitle": "Todavía no hay contratos",
+      "emptyBody": "Elegí un contacto y una plantilla para generar el primer contrato.",
+      "createTitle": "Nuevo contrato",
+      "needContact": "Primero necesitás al menos un contacto.",
+      "goToContacts": "Ir a contactos",
+      "needTemplate": "Primero necesitás al menos una plantilla activa.",
+      "manageTemplates": "Administrar plantillas",
+      "number": "Número",
+      "contact": "Contacto",
+      "template": "Plantilla",
+      "status": "Estado",
+      "statusValues": {
+        "draft": "Borrador",
+        "sent": "Enviado",
+        "accepted": "Aceptado",
+        "declined": "Rechazado",
+        "voided": "Anulado"
+      },
+      "sendWhatsapp": "Enviar por WhatsApp",
+      "sendEmail": "Enviar por email",
+      "publicLink": "Enlace público",
+      "downloadPdf": "Descargar PDF",
+      "decisionAccepted": "El cliente aceptó el contrato.",
+      "decisionDeclined": "El cliente rechazó el contrato.",
+      "voidTitle": "Anular",
+      "voidReason": "Motivo",
+      "voidWarning": "Anular un contrato es definitivo.",
+      "voidAction": "Anular contrato",
+      "voidedNotice": "Anulado: {reason}",
+      "templatesTitle": "Plantillas de contrato",
+      "templatesIntro": "Escribí el cuerpo en texto plano. Usá # para un título de sección y una línea en blanco para separar párrafos. Variables disponibles entre llaves dobles: contacto.nombre, contacto.telefono, contacto.email.",
+      "templateName": "Nombre",
+      "templateBody": "Cuerpo",
+      "templateBodyHint": "Texto plano — sin Markdown ni HTML. # Título para una sección, línea en blanco entre párrafos.",
+      "templateActive": "Activa",
+      "templateSave": "Guardar cambios",
+      "templateCreate": "Crear plantilla",
+      "errors": {
+        "invalid": "No se pudo guardar. Revisá los datos e intentá de nuevo.",
+        "unknownVariable": "La plantilla usa una variable desconocida"
+      }
+    },
+    "onboarding": {
+      "title": "Configurá tu rubro",
+      "adminOnly": "Solo los administradores pueden ver esta página",
+      "intro": "Elegí a qué se dedica tu negocio y te dejamos los servicios, los horarios y el embudo listos para empezar a recibir reservas.",
+      "apply": "Usar este rubro",
+      "previewServices": "Servicios:",
+      "previewResources": "Recursos:",
+      "previewStages": "Embudo:",
+      "previewFlows": "Automatizaciones:",
+      "previewCapacity": "{count} lugares",
+      "alreadyApplied": "Ya aplicaste el rubro «{name}».",
+      "alreadyAppliedHelp": "Podés aplicar otro rubro cuando quieras: se agrega a lo que ya tenés, nunca reemplaza nada.",
+      "additiveNote": "Aplicar un rubro solo agrega servicios, recursos, etapas y etiquetas. Nunca borra ni cambia lo que ya configuraste.",
+      "assistant": {
+        "cta": "Configurar con el asistente",
+        "intro": "Te hacemos algunas preguntas y armamos la configuración por vos. Podés saltar cualquiera.",
+        "pickerLink": "Elegir un rubro sin el asistente",
+        "skip": "Saltar",
+        "continueButton": "Continuar",
+        "stepOf": "Pregunta {current} de {total}",
+        "topics": {
+          "about": "¿A qué se dedica tu negocio y para quién?",
+          "contactToday": "¿Cómo te contactan hoy tus clientes?",
+          "hoursAddress": "¿Cuál es tu horario de atención y tu dirección?",
+          "servicesPrices": "¿Qué servicios ofrecés y a qué precio? Si preferís cargarlos después, saltá esta pregunta.",
+          "policies": "¿Cómo manejás las señas, la cancelación y los pagos?",
+          "faqs": "¿Cuáles son las 5 preguntas que más te hacen? Escribí cada una en un párrafo separado, con la respuesta debajo.",
+          "tone": "¿Cómo querés que hable el asistente: cercano, formal o directo?",
+          "neverPromise": "¿Qué no debe prometer nunca el asistente?"
+        },
+        "generating": "Armando tu plan…",
+        "aiUnavailable": "Todavía no hay un asistente de IA configurado. Elegí un rubro manualmente abajo.",
+        "generationFailed": "No pudimos generar el plan automáticamente. Elegí un rubro manualmente abajo.",
+        "dailyCapReached": "Se alcanzó el límite diario de IA de tu plan. Probá de nuevo mañana o elegí un rubro manualmente.",
+        "previewTitle": "Esto es lo que vamos a crear — y nada de lo que ya tenés se borra",
+        "previewQuickReplies": "Respuestas rápidas:",
+        "applyPlan": "Aplicar este plan",
+        "startOver": "Empezar de nuevo",
+        "appliedTitle": "¡Listo! Aplicamos tu plan.",
+        "retry": "Reintentar"
+      }
+    },
+    "notifications": {
+      "title": "Avisos",
+      "empty": "No tenés avisos",
+      "markAllRead": "Marcar todo como leído"
+    },
+    "push": {
+      "bannerTitle": "Activá los avisos",
+      "bannerBody": "Recibí un aviso en el celular cuando entra un mensaje.",
+      "bannerEnable": "Activar",
+      "bannerDismiss": "Cerrar",
+      "inboundFallbackTitle": "Mensaje nuevo",
+      "inboundNoText": "Te enviaron un archivo",
+      "assignedTitle": "Te asignaron una conversación",
+      "assignedBody": "Ahora atendés a {contact}.",
+      "taskDueTitle": "Tu día",
+      "taskDueBody": "{tasks, plural, =0 {Sin tareas} one {# tarea} other {# tareas}} · {appointments, plural, =0 {sin citas} one {# cita} other {# citas}}"
+    },
+    "customFields": {
+      "title": "Campos personalizados",
+      "intro": "Datos propios de tu negocio en cada contacto — el tipo y la clave no se pueden cambiar después de crear el campo.",
+      "backToContacts": "Volver a contactos",
+      "labelLabel": "Etiqueta",
+      "typeLabel": "Tipo",
+      "typeValues": {
+        "text": "Texto",
+        "number": "Número",
+        "date": "Fecha",
+        "select": "Lista",
+        "phone": "Teléfono"
+      },
+      "optionsLabel": "Opciones (separadas por coma, solo para tipo lista)",
+      "requiredLabel": "Obligatorio",
+      "showOnCardLabel": "Mostrar en la tarjeta del pipeline",
+      "create": "Crear campo",
+      "delete": "Eliminar",
+      "keyTaken": "Ya existe un campo con esa clave.",
+      "adminOnly": "Esta sección es solo para administradores.",
+      "empty": "Todavía no hay campos personalizados."
     }
   },
   "superadmin": {
@@ -1538,7 +2258,8 @@
       "superadmin": "Superadministrador",
       "audit": "Auditoría",
       "users": "Usuarios",
-      "overview": "Panel"
+      "overview": "Panel",
+      "claudeOps": "Claude Ops"
     },
     "tenantUsers": {
       "title": "Usuarios de la empresa",
@@ -1610,7 +2331,8 @@
         "slugTaken": "Ya existe una empresa con ese slug.",
         "unknown": "No se pudo crear la empresa. Intentá de nuevo."
       },
-      "slugPlaceholder": "Se genera del nombre; podés cambiarlo"
+      "slugPlaceholder": "Se genera del nombre; podés cambiarlo",
+      "configureWithAi": "Configurar con IA"
     },
     "subscriptions": {
       "title": "Suscripción",
@@ -1674,7 +2396,9 @@
       "clearError": "Marcar como resuelto",
       "retryTenantJobs": "Reintentar {count} envío(s)",
       "sendFailures": "Envíos que fallaron",
-      "noSendFailures": "Ningún envío falló últimamente."
+      "noSendFailures": "Ningún envío falló últimamente.",
+      "graphVersionPastReview": "La versión {version} de la API de Meta pasó su fecha de revisión ({date}). Meta retira las versiones viejas y, cuando lo hace, WhatsApp deja de funcionar para todas las empresas. Revisá la versión disponible y actualizá WHATSAPP_GRAPH_API_VERSION.",
+      "graphVersionUndocumented": "La versión {version} de la API de Meta no tiene fecha de revisión documentada. Anotala en modules/whatsapp/graph.ts para que esta página pueda avisarte a tiempo."
     },
     "users": {
       "title": "Usuarios",
@@ -1776,6 +2500,90 @@
         "phoneNumberIdRequired": "Ingresá el Phone Number ID.",
         "accessTokenRequired": "Ingresá el token de acceso.",
         "unknown": "No se pudo conectar el número. Intentá de nuevo."
+      }
+    },
+    "ops": {
+      "title": "Claude Ops",
+      "intro": "Pasale un lote de sitios a una sesión de Claude Code, mirá qué va aprovisionando y aprobá cada uno antes de que quede en vivo. Nada acá crea un sitio a mano: lo hace la sesión, a través de la API de ops, y cada llamada queda en el registro de abajo.",
+      "noTokenIntro": "Todavía no hay ningún token de ops. Creá uno abajo y pegalo, junto con la URL, en el entorno de la PC donde corre la sesión de Claude Code.",
+      "states": {
+        "pending": "Sin empezar",
+        "running": "En curso",
+        "needsInput": "Necesita tu respuesta",
+        "failed": "Falló",
+        "awaitingApproval": "Esperando aprobación",
+        "live": "En vivo"
+      },
+      "token": {
+        "title": "Token de la sesión",
+        "createLabel": "Etiqueta",
+        "createPlaceholder": "Etiqueta (por ejemplo, «PC de Anton»)",
+        "createSubmit": "Crear token",
+        "revealTitle": "Token creado",
+        "revealHint": "Se muestra una sola vez. Copialo y pegalo en el entorno de la sesión como VCRM_OPS_TOKEN; no queda guardado en ningún lado para volver a mostrarlo.",
+        "copy": "Copiar",
+        "copied": "Copiado",
+        "prefix": "Prefijo",
+        "lastUsed": "Último uso",
+        "calls": "Llamadas",
+        "never": "nunca",
+        "allowlist": "Empresas permitidas",
+        "allowlistNone": "ninguna — solo puede crear empresas nuevas",
+        "revoke": "Revocar",
+        "revoked": "Revocado",
+        "errorInvalid": "Poné una etiqueta para el token.",
+        "noneYet": "Todavía no hay tokens."
+      },
+      "batch": {
+        "select": "Lote",
+        "newBatch": "Nuevo lote",
+        "newBatchPlaceholder": "Título del lote",
+        "newBatchSubmit": "Crear",
+        "noBatches": "Todavía no hay lotes.",
+        "pickOne": "Elegí un lote para ver sus filas."
+      },
+      "worksheet": {
+        "tabSites": "Sitios",
+        "tabPaste": "Pegar lista",
+        "colDomain": "Dominio",
+        "colCompany": "Empresa",
+        "colPipeline": "Pipeline",
+        "colSteps": "Pasos",
+        "colState": "Estado",
+        "openSite": "Ver empresa",
+        "review": "Revisar",
+        "emptyRows": "La sesión todavía no escribió filas para este lote.",
+        "provisioned": "Lo que aprovisionó Claude",
+        "credentials": "Credenciales de este sitio",
+        "rawDetails": "Detalle pegado",
+        "gateNote": "Aprobar activa el sitio y borra el lead de prueba. Hasta entonces el sitio solo acepta el lead de prueba de la sesión. Rechazar lo devuelve a Claude con tu nota.",
+        "approve": "Aprobar y activar",
+        "reject": "Rechazar con nota",
+        "rejectPlaceholder": "Qué falta o qué corregir",
+        "rejectSubmit": "Enviar",
+        "newTenant": "empresa nueva",
+        "intakeHint": "El lote guarda exactamente lo que escribís acá. La sesión lo lee a través de la API de ops y escribe una fila por dominio en la pestaña Sitios.",
+        "intakeSave": "Guardar texto",
+        "intakePlaceholder": "dominio.com.py   Nombre de la empresa   tags: ejemplo"
+      },
+      "needsYou": {
+        "title": "Necesita tu atención",
+        "empty": "Nada pendiente por ahora."
+      },
+      "log": {
+        "title": "Registro de aprovisionamiento",
+        "when": "Cuándo",
+        "action": "Acción",
+        "object": "Objeto",
+        "via": "Vía",
+        "empty": "Todavía no hay entradas.",
+        "filterBatch": "Este lote",
+        "filterFailures": "Solo fallos",
+        "filterAll": "Todo Claude Ops",
+        "openFull": "Ver en Auditoría"
+      },
+      "common": {
+        "cancel": "Cancelar"
       }
     }
   },
@@ -2305,6 +3113,11 @@
       "crossed": "¿Ya pagaste? Entonces ignorá este mensaje.",
       "cta": "Abrir la factura",
       "fallback": "¿No funciona el botón? Copiá este enlace en tu navegador: {url}"
+    },
+    "weeklyBriefing": {
+      "subject": "Briefing semanal de {business}",
+      "title": "Tu briefing semanal",
+      "cta": "Ver el briefing completo"
     }
   },
   "pdf": {
@@ -2322,7 +3135,9 @@
       "caption": "Presupuesto",
       "vat": "IVA",
       "net": "Base imponible",
-      "vatTotal": "IVA"
+      "vatTotal": "IVA",
+      "paymentMethods": "Formas de pago:",
+      "depositPolicy": "Seña:"
     },
     "faktura": {
       "title": "FACTURA",
@@ -2363,7 +3178,41 @@
         "paid": "PAGADA",
         "void": "ANULADA"
       },
-      "caption": "Factura"
+      "caption": "Factura",
+      "paymentMethods": "Formas de pago:",
+      "depositPolicy": "Seña:"
+    },
+    "recibo": {
+      "title": "Recibo",
+      "client": "Recibido de",
+      "description": "Descripción",
+      "total": "Total",
+      "againstDocument": "Correspondiente a",
+      "disclaimer": "Este recibo no es un comprobante fiscal.",
+      "method": {
+        "transfer": "Transferencia",
+        "cash": "Efectivo",
+        "card": "Tarjeta",
+        "check": "Cheque",
+        "other": "Otro"
+      }
+    },
+    "contract": {
+      "title": "CONTRATO",
+      "client": "Cliente",
+      "legalNotice": "Firma electrónica simple bajo eIDAS (UE) 910/2014 — no es una firma electrónica cualificada.",
+      "footer": "Documento no fiscal",
+      "caption": "Contrato",
+      "acceptancePageTitle": "Registro de aceptación",
+      "decisionLabel": "Decisión",
+      "decisionValues": {
+        "accepted": "Aceptado",
+        "declined": "Rechazado"
+      },
+      "nameLabel": "Nombre",
+      "dateLabel": "Fecha",
+      "ipLabel": "Dirección IP",
+      "userAgentLabel": "Navegador"
     }
   },
   "public": {
@@ -2384,7 +3233,26 @@
       "footer": "Documento no fiscal · Factura electrónica próximamente",
       "vat": "IVA",
       "net": "Base imponible",
-      "vatTotal": "IVA"
+      "vatTotal": "IVA",
+      "decisionPrompt": "¿Qué decidís sobre este presupuesto?",
+      "decisionNameLabel": "Tu nombre",
+      "decisionNamePlaceholder": "Nombre y apellido",
+      "decisionCommentLabel": "Comentario (opcional)",
+      "decisionCommentPlaceholder": "Alguna aclaración...",
+      "decisionAccept": "Aceptar",
+      "decisionReject": "Rechazar",
+      "decisionAcceptedGeneric": "¡Listo! Registramos tu aceptación.",
+      "decisionRejectedGeneric": "Listo, registramos tu respuesta.",
+      "decisionAccepted": "Aceptado por {name}",
+      "decisionRejected": "Rechazado por {name}",
+      "decisionErrors": {
+        "nameRequired": "Escribí tu nombre antes de continuar.",
+        "rateLimited": "Demasiadas solicitudes. Probá de nuevo en un momento.",
+        "alreadyDecided": "Este presupuesto ya fue respondido antes.",
+        "notSent": "Este presupuesto todavía no fue enviado.",
+        "expired": "Este presupuesto ya venció. Pedile uno nuevo a quien te lo envió.",
+        "invalid": "No pudimos procesar tu respuesta. Probá de nuevo."
+      }
     },
     "document": {
       "title": "Factura",
@@ -2467,7 +3335,14 @@
       "locationInPerson": "Presencial",
       "locationPhone": "Por teléfono",
       "locationVideo": "Por videollamada",
-      "locationWhatsapp": "Por WhatsApp"
+      "locationWhatsapp": "Por WhatsApp",
+      "statusPendingDeposit": "Pendiente de seña",
+      "servicesTitle": "¿Querés agregar algo?",
+      "partySize": "¿Cuántas personas?",
+      "seatsRemaining": "quedan {count}",
+      "depositTitle": "Reservado, falta la seña",
+      "depositBody": "Para dejarla confirmada necesitamos una seña de {amount}. Te mandamos los datos por WhatsApp — pasanos el comprobante y listo.",
+      "errorPartyTooLarge": "Son más personas de las que entran en este horario. Probá con menos."
     },
     "chat": {
       "title": "Chat",
@@ -2484,6 +3359,46 @@
       "error": "No pudimos enviar tu mensaje. Probá de nuevo.",
       "rateLimited": "Estás escribiendo muy rápido. Esperá un momento.",
       "offline": "Ahora no hay nadie en línea, pero dejanos tus datos y te contactamos."
+    },
+    "unsubscribe": {
+      "title": "Listo, te sacamos de la lista",
+      "body": "{name}, no vas a recibir más emails automáticos de este negocio."
+    },
+    "receipt": {
+      "title": "Recibo",
+      "client": "Recibido de",
+      "againstDocument": "Correspondiente a",
+      "total": "Total recibido",
+      "downloadPdf": "Descargar PDF",
+      "disclaimer": "Este recibo no es un comprobante fiscal.",
+      "method": {
+        "transfer": "Transferencia",
+        "cash": "Efectivo",
+        "card": "Tarjeta",
+        "check": "Cheque",
+        "other": "Otro"
+      }
+    },
+    "contract": {
+      "title": "Contrato",
+      "downloadPdf": "Descargar PDF",
+      "legalNotice": "Este documento se acepta mediante firma electrónica simple, bajo eIDAS (UE) 910/2014 — no es una firma electrónica cualificada.",
+      "decisionPrompt": "¿Aceptás este contrato?",
+      "decisionNameLabel": "Tu nombre",
+      "decisionNamePlaceholder": "Nombre y apellido",
+      "decisionAccept": "Aceptar",
+      "decisionDecline": "Rechazar",
+      "decisionAcceptedGeneric": "¡Listo! Registramos tu aceptación.",
+      "decisionDeclinedGeneric": "Listo, registramos tu respuesta.",
+      "decisionAccepted": "Aceptado por {name}",
+      "decisionDeclined": "Rechazado por {name}",
+      "decisionErrors": {
+        "nameRequired": "Escribí tu nombre antes de continuar.",
+        "rateLimited": "Demasiadas solicitudes. Probá de nuevo en un momento.",
+        "alreadyDecided": "Este contrato ya fue respondido antes.",
+        "notSent": "Este contrato todavía no fue enviado.",
+        "invalid": "No pudimos procesar tu respuesta. Probá de nuevo."
+      }
     }
   }
 }

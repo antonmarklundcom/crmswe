@@ -4,9 +4,14 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { formatDateTime, formatMoney } from "@/lib/i18n/format";
 import { requireTenantContext } from "@/modules/tenancy/context";
 import { listTenantUsers } from "@/modules/tenancy/users";
-import { getContact, listTags, listTagsForContact } from "@/modules/crm/contacts";
+import { getContact, listContacts, listTags, listTagsForContact } from "@/modules/crm/contacts";
+import { listCompanies } from "@/modules/crm/companies";
+import { MergeDialog } from "./MergeDialog";
+import { setContactCompanyAction } from "../merge-actions";
+import { listCustomFieldDefinitions } from "@/modules/crm/custom-fields";
 import { getContactTimeline, type TimelineEntry } from "@/modules/crm/timeline";
 import { listDealsForContact } from "@/modules/crm/deals";
+import { listContractsForContact } from "@/modules/contracts/contracts";
 import { listTasksForContact } from "@/modules/crm/tasks";
 import { listEventsForContact } from "@/modules/calendar/events";
 import { findContactDeleteBlockers, type ContactBlocker } from "@/modules/crm/deletion";
@@ -19,6 +24,10 @@ import {
 import { listApprovedTemplates } from "@/modules/whatsapp/templates";
 import { whatsappEnabledFor } from "@/modules/whatsapp/feature";
 import { Button, buttonVariants } from "@/components/ui/button";
+import { WhatsAppLink } from "@/components/whatsapp-link";
+import { getTenant } from "@/modules/tenancy/tenants";
+import { DEFAULT_COUNTRY } from "@/lib/phone";
+import type { TenantSettings } from "@/modules/tenancy/settings";
 import { cn } from "@/lib/utils";
 import { TaskList, type TaskListLabels } from "@/components/task-list";
 import { EmptyState } from "@/components/empty-state";
@@ -34,6 +43,7 @@ import {
   sendContactMessageAction,
   sendContactTemplateAction,
   updateContactAction,
+  updateContactCustomFieldsAction,
 } from "../actions";
 import {
   completeTaskAction,
@@ -48,7 +58,7 @@ import { Input, Select, Textarea } from "@/components/ui/form-fields";
 // own data. Tabs are URL state rather than client state so each one is a
 // plain server render — no client bundle for what is fundamentally reading.
 
-const TABS = ["conversacion", "tareas", "actividad", "datos"] as const;
+const TABS = ["conversacion", "tareas", "actividad", "contratos", "datos", "fusionar"] as const;
 type Tab = (typeof TABS)[number];
 
 /** The tabs this contact page actually shows. The conversation tab is the
@@ -80,15 +90,17 @@ export default async function ContactDetailPage({
     deleteError?: string;
     anonymizeError?: string;
     anonymized?: string;
+    otherId?: string;
   }>;
 }) {
   const { id } = await params;
-  const { tab: rawTab, deleteError, anonymizeError, anonymized } = await searchParams;
+  const { tab: rawTab, deleteError, anonymizeError, anonymized, otherId } = await searchParams;
   const ctx = await requireTenantContext();
   const t = await getTranslations("app.contacts");
   const locale = await getLocale();
   const tq = await getTranslations("app.quotes");
   const td = await getTranslations("app.documents");
+  const tc = await getTranslations("app.contracts");
   const ti = await getTranslations("app.inbox");
   const tcal = await getTranslations("app.calendar");
 
@@ -101,6 +113,12 @@ export default async function ContactDetailPage({
   // lands on the first tab that still exists rather than on an empty page.
   const tab: Tab = tabs.includes(rawTab as Tab) ? (rawTab as Tab) : tabs[0];
 
+  // The tenant's dialing convention, so a wa.me link built from a bare local
+  // number reaches the right country (plan-booking.md §6.2).
+  const tenantRow = await getTenant(ctx.tenantId);
+  const defaultCountry =
+    ((tenantRow?.settings ?? {}) as TenantSettings).defaultCountry ?? DEFAULT_COUNTRY;
+
   const [
     timeline,
     deals,
@@ -111,6 +129,10 @@ export default async function ContactDetailPage({
     appointments,
     users,
     deleteBlockers,
+    customFields,
+    contracts,
+    companies,
+    allContacts,
   ] =
     await Promise.all([
       getContactTimeline(ctx, id),
@@ -129,6 +151,10 @@ export default async function ContactDetailPage({
       ctx.role === "admin"
         ? findContactDeleteBlockers(ctx, id)
         : Promise.resolve<ContactBlocker[]>([]),
+      listCustomFieldDefinitions(ctx),
+      listContractsForContact(ctx, id),
+      listCompanies(ctx),
+      listContacts(ctx),
     ]);
 
   const assignableUsers = users
@@ -211,6 +237,11 @@ export default async function ContactDetailPage({
           title: t("timelineLead"),
           detail: entry.campaign ?? entry.pageUrl ?? undefined,
         };
+      case "conversationNote":
+        return {
+          title: t("timelineConversationNote"),
+          detail: entry.body,
+        };
     }
   }
 
@@ -219,10 +250,21 @@ export default async function ContactDetailPage({
       <header className="flex flex-col gap-2">
         <h1 className="text-xl font-semibold">{contact.name}</h1>
         <p className="text-sm text-muted-foreground">
-          {contact.phone}
+          <WhatsAppLink phone={contact.phone} country={defaultCountry} />
           {contact.email ? ` · ${contact.email}` : ""}
           {contact.source ? ` · ${contact.source}` : ""}
         </p>
+        {contact.companyId && (
+          <p className="text-sm text-muted-foreground">
+            <Link
+              href={`/companies/${contact.companyId}`}
+              className="underline underline-offset-4"
+            >
+              {companies.find((company) => company.id === contact.companyId)?.name ??
+                t("company.title")}
+            </Link>
+          </p>
+        )}
         <div className="flex flex-wrap gap-2">
           {contactTags.map((tag) => (
             <form key={tag.id} action={removeTagFromContactAction.bind(null, id, tag.id)}>
@@ -431,6 +473,33 @@ export default async function ContactDetailPage({
         </div>
       )}
 
+      {tab === "contratos" && (
+        <div className="flex flex-col gap-4">
+          <Link
+            href={`/contracts?contactId=${id}#nuevo-contrato`}
+            className="w-fit text-sm underline underline-offset-4"
+          >
+            {tc("createTitle")}
+          </Link>
+          {contracts.length === 0 ? (
+            <p className="text-sm text-muted-foreground">{tc("emptyBody")}</p>
+          ) : (
+            <ul className="flex flex-col gap-2 text-sm">
+              {contracts.map((contract) => (
+                <li key={contract.id} className="rounded-md border px-3 py-2">
+                  <Link href={`/contracts/${contract.id}`} className="underline underline-offset-4">
+                    {contract.number}
+                  </Link>
+                  <span className="ml-2 text-muted-foreground">
+                    {tc(`statusValues.${contract.status}` as "statusValues.draft")}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+
       {tab === "datos" && (
         <div className="flex flex-col gap-8">
           {deals.length > 0 && (
@@ -445,6 +514,26 @@ export default async function ContactDetailPage({
               </ul>
             </section>
           )}
+
+          <section>
+            <h2 className="mb-3 text-lg font-semibold">{t("company.title")}</h2>
+            <form
+              action={setContactCompanyAction.bind(null, id)}
+              className="flex max-w-sm gap-2"
+            >
+              <Select name="companyId" className="flex-1" defaultValue={contact.companyId ?? ""}>
+                <option value="">{t("company.none")}</option>
+                {companies.map((company) => (
+                  <option key={company.id} value={company.id}>
+                    {company.name}
+                  </option>
+                ))}
+              </Select>
+              <Button type="submit" size="sm" variant="outline">
+                {t("company.save")}
+              </Button>
+            </form>
+          </section>
 
           {availableTags.length > 0 && (
             <section>
@@ -475,6 +564,47 @@ export default async function ContactDetailPage({
               }}
             />
           </section>
+
+          {customFields.length > 0 && (
+            <section>
+              <h2 className="mb-3 text-lg font-semibold">{t("customFieldsTitle")}</h2>
+              <form
+                action={updateContactCustomFieldsAction.bind(null, id)}
+                className="flex max-w-sm flex-col gap-3"
+              >
+                {customFields.map((field) => {
+                  const value = ((contact.custom as Record<string, unknown>) ?? {})[field.key];
+                  const name = `custom_${field.key}`;
+                  return (
+                    <label key={field.id} className="flex flex-col gap-1 text-sm">
+                      {field.label}
+                      {field.type === "select" ? (
+                        <Select name={name} defaultValue={value ? String(value) : ""}>
+                          <option value="" />
+                          {((field.options as string[] | null) ?? []).map((option) => (
+                            <option key={option} value={option}>
+                              {option}
+                            </option>
+                          ))}
+                        </Select>
+                      ) : (
+                        <Input
+                          name={name}
+                          type={
+                            field.type === "number" ? "number" : field.type === "date" ? "date" : "text"
+                          }
+                          defaultValue={value ? String(value) : ""}
+                        />
+                      )}
+                    </label>
+                  );
+                })}
+                <Button type="submit" size="sm" variant="outline" className="w-fit">
+                  {t("customFieldsSave")}
+                </Button>
+              </form>
+            </section>
+          )}
 
           {/* The two GDPR rights, next to each other because a tenant
               handling a request from one person needs both (plan.md §5.3.3):
@@ -562,6 +692,47 @@ export default async function ContactDetailPage({
             </section>
           )}
         </div>
+      )}
+
+      {tab === "fusionar" && ctx.role === "admin" && (
+        <div className="flex flex-col gap-4">
+          <p className="text-sm text-muted-foreground">{t("merge.intro")}</p>
+          <MergeDialog
+            contactId={id}
+            contactLabel={`${contact.name} — ${contact.phone}`}
+            candidates={allContacts.map((candidate) => ({
+              id: candidate.id,
+              label: `${candidate.name} — ${candidate.phone}`,
+            }))}
+            defaultOtherId={otherId}
+            labels={{
+              otherContact: t("merge.otherContact"),
+              chooseContact: t("merge.chooseContact"),
+              fields: {
+                name: t("name"),
+                email: t("email"),
+                notes: t("notes"),
+                source: t("source"),
+                ownerUserId: t("owner"),
+                companyId: t("company.title"),
+              },
+              keepWinner: t("merge.keepThis"),
+              keepOther: t("merge.keepOther"),
+              countsWillMove: t("merge.countsWillMove"),
+              confirm: t("merge.confirm"),
+              warning: t("merge.warning"),
+              errors: {
+                invalid: t("merge.errors.invalid"),
+                sameContact: t("merge.errors.sameContact"),
+                notFound: t("merge.errors.notFound"),
+              },
+            }}
+          />
+        </div>
+      )}
+
+      {tab === "fusionar" && ctx.role !== "admin" && (
+        <p className="text-sm text-muted-foreground">{t("merge.adminOnly")}</p>
       )}
     </div>
   );

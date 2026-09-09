@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { headers } from "next/headers";
 import { getPublicQuote } from "@/modules/quotes/quotes";
+import { getQuoteDecision } from "@/modules/quotes/public";
 import { getContact } from "@/modules/crm/contacts";
 import { getTenant } from "@/modules/tenancy/tenants";
 import type { TenantSettings } from "@/modules/tenancy/settings";
@@ -12,10 +13,10 @@ import { money } from "@/modules/renderable-document/format";
 import { formatRateLabel } from "@/lib/se/moms";
 import { quoteMoms } from "@/modules/quotes/quotes";
 import { DEFAULT_LOCALE } from "@/lib/i18n/locales";
+import { QuoteDecisionForm } from "./QuoteDecisionForm";
 
-// Public read-only quote view (PLAN.md §8) — the token is the secret, and
-// there is deliberately no accept/reject button in Phase 1: the rep sets
-// those by hand in the CRM.
+// Public read-only quote view (PLAN.md §8), with online accept/reject added
+// in §15.8 P6 — the token is the secret, same as before.
 
 
 export default async function PublicQuotePage({
@@ -27,9 +28,9 @@ export default async function PublicQuotePage({
 
   // Per-IP limit — the token itself is the secret, so this isn't for
   // brute-forcing defense, it's to keep the page from being scraped/hammered
-  // (lib/rate-limit documents the single-process limitation).
+  // (lib/rate-limit holds the window in MySQL, so it survives a deploy).
   const ip = clientIp(await headers());
-  if (checkRateLimit(`quote-view:${ip}`, 60, 60_000).limited) {
+  if ((await checkRateLimit(`quote-view:${ip}`, 60, 60_000)).limited) {
     // No tenant resolved yet at this point, so this one line is the single
     // place the reference locale is the only thing available.
     const tLimit = await getTranslator(null, "public.shared");
@@ -58,6 +59,7 @@ export default async function PublicQuotePage({
   // artifact as the PDF beside it (PLAN.md §13 H5 #4).
   const locale = tenant?.locale ?? DEFAULT_LOCALE;
   const t = await getTranslator(locale, "public.quote");
+  const decision = await getQuoteDecision(quote.id, quote.tenantId);
 
   return (
     <main className="mx-auto flex max-w-2xl flex-col gap-6 p-6">
@@ -153,6 +155,41 @@ export default async function PublicQuotePage({
       <a href={`/q/${token}/pdf`} className="text-sm underline">
         {t("downloadPdf")}
       </a>
+
+      {decision ? (
+        <p className="rounded-md border bg-muted px-3 py-2 text-sm">
+          {t(decision.decision === "accepted" ? "decisionAccepted" : "decisionRejected", {
+            name: decision.name,
+          })}
+        </p>
+      ) : quote.status === "sent" ? (
+        <QuoteDecisionForm
+          token={token}
+          labels={{
+            prompt: t("decisionPrompt"),
+            nameLabel: t("decisionNameLabel"),
+            namePlaceholder: t("decisionNamePlaceholder"),
+            commentLabel: t("decisionCommentLabel"),
+            commentPlaceholder: t("decisionCommentPlaceholder"),
+            accept: t("decisionAccept"),
+            reject: t("decisionReject"),
+            acceptedGeneric: t("decisionAcceptedGeneric"),
+            rejectedGeneric: t("decisionRejectedGeneric"),
+            errors: {
+              nameRequired: t("decisionErrors.nameRequired"),
+              rateLimited: t("decisionErrors.rateLimited"),
+              alreadyDecided: t("decisionErrors.alreadyDecided"),
+              notSent: t("decisionErrors.notSent"),
+              expired: t("decisionErrors.expired"),
+              invalid: t("decisionErrors.invalid"),
+            },
+          }}
+        />
+      ) : quote.status === "expired" ? (
+        <p className="rounded-md border border-warning/30 bg-warning-surface px-3 py-2 text-sm text-warning">
+          {t("decisionErrors.expired")}
+        </p>
+      ) : null}
 
       <footer className="mt-8 text-center text-xs text-muted-foreground">
         {t("footer")}

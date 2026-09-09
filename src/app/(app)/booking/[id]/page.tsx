@@ -11,9 +11,18 @@ import { listSites } from "@/modules/sites/sites";
 import { siteSettings } from "@/modules/sites/settings";
 import { getBookingType, resolveBookingTypeSettings } from "@/modules/booking/types";
 import { listResources, listResourcesForType } from "@/modules/booking/resources";
+import { listServicesForType } from "@/modules/booking/services";
+import { formatMoney } from "@/lib/i18n/format";
 import { PageHeader } from "@/components/page-header";
 import { TypeResourcesPicker } from "../BookingForms";
 import { BookingTypeForm, type Question } from "./BookingTypeForm";
+import { ServicesEditor } from "./ServicesEditor";
+import { ShareCode, type ShareCodeLabels } from "./ShareCodes";
+import { qrSvg } from "@/lib/qr";
+import { DEFAULT_COUNTRY, waMeHref } from "@/lib/phone";
+import { getPrimaryAccount } from "@/modules/whatsapp/accounts";
+import type { TenantSettings } from "@/modules/tenancy/settings";
+import { DEFAULT_LOCALE } from "@/lib/i18n/locales";
 
 // One booking type, in full (docs/SPEC-BOOKING.md §2). The list page creates
 // a type with the three fields it takes to publish a page; every other column
@@ -50,6 +59,8 @@ export default async function BookingTypePage({
     listResourcesForType(ctx, type.id),
   ]);
 
+  const services = await listServicesForType(ctx, type.id);
+
   const stageLists = await Promise.all(
     pipelines.map(
       async (pipeline) => [pipeline.id, await listStagesForPipeline(ctx, pipeline.id)] as const,
@@ -72,6 +83,31 @@ export default async function BookingTypePage({
   const settings = resolveBookingTypeSettings(type.settings as never);
   const publicUrl = `${env.APP_URL}/b/${tenant?.slug}/${type.slug}`;
 
+  // The two things a business actually puts on a poster, a window sticker or
+  // an Instagram bio (plan-booking.md §6.2): the booking page itself, and
+  // their own WhatsApp with the first message already written. The wa.me code
+  // only exists once a number is connected — a QR to nobody is worse than no
+  // QR at all.
+  const tenantSettings = (tenant?.settings ?? {}) as TenantSettings;
+  const account = await getPrimaryAccount(ctx);
+  const whatsappUrl = waMeHref(
+    account?.displayNumber,
+    tenantSettings.defaultCountry ?? DEFAULT_COUNTRY,
+    t("share.whatsappGreeting", { type: type.name }),
+  );
+
+  const shareLabels: ShareCodeLabels = {
+    downloadSvg: t("share.downloadSvg"),
+    downloadPng: t("share.downloadPng"),
+  };
+
+  const embedSnippet = [
+    `<script src="${env.APP_URL}/b.js"`,
+    `data-tenant="${tenant?.slug}"`,
+    `data-type="${type.slug}"`,
+    "defer></script>",
+  ].join(" ");
+
   return (
     <div className="flex flex-col gap-8">
       <PageHeader title={type.name} description={t("detail.intro")} />
@@ -84,6 +120,45 @@ export default async function BookingTypePage({
           {publicUrl}
         </a>
       </div>
+
+      <section className="flex flex-col gap-3">
+        <h2 className="text-sm font-medium">{t("share.title")}</h2>
+
+        <div className="flex flex-col gap-2">
+          <p className="text-sm font-medium">{t("share.embedTitle")}</p>
+          {/* b.js reads the tenant and type off its own script tag, the way
+              w.js reads the widget key, so the snippet carries both. Adding
+              data-inline="#selector" puts the form inside the page instead of
+              behind a floating button. */}
+          <code className="block overflow-x-auto rounded bg-muted px-2 py-1 font-mono text-xs">
+            {embedSnippet}
+          </code>
+          <p className="text-xs text-muted-foreground">{t("share.embedHelp")}</p>
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-2">
+          <ShareCode
+            svg={qrSvg(publicUrl)}
+            title={t("share.qrPageTitle")}
+            caption={publicUrl}
+            filename={`reserva-${type.slug}`}
+            labels={shareLabels}
+          />
+          {whatsappUrl ? (
+            <ShareCode
+              svg={qrSvg(whatsappUrl)}
+              title={t("share.qrWhatsappTitle")}
+              caption={whatsappUrl}
+              filename={`whatsapp-${type.slug}`}
+              labels={shareLabels}
+            />
+          ) : (
+            <p className="rounded-lg border p-4 text-xs text-muted-foreground">
+              {t("share.qrWhatsappMissing")}
+            </p>
+          )}
+        </div>
+      </section>
 
       <section className="flex flex-col gap-2">
         <h2 className="text-sm font-medium">{t("resourcesTitle")}</h2>
@@ -129,11 +204,35 @@ export default async function BookingTypePage({
           // default the booking engine actually applies to it today.
           reminderMinutes: settings.reminderMinutes ?? 0,
           cancellationCutoffMinutes: settings.cancellationCutoffMinutes,
+          capacity: type.capacity,
+          depositAmount: type.depositAmount,
+          allowMultiService: type.allowMultiService,
+          depositExpiryMinutes: settings.depositExpiryMinutes,
           confirmationMessage: settings.confirmationMessage ?? "",
           questions: ((type.questions as Question[] | null) ?? []).map((question) => ({
             ...question,
             options: question.options ?? [],
           })),
+        }}
+      />
+
+      <ServicesEditor
+        bookingTypeId={type.id}
+        services={services}
+        allowMultiService={type.allowMultiService}
+        formatPrice={(value) => formatMoney(value, type.depositCurrency, tenant?.locale ?? DEFAULT_LOCALE)}
+        labels={{
+          title: t("servicesTitle"),
+          help: t("servicesHelp"),
+          empty: t("servicesEmpty"),
+          name: t("serviceName"),
+          extraDuration: t("serviceExtraDuration"),
+          extraPrice: t("serviceExtraPrice"),
+          add: t("serviceAdd"),
+          remove: t("serviceRemove"),
+          active: t("active"),
+          inactive: t("inactive"),
+          disabledHint: t("servicesDisabledHint"),
         }}
       />
     </div>

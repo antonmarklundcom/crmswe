@@ -98,6 +98,10 @@ describe.skipIf(!hasDb)("closing deals and configuring stages (MySQL integration
     const deal = await newDeal("Perdida");
     const lost = await deals.closeDeal(ctx, deal!.id, "lost", "eligió a otro");
     expect((await pipelines.getStage(ctx, lost!.stageId))?.isLost).toBe(true);
+    // Lost writes lostReason, not closeReason — the two answer different
+    // questions (§15.8 P5).
+    expect(lost!.lostReason).toBe("eligió a otro");
+    expect(lost!.closeReason).toBeNull();
 
     const stages = await pipelines.listStagesForPipeline(ctx, pipelineId);
     const open = stages.find((stage) => !stage.isWon && !stage.isLost)!;
@@ -106,6 +110,42 @@ describe.skipIf(!hasDb)("closing deals and configuring stages (MySQL integration
     expect(reopened!.stageId).toBe(open.id);
     expect(reopened!.closedAt).toBeNull();
     expect(reopened!.closeReason).toBeNull();
+    expect(reopened!.lostReason).toBeNull();
+  });
+
+  it("positions a closed deal after every deal already in the outcome stage", async () => {
+    // closeDeal/reopenDeal derive the new position from a tenant-scoped
+    // COUNT(*), not by fetching every sibling row and reading .length — this
+    // pins the observable behavior (correct position) so that query can be
+    // swapped freely as long as the count stays right.
+    const wonStage = (await deals.findOutcomeStage(ctx, pipelineId, "won"))!;
+
+    // A handful of deals already sitting in the won stage, planted directly
+    // rather than via closeDeal, so the count reflects real sibling rows.
+    const priorCount = (await deals.listDealsForPipeline(ctx, pipelineId)).filter(
+      (d) => d.stageId === wonStage.id,
+    ).length;
+    for (let i = 0; i < 3; i++) {
+      await deals.createDeal(ctx, {
+        contactId,
+        pipelineId,
+        stageId: wonStage.id,
+        title: `Ya ganada ${i}`,
+      });
+    }
+
+    const deal = await newDeal("Recién cerrada");
+    const closed = await deals.closeDeal(ctx, deal!.id, "won");
+    expect(closed!.position).toBe(priorCount + 3);
+
+    // Reopening into a stage counts that stage's own siblings, independently.
+    const openStages = await pipelines.listStagesForPipeline(ctx, pipelineId);
+    const openStage = openStages.find((s) => !s.isWon && !s.isLost)!;
+    const priorOpenCount = (await deals.listDealsForPipeline(ctx, pipelineId)).filter(
+      (d) => d.stageId === openStage.id,
+    ).length;
+    const reopened = await deals.reopenDeal(ctx, closed!.id, openStage.id);
+    expect(reopened!.position).toBe(priorOpenCount);
   });
 
   it("refuses to close when the pipeline has no won/lost stage", async () => {

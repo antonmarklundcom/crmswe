@@ -334,3 +334,164 @@ every wave it produced has now merged, and nothing has re-read the result.
 Skip the prompt above and just run the day (§1.6). A bug you hit yourself
 with a real lead in front of you is worth more than one found by reading, and
 the list of places you had to leave the app is the next phase's spec.
+
+---
+
+## Part 3 — Wave 1 (P1–P7) deploy
+
+Written after PRs #96–#103 merged (PLAN.md §15.5 "now" batch, §15.8's phase
+table). Seven phases: the automation library and web push (lane 1, Opus),
+then inbox ergonomics, email identity, pipeline polish + custom fields,
+quote accept/reject + receipts, and the rule-based "Hoy" dashboard panel
+(lane 2, Sonnet, one session, sequential). `docs/log/p1.md` through
+`docs/log/p7.md` are the per-phase detail; this is the one deploy pass for
+all seven.
+
+### 3.1 Migrations to run
+
+Six new migrations, `0029` through `0034`, additive only (new tables and
+nullable columns — nothing altered or dropped):
+
+```bash
+git pull origin main
+npm ci
+npm run db:migrate
+```
+
+Expected to apply: `0029_add_notifications`, `0030_add_push_subscriptions`,
+`0031_add_quick_replies_and_notes`, `0032_add_email_identity`,
+`0033_add_pipeline_polish_and_custom_fields`,
+`0034_add_quote_acceptances_and_receipts`.
+
+### 3.2 Env vars to add
+
+Both are optional — the features they gate simply stay hidden with nothing
+configured, same posture as every other optional integration in
+`.env.example`.
+
+**Web push** (§15.5 J2 — the bell's push half):
+```bash
+npm run generate-vapid
+```
+prints a keypair; paste it into hPanel's env vars as:
+```
+WEB_PUSH_PUBLIC_KEY=
+WEB_PUSH_PRIVATE_KEY=
+WEB_PUSH_SUBJECT=mailto:soporte@clientes.com.py
+```
+Generate this **once for the whole platform**, not per tenant. Changing it
+later invalidates every existing browser subscription (they silently
+re-subscribe on next visit).
+
+**Tenant email sending identity** (§15.1, P4 — used when a tenant hasn't
+verified their own domain yet):
+```
+EMAIL_DEFAULT_DOMAIN=mail.clientes.com.py
+```
+A subdomain you control's DNS for, not the apex — see `.env.example`'s own
+comment for why (reputation isolation from the marketing site and from
+tenants who verify their own domain). Leaving it unset keeps every tenant on
+`RESEND_FROM_EMAIL`, exactly the pre-P4 behavior.
+
+Redeploy after either is added.
+
+### 3.3 The two human checks this wave needs
+
+Neither is a click-through — both need a real device/account, the same
+reason `TRUSTED_PROXY_HOPS` (Part 1) needed a real request.
+
+**Push on Android** (10 minutes):
+1. With `WEB_PUSH_*` set and deployed, open the app in Chrome on an Android
+   phone and log in.
+2. "Add to home screen" (or accept the install banner) so the PWA runs
+   standalone — a push that arrives while the tab is merely open in a
+   browser is not the real test.
+3. From another session, do something that writes a `notifications` row for
+   that user (assign them a conversation, or wait for an overdue task to
+   push through P7's `coach.morning` digest at their tenant's local 08:00).
+4. Confirm the notification appears on the phone with the app closed, and
+   tapping it opens the right page.
+   iPhone/Safari needs the same install step before push works at all —
+   that's Apple's platform rule, not a bug (P2's `docs/log/p2.md` Known
+   issues).
+
+**Resend domain verification** (15 minutes, needs a real domain you control
+DNS for):
+1. As a tenant admin, go to `/settings` and add a sending domain in the
+   email section P4 added.
+2. Add the TXT/CNAME/MX records Resend returns to that domain's DNS.
+3. Within a few minutes to a few hours (DNS propagation), the domain's
+   status in `/settings` should flip from pending to verified — this is
+   `modules/tenancy/email-jobs.ts`'s polling chain, not something to force.
+4. Send a quote or document by email from that tenant (the "Enviar por
+   email" button on a quote/document detail page) and confirm the message
+   arrives from the verified domain, not the platform default.
+
+### 3.4 New URLs, for the smoke test
+
+Already folded into `docs/SMOKE_TEST.md` §9 — listed here only as a quick
+index of what is new this wave: `/inbox/quick-replies`,
+`/contacts/campos`, `/pipeline/etapas`'s stale-threshold field, the email
+section on `/settings`, the "Enviar por email" buttons on quotes/documents,
+`/q/[token]`'s new accept/reject form, `/r/[token]` (+ `/pdf`), and the
+"Hoy" panel at the top of `/dashboard`.
+
+## Part 4 — Wave 2 lane 2 (P13–P17) + K1 deploy
+
+Written after PRs #106–#114 merged (PLAN.md §17.2's phase table, lane 2).
+Five phases in one session: contracts, the weekly AI briefing, reporting
+v2, companies + contact merge, and the forms field editor. `docs/log/p13.md`
+through `docs/log/p17.md` are the per-phase detail; this is the one deploy
+pass for all five, plus `0028` (K1, business memory — merged earlier but
+never folded into a HANDOFF pass until now).
+
+Lane 1 (K2, P9, P10, P11) had not merged when this lane finished — nothing
+from it is in this pass. `prompts/sonnet-k3-memory-imports.md` (K3) was
+skipped for the same reason (K2 not merged); see `KNOWN-ISSUES.md`.
+
+### 4.1 Migrations to run
+
+Four new migrations, `0028` and `0035` through `0037`, additive only (new
+tables and nullable columns — nothing altered or dropped):
+
+```bash
+git pull origin main
+npm ci
+npm run db:migrate
+```
+
+Expected to apply: `0028_add_business_memory`, `0035_add_contracts`,
+`0036_add_coach_briefings`, `0037_add_companies`.
+
+`0028` predates this pass (K1) but was never run through a HANDOFF deploy
+step until now — **do not regenerate it** with `drizzle-kit generate` if it
+ever needs a follow-up; its FULLTEXT index on `business_facts(title, body)`
+is hand-written because drizzle-kit's MySQL dialect can't express one
+(`docs/log/k1.md`).
+
+### 4.2 Env vars to add
+
+None. Every wave 2 lane 2 phase and K1 build on existing integrations
+(storage for contract PDFs, the existing AI driver for the briefing) —
+nothing new to configure in hPanel.
+
+### 4.3 The human checks this wave needs
+
+**A contract accepted on a phone** (5 minutes): from a won deal, generate a
+contract, open its public link on a phone, and click-to-accept it. Confirm
+the contract's detail page shows the acceptance record and a PDF with it
+attached (§15.5 J5's exit criterion).
+
+**The Monday briefing arriving by push and email** (needs to wait for an
+actual Monday, or a manual trigger per `docs/DEPLOY.md` §5): confirm
+`coach.weekly` produces a briefing whose numbers are real (not invented by
+the model) and that it reaches the tenant by both channels the same way
+`coach.morning`'s existing digest already does.
+
+### 4.4 New URLs, for the smoke test
+
+Already folded into `docs/SMOKE_TEST.md` §10 — listed here only as a quick
+index: `/contracts` (+ `/templates`), `/dashboard/briefings`, `/reports`
+(+ `/api/exports/reports/[table]`), `/companies`, `/forms/[id]` (the field
+editor), and `/settings/negocio` (now reachable from the nav — it existed
+since K1 but had no nav entry until this pass).

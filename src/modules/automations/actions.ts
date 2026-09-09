@@ -259,7 +259,7 @@ async function sendEmailAction(
     ctx,
     kind: "automated",
   });
-  return sent
+  return sent.sent
     ? { skipped: false, detail: { to: contact.email, subject } }
     : { skipped: true, detail: { reason: "email_not_configured", to: contact.email } };
 }

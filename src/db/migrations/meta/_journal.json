@@ -183,6 +183,13 @@
       "when": 1788965927930,
       "tag": "0025_lively_starjammers",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "5",
+      "when": 1788970984243,
+      "tag": "0026_search_fulltext_indexes",
+      "breakpoints": true
     }
   ]
 }

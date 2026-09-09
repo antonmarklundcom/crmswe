@@ -75,14 +75,14 @@ describe.skipIf(!hasDb)("maxEmailsPerDay (MySQL integration)", () => {
     const before = await checkPlanLimit(ctx.tenantId, "maxEmailsPerDay");
     expect(before.allowed).toBe(false); // still over cap from the previous test
 
-    const sent = await sendEmail({
+    const result = await sendEmail({
       to: "e@example.com",
       subject: "automated over cap",
       html: "<p>hi</p>",
       ctx,
       kind: "automated",
     });
-    expect(sent).toBe(false);
+    expect(result.sent).toBe(false);
 
     // The cap refusal is logged before RESEND_API_KEY is ever checked, so
     // `current` must not have grown by this attempt — a skipped send is not

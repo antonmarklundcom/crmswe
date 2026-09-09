@@ -196,11 +196,12 @@ async function send(
       });
     case "email": {
       const { subject, html } = buildEmail(kind, vars);
-      // sendEmail never throws and returns false when Resend is unset or
-      // rejects; the chain needs that to be a *failure* so it falls through
-      // to the logged skip rather than claiming a send that never happened.
+      // sendEmail never throws and reports { sent: false } when Resend is
+      // unset or rejects; the chain needs that to be a *failure* so it falls
+      // through to the logged skip rather than claiming a send that never
+      // happened.
       const ok = await sendEmail({ to: targets.email!, subject, html });
-      if (!ok) throw new Error("email_not_delivered");
+      if (!ok.sent) throw new Error("email_not_delivered");
       return null;
     }
     case "none":

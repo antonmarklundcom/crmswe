@@ -109,6 +109,6 @@ describe.skipIf(!hasDb)("senderFor (MySQL integration)", () => {
       ctx,
       kind: "automated",
     });
-    expect(sent).toBe(false); // unconfigured Resend, not a cap or resolution failure
+    expect(sent.sent).toBe(false); // unconfigured Resend, not a cap or resolution failure
   });
 });

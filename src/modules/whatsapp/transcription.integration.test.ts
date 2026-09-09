@@ -90,6 +90,11 @@ describe.skipIf(!hasDb)("voice-note transcription (MySQL integration)", () => {
       accessStatus: "active",
     };
 
+    // Off by default in this edition (plan.md §5.3.1) — this whole suite is
+    // the WhatsApp channel itself, so the tenant needs it switched on.
+    const { updateTenantWhatsappEnabled } = await import("@/modules/tenancy/settings");
+    await updateTenantWhatsappEnabled(ctx, true);
+
     const account = await connectAccountManually(ctx, {
       wabaId: `waba-${newId()}`,
       phoneNumberId: `pn-${newId()}`,

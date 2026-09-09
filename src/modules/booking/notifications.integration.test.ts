@@ -55,9 +55,13 @@ describe.skipIf(!hasDb)("booking notifications (MySQL integration)", () => {
     const { createTenant } = await import("@/modules/tenancy/tenants");
     const superadmin = { userId: "sa-booking-notif", impersonatorUserId: null } as const;
 
+    // Asunción, explicitly: fixed UTC-3 year round, unlike the tenant
+    // default (Europe/Stockholm), which shifts under DST — this file's
+    // weekCursor spans many synthetic weeks and needs one stable offset.
     const tenant = await createTenant(superadmin, {
       name: `Notif ${newId()}`,
       slug: `nbk-${newId().toLowerCase()}`,
+      timezone: "America/Asuncion",
     });
     const other = await createTenant(superadmin, {
       name: `Other ${newId()}`,

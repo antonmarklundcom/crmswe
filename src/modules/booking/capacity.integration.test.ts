@@ -56,9 +56,13 @@ describe.skipIf(!hasDb)("capacity and deposits (MySQL integration)", () => {
 
     const { createTenant } = await import("@/modules/tenancy/tenants");
     const superadmin = { userId: "sa-capacity", impersonatorUserId: null } as const;
+    // Asunción, explicitly: fixed UTC-3 year round, unlike the tenant
+    // default (Europe/Stockholm), which shifts under DST — this file's
+    // weekCursor spans many synthetic weeks and needs one stable offset.
     const tenant = await createTenant(superadmin, {
       name: `Cap ${newId()}`,
       slug: `cap-${newId().toLowerCase()}`,
+      timezone: "America/Asuncion",
     });
 
     ctx = {

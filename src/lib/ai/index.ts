@@ -3,9 +3,28 @@ import { openAiDriverFromEnv } from "./openai";
 import { geminiDriverFromEnv } from "./gemini";
 import type { AiDriver } from "./types";
 
-export type { AiDriver, AiGenerateInput, AiGenerateResult, AiProvider, AiTurn } from "./types";
-export { buildReplyPrompt, buildSystemPrompt, serialisePrompt, toTurns } from "./prompt";
-export type { BusinessContext } from "./prompt";
+export type {
+  AiDriver,
+  AiGenerateInput,
+  AiGenerateResult,
+  AiProvider,
+  AiStructuredInput,
+  AiStructuredResult,
+  AiTranscribeInput,
+  AiTranscribeResult,
+  AiTurn,
+} from "./types";
+export { DEFAULT_MAX_STRUCTURED_OUTPUT_TOKENS } from "./types";
+export { MAX_STRUCTURED_ATTEMPTS, parseJson, toGeminiSchema, toJsonSchema } from "./structured";
+export {
+  buildReplyPrompt,
+  buildSystemPrompt,
+  extractBookingIntent,
+  messageText,
+  serialisePrompt,
+  toTurns,
+} from "./prompt";
+export type { BookingIntent, BusinessContext, PromptMessage } from "./prompt";
 
 // Driver selection by env (PLAN.md §10 1O), same shape as lib/storage —
 // with one deliberate difference: storage always resolves to *some* adapter

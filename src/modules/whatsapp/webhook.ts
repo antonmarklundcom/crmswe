@@ -6,15 +6,20 @@ import { webhookEvents, messages as messagesTable, conversations } from "@/db/sc
 import { newId } from "@/lib/ids";
 import { env } from "@/lib/config/env";
 import { storage } from "@/lib/storage";
+import { enqueue } from "@/lib/queue";
+import { isAiConfigured } from "@/lib/ai";
 import { buildSystemTenantContext, type TenantContext } from "@/modules/tenancy/context";
 import { tenantDb } from "@/modules/tenancy/db";
 import { createContact, getContactByPhone } from "@/modules/crm/contacts";
 import { resolveAccountByPhoneNumberId, getDecryptedAccessToken } from "./accounts";
 import { whatsappEnabledForTenantId } from "./feature";
-import { GRAPH_API_BASE } from "./graph";
+import { GRAPH_API_BASE, GRAPH_TIMEOUT_MS, MEDIA_DOWNLOAD_TIMEOUT_MS } from "./graph";
 import { whatsappEvents } from "./events";
+import { TRANSCRIBE_JOB_TYPE } from "./transcription";
 import { inboundMessageTime, latest } from "./inbound-time";
+import { advanceNotificationForMessage } from "@/modules/booking/notifications";
 import { advancesMessageStatus, type MessageStatus } from "./message-status";
+import { reportError } from "@/lib/observability";
 
 // Webhook ingestion (PLAN.md §6.3, reliability-critical). The route handler
 // (app/api/webhooks/whatsapp/route.ts) does only steps 1-2 — verify
@@ -58,6 +63,15 @@ const webhookValueSchema = z.object({
         document: z.object({ id: z.string(), mime_type: z.string().optional() }).optional(),
         audio: z.object({ id: z.string(), mime_type: z.string().optional() }).optional(),
         video: z.object({ id: z.string(), mime_type: z.string().optional() }).optional(),
+        // A tapped reply button or list row. `id` is ours — we put it on the
+        // row when the options were sent (modules/booking/whatsapp-booking).
+        interactive: z
+          .object({
+            type: z.string().optional(),
+            button_reply: z.object({ id: z.string(), title: z.string().optional() }).optional(),
+            list_reply: z.object({ id: z.string(), title: z.string().optional() }).optional(),
+          })
+          .optional(),
       }),
     )
     .optional(),
@@ -165,6 +179,12 @@ async function processValue(eventId: string, value: z.infer<typeof webhookValueS
       .update(messagesTable)
       .set({ status: status.status, error: status.errors ? { errors: status.errors } : null })
       .where(eq(messagesTable.waMessageId, status.id));
+
+    // A booking notice sent over WhatsApp is *this* message. Mirroring the
+    // status onto its notification row is what lets the booking timeline say
+    // "entregado" instead of stopping at "enviado" — the distinction staff
+    // actually argue about when a customer says nobody told them.
+    await advanceNotificationForMessage(ctx, message.id, status.status);
   }
 
   await markEvent(eventId, "processed");
@@ -235,15 +255,38 @@ async function ingestInboundMessage(
   }
   if (!conversation) return;
 
+  const reply = message.interactive?.button_reply ?? message.interactive?.list_reply;
+
   const messageType = ["text", "image", "document", "audio", "video"].includes(message.type)
     ? (message.type as "text" | "image" | "document" | "audio" | "video")
-    : "unsupported";
+    : message.type === "interactive" && reply
+      ? ("interactive" as const)
+      : "unsupported";
 
   const mediaRef = message.image ?? message.document ?? message.audio ?? message.video;
   let storageKey: string | undefined;
-  if (mediaRef) {
-    storageKey = await downloadMedia(account, mediaRef.id).catch(() => undefined);
+  let mediaMimeType: string | undefined = mediaRef?.mime_type;
+  if (mediaRef && (messageType === "image" || messageType === "document" || messageType === "audio" || messageType === "video")) {
+    const stored = await downloadMedia(account, mediaRef.id, messageType).catch((error) => {
+      // Inbound webhooks must stay resilient (§6.3): a rejected/oversized/
+      // disallowed-type attachment should never take the handler down or
+      // lose the message it arrived on — it just arrives with no media.
+      reportError(error, {
+        tags: { scope: "whatsapp.inbound_media", tenantId: ctx.tenantId, mediaType: messageType },
+        extra: { mediaId: mediaRef.id },
+      });
+      return undefined;
+    });
+    storageKey = stored?.key;
+    // Meta's own answer wins over the webhook's: the webhook omits the mime
+    // type on some payloads, and the transcription call cannot ask later.
+    mediaMimeType = stored?.mimeType ?? mediaMimeType;
   }
+
+  // A voice note is transcribed rather than left as an unreadable bubble
+  // (§15.3 Lane A). Only when a driver is configured — with AI_DRIVER=none
+  // the column stays null and the inbox looks exactly as it did before.
+  const transcribes = messageType === "audio" && !!storageKey && isAiConfigured();
 
   const messageId = newId();
   await tenantDb(ctx)
@@ -254,41 +297,143 @@ async function ingestInboundMessage(
       direction: "in",
       waMessageId: message.id,
       type: messageType,
-      body: message.text?.body,
+      // The *title* the customer saw, not the opaque id: a rep scrolling the
+      // thread should read "lun 7, 09:00", not "bk:01J…:1789…".
+      body: message.text?.body ?? reply?.title ?? undefined,
       mediaId: mediaRef?.id,
       storageKey,
+      mediaMimeType,
+      transcriptStatus: transcribes ? "pending" : undefined,
       status: "delivered",
       // Stamped from Meta's timestamp too, so a thread read after a backlog
       // shows when the customer wrote, not when the queue caught up.
       createdAt: sentAt,
     });
 
+  if (transcribes) {
+    await enqueue(
+      TRANSCRIBE_JOB_TYPE,
+      { messageId, conversationId: conversation.id, contactId: contact.id },
+      { tenantId: ctx.tenantId },
+    );
+  }
+
   await whatsappEvents.emit("wa.message_received", {
     tenantId: ctx.tenantId,
     conversationId: conversation.id,
     contactId: contact.id,
     messageId,
+    transcriptPending: transcribes,
   });
+
+  // A tapped slot is a booking (plan-booking.md §5.3). Handled after the
+  // message is persisted and the event has fired, so the thread reads in the
+  // right order and an automation still sees the customer's reply — and
+  // handled *last*, because a failure to reserve must not lose the inbound
+  // message that is already safely written.
+  if (reply) {
+    const { handleSlotTap } = await import("@/modules/booking/whatsapp-booking");
+    await handleSlotTap(ctx, {
+      conversationId: conversation.id,
+      contactId: contact.id,
+      replyId: reply.id,
+    });
+  }
 }
 
-/** Media URLs Meta returns expire quickly — fetch immediately (§6.3 rule 3). */
-async function downloadMedia(
+export type InboundMediaType = "image" | "document" | "audio" | "video";
+
+/**
+ * Meta's documented per-type caps for media *sent to* a WhatsApp user
+ * (Cloud API "Supported Media Types"). We apply the same caps to *inbound*
+ * media, since Meta itself never delivers anything larger — anything past
+ * this is either a misbehaving/compromised sender or a corrupted transfer,
+ * and either way we don't want it in storage.
+ */
+export const WHATSAPP_MEDIA_LIMITS: Record<
+  InboundMediaType,
+  { maxBytes: number; mimeTypes: readonly string[] }
+> = {
+  image: {
+    maxBytes: 5 * 1024 * 1024,
+    mimeTypes: ["image/jpeg", "image/png"],
+  },
+  audio: {
+    maxBytes: 16 * 1024 * 1024,
+    mimeTypes: ["audio/aac", "audio/amr", "audio/mpeg", "audio/mp4", "audio/ogg"],
+  },
+  video: {
+    maxBytes: 16 * 1024 * 1024,
+    mimeTypes: ["video/mp4", "video/3gpp"],
+  },
+  document: {
+    maxBytes: 100 * 1024 * 1024,
+    mimeTypes: [
+      "text/plain",
+      "application/pdf",
+      "application/vnd.ms-powerpoint",
+      "application/msword",
+      "application/vnd.ms-excel",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    ],
+  },
+};
+
+/** Pure so it's cheap to unit-test without touching fetch/storage. */
+export function validateInboundMedia(
+  type: InboundMediaType,
+  mimeType: string | undefined,
+  sizeBytes: number,
+): { ok: true } | { ok: false; reason: string } {
+  const limit = WHATSAPP_MEDIA_LIMITS[type];
+
+  if (!mimeType || !limit.mimeTypes.includes(mimeType)) {
+    return { ok: false, reason: `Disallowed MIME type for ${type}: ${mimeType ?? "(missing)"}` };
+  }
+  if (sizeBytes > limit.maxBytes) {
+    return { ok: false, reason: `${type} of ${sizeBytes} bytes exceeds ${limit.maxBytes} byte cap` };
+  }
+  return { ok: true };
+}
+
+/** Media URLs Meta returns expire quickly — fetch immediately (§6.3 rule 3).
+ *  The mime type comes back with the key because it is not recoverable
+ *  afterwards: storage stores bytes, and the media URL is gone. */
+export async function downloadMedia(
   account: NonNullable<Awaited<ReturnType<typeof resolveAccountByPhoneNumberId>>>,
   mediaId: string,
-): Promise<string> {
+  type: InboundMediaType,
+): Promise<{ key: string; mimeType?: string }> {
   const token = getDecryptedAccessToken(account);
 
   const metaRes = await fetch(`${GRAPH_API_BASE}/${mediaId}`, {
     headers: { Authorization: `Bearer ${token}` },
+    signal: AbortSignal.timeout(GRAPH_TIMEOUT_MS),
   });
   if (!metaRes.ok) throw new Error(`Media metadata fetch failed: ${metaRes.status}`);
-  const meta = (await metaRes.json()) as { url: string; mime_type?: string };
+  const meta = (await metaRes.json()) as { url: string; mime_type?: string; file_size?: number };
 
-  const fileRes = await fetch(meta.url, { headers: { Authorization: `Bearer ${token}` } });
+  // Meta's own metadata reports the size before we pull the bytes — reject
+  // up front rather than downloading a body we're going to throw away.
+  const declaredSize = typeof meta.file_size === "number" ? meta.file_size : 0;
+  const declaredCheck = validateInboundMedia(type, meta.mime_type, declaredSize);
+  if (!declaredCheck.ok) throw new Error(declaredCheck.reason);
+
+  const fileRes = await fetch(meta.url, {
+    headers: { Authorization: `Bearer ${token}` },
+    signal: AbortSignal.timeout(MEDIA_DOWNLOAD_TIMEOUT_MS),
+  });
   if (!fileRes.ok) throw new Error(`Media download failed: ${fileRes.status}`);
   const buffer = Buffer.from(await fileRes.arrayBuffer());
 
+  // Defense in depth: `file_size` can be absent, and content can't be
+  // trusted to match what the metadata call claimed.
+  const finalCheck = validateInboundMedia(type, meta.mime_type, buffer.byteLength);
+  if (!finalCheck.ok) throw new Error(finalCheck.reason);
+
   const key = `whatsapp-media/${account.tenantId}/${mediaId}`;
   await storage.put(key, buffer, meta.mime_type);
-  return key;
+  return { key, mimeType: meta.mime_type };
 }

@@ -2,7 +2,8 @@ import Link from "next/link";
 import { ArrowDown, ArrowUp, Download, Upload, Users } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { requireTenantContext } from "@/modules/tenancy/context";
-import { listTags } from "@/modules/crm/contacts";
+import { listContacts, listTags } from "@/modules/crm/contacts";
+import { findDuplicateCandidates } from "@/modules/crm/duplicates";
 import {
   contactsWithOpenDeals,
   listContactSources,
@@ -11,6 +12,7 @@ import {
 } from "@/modules/crm/contact-list";
 import { listTenantUsers } from "@/modules/tenancy/users";
 import { listPipelines, listStagesForPipeline } from "@/modules/crm/pipelines";
+import { listCustomFieldDefinitions } from "@/modules/crm/custom-fields";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { EmptyState } from "@/components/empty-state";
@@ -29,6 +31,9 @@ import {
   type ContactSearchParams,
 } from "./query";
 import { formatDate } from "@/lib/i18n/format";
+import { DEFAULT_COUNTRY, waMeHref } from "@/lib/phone";
+import { getTenant } from "@/modules/tenancy/tenants";
+import type { TenantSettings } from "@/modules/tenancy/settings";
 import { getLocale } from "next-intl/server";
 import { Input, Select } from "@/components/ui/form-fields";
 
@@ -46,15 +51,28 @@ export default async function ContactsPage({
   const query = parseContactQuery(params);
   const options = parseContactOptions(params);
 
-  const [page, tags, sources, users, openDeals, pipelines, views] = await Promise.all([
-    queryContacts(ctx, query, options),
-    listTags(ctx),
-    listContactSources(ctx),
-    listTenantUsers(ctx),
-    contactsWithOpenDeals(ctx),
-    listPipelines(ctx),
-    listContactViews(ctx),
-  ]);
+  // One lookup for the whole table: the wa.me links are built here because
+  // only the server knows the tenant's dialing country (plan-booking.md §6.2).
+  const tenantRow = await getTenant(ctx.tenantId);
+  const defaultCountry =
+    ((tenantRow?.settings ?? {}) as TenantSettings).defaultCountry ?? DEFAULT_COUNTRY;
+
+  const [page, tags, sources, users, openDeals, pipelines, views, customFields, allContactRows] =
+    await Promise.all([
+      queryContacts(ctx, query, options),
+      listTags(ctx),
+      listContactSources(ctx),
+      listTenantUsers(ctx),
+      contactsWithOpenDeals(ctx),
+      listPipelines(ctx),
+      listContactViews(ctx),
+      listCustomFieldDefinitions(ctx),
+      // For the "posibles duplicados" panel below — a pure computation over
+      // every contact's name/phone/email, not itself paginated or filtered.
+      listContacts(ctx),
+    ]);
+
+  const duplicatePairs = findDuplicateCandidates(allContactRows);
 
   // Stages, kept grouped by pipeline: the filter's <optgroup>s need the
   // grouping, and the bulk "add to pipeline" picker needs the same list
@@ -144,9 +162,44 @@ export default async function ContactsPage({
                   {t("exportCsv")}
                 </a>
               )}
+              {ctx.role === "admin" && (
+                <Link
+                  href="/contacts/campos"
+                  className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
+                >
+                  {t("manageCustomFields")}
+                </Link>
+              )}
             </div>
           }
         />
+
+        {duplicatePairs.length > 0 && (
+          <section className="flex flex-col gap-2 rounded-md border p-4">
+            <h2 className="text-sm font-semibold">{t("duplicates.title")}</h2>
+            <ul className="flex flex-col gap-2 text-sm">
+              {duplicatePairs.map((pair) => (
+                <li
+                  key={`${pair.a.id}-${pair.b.id}`}
+                  className="flex flex-wrap items-center justify-between gap-2 border-b pb-2 last:border-b-0"
+                >
+                  <span>
+                    {pair.a.name} ({pair.a.phone}) · {pair.b.name} ({pair.b.phone})
+                    <span className="ml-2 text-xs text-muted-foreground">
+                      {t(pair.reason === "email" ? "duplicates.reasonEmail" : "duplicates.reasonNameAndPhone")}
+                    </span>
+                  </span>
+                  <Link
+                    href={`/contacts/${pair.a.id}?tab=fusionar&otherId=${pair.b.id}`}
+                    className="text-sm underline underline-offset-4"
+                  >
+                    {t("duplicates.review")}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
 
         {!isFirstTime && (
           <SavedViews
@@ -270,6 +323,32 @@ export default async function ContactsPage({
               />
               {t("onlyOpenDeal")}
             </label>
+            {customFields.length > 0 && (
+              <>
+                <label className="flex flex-col gap-1 text-xs text-muted-foreground">
+                  {t("customFilterLabel")}
+                  <Select name="customKey" defaultValue={params.customKey ?? ""}>
+                    <option value="">{t("customFilterNone")}</option>
+                    {customFields.map((field) => (
+                      <option key={field.key} value={field.key}>
+                        {field.label}
+                      </option>
+                    ))}
+                  </Select>
+                </label>
+                <label className="flex flex-col gap-1 text-xs text-muted-foreground">
+                  {t("customFilterOperator")}
+                  <Select name="customOp" defaultValue={params.customOp ?? "equals"}>
+                    <option value="equals">{t("customFilterEquals")}</option>
+                    <option value="contains">{t("customFilterContains")}</option>
+                  </Select>
+                </label>
+                <label className="flex flex-col gap-1 text-xs text-muted-foreground">
+                  {t("customFilterValue")}
+                  <Input name="customValue" defaultValue={params.customValue ?? ""} />
+                </label>
+              </>
+            )}
             {/* Sorting lives in the URL too, so it must survive a filter submit. */}
             {params.sort && <input type="hidden" name="sort" value={params.sort} />}
             {params.dir && <input type="hidden" name="dir" value={params.dir} />}
@@ -319,6 +398,7 @@ export default async function ContactsPage({
                 ownerName: contact.ownerUserId ? (userNames.get(contact.ownerUserId) ?? null) : null,
                 createdAtLabel: formatDate(contact.createdAt, locale),
                 hasOpenDeal: openDeals.has(contact.id),
+                whatsappHref: waMeHref(contact.phone, defaultCountry),
               }))}
               nameHeader={<SortHeader field="name" label={t("name")} />}
               phoneHeader={<SortHeader field="phone" label={t("phone")} />}

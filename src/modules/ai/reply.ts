@@ -1,9 +1,17 @@
 import { eq } from "drizzle-orm";
 import { messages } from "@/db/schema";
-import { buildReplyPrompt, getAiDriver, serialisePrompt } from "@/lib/ai";
+import {
+  buildReplyPrompt,
+  extractBookingIntent,
+  getAiDriver,
+  messageText,
+  serialisePrompt,
+  type PromptMessage,
+} from "@/lib/ai";
 import type { TenantContext } from "@/modules/tenancy/context";
 import { tenantDb } from "@/modules/tenancy/db";
 import { getContact } from "@/modules/crm/contacts";
+import { buildMemoryContext } from "@/modules/memory/retrieve";
 import { getPrimaryAccount } from "@/modules/whatsapp/accounts";
 import {
   getConversation,
@@ -161,8 +169,23 @@ export async function generateAiReply(
   if (!driver) return { status: "skipped", reason: "ai_not_configured" };
 
   const history = await listMessagesForConversation(ctx, conversation.id);
+  // Only when the tenant opted in: a tenant who has not gets byte-identical
+  // prompts to the ones they had before booking existed.
+  const bookableTypes = config.bookingEnabled ? await listBookableForAi(ctx) : [];
+  // The memory, selected against what the customer actually asked (§16.4).
+  // Customer audience, so internal facts and unconfirmed AI suggestions are
+  // excluded by the query rather than by the prompt asking nicely.
+  const memory = await buildMemoryContext(ctx, {
+    query: lastInboundBody(history),
+    audience: "customer",
+  });
   const prompt = buildReplyPrompt(
-    { ...config.business, instructions: input.instructions },
+    {
+      ...config.business,
+      memory: memory.block,
+      instructions: input.instructions,
+      bookableTypes,
+    },
     history,
   );
   if (prompt.messages.length === 0) {
@@ -197,13 +220,18 @@ export async function generateAiReply(
     return { status: "failed", reason: message, replyId: row?.id };
   }
 
+  // The marker is removed here, before the text is stored — not at send
+  // time. A rep approving a draft in the inbox must see the message the
+  // customer will get, and a customer must never see `[[SLOTS:corte]]`.
+  const intent = extractBookingIntent(generated.text);
+
   const reply = await recordReply(ctx, {
     conversationId: conversation.id,
     contactId: input.contactId,
     mode,
     status: "draft",
     prompt: promptText,
-    body: generated.text,
+    body: intent.text,
     provider: driver.provider,
     model: generated.model,
     promptTokens: generated.promptTokens,
@@ -216,7 +244,62 @@ export async function generateAiReply(
   if (mode === "draft") return { status: "draft", replyId: reply.id };
 
   const sent = await deliverReply(ctx, reply.id);
+
+  // The slot list follows the reply, and only if the reply actually went out
+  // — offering times underneath a message that failed to send would be a
+  // picker with no question above it. The assistant never reserves: the
+  // customer's tap does, through the ordinary transactional path.
+  if (sent.status === "sent" && intent.bookingTypeSlug && config.bookingEnabled) {
+    await offerSlotsForSlug(ctx, conversation.id, intent.bookingTypeSlug);
+  }
+
   return sent;
+}
+
+/**
+ * What the retrieval query is: the last thing the customer said. Not the
+ * whole thread — an old "¿hacen delivery?" would keep pulling the delivery
+ * FAQ into every later answer about something else.
+ */
+function lastInboundBody(messages: PromptMessage[]): string {
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const message = messages[i];
+    // messageText, not `body`: the memory query for a voice note is what the
+    // customer said in it (§17.3 P9).
+    const text = messageText(message);
+    if (message.direction === "in" && text) return text;
+  }
+  return "";
+}
+
+/** Active bookable types, in the shape the prompt needs. */
+async function listBookableForAi(
+  ctx: TenantContext,
+): Promise<Array<{ slug: string; name: string }>> {
+  const { listBookingTypes } = await import("@/modules/booking/types");
+  const types = await listBookingTypes(ctx);
+  return types
+    .filter((type) => type.isActive)
+    .map((type) => ({ slug: type.slug, name: type.name }));
+}
+
+/**
+ * Offers slots for the type the model named. A slug that does not resolve is
+ * dropped in silence: the model inventing a service is exactly the failure
+ * the guardrails already exist for, and the customer has just been sent a
+ * perfectly good message either way.
+ */
+async function offerSlotsForSlug(
+  ctx: TenantContext,
+  conversationId: string,
+  slug: string,
+): Promise<void> {
+  const { getBookingTypeBySlug } = await import("@/modules/booking/types");
+  const { offerSlots } = await import("@/modules/booking/whatsapp-booking");
+
+  const type = await getBookingTypeBySlug(ctx, slug);
+  if (!type || !type.isActive) return;
+  await offerSlots(ctx, { conversationId, bookingTypeId: type.id });
 }
 
 /**

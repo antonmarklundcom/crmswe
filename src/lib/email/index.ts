@@ -1,12 +1,17 @@
 import { Resend } from "resend";
 import { env } from "@/lib/config/env";
+import type { TenantContext } from "@/modules/tenancy/context";
+import { logEmail } from "@/modules/tenancy/email-log";
+import { checkPlanLimit } from "@/modules/tenancy/limits";
+import { senderFor } from "./sender";
 
 // Transactional email (PLAN.md §10 1M; plan.md §5.3.2, where it becomes the
-// product's primary channel rather than a side door). Optional by design, the
-// same pattern next.config.ts already uses for Sentry: absent config means
-// send() logs and no-ops rather than the app refusing to boot or a caller
-// having to branch on whether email is configured. Every call site (invite,
-// password reset, expiry warning, offert, faktura, påminnelse) stays a plain
+// product's primary channel rather than a side door; extended by §15.1/§15.8
+// P4 for per-tenant sending identity). Optional by design, the same pattern
+// next.config.ts already uses for Sentry: absent config means send() logs
+// and no-ops rather than the app refusing to boot or a caller having to
+// branch on whether email is configured. Every call site (invite, password
+// reset, expiry warning, offert, faktura, påminnelse) stays a plain
 // `await sendEmail(...)` regardless of environment — local dev and a fresh
 // prod deploy before RESEND_API_KEY is set behave the same way, just without
 // an email actually going out.
@@ -22,10 +27,11 @@ export type SendEmailInput = {
    */
   fromName?: string;
   /**
-   * Overrides the sender address entirely. Only pass an address on a domain
-   * that is verified in Resend (SPF + DKIM): an unverified sender is what
-   * makes an invoice land in skräpposten, or bounce. Tenants normally leave
-   * this alone and set `replyTo` instead.
+   * Overrides `senderFor(ctx)`'s own resolution — most callers with a `ctx`
+   * don't need this; it exists for a caller that already computed a sender
+   * for another reason. Only pass an address on a domain that is verified in
+   * Resend (SPF + DKIM): an unverified sender is what makes an invoice land
+   * in skräpposten, or bounce.
    */
   from?: string;
   /**
@@ -35,6 +41,23 @@ export type SendEmailInput = {
    * (sweden-business-apps §6).
    */
   replyTo?: string;
+  attachments?: Array<{ filename: string; content: Buffer }>;
+  /**
+   * The tenant this send is for. Two things ride on it: `senderFor(ctx)`
+   * resolves the tenant's own sending identity when `from`/`replyTo` are not
+   * given explicitly (PLAN.md §15.1) — an existing call site like
+   * automations/actions.ts's `send_email` action picks up its own domain the
+   * moment it starts passing `ctx`, with no other change — and every send
+   * gets an `email_log` row to count against `maxEmailsPerDay`. Absent only
+   * for the handful of callers that run before any tenant is known (password
+   * reset, an invite not yet tied to a session) — those stay unlogged and
+   * unresolved exactly as before this phase.
+   */
+  ctx?: TenantContext;
+  /** `automated` is the only kind the plan's `maxEmailsPerDay` cap counts —
+   *  a transactional send (invite, reset, "skicka som e-post" on a document)
+   *  always goes out regardless of volume. Defaults to `transactional`. */
+  kind?: "transactional" | "automated";
 };
 
 export type EmailResult = {
@@ -68,7 +91,24 @@ function formatSender(address: string, name?: string): string {
  * finds out.
  */
 export async function sendEmail(input: SendEmailInput): Promise<EmailResult> {
-  const from = input.from ?? env.RESEND_FROM_EMAIL;
+  const kind = input.kind ?? "transactional";
+
+  if (input.ctx && kind === "automated") {
+    const limit = await checkPlanLimit(input.ctx.tenantId, "maxEmailsPerDay");
+    if (!limit.allowed) {
+      await logEmail(input.ctx, { to: input.to, subject: input.subject, kind, status: "skipped" });
+      return { sent: false, driver: "log", error: "plan_limit_reached" };
+    }
+  }
+
+  let from = input.from;
+  let replyTo = input.replyTo;
+  if (input.ctx && (from === undefined || replyTo === undefined)) {
+    const resolved = await senderFor(input.ctx);
+    from = from ?? resolved.from;
+    replyTo = replyTo ?? resolved.replyTo;
+  }
+  from = from || env.RESEND_FROM_EMAIL;
 
   if (!client || !from) {
     // The log driver (plan.md §4.5: a missing env degrades, it never blocks).
@@ -81,12 +121,15 @@ export async function sendEmail(input: SendEmailInput): Promise<EmailResult> {
         "[email] RESEND_API_KEY/RESEND_FROM_EMAIL not set — nothing sent.",
         `  to:       ${input.to}`,
         `  subject:  ${input.subject}`,
-        input.replyTo ? `  reply-to: ${input.replyTo}` : null,
+        replyTo ? `  reply-to: ${replyTo}` : null,
         ...linksIn(input.html).map((link) => `  link:     ${link}`),
       ]
         .filter(Boolean)
         .join("\n"),
     );
+    if (input.ctx) {
+      await logEmail(input.ctx, { to: input.to, subject: input.subject, kind, status: "skipped" });
+    }
     return { sent: false, driver: "log", error: "email_not_configured" };
   }
 
@@ -96,15 +139,31 @@ export async function sendEmail(input: SendEmailInput): Promise<EmailResult> {
       to: input.to,
       subject: input.subject,
       html: input.html,
-      ...(input.replyTo ? { replyTo: input.replyTo } : {}),
+      ...(replyTo ? { replyTo } : {}),
+      attachments: input.attachments?.map((a) => ({ filename: a.filename, content: a.content })),
     });
     if (result.error) {
       console.error("[email] Resend rejected the send:", result.error);
+      if (input.ctx) {
+        await logEmail(input.ctx, { to: input.to, subject: input.subject, kind, status: "failed" });
+      }
       return { sent: false, driver: "resend", error: result.error.message };
+    }
+    if (input.ctx) {
+      await logEmail(input.ctx, {
+        to: input.to,
+        subject: input.subject,
+        kind,
+        status: "sent",
+        providerId: result.data?.id,
+      });
     }
     return { sent: true, driver: "resend" };
   } catch (err) {
     console.error("[email] send failed:", err);
+    if (input.ctx) {
+      await logEmail(input.ctx, { to: input.to, subject: input.subject, kind, status: "failed" });
+    }
     return {
       sent: false,
       driver: "resend",

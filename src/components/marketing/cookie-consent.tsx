@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Script from "next/script";
-import { CRM_URL } from "@/lib/site-config";
+import { CRM_URL } from "@/lib/config/hosts";
 
 // GDPR-granular consent (plan.md §6.2): two categories, "necessary" always on
 // and never asked about, "analytics" (first-touch attribution + the click

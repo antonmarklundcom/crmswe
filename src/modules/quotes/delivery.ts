@@ -4,6 +4,7 @@ import { getTenant } from "@/modules/tenancy/tenants";
 import type { TenantSettings } from "@/modules/tenancy/settings";
 import { getContact } from "@/modules/crm/contacts";
 import { createActivity } from "@/modules/crm/activities";
+import { getNegocioVars } from "@/modules/memory/vars";
 import { getTranslator } from "@/lib/i18n/translator";
 import {
   sendDocumentOverWhatsapp,
@@ -16,6 +17,7 @@ import {
 } from "@/modules/renderable-document/email";
 import { quoteEmail } from "@/lib/email/templates";
 import { isWhatsappEnabled } from "@/modules/whatsapp/feature";
+import { quoteEvents } from "./events";
 import { getQuote, listQuoteItems, quoteMoms, setQuotePdfKey, setQuoteStatus } from "./quotes";
 import { renderQuotePdf } from "./pdf";
 
@@ -44,10 +46,11 @@ export async function generateQuotePdf(ctx: TenantContext, quoteId: string): Pro
   const quote = await getQuote(ctx, quoteId);
   if (!quote) throw new Error(`quote_not_found:${quoteId}`);
 
-  const [items, contact, tenant] = await Promise.all([
+  const [items, contact, tenant, negocio] = await Promise.all([
     listQuoteItems(ctx, quote.id),
     getContact(ctx, quote.contactId),
     getTenant(ctx.tenantId),
+    getNegocioVars(ctx),
   ]);
   if (!contact) throw new Error("contact_not_found");
 
@@ -73,6 +76,8 @@ export async function generateQuotePdf(ctx: TenantContext, quoteId: string): Pro
     notes: quote.notes,
     createdAt: quote.createdAt,
     locale: tenant?.locale,
+    paymentMethods: negocio["negocio.pagos"] || null,
+    depositPolicy: negocio["negocio.politica.senas"] || null,
     items: items.map((item) => ({
       description: item.description,
       qty: item.qty,
@@ -177,6 +182,20 @@ export async function sendQuote(ctx: TenantContext, quoteId: string): Promise<Se
       whatsappError,
     },
     userId: ctx.userId,
+  });
+
+  // Fired after the activity, so a listener that reads the timeline sees the
+  // same history the rep does. Emitting is not delivery: the quote is "sent"
+  // whether or not WhatsApp took it, and a follow-up sequence keyed on this
+  // is exactly what a closed window needs (§15.5 J1).
+  await quoteEvents.emit("quote.sent", {
+    tenantId: ctx.tenantId,
+    contactId: quote.contactId,
+    quoteId: quote.id,
+    dealId: quote.dealId ?? null,
+    number: quote.number,
+    total: quote.total,
+    currency: quote.currency,
   });
 
   return { publicUrl, email, messageId, whatsappError };

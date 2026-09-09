@@ -44,6 +44,11 @@ const eslintConfig = defineConfig([
       "src/db/**/*.{ts,tsx}",
       "src/worker/**/*.{ts,tsx}",
       "src/lib/queue/**/*.{ts,tsx}",
+      // Same rationale as lib/queue: the rate limiter is platform-level
+      // infrastructure with no tenant at all — it counts requests from
+      // unauthenticated callers *before* anyone is identified (PLAN.md §14
+      // I1 #1). Its one table holds no tenant data.
+      "src/lib/rate-limit/**/*.{ts,tsx}",
       "src/modules/tenancy/**/*.{ts,tsx}",
       // JUDGMENT CALL (flagged for Fable review): the WhatsApp webhook
       // receiver has no session and no tenant slug — it only has a Meta
@@ -86,6 +91,16 @@ const eslintConfig = defineConfig([
       // is the only raw-db use here; conversations, messages and the AI
       // spend caps all go through tenantDb once the tenant is known.
       "src/modules/chatwidget/**/*.{ts,tsx}",
+      // Same rationale as the routing lookups above, from the other
+      // direction: a web push endpoint is the identity of a *browser*, and
+      // `push_subscriptions.endpoint` is unique platform-wide because a
+      // browser is one browser (PLAN.md §15.5 J2). Re-subscribing after
+      // switching business — or after somebody else signs in on the same
+      // phone — has to clear the row that endpoint already holds, which by
+      // definition may sit in a tenant the caller has no context for. That
+      // one delete-by-endpoint is the only raw-db use here; every other read
+      // and write in this module goes through tenantDb.
+      "src/modules/notifications/**/*.{ts,tsx}",
       // JUDGMENT CALL (flagged for Fable review, not explicit in PLAN.md
       // §3.3's exemption list): the Better Auth instance (src/lib/auth/server.ts)
       // is infra wiring handed the raw `db` client by the Drizzle adapter,
@@ -94,6 +109,22 @@ const eslintConfig = defineConfig([
       // through src/modules/tenancy or src/modules/auth (which holds no raw
       // db import of its own).
       "src/lib/auth/**/*.{ts,tsx}",
+      // Same rationale as quotes and documents: the public contract view
+      // /c/[token] resolves an unguessable token to its contract — and
+      // therefore its tenant — before any TenantContext exists (PLAN.md
+      // §17.3 P13). That single lookup is the only raw-db use here; the
+      // acceptance record and everything else are read back through
+      // tenantDb once the tenant is known.
+      "src/modules/contracts/**/*.{ts,tsx}",
+      // Claude Ops (PLAN.md §18). Its four tables carry no `tenant_id` at
+      // all: they are platform-level bookkeeping about provisioning, owned
+      // by a superadmin, the same shape as `tenants` itself — tenantDb has
+      // no predicate to inject for them. The token lookup is also, like the
+      // ingest key lookup above, a routing read that runs before any context
+      // can exist. Every tenant-owned object these endpoints create
+      // (site, pipeline, tags, contact, deal) is written through the ordinary
+      // module services and tenantDb once the tenant is known.
+      "src/modules/ops/**/*.{ts,tsx}",
     ],
     rules: {
       "no-restricted-imports": "off",

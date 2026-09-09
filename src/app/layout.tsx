@@ -4,6 +4,8 @@ import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
 import { intlTag } from "@/lib/i18n/locales";
 import { siteConfig } from "@/lib/site-config";
+import { THEME_SCRIPT, themeClass } from "@/lib/theme";
+import { resolveTheme } from "@/lib/theme-resolve";
 import "./globals.css";
 
 // Namespaces an actual Client Component reads via `useTranslations` (grep
@@ -79,11 +81,22 @@ export default async function RootLayout({
   const locale = await getLocale();
   const messages = await getMessages();
 
+  // Appearance (PLAN.md §14 I3). The server can settle "dark" and "light"
+  // from the cookie; only "system" needs the browser, so THEME_SCRIPT runs
+  // before paint and corrects the class. suppressHydrationWarning covers
+  // exactly that: the script is *expected* to have changed this attribute
+  // before React looks at it.
+  const theme = await resolveTheme();
+
   return (
     <html
       lang={intlTag(locale)}
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      suppressHydrationWarning
+      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased ${themeClass(theme)}`}
     >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+      </head>
       <body className="min-h-full flex flex-col">
         <NextIntlClientProvider messages={pickNamespaces(messages, CLIENT_NAMESPACES)}>
           {children}

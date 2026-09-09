@@ -8,15 +8,62 @@ import type { AiGenerateInput, AiTurn } from "./types";
 
 export type BusinessContext = {
   businessName: string;
-  /** What the company sells, in the tenant's own words. */
-  about?: string;
-  tone?: string;
-  hours?: string;
-  /** Things the model must never promise: prices, delivery dates, discounts. */
+  /**
+   * The business memory, already rendered and budgeted
+   * (modules/memory/render.ts). Replaces the four free-text fields this
+   * used to carry (about/tone/hours plus the pasted-in rest): what the
+   * model needs to answer *this* message is selected per call now, so the
+   * prompt builder takes a block rather than a bag of settings.
+   */
+  memory?: string;
+  /** Things the model must never promise: prices, delivery dates, discounts.
+   * Lives in the memory too; kept as a field because the chat widget may
+   * override it per widget (docs/SPEC-CHAT-WIDGET.md §4). */
   neverPromise?: string;
   /** Extra per-node instructions from the flow's ai_reply node. */
   instructions?: string;
+  /**
+   * Bookable types the assistant may offer, when the tenant has turned
+   * booking on. Empty or absent means the marker below is never mentioned,
+   * so a tenant who has not opted in gets exactly the prompt they had.
+   */
+  bookableTypes?: Array<{ slug: string; name: string }>;
 };
+
+/**
+ * How the model asks for the slot picker (plan-booking.md §5.3).
+ *
+ * Deliberately a marker in the text rather than provider-native tool calls.
+ * Two reasons, and the second is the important one. First, the driver
+ * interface is prompt-in-string-out for both OpenAI and Gemini, so native
+ * tools would mean two provider-specific implementations of the same idea.
+ * Second — and this is why it stays this way even if that changes — the
+ * model never books anything. It can *offer* times; the customer's tap is
+ * what reserves, through the same transaction the public page uses. A model
+ * that cannot write to the database cannot hallucinate an appointment into
+ * existence, and "confirm with the customer before reserving" stops being a
+ * prompt instruction the model might ignore and becomes the shape of the
+ * system.
+ */
+export const BOOKING_MARKER = /\[\[SLOTS:([a-z0-9-]{1,100})\]\]/i;
+
+export type BookingIntent = { text: string; bookingTypeSlug: string | null };
+
+/**
+ * Splits a generated reply into the text to send and the slots to offer.
+ *
+ * Pure, and tested — the marker must be stripped whether or not the slug is
+ * one this tenant actually has, because a customer should never see
+ * `[[SLOTS:corte]]` in a WhatsApp message.
+ */
+export function extractBookingIntent(reply: string): BookingIntent {
+  const match = reply.match(BOOKING_MARKER);
+  if (!match) return { text: reply.trim(), bookingTypeSlug: null };
+  return {
+    text: reply.replace(BOOKING_MARKER, "").replace(/\s{2,}/g, " ").trim(),
+    bookingTypeSlug: match[1].toLowerCase(),
+  };
+}
 
 /** Kept in Swedish because the product is Swedish-only (plan.md §1.11). */
 const GUARDRAILS = [
@@ -33,14 +80,26 @@ export function buildSystemPrompt(business: BusinessContext): string {
     `Du är kundtjänstassistenten för "${business.businessName}" och svarar via WhatsApp.`,
   ];
 
-  if (business.about) lines.push(`Om företaget: ${business.about}`);
-  if (business.tone) lines.push(`Tonen i svaren: ${business.tone}`);
-  if (business.hours) lines.push(`Öppettider: ${business.hours}`);
+  if (business.memory) lines.push("", business.memory, "");
   if (business.neverPromise) lines.push(`Lova aldrig: ${business.neverPromise}`);
   if (business.instructions) lines.push(`Instruktion för det här flödet: ${business.instructions}`);
 
   lines.push("Obligatoriska regler:");
   for (const rule of GUARDRAILS) lines.push(`- ${rule}`);
+
+  const bookable = business.bookableTypes ?? [];
+  if (bookable.length > 0) {
+    lines.push(
+      "Si el cliente quiere agendar un turno, terminá tu mensaje con el marcador " +
+        "[[SLOTS:slug]] usando uno de estos servicios:",
+    );
+    for (const type of bookable) lines.push(`- ${type.slug} — ${type.name}`);
+    lines.push(
+      "El sistema le va a mostrar los horarios libres para que toque el que quiera. " +
+        "Nunca digas vos un horario concreto ni des una reserva por confirmada: " +
+        "eso lo hace el cliente tocando la opción.",
+    );
+  }
 
   return lines.join("\n");
 }
@@ -51,22 +110,39 @@ export function buildSystemPrompt(business: BusinessContext): string {
  * sees the thread the way the customer does. Empty bodies (media-only
  * messages) are dropped rather than sent as blank turns.
  */
-export function toTurns(
-  messages: Array<{ direction: "in" | "out"; body: string | null }>,
-  limit = 20,
-): AiTurn[] {
+/**
+ * A message's text for the model: its body, or — for a voice note — its
+ * transcript once one exists (PLAN.md §17.3 P9). An audio still being
+ * transcribed contributes nothing rather than an empty turn, which is what
+ * makes the deferred reply in automations/triggers.ts worth deferring.
+ */
+export function messageText(message: PromptMessage): string {
+  const body = (message.body ?? "").trim();
+  if (body) return body;
+  return message.transcriptStatus === "done" ? (message.transcript ?? "").trim() : "";
+}
+
+export type PromptMessage = {
+  direction: "in" | "out";
+  body: string | null;
+  transcript?: string | null;
+  transcriptStatus?: string | null;
+};
+
+export function toTurns(messages: PromptMessage[], limit = 20): AiTurn[] {
   return messages
-    .filter((message) => (message.body ?? "").trim().length > 0)
+    .map((message) => ({ message, content: messageText(message) }))
+    .filter((entry) => entry.content.length > 0)
     .slice(-limit)
-    .map((message) => ({
-      role: message.direction === "in" ? ("user" as const) : ("assistant" as const),
-      content: (message.body ?? "").trim(),
+    .map((entry) => ({
+      role: entry.message.direction === "in" ? ("user" as const) : ("assistant" as const),
+      content: entry.content,
     }));
 }
 
 export function buildReplyPrompt(
   business: BusinessContext,
-  messages: Array<{ direction: "in" | "out"; body: string | null }>,
+  messages: PromptMessage[],
 ): AiGenerateInput {
   return { system: buildSystemPrompt(business), messages: toTurns(messages) };
 }

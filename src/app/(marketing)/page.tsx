@@ -12,7 +12,8 @@ import { VerticalCards, type VerticalItem } from "@/components/marketing/vertica
 import { Statement } from "@/components/marketing/statement";
 import { CtaBand } from "@/components/marketing/cta-band";
 import { JsonLd } from "@/components/marketing/json-ld";
-import { contact, SITE_URL, siteConfig } from "@/lib/site-config";
+import { SITE_URL } from "@/lib/config/hosts";
+import { contact, siteConfig } from "@/lib/site-config";
 
 // Same Node app answers both the apex marketing domain and the crm.*
 // subdomain (parked domain, shared document root — see hPanel Domains).

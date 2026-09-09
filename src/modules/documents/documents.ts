@@ -14,6 +14,7 @@ import { getTenant } from "@/modules/tenancy/tenants";
 import { getContact } from "@/modules/crm/contacts";
 import { createActivity } from "@/modules/crm/activities";
 import { getQuote, listQuoteItems } from "@/modules/quotes/quotes";
+import { documentEvents } from "./events";
 import { nextDocumentNumber } from "./numbering";
 import {
   balanceOf,
@@ -698,6 +699,12 @@ export async function recordPayment(
     throw new Error("payment_must_be_positive");
   }
 
+  // Read before writing, so "did this payment settle the document?" can be
+  // answered exactly once (§15.5 J1: `document_paid` fires once, when the
+  // ledger reaches the total). A second payment on an already-settled
+  // document, or one that leaves a balance, emits nothing.
+  const paidBefore = await amountPaid(ctx, documentId);
+
   const id = newId();
   await tenantDb(ctx)
     .insert(documentPayments)
@@ -713,7 +720,21 @@ export async function recordPayment(
       notes: input.notes,
     });
 
-  return getDocumentTotals(ctx, documentId);
+  const totals = await getDocumentTotals(ctx, documentId);
+
+  if (paidBefore < document.total && (totals?.amountPaid ?? 0) >= document.total) {
+    await documentEvents.emit("document.paid", {
+      tenantId: ctx.tenantId,
+      contactId: document.contactId,
+      documentId: document.id,
+      dealId: document.dealId ?? null,
+      number: document.number,
+      total: document.total,
+      currency: document.currency,
+    });
+  }
+
+  return totals;
 }
 
 export async function listPayments(ctx: TenantContext, documentId: string) {

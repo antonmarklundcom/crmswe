@@ -1,8 +1,9 @@
 import { redirect } from "next/navigation";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { getTenantContext } from "@/modules/tenancy/context";
 import type { TenantSettings } from "@/modules/tenancy/settings";
 import { getUserById } from "@/modules/tenancy/users";
+import { resolveTheme } from "@/lib/theme-resolve";
 import { listMembershipsForUser } from "@/modules/tenancy/memberships";
 import { getTenant } from "@/modules/tenancy/tenants";
 import { isWhatsappEnabled } from "@/modules/whatsapp/feature";
@@ -11,8 +12,13 @@ import { UserMenu } from "@/components/user-menu";
 import { BusinessSwitcher, type SwitchableBusiness } from "@/components/business-switcher";
 import { Toaster } from "@/components/ui/sonner";
 import { CommandPalette } from "@/components/command-palette";
+import { NotificationBell, type NotificationItem } from "@/components/notification-bell";
+import { PushRegistrar } from "@/components/push-registrar";
+import { listNotifications, countUnread } from "@/modules/notifications/notifications";
+import { pushPublicKey } from "@/modules/notifications/push";
+import { formatDateTime } from "@/lib/i18n/format";
 import { Button } from "@/components/ui/button";
-import { stopImpersonationAction } from "./actions";
+import { markAllNotificationsReadAction, stopImpersonationAction } from "./actions";
 
 // Tenant suspension/expiry enforcement (PLAN.md §10 1B: "grace → read-only
 // banner → locked"). Runs server-side, in the Node.js runtime, so it can
@@ -53,7 +59,14 @@ export default async function AppLayout({
   const tSearch = await getTranslations("app.search");
   const tRoles = await getTranslations("app.users.roles");
   const tBusiness = await getTranslations("app.business");
+  const tTheme = await getTranslations("app.settings.theme");
   const isAdmin = ctx.role === "admin";
+
+  // "system" has no server-side answer (the OS preference is client-only) —
+  // the quick toggle in UserMenu needs a concrete side to render, same
+  // simplification themeClass() already makes for the <html> class.
+  const resolvedTheme = await resolveTheme();
+  const toggleTheme: "light" | "dark" = resolvedTheme === "dark" ? "dark" : "light";
 
   const [user, tenant, memberships] = await Promise.all([
     getUserById(ctx.userId),
@@ -85,6 +98,8 @@ export default async function AppLayout({
       label: t("groups.crm"),
       items: [
         { href: "/contacts", label: t("contacts"), icon: "contacts" },
+        { href: "/companies", label: t("companies"), icon: "companies" },
+        { href: "/contracts", label: t("contracts"), icon: "contracts" },
         { href: "/pipeline", label: t("pipeline"), icon: "pipeline" },
         ...(whatsappEnabled
           ? [{ href: "/inbox", label: t("inbox"), icon: "inbox" as const }]
@@ -115,6 +130,9 @@ export default async function AppLayout({
             { href: "/forms", label: t("forms"), icon: "forms" as const },
             { href: "/sites", label: t("sites"), icon: "sites" as const },
             { href: "/booking", label: t("booking"), icon: "booking" as const },
+            // The rubro wizard sits next to booking because that is what it
+            // configures (plan-booking.md §6.1).
+            { href: "/onboarding", label: t("onboarding"), icon: "booking" as const },
           ]
         : [],
     },
@@ -128,6 +146,7 @@ export default async function AppLayout({
           ? [
               { href: "/users", label: t("users"), icon: "users" as const },
               { href: "/settings", label: t("settings"), icon: "settings" as const },
+              { href: "/settings/negocio", label: t("negocio"), icon: "negocio" as const },
             ]
           : []),
         // The inert "factura electrónica — pronto" entry is gone (plan.md
@@ -141,11 +160,36 @@ export default async function AppLayout({
 
   const visibleGroups = groups.filter((group) => group.items.length > 0);
 
+  // The in-app half of `notify_user` (PLAN.md §15.5 J1). Read here rather
+  // than in a client component so the bell costs one query on a page the
+  // layout is already rendering, and shows something the moment it appears.
+  const [notificationRows, unreadCount] = await Promise.all([
+    listNotifications(ctx, ctx.userId, 10),
+    countUnread(ctx, ctx.userId),
+  ]);
+  const tNotifications = await getTranslations("app.notifications");
+  const tPush = await getTranslations("app.push");
+  // Null when the platform has no VAPID keys: the registrar then renders
+  // nothing and registers nothing, which is the whole of "absent keys =
+  // feature hidden" on this surface (§15.8 P2).
+  const vapidPublicKey = pushPublicKey();
+  const locale = await getLocale();
+  const notificationItems: NotificationItem[] = notificationRows.map((row) => ({
+    id: row.id,
+    title: row.title,
+    body: row.body,
+    url: row.url,
+    read: row.readAt !== null,
+    when: formatDateTime(row.createdAt, locale),
+  }));
+
   const identity = {
     name: user?.name ?? "",
     email: user?.email ?? "",
     subtitle: [tenant?.name, tRoles(ctx.role)].filter(Boolean).join(" · "),
     signOutLabel: tc("signOut"),
+    theme: toggleTheme,
+    themeToggleLabel: tTheme("toggle"),
   };
 
   return (
@@ -157,19 +201,46 @@ export default async function AppLayout({
           groups={visibleGroups}
           appName={tc("appName")}
           header={
-            <BusinessSwitcher
-              businesses={businesses}
-              activeId={ctx.tenantId}
-              labels={{
-                title: tBusiness("switcherTitle"),
-                current: tBusiness("switcherCurrent"),
-              }}
-            />
+            <>
+              <NotificationBell
+                items={notificationItems}
+                unread={unreadCount}
+                labels={{
+                  title: tNotifications("title"),
+                  empty: tNotifications("empty"),
+                  markAllRead: tNotifications("markAllRead"),
+                }}
+                onMarkAllRead={markAllNotificationsReadAction}
+              />
+              <BusinessSwitcher
+                businesses={businesses}
+                activeId={ctx.tenantId}
+                labels={{
+                  title: tBusiness("switcherTitle"),
+                  current: tBusiness("switcherCurrent"),
+                }}
+              />
+            </>
           }
           footer={<UserMenu {...identity} />}
           mobileHeader={<UserMenu {...identity} variant="bar" />}
         />
-        <div className="min-w-0 flex-1 p-6">{children}</div>
+        <div className="min-w-0 flex-1 p-6">
+          {/* Registers the service worker for anybody signed in, and asks once
+              on the inbox (PLAN.md §15.5 J2). Mounted here rather than on the
+              inbox page so the whole feature has one mount point, and so the
+              worker is registered on whatever page the app is opened at. */}
+          <PushRegistrar
+            publicKey={vapidPublicKey}
+            labels={{
+              bannerTitle: tPush("bannerTitle"),
+              bannerBody: tPush("bannerBody"),
+              enable: tPush("bannerEnable"),
+              dismiss: tPush("bannerDismiss"),
+            }}
+          />
+          {children}
+        </div>
       </div>
       {/* ⌘K from anywhere in the app (PLAN.md §13 H8). */}
       <CommandPalette

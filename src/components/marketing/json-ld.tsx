@@ -1,11 +1,14 @@
 // Structured data (nextjs-national-lead-gen skill §3 technical SEO checklist).
 // Server-rendered only, from translation strings and site-config — never
-// user input — so a plain JSON.stringify is safe here.
+// user input — but "<" is escaped anyway so copy that merely *looks*
+// user-provided can never close the tag early.
 export function JsonLd({ data }: { data: Record<string, unknown> }) {
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }}
+      dangerouslySetInnerHTML={{
+        __html: JSON.stringify(data).replace(/</g, "\\u003c"),
+      }}
     />
   );
 }

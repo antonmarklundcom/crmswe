@@ -159,6 +159,75 @@ signature verifies; a forged one and an expired one are rejected) and, if
 signed URL over HTTP against it — without that variable the HTTP leg is
 skipped.
 
+## 9. Wave 1 — automations, push, inbox, email, pipeline, quotes, coach (P1–P7)
+
+- [ ] The bell (top nav) shows unread automation/task/assignment
+      notifications; "mark all read" clears the count
+- [ ] With `WEB_PUSH_*` set, install the PWA on an Android phone and confirm
+      a push arrives with the app closed (see `docs/HANDOFF.md` Part 3.3 —
+      needs a real device, not just this checklist)
+- [ ] `/inbox/quick-replies` — create one, then insert it from the composer
+      in a real conversation; `{{contacto.nombre}}` resolves
+- [ ] A conversation note (distinct from a message) appears inline in the
+      thread and on the contact's timeline
+- [ ] `/inbox?filter=unread` and `?q=` search both narrow the list; web-chat
+      rows appear under `all` with a channel chip
+- [ ] As admin, add a sending domain on `/settings` and confirm it moves
+      pending → verified in Resend (Part 3.3) — then send a quote by email
+      and see it arrive from that domain
+- [ ] `/contacts/campos` — create a custom field, set it on a contact, and
+      confirm it round-trips through CSV export/import and filters the
+      contact list
+- [ ] On `/pipeline/etapas`, set a stage's "días antes de marcar
+      estancado"; a deal left there past that many days shows a stale badge
+      on the board
+- [ ] Drag a deal on the board — the column's value total and each card's
+      days-in-stage update immediately, without a reload
+- [ ] Send a quote, open its public link in a private window, and accept it
+      — the quote's status flips to accepted and a name/comment is recorded;
+      try deciding it a second time and confirm it's refused
+- [ ] Record a payment on an issued nota de venta, then "Ver recibo" — the
+      public `/r/[token]` receipt view and its PDF both load with no session
+- [ ] Set a quote's "válido hasta" in the past and confirm the daily
+      `quotes.expire` job (or a manual trigger — `docs/DEPLOY.md` §5) moves
+      it to expired; "Duplicar como nuevo borrador" creates a fresh draft
+      with the same lines
+- [ ] `/dashboard` shows the "Hoy" panel above the stat cards, one row per
+      thing needing attention today, each with a working deep link; with
+      nothing pending it shows the empty state instead
+
+## 10. Wave 2 lane 2 — contracts, briefing, reports, companies, forms (P13–P17) + K1
+
+- [ ] From a won deal, "generar contrato" creates a contract from a
+      template; its public link accepts click-to-accept on a phone, and the
+      accepted PDF (with the acceptance record) appears on the contract's
+      detail page — `/contracts` lists it and `/contracts/templates`
+      manages the templates
+- [ ] With AI off, `/dashboard`'s briefing card shows a Monday summary built
+      from real numbers (no model call); `/dashboard/briefings/[id]` shows
+      the full narrative, and acting on a "Hoy" action records a
+      `coach.hoy_action` audit row
+- [ ] `/reports` renders funnel, sources, sites, agents, and the response
+      distribution for a date range, each with a comparison column vs. the
+      previous window; `/api/exports/reports/[table]` CSV matches what the
+      page shows for the same filters
+- [ ] `/companies` — create a company, link two contacts to it from their
+      own pages, and see its contact/open-deal counts; deleting a company
+      with contacts still on it is refused
+- [ ] `/contacts` shows a "posibles duplicados" panel when two contacts
+      share an email or a name + phone prefix; "revisar" opens the merge
+      dialog with both contacts preselected; admin-only, and the loser's
+      history (deals, tags, custom fields) appears under the winner after
+      merging
+- [ ] `/forms/[id]` — add a `select` field and map one field to a custom
+      field; submit the public form and confirm the mapped answer lands on
+      the contact's custom fields; a required field left empty or an
+      invalid `select` answer is refused
+- [ ] `/settings/negocio` (now in the nav) — fill in the business profile
+      and add a fact; the AI reply test (K1) answers using it; the AI
+      card's old "Sobre el negocio/Tono/Horario" text fields are gone,
+      replaced by a link here
+
 ## If anything fails
 
 Don't leave a failing smoke test unresolved before calling a deploy done —

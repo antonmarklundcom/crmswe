@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import { useTranslations } from "next-intl";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import type { BusinessHours, TenantEmailSettings } from "@/modules/tenancy/settings";
 import {
@@ -10,6 +11,7 @@ import {
   updateBusinessHoursAction,
   updateDefaultCountryAction,
   updateReviewLinkAction,
+  updateCoachPhoneAction,
   updateTimezoneAction,
   updateWhatsappEnabledAction,
   updateEmailSettingsAction,
@@ -274,6 +276,29 @@ export function WhatsappChannelForm({ whatsappEnabled }: { whatsappEnabled: bool
   );
 }
 
+export function CoachPhoneForm({ coachPhone }: { coachPhone: string }) {
+  const t = useTranslations("app.settings");
+  const tc = useTranslations("common");
+  const [state, formAction, pending] = useActionState(updateCoachPhoneAction, initialState);
+
+  return (
+    <form action={formAction} className="flex max-w-md flex-col gap-2">
+      <div className="flex gap-2">
+        <Input
+          name="coachPhone"
+          defaultValue={state.values.coachPhone ?? coachPhone}
+          placeholder="+46701234567"
+          className="flex-1"
+        />
+        <Button type="submit" variant="outline" disabled={pending}>
+          {tc("save")}
+        </Button>
+      </div>
+      <ErrorOrSaved state={state} tc={tc} t={t} />
+    </form>
+  );
+}
+
 const DAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"] as const;
 
 export function BusinessHoursForm({ businessHours }: { businessHours: BusinessHours }) {
@@ -328,25 +353,21 @@ export function AiSettingsForm({
   mode,
   businessName,
   businessNamePlaceholder,
-  about,
-  tone,
-  hours,
   neverPromise,
   maxRepliesPerConversationPerDay,
   maxRepliesPerTenantPerDay,
   handoffKeyword,
+  bookingEnabled,
 }: {
   enabled: boolean;
   mode: string;
   businessName: string;
   businessNamePlaceholder: string;
-  about: string;
-  tone: string;
-  hours: string;
   neverPromise: string;
   maxRepliesPerConversationPerDay: number;
   maxRepliesPerTenantPerDay: number;
   handoffKeyword: string;
+  bookingEnabled: boolean;
 }) {
   const t = useTranslations("app.settings");
   const tc = useTranslations("common");
@@ -385,32 +406,18 @@ export function AiSettingsForm({
         />
       </label>
 
-      <label className="flex flex-col gap-1 text-sm">
-        {t("aiAbout")}
-        <Textarea
-          name="about"
-          rows={3}
-          defaultValue={state.values.about ?? about}
-          placeholder={t("aiAboutPlaceholder")}
-        />
-      </label>
-
-      <label className="flex flex-col gap-1 text-sm">
-        {t("aiTone")}
-        <Input
-          name="tone"
-          defaultValue={state.values.tone ?? tone}
-          placeholder={t("aiTonePlaceholder")}
-        />
-      </label>
-
-      <label className="flex flex-col gap-1 text-sm">
-        {t("aiHours")}
-        <Input
-          name="hours"
-          defaultValue={state.values.hours ?? hours}
-        />
-      </label>
+      {/* "Sobre el negocio", "Tono" and "Horario" used to live here as free
+          text; they are now inert (resolveAiConfig never reads them — the
+          memory profile at /settings/negocio is the one source for all
+          three, PLAN.md §16.4). Link there instead of duplicating a form
+          the reply engine has already stopped listening to (K1's open item,
+          closed by the wave 2 link pass, P18). */}
+      <p className="text-sm text-muted-foreground">
+        {t("aiBusinessProfileIntro")}{" "}
+        <Link href="/settings/negocio" className="underline">
+          {t("aiBusinessProfileLink")}
+        </Link>
+      </p>
 
       <label className="flex flex-col gap-1 text-sm">
         {t("aiNeverPromise")}
@@ -455,6 +462,20 @@ export function AiSettingsForm({
           />
         </label>
       </div>
+
+      {/* Off by default and gated per tenant, on the same principle as
+          `mode`: a capability that reaches customers starts switched off.
+          The assistant can only *offer* times — the customer's tap is what
+          reserves, through the ordinary transactional path. */}
+      <label className="flex items-center gap-2 text-sm">
+        <input
+          type="checkbox"
+          name="bookingEnabled"
+          defaultChecked={echoedCheckbox(state.values, "bookingEnabled", bookingEnabled)}
+        />
+        {t("aiBookingEnabled")}
+      </label>
+      <p className="text-xs text-muted-foreground">{t("aiBookingEnabledHelp")}</p>
 
       <ErrorOrSaved state={state} tc={tc} t={t} />
 

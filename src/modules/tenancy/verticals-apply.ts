@@ -1,0 +1,378 @@
+import type { TenantContext } from "@/modules/tenancy/context";
+import { createTag, listTags } from "@/modules/crm/contacts";
+import { createPipelineWithDefaultStages, listPipelines, listStagesForPipeline, createStage } from "@/modules/crm/pipelines";
+import {
+  createResource,
+  listResources,
+  replaceAvailabilityRules,
+  listAvailabilityRules,
+} from "@/modules/booking/resources";
+import { createBookingType, listBookingTypes } from "@/modules/booking/types";
+import { setResourcesForType } from "@/modules/booking/resources";
+import { createService, listServicesForType } from "@/modules/booking/services";
+import { createFlow, listFlows, publishFlow, saveDraft } from "@/modules/automations/flows";
+import type { FlowGraph } from "@/modules/automations/graph";
+import { createQuickReply, listQuickReplies } from "@/modules/whatsapp/quick-replies";
+import { updateTenantAiSettings, updateTenantVertical, type TenantSettings } from "./settings";
+import { getTenant } from "./tenants";
+import { findPreset, stageName, type PresetFlow, type VerticalPreset } from "./verticals";
+
+// Applying a preset (plan-booking.md §6.1).
+//
+// Two rules govern everything below, and both exist because this runs
+// against a tenant that may already have real data in it:
+//
+//   1. **Additive.** Nothing is deleted, renamed or overwritten. An admin who
+//      picks the wrong rubro, or picks a second one out of curiosity, ends up
+//      with extra rows they can delete — never with their booking types gone.
+//   2. **Idempotent.** Every step checks for what it would create and skips
+//      it. Applying the same preset twice is a no-op, which matters because
+//      the wizard is a form and forms get double-submitted.
+//
+// The cost is that a preset cannot "fix" a tenant who has already
+// half-configured themselves. That is the right trade: a wizard that
+// silently replaced someone's availability would be a support incident, and
+// the extra rows are visible and removable.
+
+export type ApplyOutcome = {
+  vertical: string;
+  created: {
+    resources: number;
+    bookingTypes: number;
+    services: number;
+    stages: number;
+    tags: number;
+    flows: number;
+    quickReplies: number;
+  };
+};
+
+export async function applyVerticalPreset(
+  ctx: TenantContext,
+  slug: string,
+): Promise<ApplyOutcome | { error: "unknown_vertical" }> {
+  const preset = findPreset(slug);
+  if (!preset) return { error: "unknown_vertical" };
+  return applyPreset(ctx, preset);
+}
+
+/**
+ * The same apply logic, given a preset object directly rather than a
+ * catalogue slug — what the setup assistant's AI-generated plan needs
+ * (K2, §16.2 rule 3: "applied by `applyVerticalPreset`", same shape either
+ * way). `applyVerticalPreset` above is now a thin lookup in front of this.
+ */
+export async function applyPreset(ctx: TenantContext, preset: VerticalPreset): Promise<ApplyOutcome> {
+  const created = {
+    resources: await applyResources(ctx, preset),
+    bookingTypes: 0,
+    services: 0,
+    stages: await applyStages(ctx, preset),
+    tags: await applyTags(ctx, preset),
+    flows: 0,
+    quickReplies: await applyQuickReplies(ctx, preset),
+  };
+
+  const types = await applyBookingTypes(ctx, preset);
+  created.bookingTypes = types.types;
+  created.services = types.services;
+
+  // After the booking types, because a no-show flow offers slots for one of
+  // them and needs its id.
+  created.flows = await applyFlows(ctx, preset);
+
+  await applyAiMode(ctx, preset);
+
+  // Recorded last, so a half-applied preset (a crash mid-way) does not claim
+  // to have been applied. Settings only — no migration, per §2.
+  await updateTenantVertical(ctx, preset.slug);
+
+  return { vertical: preset.slug, created };
+}
+
+async function applyResources(ctx: TenantContext, preset: VerticalPreset): Promise<number> {
+  const existing = await listResources(ctx);
+  const byName = new Set(existing.map((row) => row.name.toLowerCase()));
+  let count = 0;
+
+  for (const name of preset.resources) {
+    if (byName.has(name.toLowerCase())) continue;
+    // `resource`, not `user`: a chair, a bay and a room are things, and a
+    // thing must not burn a plan seat.
+    const resource = await createResource(ctx, { kind: "resource", name });
+    if (!resource) continue;
+    count += 1;
+    await replaceAvailabilityRules(
+      ctx,
+      resource.id,
+      preset.hours.map((rule) => ({
+        weekday: rule.weekday,
+        start: rule.start,
+        end: rule.end,
+      })),
+    );
+  }
+
+  // A tenant whose resources all already existed still wants the preset's
+  // hours — but only on resources that have none, since overwriting a
+  // configured schedule would break rule 1 above.
+  for (const resource of existing) {
+    const rules = await listAvailabilityRules(ctx);
+    const hasOwn = rules.some((rule) => rule.resourceId === resource.id);
+    if (hasOwn) continue;
+    await replaceAvailabilityRules(
+      ctx,
+      resource.id,
+      preset.hours.map((rule) => ({
+        weekday: rule.weekday,
+        start: rule.start,
+        end: rule.end,
+      })),
+    );
+  }
+
+  return count;
+}
+
+async function applyBookingTypes(
+  ctx: TenantContext,
+  preset: VerticalPreset,
+): Promise<{ types: number; services: number }> {
+  const existing = await listBookingTypes(ctx);
+  const bySlug = new Set(existing.map((row) => row.slug));
+  const resources = await listResources(ctx);
+
+  let types = 0;
+  let services = 0;
+
+  for (const definition of preset.bookingTypes) {
+    if (bySlug.has(definition.slug)) continue;
+
+    const type = await createBookingType(ctx, {
+      name: definition.name,
+      slug: definition.slug,
+      description: definition.description ?? null,
+      durationMinutes: definition.durationMinutes,
+      bufferAfterMinutes: definition.bufferAfterMinutes ?? 0,
+      minNoticeMinutes: definition.minNoticeMinutes ?? 120,
+      capacity: definition.capacity ?? 1,
+      allowMultiService: definition.allowMultiService ?? false,
+      locationMode: definition.locationMode ?? "in_person",
+    });
+    if (!type) continue;
+    types += 1;
+
+    // Every type serves every resource the preset made. A barbería with two
+    // chairs wants either chair to take a corte; narrowing that is a choice
+    // the admin makes afterwards, not one a preset should make for them.
+    if (resources.length > 0) {
+      await setResourcesForType(
+        ctx,
+        type.id,
+        resources.map((resource) => resource.id),
+      );
+    }
+
+    for (const [index, service] of (definition.services ?? []).entries()) {
+      const already = await listServicesForType(ctx, type.id);
+      if (already.some((row) => row.name.toLowerCase() === service.name.toLowerCase())) continue;
+      await createService(ctx, {
+        bookingTypeId: type.id,
+        name: service.name,
+        extraDurationMinutes: service.extraDurationMinutes,
+        extraPrice: service.extraPrice,
+        sort: index,
+      });
+      services += 1;
+    }
+  }
+
+  return { types, services };
+}
+
+/**
+ * Adds the preset's stages to the tenant's first pipeline, creating one only
+ * if they have none at all.
+ *
+ * Appended rather than replacing the default stage set: a tenant's board may
+ * already have deals sitting on stages, and deleting a stage with deals on it
+ * is the one thing this must never do.
+ */
+async function applyStages(ctx: TenantContext, preset: VerticalPreset): Promise<number> {
+  if (preset.pipelineStages.length === 0) return 0;
+
+  let pipelines = await listPipelines(ctx);
+  if (pipelines.length === 0) {
+    await createPipelineWithDefaultStages(ctx, "Ventas");
+    pipelines = await listPipelines(ctx);
+  }
+  const pipeline = pipelines[0];
+  if (!pipeline) return 0;
+
+  const stages = await listStagesForPipeline(ctx, pipeline.id);
+  const byName = new Set(stages.map((stage) => stage.name.toLowerCase()));
+  let count = 0;
+  let position = stages.length;
+
+  for (const stage of preset.pipelineStages) {
+    const name = stageName(stage);
+    if (byName.has(name.toLowerCase())) continue;
+    await createStage(ctx, {
+      pipelineId: pipeline.id,
+      name,
+      position,
+      ...(typeof stage === "string"
+        ? {}
+        : { isWon: stage.isWon, isLost: stage.isLost, staleAfterDays: stage.staleAfterDays }),
+    });
+    position += 1;
+    count += 1;
+  }
+
+  return count;
+}
+
+/** §16.5 step 3's 3–5 canned replies, idempotent by name like everything else. */
+async function applyQuickReplies(ctx: TenantContext, preset: VerticalPreset): Promise<number> {
+  if (!preset.quickReplies || preset.quickReplies.length === 0) return 0;
+  const existing = await listQuickReplies(ctx);
+  const byName = new Set(existing.map((row) => row.name.toLowerCase()));
+
+  let count = 0;
+  for (const reply of preset.quickReplies) {
+    if (byName.has(reply.name.toLowerCase())) continue;
+    await createQuickReply(ctx, { name: reply.name, body: reply.body });
+    count += 1;
+  }
+  return count;
+}
+
+/**
+ * AI reply mode always starts in `draft` (§16.2 rule 2) and only when the
+ * tenant has never chosen one — a preset applied a second time, or applied
+ * onto a tenant who already turned AI on or off, must not flip the switch
+ * back.
+ */
+async function applyAiMode(ctx: TenantContext, preset: VerticalPreset): Promise<void> {
+  if (!preset.aiMode) return;
+  const tenant = await getTenant(ctx.tenantId);
+  const settings = (tenant?.settings ?? {}) as TenantSettings;
+  if (settings.ai?.mode) return;
+  await updateTenantAiSettings(ctx, { mode: preset.aiMode });
+}
+
+async function applyTags(ctx: TenantContext, preset: VerticalPreset): Promise<number> {
+  if (preset.tags.length === 0) return 0;
+  const existing = await listTags(ctx);
+  const byName = new Set(existing.map((tag) => tag.name.toLowerCase()));
+
+  let count = 0;
+  for (const name of preset.tags) {
+    if (byName.has(name.toLowerCase())) continue;
+    await createTag(ctx, { name });
+    count += 1;
+  }
+  return count;
+}
+
+/**
+ * The preset's automation flows (plan-booking.md §6.1), created published and
+ * active so that picking a rubro actually turns the behaviour on — a flow
+ * left in draft is a flow nobody notices is off.
+ *
+ * One graph shape serves every preset flow, built from the data rather than
+ * per rubro:
+ *
+ *     trigger → wait → say something → (offer slots)
+ *
+ * The `offer_slots` tail only exists for flows that name a booking type, so
+ * the review request ends after its message rather than inviting someone to
+ * book again in the same breath as thanking them.
+ */
+async function applyFlows(ctx: TenantContext, preset: VerticalPreset): Promise<number> {
+  if (preset.flows.length === 0) return 0;
+
+  const existing = await listFlows(ctx);
+  const byName = new Set(existing.map((row) => row.name.toLowerCase()));
+  const types = await listBookingTypes(ctx);
+  let count = 0;
+
+  for (const definition of preset.flows) {
+    if (byName.has(definition.name.toLowerCase())) continue;
+
+    // A flow whose slots cannot be resolved would publish an `offer_slots`
+    // node pointing nowhere. Skipping the tail is better than skipping the
+    // flow: the message is the half that matters.
+    const offerTypeId = definition.offerSlotsFor
+      ? (types.find((type) => type.slug === definition.offerSlotsFor)?.id ?? null)
+      : null;
+
+    const flow = await createFlow(ctx, { name: definition.name, triggerType: definition.trigger });
+    if (!flow) continue;
+
+    const saved = await saveDraft(ctx, flow.id, graphFor(definition, offerTypeId));
+    if (!saved) continue;
+
+    const published = await publishFlow(ctx, flow.id);
+    if (!published.ok) continue;
+
+    byName.add(definition.name.toLowerCase());
+    count += 1;
+  }
+
+  return count;
+}
+
+/** Review requests fire on either "the job is done" moment the catalogue or
+ *  the setup assistant names — a completed booking, or a deal dragged to a
+ *  won stage. */
+const REVIEW_TRIGGERS: PresetFlow["trigger"][] = ["booking_completed", "deal_won"];
+
+function graphFor(definition: PresetFlow, offerTypeId: string | null): FlowGraph {
+  const nodes: FlowGraph["nodes"] = [
+    { id: "trigger", type: "trigger", config: { triggerType: definition.trigger } },
+  ];
+  const edges: FlowGraph["edges"] = [];
+
+  // §16.5's welcome flow only wants to greet a customer nobody is there to
+  // answer live — the "no" branch of the same `business_hours` condition
+  // the manual flow editor already offers, not a new condition kind.
+  let lastNode = "trigger";
+  if (definition.conditions?.includes("outside_business_hours")) {
+    nodes.push({ id: "hours", type: "condition", config: { kind: "business_hours" } });
+    edges.push({ id: "e0", source: "trigger", target: "hours", branch: "default" });
+    lastNode = "hours";
+  }
+
+  nodes.push({
+    id: "wait",
+    type: "delay",
+    config: { kind: "wait_duration", minutes: definition.waitMinutes },
+  });
+  edges.push({
+    id: "e1",
+    source: lastNode,
+    target: "wait",
+    branch: lastNode === "hours" ? "no" : "default",
+  });
+
+  nodes.push({
+    id: "message",
+    type: "action",
+    config: REVIEW_TRIGGERS.includes(definition.trigger)
+      ? { kind: "send_review_request", text: definition.text }
+      : { kind: "send_whatsapp", text: definition.text },
+  });
+  edges.push({ id: "e2", source: "wait", target: "message", branch: "default" });
+
+  if (offerTypeId) {
+    nodes.push({
+      id: "offer",
+      type: "action",
+      config: { kind: "offer_slots", bookingTypeId: offerTypeId },
+    });
+    edges.push({ id: "e3", source: "message", target: "offer", branch: "default" });
+  }
+
+  return { nodes, edges };
+}

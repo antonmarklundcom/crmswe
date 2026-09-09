@@ -11,6 +11,11 @@ import "./handlers";
 import "@/modules/whatsapp/jobs";
 import "@/modules/automations/jobs";
 import "@/modules/booking/jobs";
+import "@/modules/notifications/jobs";
+import "@/modules/tenancy/email-jobs";
+import "@/modules/quotes/jobs";
+import "@/modules/coach/jobs";
+import "@/modules/coach/briefing-jobs";
 import { ensureMaintenanceScheduled } from "./maintenance";
 
 const TICK_MS = 2000;

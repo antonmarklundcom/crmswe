@@ -22,6 +22,9 @@ import { requireTenantContext } from "@/modules/tenancy/context";
 import { getTenant } from "@/modules/tenancy/tenants";
 import { whatsappEnabledFor } from "@/modules/whatsapp/feature";
 import { getDashboardSummary } from "@/modules/dashboard/summary";
+import { buildHoy, type HoyItem } from "@/modules/coach/hoy";
+import { getLatestBriefing } from "@/modules/coach/briefing";
+import { BriefingCard } from "./BriefingCard";
 import { Card } from "@/components/ui/card";
 import { PageHeader } from "@/components/page-header";
 import { TaskList, type TaskListLabels } from "@/components/task-list";
@@ -39,27 +42,43 @@ import { listSites } from "@/modules/sites/sites";
 // what to do first (the checklist). Every number comes from the tenant-scoped
 // read model in modules/dashboard — no raw db, no cross-tenant reads.
 
+const STAT_TONES = {
+  info: "bg-info-surface text-info",
+  warning: "bg-warning-surface text-warning",
+  destructive: "bg-destructive-surface text-destructive",
+  success: "bg-success-surface text-success",
+} as const;
+
 function StatCard({
   icon: Icon,
   label,
   value,
   hint,
   href,
+  tone,
 }: {
   icon: LucideIcon;
   label: string;
   value: string;
   hint: string;
   href: string;
+  tone: keyof typeof STAT_TONES;
 }) {
   return (
     <Card className="gap-3 transition-colors hover:bg-accent/40">
       <Link href={href} className="flex flex-col gap-3">
-        <span className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Icon className="size-4" aria-hidden="true" />
-          {label}
+        <span className="flex items-center gap-2">
+          <span
+            className={cn(
+              "flex size-8 shrink-0 items-center justify-center rounded-lg",
+              STAT_TONES[tone],
+            )}
+          >
+            <Icon className="size-4" aria-hidden="true" />
+          </span>
+          <span className="text-sm font-medium text-muted-foreground">{label}</span>
         </span>
-        <span className="text-3xl font-semibold tabular-nums">{value}</span>
+        <span className="text-3xl font-semibold tracking-tight tabular-nums">{value}</span>
         <span className="text-xs text-muted-foreground">{hint}</span>
       </Link>
     </Card>
@@ -105,6 +124,55 @@ function ChecklistItem({
   );
 }
 
+// "Hoy" (PLAN.md §15.3 L1, §15.8 P7): a ranked, rule-based list of what
+// needs attention today — modules/coach/hoy.ts does the ranking, this is
+// purely the render, one row per item with the one deep-link action.
+const HOY_SEVERITY_DOT = {
+  high: "bg-destructive",
+  medium: "bg-warning",
+  low: "bg-info",
+} as const;
+
+function HoyPanel({ items, title, empty }: { items: HoyItem[]; title: string; empty: string }) {
+  return (
+    <section className="flex flex-col gap-3">
+      <h2 className="text-lg font-semibold">{title}</h2>
+      {items.length === 0 ? (
+        <p className="text-sm text-muted-foreground">{empty}</p>
+      ) : (
+        <Card className="py-1">
+          <ul className="flex flex-col">
+            {items.map((item, index) => (
+              <li
+                key={`${item.kind}-${index}`}
+                className="flex flex-wrap items-center justify-between gap-3 border-b py-3 last:border-b-0"
+              >
+                <div className="flex min-w-0 items-start gap-3">
+                  <span
+                    className={cn("mt-1.5 size-2 shrink-0 rounded-full", HOY_SEVERITY_DOT[item.severity])}
+                    aria-hidden="true"
+                  />
+                  <div className="flex min-w-0 flex-col gap-0.5">
+                    <span className="text-sm font-medium">{item.title}</span>
+                    <span className="text-sm text-muted-foreground">{item.subtitle}</span>
+                  </div>
+                </div>
+                <Link
+                  href={`/dashboard/hoy-redirect?kind=${encodeURIComponent(item.kind)}&severity=${item.severity}&origin=panel&to=${encodeURIComponent(item.url)}`}
+                  className="flex shrink-0 items-center gap-1 text-sm font-medium whitespace-nowrap underline-offset-4 hover:underline"
+                >
+                  {item.action}
+                  <ArrowRight className="size-3.5" aria-hidden="true" />
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
+    </section>
+  );
+}
+
 export default async function DashboardPage() {
   const ctx = await requireTenantContext();
   const t = await getTranslations("app.dashboard");
@@ -117,10 +185,12 @@ export default async function DashboardPage() {
   const tenant = await getTenant(ctx.tenantId);
   const timeZone = tenant?.timezone || DEFAULT_TIMEZONE;
 
-  const [summary, leadStats, sites] = await Promise.all([
+  const [summary, leadStats, sites, hoy, briefing] = await Promise.all([
     getDashboardSummary(ctx, { timeZone }),
     getLeadStats(ctx),
     listSites(ctx),
+    buildHoy(ctx),
+    getLatestBriefing(ctx),
   ]);
 
   // Sites are shown by name; the stats module groups by id because that is
@@ -131,6 +201,8 @@ export default async function DashboardPage() {
     summary;
   const tTasks = await getTranslations("app.contacts.tasks");
   const tLeads = await getTranslations("app.dashboard.leads");
+  const tHoy = await getTranslations("app.dashboard.hoy");
+  const tBriefing = await getTranslations("app.dashboard.briefing");
   const taskLabels: TaskListLabels = {
     complete: tTasks("complete"),
     reopen: tTasks("reopen"),
@@ -178,6 +250,20 @@ export default async function DashboardPage() {
         description={t("subtitle")}
       />
 
+      <HoyPanel items={hoy} title={tHoy("title")} empty={tHoy("empty")} />
+
+      {briefing && (
+        <BriefingCard
+          briefing={briefing}
+          locale={locale}
+          labels={{
+            title: tBriefing("title"),
+            viewAll: tBriefing("viewAll"),
+            recommendationsTitle: tBriefing("recommendationsTitle"),
+          }}
+        />
+      )}
+
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
           icon={SquareKanban}
@@ -187,10 +273,12 @@ export default async function DashboardPage() {
             value: formatMoney(stats.openDealsValue, stats.currency, locale),
           })}
           href="/pipeline"
+          tone="info"
         />
-        {/* Counts WhatsApp conversations only, so it goes with the channel:
-            with WhatsApp off it would read a permanent zero and link to a
-            404. The row is a responsive grid, so three cards lay out fine. */}
+        {/* Counts WhatsApp conversations only (the merged inbox's other
+            channel, webchat, has its own unread tracking) — so it goes with
+            the channel: with WhatsApp off it would read a permanent zero.
+            The row is a responsive grid, so three cards lay out fine. */}
         {whatsappEnabled && (
           <StatCard
             icon={MessagesSquare}
@@ -198,6 +286,7 @@ export default async function DashboardPage() {
             value={formatNumberL(stats.unreadMessages)}
             hint={t("stats.unreadHint", { count: stats.unreadConversations })}
             href="/inbox"
+            tone="warning"
           />
         )}
         <StatCard
@@ -206,6 +295,7 @@ export default async function DashboardPage() {
           value={formatNumberL(stats.pendingQuotes)}
           hint={t("stats.pendingQuotesHint")}
           href="/quotes"
+          tone="destructive"
         />
         <StatCard
           icon={Users}
@@ -213,6 +303,7 @@ export default async function DashboardPage() {
           value={formatNumberL(stats.contacts)}
           hint={t("stats.contactsHint")}
           href="/contacts"
+          tone="success"
         />
       </section>
 

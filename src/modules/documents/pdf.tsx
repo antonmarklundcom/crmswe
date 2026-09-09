@@ -72,6 +72,10 @@ export type DocumentPdfData = {
   createdAt: Date;
   items: Array<PdfLineItem & { vatRateBps: number | null }>;
   locale?: string | null;
+  /** From the memory (K3, PLAN.md §16.4) — printed only when the tenant has
+   *  confirmed them, same as everywhere else the memory reaches a customer. */
+  paymentMethods?: string | null;
+  depositPolicy?: string | null;
 };
 
 /** Resolved by renderDocumentPdf: the react-pdf tree renders synchronously
@@ -109,6 +113,8 @@ export type DocumentPdfLabels = {
   momsRegNr: string;
   fskatt: string;
   notes: string;
+  paymentMethods: string;
+  depositPolicy: string;
   state: Record<PaymentState, string>;
 };
 
@@ -273,6 +279,21 @@ export function FakturaDocument({
               <Text>{data.notes}</Text>
             </View>
           )}
+
+          {(data.paymentMethods || data.depositPolicy) && (
+            <View style={styles.notes}>
+              {data.paymentMethods && (
+                <Text>
+                  {labels.paymentMethods} {data.paymentMethods}
+                </Text>
+              )}
+              {data.depositPolicy && (
+                <Text>
+                  {labels.depositPolicy} {data.depositPolicy}
+                </Text>
+              )}
+            </View>
+          )}
         </>
       }
       footer={seller?.invoiceFooter || data.tenantName}
@@ -315,6 +336,8 @@ export async function renderDocumentPdf(data: DocumentPdfData): Promise<Buffer> 
     momsRegNr: t("momsRegNr"),
     fskatt: t("fskatt"),
     notes: t("notes"),
+    paymentMethods: t("paymentMethods"),
+    depositPolicy: t("depositPolicy"),
     state: {
       unpaid: t("state.unpaid"),
       partial: t("state.partial"),

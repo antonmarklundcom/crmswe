@@ -1,4 +1,4 @@
-import { randomBytes, timingSafeEqual } from "node:crypto";
+import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
 import { eq } from "drizzle-orm";
 import { db } from "@/db/client";
 import { tenants } from "@/db/schema";
@@ -57,6 +57,12 @@ export type TenantExports = {
  * draft mode if it is ever turned on.
  */
 export type TenantAiSettings = {
+  /**
+   * Lets the assistant offer bookable slots in the thread (plan-booking.md
+   * §5.3). It can only *offer*: the customer's tap is what reserves, through
+   * the same transaction the public page uses.
+   */
+  bookingEnabled?: boolean;
   enabled?: boolean;
   /** Falls back to the tenant name when unset. */
   businessName?: string;
@@ -135,6 +141,38 @@ export type TenantSettings = {
    * `https://g.page/r/.../review`.
    */
   reviewLink?: string;
+  /**
+   * The vertical preset this tenant picked in the onboarding wizard
+   * (plan-booking.md §6.1). Bookkeeping only: nothing branches on it. It
+   * exists so the wizard can say "ya aplicaste barbería" rather than
+   * offering to apply it again, and so support can see what a tenant started
+   * from. If anything ever reads this to change behaviour, presets have
+   * become code paths and the whole design has been lost.
+   */
+  vertical?: string;
+  /**
+   * Where a customer should transfer a seña, as the business would write it
+   * ("Banco Itaú, cta. 12345678, a nombre de ..."). Read by the booking
+   * deposit-request notification (plan-booking.md §5.1); flattened to one
+   * line before it goes into a WhatsApp template variable, which is why the
+   * bank details belong here rather than in a multi-paragraph blob.
+   */
+  depositInstructions?: string;
+  /**
+   * Reply-to for every email `senderFor(ctx)` resolves (PLAN.md §15.1,
+   * §15.8 P4) — where a customer's "reply" on a transactional or automated
+   * email actually lands. Falls back to the tenant's first active admin's
+   * own login email when unset, so the reply-to is never blank.
+   */
+  contactEmail?: string;
+  /**
+   * The owner's own WhatsApp number — their personal phone, not the
+   * business's WABA number (PLAN.md §15.3 "Voice, Lane A", second half).
+   * A voice note from this number asking what is pending gets the "Hoy"
+   * list back instead of being treated as a customer message. Unset means
+   * the coach half is simply off; nothing else changes.
+   */
+  coachPhone?: string;
 };
 
 export async function updateTenantBranding(ctx: TenantContext, branding: TenantBranding) {
@@ -168,10 +206,25 @@ export async function updateTenantEmailSettings(
   return mergeTenantSettings(ctx, { email });
 }
 
+export async function updateTenantContactEmail(ctx: TenantContext, contactEmail: string) {
+  return mergeTenantSettings(ctx, { contactEmail });
+}
+
+export async function updateTenantCoachPhone(ctx: TenantContext, coachPhone: string) {
+  return mergeTenantSettings(ctx, { coachPhone });
+}
+
+
 export async function updateTenantTimezone(ctx: TenantContext, timezone: string) {
   assertTenantWritable(ctx);
   await db.update(tenants).set({ timezone }).where(eq(tenants.id, ctx.tenantId));
   return getTenant(ctx.tenantId);
+}
+
+/** The indexed lookup column's value. Same digest MySQL's own SHA2(x, 256)
+ * produces, which is what migration 0026 backfilled existing tokens with. */
+function contactsFeedTokenHash(token: string): string {
+  return createHash("sha256").update(token).digest("hex");
 }
 
 /**
@@ -273,11 +326,22 @@ function blankToNull(value: string | null | undefined): string | null {
 export async function regenerateContactsFeedToken(ctx: TenantContext): Promise<string> {
   const token = randomBytes(24).toString("hex");
   await mergeTenantSettings(ctx, { exports: { contactsToken: token } });
+  // Written after the settings merge, never before: the hash is only a way
+  // to *find* the row that holds the token, so the token is the source of
+  // truth and the column follows it.
+  await db
+    .update(tenants)
+    .set({ contactsFeedTokenHash: contactsFeedTokenHash(token) })
+    .where(eq(tenants.id, ctx.tenantId));
   return token;
 }
 
 export async function clearContactsFeedToken(ctx: TenantContext) {
   await mergeTenantSettings(ctx, { exports: {} });
+  await db
+    .update(tenants)
+    .set({ contactsFeedTokenHash: null })
+    .where(eq(tenants.id, ctx.tenantId));
 }
 
 /**
@@ -286,24 +350,36 @@ export async function clearContactsFeedToken(ctx: TenantContext) {
  * token above and the public quote token (§8), so it lives here in the
  * tenancy module where raw `db` is sanctioned.
  *
- * Scans tenants rather than querying into the settings JSON: the row count
- * is tenants-per-platform (tens), and a timing-safe compare over that is
- * cheaper to reason about than a JSON path index. Revisit if the platform
- * ever grows past a few thousand tenants.
+ * One indexed equality match on the token's SHA-256 (PLAN.md §14 I1 #2),
+ * the same pattern `site_api_keys` uses. This used to scan every tenant and
+ * timing-safe compare each stored token, which cost the whole table per
+ * unauthenticated request. Hashing is what keeps the lookup constant-time
+ * with respect to the token: an attacker learns nothing from how long a
+ * miss takes, because every miss is the same single index probe.
  */
 export async function resolveTenantByContactsFeedToken(token: string) {
   if (token.length < 32) return null;
-  const provided = Buffer.from(token);
 
-  const rows = await db.select().from(tenants);
-  for (const tenant of rows) {
-    const stored = (tenant.settings as TenantSettings | null)?.exports?.contactsToken;
-    if (!stored) continue;
-    const expected = Buffer.from(stored);
-    if (expected.length !== provided.length) continue;
-    if (timingSafeEqual(expected, provided)) return tenant;
-  }
-  return null;
+  const [tenant] = await db
+    .select()
+    .from(tenants)
+    .where(eq(tenants.contactsFeedTokenHash, contactsFeedTokenHash(token)))
+    .limit(1);
+  if (!tenant) return null;
+
+  // The hash found the row; the stored token still decides. Belt and braces
+  // against a stale or hand-edited hash column — and the compare stays
+  // timing-safe, as it was before.
+  const stored = (tenant.settings as TenantSettings | null)?.exports?.contactsToken;
+  if (!stored) return null;
+  const expected = Buffer.from(stored);
+  const provided = Buffer.from(token);
+  if (expected.length !== provided.length) return null;
+  return timingSafeEqual(expected, provided) ? tenant : null;
+}
+
+export async function updateTenantVertical(ctx: TenantContext, vertical: string) {
+  return mergeTenantSettings(ctx, { vertical });
 }
 
 async function mergeTenantSettings(ctx: TenantContext, patch: Partial<TenantSettings>) {

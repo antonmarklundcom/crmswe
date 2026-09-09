@@ -1,6 +1,14 @@
+import { readdirSync } from "node:fs";
+import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { isAppHost, isPublicPath, resolveHostRedirect } from "./middleware";
-import { APEX_HOST, APP_HOST } from "./lib/site-config";
+import {
+  CRM_ROBOTS_BODY,
+  crmRobotsBody,
+  isAppHost,
+  isPublicPath,
+  resolveHostRedirect,
+} from "./middleware";
+import { APEX_HOST, APP_HOST } from "./lib/config/hosts";
 
 // The auth allowlist fails closed, which is the right default but makes an
 // omission silent in a confusing way: a missing public prefix doesn't look
@@ -43,6 +51,16 @@ describe("isPublicPath", () => {
     }
   });
 
+  it("allows the public booking pages and the embedded chat widget", () => {
+    // Both of these shipped *missing* from the allowlist. The failure is the
+    // confusing kind this whole suite exists for: a customer opening the
+    // manage link a business WhatsApp'd them got the CRM login page, and the
+    // chat widget iframe 302'd on every third-party site that embedded it.
+    expect(isPublicPath("/b/barberia-central/corte")).toBe(true);
+    expect(isPublicPath("/b/g/tok123")).toBe(true);
+    expect(isPublicPath("/w/wk_abc123")).toBe(true);
+  });
+
   it("does not treat a lookalike prefix as public", () => {
     // "/documents" must not be matched by the "/d/" prefix.
     expect(isPublicPath("/documents")).toBe(false);
@@ -70,7 +88,7 @@ describe("isPublicPath, host-aware", () => {
   });
 
   it("opens every marketing route on the apex host", () => {
-    for (const path of ["/", "/sa-funkar-det", "/kontakt", "/om-oss", "/soluciones/clinicas"]) {
+    for (const path of ["/", "/sa-funkar-det", "/kontakt", "/om-oss"]) {
       expect(isPublicPath(path, apex)).toBe(true);
     }
   });
@@ -114,6 +132,25 @@ describe("isAppHost", () => {
   });
 });
 
+describe("crmRobotsBody", () => {
+  it("serves a disallow-all robots.txt on the crm host only", () => {
+    expect(crmRobotsBody("crm.crmswe.se", "/robots.txt")).toBe(CRM_ROBOTS_BODY);
+    expect(CRM_ROBOTS_BODY).toContain("Disallow: /");
+  });
+
+  it("leaves the apex, preview and localhost robots to app/robots.ts", () => {
+    expect(crmRobotsBody("crmswe.se", "/robots.txt")).toBeNull();
+    expect(crmRobotsBody("www.crmswe.se", "/robots.txt")).toBeNull();
+    expect(crmRobotsBody("localhost:3000", "/robots.txt")).toBeNull();
+    expect(crmRobotsBody(null, "/robots.txt")).toBeNull();
+  });
+
+  it("only ever answers /robots.txt itself", () => {
+    expect(crmRobotsBody("crm.crmswe.se", "/")).toBeNull();
+    expect(crmRobotsBody("crm.crmswe.se", "/robots.txt/extra")).toBeNull();
+  });
+});
+
 describe("resolveHostRedirect", () => {
   it("301s www to the apex, preserving path and query", () => {
     expect(resolveHostRedirect(`www.${APEX_HOST}`, "/sa-funkar-det", "?utm_source=ads")).toEqual({
@@ -140,7 +177,15 @@ describe("resolveHostRedirect", () => {
   it("keeps shared customer links and the API on whichever host they were opened", () => {
     // A quote link sent over WhatsApp, or a site posting its leads, must not
     // be bounced to another hostname mid-request.
-    for (const path of ["/api/v1/leads", "/q/tok", "/d/tok/pdf", "/f/acme/contacto"]) {
+    for (const path of [
+      "/api/v1/leads",
+      "/q/tok",
+      "/d/tok/pdf",
+      "/f/acme/contacto",
+      "/b/acme/corte",
+      "/b/g/tok",
+      "/w/wk_abc",
+    ]) {
       expect(resolveHostRedirect(APEX_HOST, path)).toBeNull();
     }
   });
@@ -161,5 +206,60 @@ describe("resolveHostRedirect", () => {
   it("leaves the crm host untouched", () => {
     expect(resolveHostRedirect(APP_HOST, "/dashboard")).toBeNull();
     expect(resolveHostRedirect(APP_HOST, "/")).toBeNull();
+  });
+});
+
+// The allowlist is a hand-maintained copy of a fact the filesystem already
+// knows: everything under the (public) route group is, by construction,
+// public. Every entry that has ever been forgotten (/d/, then /b/ and /w/)
+// was forgotten the same way — a route group was added and the list wasn't.
+// So the list is checked against the directory rather than against a
+// developer's memory, and the next omission fails here instead of in
+// production.
+describe("the (public) route group is fully allowlisted", () => {
+  const publicGroup = path.join(__dirname, "app", "(public)");
+
+  const segments = readdirSync(publicGroup, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    // Route groups and dynamic segments are not URL segments of their own.
+    .filter((entry) => !entry.name.startsWith("(") && !entry.name.startsWith("["))
+    .map((entry) => entry.name);
+
+  it("finds the segments it is supposed to be checking", () => {
+    // Guards against the scan silently passing because it found nothing.
+    expect(segments.length).toBeGreaterThan(0);
+  });
+
+  it.each(segments)("treats /%s/ as public", (segment) => {
+    expect(isPublicPath(`/${segment}/anything`)).toBe(true);
+  });
+});
+
+// The same reasoning one level out: the loaders in `public/` that *other
+// people's sites* embed are fetched by visitors with no session here, and
+// each one needs a hand-added entry in PUBLIC_EXACT. `w.js` shipped without
+// one and was only noticed when `b.js` was written next to it.
+//
+// Scripts the marketing site loads for itself are exempt: they are only ever
+// fetched from the apex host, where everything outside /api is public and
+// there is no allowlist to forget. They are named here rather than inferred,
+// so adding a new *embed* loader fails this test until someone decides which
+// kind it is — which is the decision that was missed for `w.js`.
+const MARKETING_ONLY_SCRIPTS = ["mk-motion.js"];
+
+describe("every shipped embed loader is allowlisted", () => {
+  const publicDir = path.join(__dirname, "..", "public");
+
+  const loaders = readdirSync(publicDir, { withFileTypes: true })
+    .filter((entry) => entry.isFile() && entry.name.endsWith(".js"))
+    .map((entry) => entry.name)
+    .filter((name) => !MARKETING_ONLY_SCRIPTS.includes(name));
+
+  it("finds the loaders it is supposed to be checking", () => {
+    expect(loaders.length).toBeGreaterThan(0);
+  });
+
+  it.each(loaders)("serves /%s to a visitor with no session", (loader) => {
+    expect(isPublicPath(`/${loader}`)).toBe(true);
   });
 });

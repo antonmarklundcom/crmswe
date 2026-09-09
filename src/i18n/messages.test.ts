@@ -3,6 +3,11 @@ import messages from "../../messages/sv.json";
 import en from "../../messages/en.json";
 import es from "../../messages/es.json";
 import { SUPPORTED_LOCALES } from "@/lib/i18n/locales";
+import {
+  ACTION_KINDS,
+  CONDITION_KINDS,
+  TRIGGER_TYPES,
+} from "@/modules/automations/graph";
 
 // Guards the Swedish copy file itself — the reference locale for this edition
 // (plan.md §1.11). These are the three ways the file has actually broken so
@@ -131,6 +136,113 @@ describe("hookGuide.platforms", () => {
       expect(platforms.map((platform) => platform.id)).toEqual(
         reference.map((platform) => platform.id),
       );
+    });
+  }
+});
+
+// Voseo in customer-facing Spanish (plan-booking.md §1, §6.2 #2).
+//
+// The reader of everything under `public.*` is the customer of a Paraguayan
+// business, not the CRM's user, and "elige un horario" reads to them the way
+// "kindly select a timeslot" reads to an English speaker: correct, and
+// written by somebody else's software. Admin copy is exempt — it is the
+// tenant's own screen and neutral Spanish is fine there.
+//
+// A blocklist of the tuteo imperatives and present-tense forms these strings
+// actually reach for, rather than an attempt to conjugate Spanish: the point
+// is to fail when somebody adds "Selecciona una fecha", not to be a grammar
+// checker.
+describe("customer-facing Spanish uses voseo", () => {
+  // Whole words only: "Enviar" is an infinitive on a button and perfectly
+  // fine; "envía" is the tuteo imperative that is not.
+  const TUTEO = [
+    "elige",
+    "elija",
+    "selecciona",
+    "escribe",
+    "env[íi]a",
+    "ingresa",
+    "confirma",
+    "descarga",
+    "revisa",
+    "espera",
+    "intenta",
+    "vuelve",
+    "recuerda",
+    // Accent and all: "contactanos" and "dejanos" are the voseo imperatives
+    // and are correct — it is "contáctanos" and "déjanos" that are not.
+    "cuéntanos",
+    "contáctanos",
+    "déjanos",
+    "compártelo",
+    "tienes",
+    "puedes",
+    "debes",
+    "quieres",
+    "necesitas",
+    "prefieres",
+    "deseas",
+  ].map((form) => new RegExp(`\\b${form}\\b`, "i"));
+
+  const strings: Array<[string, string]> = [];
+  const walk = (node: unknown, path: string[]) => {
+    if (typeof node === "string") {
+      strings.push([path.join("."), node]);
+      return;
+    }
+    if (node && typeof node === "object") {
+      for (const [key, value] of Object.entries(node as Record<string, unknown>)) {
+        walk(value, [...path, key]);
+      }
+    }
+  };
+  walk((messages as Record<string, unknown>).public, ["public"]);
+
+  it("finds the strings it is supposed to be checking", () => {
+    expect(strings.length).toBeGreaterThan(20);
+  });
+
+  it("has no tuteo left anywhere a customer can read", () => {
+    const offenders = strings.filter(([, value]) =>
+      TUTEO.some((form) => form.test(value)),
+    );
+    expect(offenders).toEqual([]);
+  });
+});
+
+// Every automation node has a label, in every locale (PLAN.md §15.0 #4).
+//
+// Five trigger types shipped with no label at all and nothing caught it: the
+// create-flow select rendered the raw key path for months. The lists live in
+// modules/automations/graph.ts, so adding a trigger, a condition or an
+// action to the engine now fails here until the copy exists — which is the
+// only way a parity test helps a Spanish-only author who cannot see the
+// English file rot.
+describe("automation labels", () => {
+  const locales: Record<string, MessageNode> = { es: messages as MessageNode, ...LOCALES };
+
+  function labelAt(tree: MessageNode, path: string[]): unknown {
+    return path.reduce<unknown>(
+      (node, key) => (node as Record<string, unknown> | undefined)?.[key],
+      tree,
+    );
+  }
+
+  for (const [locale, tree] of Object.entries(locales)) {
+    it(`${locale} names every trigger type`, () => {
+      const missing = TRIGGER_TYPES.filter(
+        (trigger) =>
+          typeof labelAt(tree, ["app", "automations", "triggers", trigger]) !== "string",
+      );
+      expect(missing).toEqual([]);
+    });
+
+    it(`${locale} names every condition and action kind in the palette`, () => {
+      const missing = [...CONDITION_KINDS, ...ACTION_KINDS].filter(
+        (kind) =>
+          typeof labelAt(tree, ["app", "automations", "editor", "palette", kind]) !== "string",
+      );
+      expect(missing).toEqual([]);
     });
   }
 });

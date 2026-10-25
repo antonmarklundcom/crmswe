@@ -3,6 +3,7 @@ import { getTranslator } from "@/lib/i18n/translator";
 import { DEFAULT_LOCALE } from "@/lib/i18n/locales";
 import { formatDate, formatMoney } from "@/lib/i18n/format";
 import { siteConfig } from "@/lib/site-config";
+import { escapeHtml as esc } from "./escape";
 
 // Minimal inline-styled HTML — no build step, no MJML, and email clients
 // strip most CSS anyway. Kept deliberately plain (one accent color, system
@@ -42,7 +43,7 @@ function paragraph(html: string): string {
 }
 
 function button(url: string, label: string): string {
-  return `<a href="${url}" style="display:inline-block;margin-top:16px;padding:12px 20px;background:#18181b;color:#ffffff;text-decoration:none;border-radius:8px;font-weight:600;">${label}</a>`;
+  return `<a href="${esc(url)}" style="display:inline-block;margin-top:16px;padding:12px 20px;background:#18181b;color:#ffffff;text-decoration:none;border-radius:8px;font-weight:600;">${label}</a>`;
 }
 
 export async function invitationEmail(input: {
@@ -56,8 +57,8 @@ export async function invitationEmail(input: {
     subject: t("subject", { inviter: input.inviterName, tenant: input.tenantName }),
     html: layout(
       `
-      ${heading(t("title", { tenant: input.tenantName }))}
-      ${paragraph(t("body", { inviter: input.inviterName }))}
+      ${heading(t("title", { tenant: esc(input.tenantName) }))}
+      ${paragraph(t("body", { inviter: esc(input.inviterName) }))}
       ${button(input.acceptUrl, t("cta"))}
     `,
       input.locale ?? DEFAULT_LOCALE,
@@ -101,7 +102,7 @@ export async function subscriptionExpiryWarningEmail(input: {
     html: layout(
       `
       ${heading(t("title"))}
-      ${paragraph(t("body", { tenant: input.tenantName, date, grace: GRACE_PERIOD_DAYS }))}
+      ${paragraph(t("body", { tenant: esc(input.tenantName), date, grace: GRACE_PERIOD_DAYS }))}
     `,
       input.locale ?? DEFAULT_LOCALE,
     ),
@@ -143,9 +144,9 @@ export async function siteIngestAlertEmail(input: {
       subject: t("staleSubject", { site: input.siteName, days: input.daysSilent ?? 0 }),
       html: layout(
         `
-        ${heading(t("staleTitle", { site: input.siteName }))}
+        ${heading(t("staleTitle", { site: esc(input.siteName) }))}
         ${paragraph(t("staleBody", { days: input.daysSilent ?? 0, lastLead }))}
-        ${paragraph(`<a href="${input.sitesUrl}">${t("staleLink")}</a>`)}
+        ${paragraph(`<a href="${esc(input.sitesUrl)}">${t("staleLink")}</a>`)}
       `,
         locale,
       ),
@@ -159,10 +160,10 @@ export async function siteIngestAlertEmail(input: {
     subject: t("failingSubject", { site: input.siteName }),
     html: layout(
       `
-      ${heading(t("failingTitle", { site: input.siteName }))}
+      ${heading(t("failingTitle", { site: esc(input.siteName) }))}
       ${paragraph(t("failingBody", { status: input.status ?? 0, reason }))}
       ${paragraph(lastLead)}
-      ${paragraph(`<a href="${input.sitesUrl}">${t("failingLink")}</a>`)}
+      ${paragraph(`<a href="${esc(input.sitesUrl)}">${t("failingLink")}</a>`)}
     `,
       locale,
     ),
@@ -211,9 +212,9 @@ export async function taskRemindersEmail(input: {
         hour: "2-digit",
         minute: "2-digit",
       });
-      const who = item.contactName ? ` · ${item.contactName}` : "";
+      const who = item.contactName ? ` · ${esc(item.contactName)}` : "";
       const flag = item.overdue ? ` · <strong>${t("overdue")}</strong>` : "";
-      return `<li style="margin-bottom:8px;"><a href="${item.url}">${item.title}</a><br /><span style="color:#71717a;">${when}${who}${flag}</span></li>`;
+      return `<li style="margin-bottom:8px;"><a href="${esc(item.url)}">${esc(item.title)}</a><br /><span style="color:#71717a;">${when}${who}${flag}</span></li>`;
     })
     .join("");
 
@@ -227,9 +228,9 @@ export async function taskRemindersEmail(input: {
             hour: "2-digit",
             minute: "2-digit",
           });
-      const where = appointment.location ? ` · ${appointment.location}` : "";
-      const who = appointment.contactName ? ` · ${appointment.contactName}` : "";
-      return `<li style="margin-bottom:8px;"><a href="${appointment.url}">${appointment.title}</a><br /><span style="color:#71717a;">${when}${who}${where}</span></li>`;
+      const where = appointment.location ? ` · ${esc(appointment.location)}` : "";
+      const who = appointment.contactName ? ` · ${esc(appointment.contactName)}` : "";
+      return `<li style="margin-bottom:8px;"><a href="${esc(appointment.url)}">${esc(appointment.title)}</a><br /><span style="color:#71717a;">${when}${who}${where}</span></li>`;
     })
     .join("");
 
@@ -257,7 +258,7 @@ export async function taskRemindersEmail(input: {
         : t("appointmentsSubject", { count: appointments.length }),
     html: layout(
       `
-      ${heading(t("title", { name: input.userName }))}
+      ${heading(t("title", { name: esc(input.userName) }))}
       ${taskSection}
       ${appointmentSection}
       ${button(input.tasksUrl, t("cta"))}
@@ -296,8 +297,8 @@ function paymentLine(
 ): string | null {
   if (!input.paymentAccount) return null;
   return input.ocrNumber
-    ? t("payment", { account: input.paymentAccount, ocr: input.ocrNumber })
-    : t("paymentNoOcr", { account: input.paymentAccount });
+    ? t("payment", { account: esc(input.paymentAccount), ocr: esc(input.ocrNumber) })
+    : t("paymentNoOcr", { account: esc(input.paymentAccount) });
 }
 
 /** The button plus the same URL in plain text underneath. A link that only
@@ -312,7 +313,7 @@ function linkBlock(
       ${button(url, t(ctaKey))}
       <p style="margin-top:16px;font-size:12px;line-height:1.5;color:#71717a;word-break:break-all;">${t(
         "fallback",
-        { url },
+        { url: esc(url) },
       )}</p>`;
 }
 
@@ -347,9 +348,9 @@ export async function quoteEmail(input: {
     subject: t("subject", { number: input.number, tenant: input.tenantName }),
     html: layout(
       `
-      ${heading(t("title", { number: input.number }))}
+      ${heading(t("title", { number: esc(input.number) }))}
       ${paragraph(
-        t("body", { name: input.contactName, tenant: input.tenantName, amount }),
+        t("body", { name: esc(input.contactName), tenant: esc(input.tenantName), amount }),
       )}
       ${validUntil}
       ${linkBlock(t, input.publicUrl)}
@@ -403,16 +404,16 @@ export async function invoiceEmail(input: {
     }),
     html: layout(
       `
-      ${heading(t(isCredit ? "creditTitle" : "title", { number: input.number }))}
+      ${heading(t(isCredit ? "creditTitle" : "title", { number: esc(input.number) }))}
       ${paragraph(
         isCredit
           ? t("creditBody", {
-              name: input.contactName,
-              tenant: input.tenantName,
+              name: esc(input.contactName),
+              tenant: esc(input.tenantName),
               amount,
-              credits: input.creditsNumber ?? "",
+              credits: esc(input.creditsNumber ?? ""),
             })
-          : t("body", { name: input.contactName, tenant: input.tenantName, amount }),
+          : t("body", { name: esc(input.contactName), tenant: esc(input.tenantName), amount }),
       )}
       ${dueAt}
       ${payment ? paragraph(payment) : ""}
@@ -466,9 +467,14 @@ export async function paymentReminderEmail(input: {
     }),
     html: layout(
       `
-      ${heading(t("title", { number: input.number }))}
+      ${heading(t("title", { number: esc(input.number) }))}
       ${paragraph(
-        t("body", { name: input.contactName, tenant: input.tenantName, number: input.number, amount }),
+        t("body", {
+          name: esc(input.contactName),
+          tenant: esc(input.tenantName),
+          number: esc(input.number),
+          amount,
+        }),
       )}
       ${dueDate ? paragraph(t(input.overdue ? "overdue" : "dueAt", { date: dueDate })) : ""}
       ${payment ? paragraph(payment) : ""}
@@ -496,7 +502,7 @@ export async function weeklyBriefingEmail(input: {
   const t = await getTranslator(locale, "email.weeklyBriefing");
 
   const items = input.recommendations
-    .map((line) => `<li style="margin-bottom:8px;">${line}</li>`)
+    .map((line) => `<li style="margin-bottom:8px;">${esc(line)}</li>`)
     .join("");
 
   return {
@@ -504,7 +510,7 @@ export async function weeklyBriefingEmail(input: {
     html: layout(
       `
       ${heading(t("title"))}
-      ${paragraph(input.summary)}
+      ${paragraph(esc(input.summary))}
       <ul style="font-size:14px;line-height:1.5;color:#3f3f46;padding-left:18px;">${items}</ul>
       ${button(input.briefingUrl, t("cta"))}
     `,

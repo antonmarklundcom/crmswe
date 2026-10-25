@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { apiError, requireSession } from "@/lib/api/guards";
 import { isPushConfigured } from "@/modules/notifications/push";
+import { isAllowedPushEndpoint } from "@/modules/notifications/push-endpoint";
 import {
   MAX_ENDPOINT_LENGTH,
   MAX_KEY_LENGTH,
@@ -15,7 +16,8 @@ import {
 // somebody else's account.
 
 const subscribeSchema = z.object({
-  endpoint: z.string().url().max(MAX_ENDPOINT_LENGTH),
+  // Solo servicios de push conocidos: el servidor POSTea a esta URL (anti-SSRF).
+  endpoint: z.string().url().max(MAX_ENDPOINT_LENGTH).refine(isAllowedPushEndpoint),
   keys: z.object({
     p256dh: z.string().min(1).max(MAX_KEY_LENGTH),
     auth: z.string().min(1).max(MAX_KEY_LENGTH),

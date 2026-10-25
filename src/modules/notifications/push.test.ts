@@ -45,7 +45,7 @@ vi.mock("web-push", () => ({
   WebPushError: FakeWebPushError,
 }));
 
-const target = (id: string, endpoint = `https://push.example/${id}`) => ({
+const target = (id: string, endpoint = `https://fcm.googleapis.com/fcm/send/${id}`) => ({
   id,
   endpoint,
   p256dh: `p256dh-${id}`,
@@ -94,7 +94,7 @@ describe("deliverToTargets", () => {
 
     const [subscription, body] = sendNotification.mock.calls[0];
     expect(subscription).toEqual({
-      endpoint: "https://push.example/s1",
+      endpoint: "https://fcm.googleapis.com/fcm/send/s1",
       keys: { p256dh: "p256dh-s1", auth: "auth-s1" },
     });
     expect(JSON.parse(body as string)).toEqual({
@@ -169,5 +169,20 @@ describe("deliverToTargets", () => {
     const { deliverToTargets } = await import("./push");
     await expect(deliverToTargets([], payload)).resolves.toEqual([]);
     expect(sendNotification).not.toHaveBeenCalled();
+  });
+});
+
+describe("deliverToTargets endpoint allowlist", () => {
+  it("does not call web-push for an endpoint outside the push services", async () => {
+    const { deliverToTargets } = await import("./push");
+    sendNotification.mockClear();
+    const outcomes = await deliverToTargets(
+      [target("evil", "http://169.254.169.254/latest")],
+      { title: "x" },
+    );
+    expect(sendNotification).not.toHaveBeenCalled();
+    expect(outcomes).toEqual([
+      { id: "evil", result: "failed", status: null, error: "invalid_endpoint" },
+    ]);
   });
 });

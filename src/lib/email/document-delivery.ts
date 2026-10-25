@@ -1,6 +1,7 @@
 import type { TenantContext } from "@/modules/tenancy/context";
 import { getContact } from "@/modules/crm/contacts";
 import { sendEmail } from "./index";
+import { escapeHtml } from "./escape";
 import { buildUnsubscribeUrl } from "./unsubscribe";
 
 // "Enviar por email" on the quote and nota de venta detail pages (PLAN.md
@@ -34,8 +35,8 @@ export async function sendLinkEmail(
   const contact = await getContact(ctx, input.contactId);
   if (!contact?.email) return { sent: false, reason: "no_email" };
 
-  const paragraphs = input.lines.map((line) => `<p>${line}</p>`).join("\n");
-  const linkHtml = `<p><a href="${input.linkUrl}">${input.linkLabel}</a></p>`;
+  const paragraphs = input.lines.map((line) => `<p>${escapeHtml(line)}</p>`).join("\n");
+  const linkHtml = `<p><a href="${escapeHtml(input.linkUrl)}">${escapeHtml(input.linkLabel)}</a></p>`;
   const unsubscribeHtml = input.automated
     ? `<p style="font-size:12px;color:#888"><a href="${buildUnsubscribeUrl(ctx.tenantId, contact.id)}">Cancelar suscripción</a></p>`
     : "";

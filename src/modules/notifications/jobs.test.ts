@@ -69,7 +69,7 @@ vi.mock("./subscriptions", () => ({
 
 const row = {
   id: "sub-1",
-  endpoint: "https://push.example/sub-1",
+  endpoint: "https://fcm.googleapis.com/fcm/send/sub-1",
   p256dh: "p256dh",
   auth: "auth",
 };
@@ -103,7 +103,7 @@ describe("sendPush", () => {
     expect(sendNotification).toHaveBeenCalledTimes(1);
     const [subscription, body] = sendNotification.mock.calls[0];
     expect(subscription).toEqual({
-      endpoint: "https://push.example/sub-1",
+      endpoint: "https://fcm.googleapis.com/fcm/send/sub-1",
       keys: { p256dh: "p256dh", auth: "auth" },
     });
     expect(JSON.parse(body as string)).toMatchObject({

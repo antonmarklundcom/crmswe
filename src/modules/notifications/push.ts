@@ -1,5 +1,6 @@
 import webpush, { WebPushError } from "web-push";
 import { env } from "@/lib/config/env";
+import { isAllowedPushEndpoint } from "./push-endpoint";
 
 // The web-push transport (PLAN.md §15.5 J2, §15.8 P2).
 //
@@ -90,6 +91,10 @@ export async function deliverToTargets(
 
   return Promise.all(
     targets.map(async (target): Promise<PushOutcome> => {
+      // Filas guardadas antes de la validación: nunca se POSTea a un host fuera de la lista.
+      if (!isAllowedPushEndpoint(target.endpoint)) {
+        return { id: target.id, result: "failed", status: null, error: "invalid_endpoint" };
+      }
       try {
         await webpush.sendNotification(
           {
